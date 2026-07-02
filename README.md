@@ -1,7 +1,7 @@
 # Hamdam Website
 
 Marketing site for Hamdam — a reflection companion grounded in Persian poetic
-wisdom, launching on iPhone Yalda 2026 (21 December).
+wisdom, launching on iPhone August 2026.
 
 ## Stack
 
