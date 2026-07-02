@@ -1,0 +1,28 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PersianShamseh from '../components/PersianShamseh.astro';
+---
+
+<BaseLayout
+  title="Page not found — Hamdam"
+  description="The page you're looking for doesn't exist."
+  lang="en"
+  path="/404"
+  altPath="/fa"
+>
+  <section class="flex min-h-screen flex-col items-center justify-center px-6 text-center">
+    <PersianShamseh size={48} />
+    <h1 class="text-balance mt-8 font-serif text-4xl font-bold text-indigo sm:text-5xl">
+      This page has wandered off.
+    </h1>
+    <p class="mt-4 font-serif text-lg italic text-indigo/70">
+      Return to the beginning.
+    </p>
+    <a
+      href="/"
+      class="mt-10 rounded-[var(--radius-button)] bg-indigo px-6 py-3 text-sm font-medium text-cream transition-colors hover:bg-indigo/90"
+    >
+      Back to Hamdam
+    </a>
+  </section>
+</BaseLayout>
