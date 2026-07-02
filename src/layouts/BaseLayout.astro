@@ -1,0 +1,79 @@
+---
+import LanguageToggle from '../components/LanguageToggle.astro';
+import '../styles/global.css';
+
+interface Props {
+  title: string;
+  description: string;
+  lang: 'en' | 'fa';
+  path: string;
+  altPath: string;
+}
+
+const { title, description, lang, path, altPath } = Astro.props;
+const dir = lang === 'fa' ? 'rtl' : 'ltr';
+const canonicalURL = new URL(path, Astro.site);
+---
+
+<!doctype html>
+<html lang={lang} dir={dir}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonicalURL} />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonicalURL} />
+    <meta property="og:locale" content={lang === 'fa' ? 'fa_IR' : 'en_AU'} />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Source+Serif+Pro:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Vazirmatn:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <script>
+      // Reveal sections with [data-fade-in] as they enter the viewport
+      const observer = new IntersectionObserver(
+        (entries) => {
+          for (const entry of entries) {
+            if (entry.isIntersecting) {
+              entry.target.setAttribute('data-visible', 'true');
+              observer.unobserve(entry.target);
+            }
+          }
+        },
+        { threshold: 0.15 }
+      );
+      document.querySelectorAll('[data-fade-in]').forEach((el) => observer.observe(el));
+    </script>
+  </head>
+  <body class="bg-cream text-indigo font-sans antialiased">
+    <a
+      href="#main-content"
+      class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:bg-indigo focus:text-cream focus:px-4 focus:py-2 focus:rounded-[var(--radius-button)]"
+    >
+      Skip to main content
+    </a>
+
+    <LanguageToggle lang={lang} altPath={altPath} />
+
+    <main id="main-content">
+      <slot />
+    </main>
+  </body>
+</html>

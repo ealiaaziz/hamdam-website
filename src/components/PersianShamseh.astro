@@ -1,0 +1,38 @@
+---
+interface Props {
+  size?: number;
+  color?: string;
+  opacity?: number;
+  animated?: boolean;
+  class?: string;
+}
+
+const { size = 24, color = 'var(--color-saffron)', opacity = 1, animated = false, class: className = '' } = Astro.props;
+---
+
+<svg
+  width={size}
+  height={size}
+  viewBox="0 0 100 100"
+  fill="none"
+  xmlns="http://www.w3.org/2000/svg"
+  class:list={[animated && 'animate-breathe', className]}
+  style={{ opacity }}
+  aria-hidden="true"
+  focusable="false"
+>
+  <rect
+    x="20" y="20" width="60" height="60"
+    transform="rotate(0 50 50)"
+    stroke={color}
+    stroke-width="2.5"
+    fill="none"
+  />
+  <rect
+    x="20" y="20" width="60" height="60"
+    transform="rotate(45 50 50)"
+    stroke={color}
+    stroke-width="2.5"
+    fill="none"
+  />
+</svg>

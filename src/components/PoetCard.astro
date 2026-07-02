@@ -1,0 +1,29 @@
+---
+import PersianShamseh from './PersianShamseh.astro';
+
+interface Props {
+  persianName: string;
+  transliteration: string;
+  description: string;
+  class?: string;
+}
+
+const { persianName, transliteration, description, class: className = '' } = Astro.props;
+---
+
+<div data-fade-in class:list={['group text-center', className]}>
+  <div class="flex items-center justify-center gap-2">
+    <h3 dir="rtl" class="font-farsi text-3xl font-bold text-indigo sm:text-4xl">
+      {persianName}
+    </h3>
+    <span class="opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+      <PersianShamseh size={18} opacity={0.7} />
+    </span>
+  </div>
+  <p class="mt-2 text-sm font-medium uppercase tracking-wide text-saffron-ink">
+    {transliteration}
+  </p>
+  <p class="mt-3 font-serif italic text-indigo/80">
+    {description}
+  </p>
+</div>

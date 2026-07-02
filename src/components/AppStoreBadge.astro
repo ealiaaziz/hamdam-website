@@ -1,0 +1,27 @@
+---
+interface Props {
+  class?: string;
+}
+
+const { class: className = '' } = Astro.props;
+// English only: no approved byte-validated Persian string exists for this copy yet.
+const eyebrow = 'Coming to iPhone';
+const headline = 'Yalda 2026';
+---
+
+<div
+  class:list={[
+    'inline-flex h-[54px] items-center gap-3 rounded-[12px] bg-indigo px-5 text-cream shadow-card',
+    className,
+  ]}
+  role="img"
+  aria-label={`${eyebrow}. ${headline}.`}
+>
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false">
+    <path d="M16.365 1.43c0 1.14-.417 2.13-1.25 2.97-.833.84-1.833 1.32-3 1.44-.083-1.14.417-2.16 1.25-3 .833-.87 1.917-1.35 3-1.41zM20.6 17.16c-.583 1.32-1.25 2.55-2.083 3.72-1.083 1.5-2.417 3.3-4.083 3.3-1.5 0-1.917-.99-3.75-.99-1.833 0-2.333.96-3.833.99-1.583.03-2.833-1.62-3.917-3.12-2.083-2.94-3.667-8.31-1.5-11.94 1.083-1.8 3-2.94 5-2.97 1.5-.03 2.833.99 3.75.99.917 0 2.583-1.23 4.333-1.05.75.03 2.833.3 4.167 2.25-.083.06-2.5 1.47-2.5 4.35.033 3.51 3.083 4.68 3.417 4.83z"/>
+  </svg>
+  <span class="flex flex-col leading-tight">
+    <span class="font-sans text-xs">{eyebrow}</span>
+    <span class="font-serif text-lg font-semibold">{headline}</span>
+  </span>
+</div>

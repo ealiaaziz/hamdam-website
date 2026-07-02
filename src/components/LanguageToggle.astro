@@ -1,0 +1,18 @@
+---
+interface Props {
+  lang: 'en' | 'fa';
+  altPath: string;
+}
+
+const { lang, altPath } = Astro.props;
+const label = lang === 'fa' ? 'English' : 'فارسی';
+const ariaLabel = 'Switch language';
+---
+
+<a
+  href={altPath}
+  aria-label={ariaLabel}
+  class="fixed top-6 right-6 z-40 rounded-full bg-white/60 px-4 py-2 text-sm font-medium text-indigo backdrop-blur transition-colors duration-200 hover:bg-white/90"
+>
+  {label}
+</a>
