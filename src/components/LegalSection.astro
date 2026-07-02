@@ -1,15 +1,18 @@
 ---
 interface Props {
   heading: string;
+  lang?: 'en' | 'fa';
 }
 
-const { heading } = Astro.props;
+const { heading, lang = 'en' } = Astro.props;
+const fontClass = lang === 'fa' ? 'font-farsi' : 'font-serif';
+const leading = lang === 'fa' ? 'leading-[1.9]' : 'leading-[1.7]';
 ---
 
 <section class="mt-14">
   <div class="mb-4 h-px w-12 bg-saffron/60"></div>
-  <h2 class="font-serif text-3xl font-semibold text-indigo">{heading}</h2>
-  <div class="mt-4 space-y-4 font-serif text-lg leading-[1.7] text-indigo/90">
+  <h2 class:list={[fontClass, 'text-3xl font-semibold text-indigo']}>{heading}</h2>
+  <div class:list={[fontClass, leading, 'mt-4 space-y-4 text-lg text-indigo/90']}>
     <slot />
   </div>
 </section>

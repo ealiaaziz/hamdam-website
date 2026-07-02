@@ -6,7 +6,7 @@ interface Props {
 
 const { lang, altPath } = Astro.props;
 const label = lang === 'fa' ? 'English' : 'فارسی';
-const ariaLabel = 'Switch language';
+const ariaLabel = lang === 'fa' ? 'Switch to English' : 'تغییر زبان به فارسی';
 ---
 
 <a

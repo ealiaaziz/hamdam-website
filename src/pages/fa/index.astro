@@ -10,162 +10,151 @@ import { poets } from '../../data/poets';
 ---
 
 <BaseLayout
-  title="Hamdam — A reflection companion grounded in Persian poetic wisdom"
-  description="Hamdam reflects your heart and your sky. A daily reflection companion grounded in Persian poetic wisdom, coming to iPhone Yalda 2026."
+  title="همدم — همراهی برای تأمل روزانه، ریشه‌دار در خرد شعر فارسی"
+  description="همدم، آینه‌ی قلب و آسمان توست. همراهی روزانه برای تأمل، ریشه‌دار در خرد شعر فارسی. به‌زودی برای آیفون، یلدا 2026."
   lang="fa"
   path="/fa"
   altPath="/"
 >
-  <div class="px-6 pt-24 sm:pt-16">
-    <div class="mx-auto max-w-[var(--container-reading)] rounded-[var(--radius-card)] bg-peach/25 px-5 py-4 text-center text-sm text-indigo/80" dir="ltr">
-      ⚠️ Persian content pending Sima native-speaker review before v1.0 launch. This page currently
-      displays English placeholder text.
+  <!-- HERO -->
+  <section class="relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-6 py-32 text-center">
+    <div
+      class="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-b from-peach/20 via-cream to-cream"
+      aria-hidden="true"
+    ></div>
+
+    <div class="mx-auto flex max-w-[800px] flex-col items-center">
+      <PersianShamseh size={64} animated={true} />
+
+      <h1 class="text-balance mt-10 font-farsi text-[40px] font-bold leading-[1.3] text-indigo sm:text-[60px] lg:text-[72px]">
+        همدم، آینه‌ی قلب و آسمان توست.
+      </h1>
+
+      <p class="mt-8 max-w-xl font-farsi text-xl leading-[1.9] text-indigo/80 sm:text-2xl">
+        همدمی برای تأمل روزانه، ریشه‌دار در خرد شعر فارسی.
+      </p>
+
+      <div class="mt-14">
+        <AppStoreBadge lang="fa" />
+      </div>
+
+      <p class="mt-4 font-farsi text-sm text-indigo/60">به‌زودی، یلدای 2026 · 21 دسامبر</p>
     </div>
-  </div>
+  </section>
 
-  <div dir="ltr">
-    <!-- HERO -->
-    <section class="relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-6 py-32 text-center">
-      <div
-        class="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-b from-peach/20 via-cream to-cream"
-        aria-hidden="true"
-      ></div>
+  <!-- VERSE SHOWCASE -->
+  <section class="px-6 py-[var(--spacing-section-mobile)] sm:py-[var(--spacing-section-desktop)]">
+    <VerseCard
+      persian={`این جهان کوه است و فعل ما ندا\nسوی ما آید نداها را صدا`}
+      translation="This world is a mountain, our actions echoes. Our echoes return to us as sound."
+      attribution="Hafez"
+    />
+    <p class="mx-auto mt-10 max-w-md text-center font-farsi text-lg leading-[1.9] text-indigo/70">
+      شعری برای هر صبح. پنج شاعر. دو زبان. قرن‌ها خرد.
+    </p>
+  </section>
 
-      <div class="mx-auto flex max-w-[800px] flex-col items-center">
-        <PersianShamseh size={64} animated={true} />
+  <SectionDivider />
 
-        <h1 class="text-balance mt-10 font-serif text-[48px] font-bold leading-[0.95] text-indigo sm:text-[72px] lg:text-[88px]">
-          Hamdam reflects your heart and your sky.
-        </h1>
-
-        <p class="mt-8 max-w-xl font-serif text-xl italic leading-[1.7] text-indigo/80 sm:text-2xl">
-          A reflection companion grounded in Persian poetic wisdom.
-        </p>
-
-        <div class="mt-14">
-          <AppStoreBadge />
-        </div>
-
-        <p class="mt-4 text-sm text-indigo/60">Coming Yalda 2026 · 21 December</p>
-      </div>
-    </section>
-
-    <!-- VERSE SHOWCASE -->
-    <section class="px-6 py-[var(--spacing-section-mobile)] sm:py-[var(--spacing-section-desktop)]">
-      <VerseCard
-        persian={`این جهان کوه است و فعل ما ندا\nسوی ما آید نداها را صدا`}
-        translation="This world is a mountain, our actions echoes. Our echoes return to us as sound."
-        attribution="Hafez"
-      />
-      <p class="mx-auto mt-10 max-w-md text-center font-serif italic text-indigo/70">
-        A verse for every morning. Five poets. Two languages. Centuries of wisdom.
-      </p>
-    </section>
-
-    <SectionDivider />
-
-    <!-- WHAT HAMDAM IS -->
-    <section class="px-6 py-[var(--spacing-section-mobile)] sm:py-[var(--spacing-section-desktop)]">
-      <div data-fade-in class="mx-auto max-w-[var(--container-reading)]">
-        <h2 class="text-balance font-serif text-4xl font-semibold text-indigo sm:text-5xl">
-          A companion for the daily reflection.
-        </h2>
-        <div class="mt-8 space-y-6 font-serif text-xl leading-[1.7] text-indigo/90">
-          <p>
-            Hamdam is a daily reflection companion. Every morning, a verse from the Persian poetic
-            tradition arrives, met by a moment of stillness. Every evening, a reflection settles the day.
-          </p>
-          <p>
-            It notices your body's rhythms, your calendar's shape, the weather outside, and the season
-            of the year. Not to fix or optimise, but to accompany.
-          </p>
-          <p>
-            Five poets carry the seasons of the soul. Their verses, their voices, their questions.
-          </p>
-        </div>
-      </div>
-    </section>
-
-    <SectionDivider />
-
-    <!-- FIVE POETS -->
-    <section class="px-6 py-[var(--spacing-section-mobile)] sm:py-[var(--spacing-section-desktop)]">
-      <h2 data-fade-in class="text-balance text-center font-serif text-4xl font-semibold text-indigo sm:text-5xl">
-        Five poets, five voices.
+  <!-- WHAT HAMDAM IS -->
+  <section class="px-6 py-[var(--spacing-section-mobile)] sm:py-[var(--spacing-section-desktop)]">
+    <div data-fade-in class="mx-auto max-w-[var(--container-reading)]">
+      <h2 class="text-balance font-farsi text-3xl font-bold text-indigo sm:text-4xl">
+        همدمی برای تأمل روزانه.
       </h2>
-      <div class="mx-auto mt-16 grid max-w-5xl grid-cols-1 gap-x-16 gap-y-16 sm:grid-cols-2 lg:grid-cols-3">
-        {poets.map((poet) => (
-          <PoetCard
-            persianName={poet.persianName}
-            transliteration={poet.transliteration}
-            description={poet.description}
-          />
-        ))}
-      </div>
-    </section>
-
-    <SectionDivider />
-
-    <!-- IRANIAN CULTURAL DEPTH -->
-    <section class="px-6 py-[var(--spacing-section-mobile)] sm:py-[var(--spacing-section-desktop)]">
-      <div data-fade-in class="mx-auto max-w-[var(--container-reading)]">
-        <h2 class="text-balance font-serif text-4xl font-semibold text-indigo sm:text-5xl">
-          The Iranian calendar breathes through Hamdam.
-        </h2>
-        <p class="mt-8 font-serif text-xl leading-[1.7] text-indigo/90">
-          Yalda in December, the longest night when families read Hafez together. Norooz in spring,
-          the new year that renews the world. Chaharshanbe Suri, Mehregan, Sizdah Bedar. Cultural
-          moments arrive as gentle presences, not calendar reminders.
+      <div class="mt-8 space-y-6 font-farsi text-lg leading-[1.9] text-indigo/90">
+        <p>
+          همدم، همراهی برای تأمل روزانه است. هر صبح، شعری از سنت شعر فارسی از راه می‌رسد و با
+          لحظه‌ای سکوت همراه می‌شود. هر شب، تأملی روز را به آرامش می‌رساند.
+        </p>
+        <p>
+          همدم ریتم بدن تو، شکل تقویم تو، هوای بیرون و فصل سال را می‌بیند. نه برای اصلاح یا
+          بهینه‌سازی، بلکه برای همراهی.
+        </p>
+        <p>
+          پنج شاعر، فصل‌های روح را با خود دارند. شعرهایشان، صداهایشان، پرسش‌هایشان.
         </p>
       </div>
-    </section>
+    </div>
+  </section>
 
-    <SectionDivider />
+  <SectionDivider />
 
-    <!-- PRIVACY COMMITMENT -->
-    <section class="px-6 py-[var(--spacing-section-mobile)] sm:py-[var(--spacing-section-desktop)]">
-      <div data-fade-in class="mx-auto max-w-[var(--container-reading)]">
-        <h2 class="text-balance font-serif text-4xl font-semibold text-indigo sm:text-5xl">
-          Everything stays on your device.
-        </h2>
-        <p class="mt-8 font-serif text-xl leading-[1.7] text-indigo/90">
-          Hamdam does not use accounts. Does not collect emails. Does not send your data to anyone.
-          Your journal entries sync only via your own iCloud account. No analytics. No advertising.
-          No tracking. Just poetry, presence, and the space between.
-        </p>
-      </div>
-    </section>
+  <!-- FIVE POETS -->
+  <section class="px-6 py-[var(--spacing-section-mobile)] sm:py-[var(--spacing-section-desktop)]">
+    <h2 data-fade-in class="text-balance text-center font-farsi text-3xl font-bold text-indigo sm:text-4xl">
+      پنج شاعر، پنج صدا.
+    </h2>
+    <div class="mx-auto mt-16 grid max-w-5xl grid-cols-1 gap-x-16 gap-y-16 sm:grid-cols-2 lg:grid-cols-3">
+      {poets.map((poet) => (
+        <PoetCard
+          persianName={poet.persianName}
+          transliteration={poet.transliteration}
+          description={poet.descriptionFa}
+        />
+      ))}
+    </div>
+  </section>
 
-    <!-- FINAL CTA -->
-    <section class="flex flex-col items-center px-6 py-[var(--spacing-section-mobile)] text-center sm:py-[var(--spacing-section-desktop)]">
-      <PersianShamseh size={32} />
-      <p class="mt-8 font-serif text-2xl italic text-indigo sm:text-[26px]">
-        Sit with a verse. Reflect. Return tomorrow.
+  <SectionDivider />
+
+  <!-- IRANIAN CULTURAL DEPTH -->
+  <section class="px-6 py-[var(--spacing-section-mobile)] sm:py-[var(--spacing-section-desktop)]">
+    <div data-fade-in class="mx-auto max-w-[var(--container-reading)]">
+      <h2 class="text-balance font-farsi text-3xl font-bold text-indigo sm:text-4xl">
+        تقویم ایرانی در همدم نفس می‌کشد.
+      </h2>
+      <p class="mt-8 font-farsi text-lg leading-[1.9] text-indigo/90">
+        یلدا در دسامبر، بلندترین شب سال که خانواده‌ها حافظ می‌خوانند. نوروز در بهار، سال نویی که
+        جهان را از نو می‌سازد. چهارشنبه‌سوری، مهرگان، سیزده‌به‌در. لحظه‌های فرهنگی مثل حضوری آرام
+        از راه می‌رسند، نه یادآوری تقویمی.
       </p>
-      <div class="mt-10">
-        <AppStoreBadge />
-      </div>
-      <p class="mt-4 text-sm text-indigo/60">Coming Yalda 2026 · 21 December</p>
-    </section>
+    </div>
+  </section>
 
-    <!-- FOOTER -->
-    <footer class="border-t border-saffron/30 px-6 py-20">
-      <div class="mx-auto flex max-w-xl flex-col items-center gap-4 text-center">
-        <PersianShamseh size={16} opacity={0.7} />
-        <HamdamLogotype size={24} showMark={false} />
-        <p class="text-sm text-indigo/70">An app by Ealia Azizollahi</p>
-        <nav aria-label="Footer" class="flex items-center gap-3 text-sm text-indigo/70">
-          <a href="/fa/privacy" class="hover:text-indigo">Privacy</a>
-          <span aria-hidden="true">·</span>
-          <a href="/fa/terms" class="hover:text-indigo">Terms</a>
-          <span aria-hidden="true">·</span>
-          <a href="mailto:hello@hamdam.com.au" class="hover:text-indigo">Contact</a>
-        </nav>
-        <p class="text-sm text-indigo/70">
-          Made with love in Brisbane. <span dir="rtl" class="font-farsi">ساخته شده با عشق در بریزبن</span>
-        </p>
-        <p class="text-xs text-indigo/50">&copy; {new Date().getFullYear()} Hamdam</p>
-      </div>
-    </footer>
-  </div>
+  <SectionDivider />
+
+  <!-- PRIVACY COMMITMENT -->
+  <section class="px-6 py-[var(--spacing-section-mobile)] sm:py-[var(--spacing-section-desktop)]">
+    <div data-fade-in class="mx-auto max-w-[var(--container-reading)]">
+      <h2 class="text-balance font-farsi text-3xl font-bold text-indigo sm:text-4xl">
+        همه‌چیز روی دستگاه تو می‌ماند.
+      </h2>
+      <p class="mt-8 font-farsi text-lg leading-[1.9] text-indigo/90">
+        همدم حساب کاربری ندارد. ایمیلی جمع‌آوری نمی‌کند. اطلاعات تو را برای کسی نمی‌فرستد.
+        یادداشت‌های تو فقط از طریق حساب iCloud خودت همگام‌سازی می‌شوند. بدون آمار کاربری. بدون
+        تبلیغات. بدون ردیابی. فقط شعر، حضور، و فاصله‌ی میان آن دو.
+      </p>
+    </div>
+  </section>
+
+  <!-- FINAL CTA -->
+  <section class="flex flex-col items-center px-6 py-[var(--spacing-section-mobile)] text-center sm:py-[var(--spacing-section-desktop)]">
+    <PersianShamseh size={32} />
+    <p class="mt-8 font-farsi text-xl leading-[1.9] text-indigo sm:text-2xl">
+      با شعری بنشین. تأمل کن. فردا برگرد.
+    </p>
+    <div class="mt-10">
+      <AppStoreBadge lang="fa" />
+    </div>
+    <p class="mt-4 font-farsi text-sm text-indigo/60">به‌زودی، یلدای 2026 · 21 دسامبر</p>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="border-t border-saffron/30 px-6 py-20">
+    <div class="mx-auto flex max-w-xl flex-col items-center gap-4 text-center">
+      <PersianShamseh size={16} opacity={0.7} />
+      <HamdamLogotype size={24} showMark={false} lang="fa" />
+      <p class="font-farsi text-sm text-indigo/70">اپلیکیشنی از <span dir="ltr">Ealia Azizollahi</span></p>
+      <nav aria-label="Footer" class="flex items-center gap-3 font-farsi text-sm text-indigo/70">
+        <a href="/fa/privacy" class="hover:text-indigo">حریم خصوصی</a>
+        <span aria-hidden="true">·</span>
+        <a href="/fa/terms" class="hover:text-indigo">شرایط استفاده</a>
+        <span aria-hidden="true">·</span>
+        <a href="mailto:hello@hamdam.com.au" class="hover:text-indigo">تماس با ما</a>
+      </nav>
+      <p class="font-farsi text-sm text-indigo/70">ساخته شده با عشق در بریزبن</p>
+      <p class="font-farsi text-xs text-indigo/50">&copy; {new Date().getFullYear()} همدم</p>
+    </div>
+  </footer>
 </BaseLayout>

@@ -1,12 +1,12 @@
 ---
 interface Props {
+  lang?: 'en' | 'fa';
   class?: string;
 }
 
-const { class: className = '' } = Astro.props;
-// English only: no approved byte-validated Persian string exists for this copy yet.
-const eyebrow = 'Coming to iPhone';
-const headline = 'Yalda 2026';
+const { lang = 'en', class: className = '' } = Astro.props;
+const eyebrow = lang === 'fa' ? 'به‌زودی برای آیفون' : 'Coming to iPhone';
+const headline = lang === 'fa' ? 'یلدا 2026' : 'Yalda 2026';
 ---
 
 <div
