@@ -1,129 +1,26 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import LegalSection from '../../components/LegalSection.astro';
-
-const effectiveDate = 'پیش‌نویس — تاریخ اجرا پیش از عرضه‌ی نسخه‌ی 1.0 مشخص خواهد شد.';
 ---
 
 <BaseLayout
-  title="شرایط استفاده — همدم"
-  description="شرایط حاکم بر استفاده از اپلیکیشن همدم، اشتراک، و محتوای یادداشت‌های شخصی."
+  title="Terms of Service | Hamdam"
+  description="The terms governing use of the Hamdam app, subscription, and journal content."
   lang="fa"
   path="/fa/terms"
   altPath="/terms"
 >
   <div class="mx-auto max-w-[var(--container-reading)] px-6 pb-32 pt-24 sm:pt-[100px]">
-    <div class="mb-10 rounded-[var(--radius-card)] bg-peach/25 px-5 py-4 font-farsi text-sm text-indigo/80">
-      ⚠️ سند پیش‌نویس. محتوا پیش از عرضه‌ی نسخه‌ی 1.0 نهایی می‌شود.
+    <div class="mb-10 rounded-[var(--radius-card)] bg-peach/25 px-5 py-4 text-sm text-indigo/80" dir="ltr">
+      This page will contain the Persian translation of Hamdam's Terms of Service. Native-speaker
+      review is scheduled for the next content pass. The English version is available at
+      <a href="/terms" class="text-saffron-ink underline">/terms</a>.
     </div>
 
-    <h1 class="font-farsi text-4xl font-bold text-indigo sm:text-5xl">شرایط استفاده</h1>
-    <p class="mt-3 font-farsi text-sm text-indigo/60">{effectiveDate}</p>
+    <h1 class="font-serif text-5xl font-bold text-indigo sm:text-[56px]" dir="ltr">Terms of Service</h1>
 
-    <LegalSection heading="۱. پذیرش شرایط" lang="fa">
-      <p>
-        [محتوای کامل در انتظار نگارش نهایی است — این بخش جای‌نگه‌دار برای بخش «پذیرش شرایط» است.]
-      </p>
-    </LegalSection>
-
-    <LegalSection heading="۲. مجوز استفاده" lang="fa">
-      <p>
-        [محتوای کامل در انتظار نگارش نهایی است — این بخش جای‌نگه‌دار برای بخش «مجوز استفاده» است.]
-      </p>
-    </LegalSection>
-
-    <LegalSection heading="۳. اشتراک" lang="fa">
-      <p>
-        همدم یک اشتراک اختیاری با 7 روز استفاده‌ی رایگان آزمایشی ارائه می‌دهد. قیمت‌گذاری و شرایط
-        پرداخت فعلی را اپل تعیین می‌کند و در زمان خرید در اپ‌استور نمایش داده می‌شود.
-      </p>
-      <p>
-        [محتوای کامل در انتظار نگارش نهایی است — این بخش جای‌نگه‌دار برای بخش «اشتراک» است که
-        شرایط تمدید، لغو، و بازپرداخت را پوشش می‌دهد.]
-      </p>
-    </LegalSection>
-
-    <!-- SAFETY-CRITICAL: crisis-line disclaimer, needs native-Farsi-speaker verification before shipping -->
-    <LegalSection heading="۴. سلامت و اخطارهای مرتبط با تندرستی" lang="fa">
-      <p>
-        همدم یک همراه برای تأمل است، نه یک دستگاه پزشکی یا جایگزینی برای مراقبت تخصصی سلامت روان.
-        اگر در شرایط بحرانی هستید یا به کمک فوری نیاز دارید، لطفاً با لایف‌لاین (Lifeline) به
-        شماره‌ی 13 11 14 (در استرالیا) یا با اورژانس محلی خود تماس بگیرید.
-      </p>
-      <p>
-        [محتوای کامل در انتظار نگارش نهایی است — این بخش جای‌نگه‌دار برای بخش «سلامت و اخطارهای
-        مرتبط با تندرستی» است.]
-      </p>
-    </LegalSection>
-
-    <LegalSection heading="۵. انتساب محتوای فرهنگی" lang="fa">
-      <p>
-        [محتوای کامل در انتظار نگارش نهایی است — این بخش جای‌نگه‌دار برای بخش «انتساب محتوای
-        فرهنگی» است. اشعار فارسی از Ganjoor.net گردآوری شده‌اند؛ شاعران معرفی‌شده در مالکیت
-        عمومی‌اند. تأملات و محتوای اصلی متعلق به تیم همدم است.]
-      </p>
-    </LegalSection>
-
-    <LegalSection heading="۶. محتوای تولیدشده توسط کاربر" lang="fa">
-      <p>
-        [محتوای کامل در انتظار نگارش نهایی است — این بخش جای‌نگه‌دار برای بخش «محتوای تولیدشده
-        توسط کاربر» است که مالکیت یادداشت‌های شخصی را پوشش می‌دهد.]
-      </p>
-    </LegalSection>
-
-    <LegalSection heading="۷. استفاده‌ی ممنوع" lang="fa">
-      <p>
-        [محتوای کامل در انتظار نگارش نهایی است — این بخش جای‌نگه‌دار برای بخش «استفاده‌ی ممنوع»
-        است.]
-      </p>
-    </LegalSection>
-
-    <LegalSection heading="۸. خاتمه" lang="fa">
-      <p>
-        [محتوای کامل در انتظار نگارش نهایی است — این بخش جای‌نگه‌دار برای بخش «خاتمه» است.]
-      </p>
-    </LegalSection>
-
-    <LegalSection heading="۹. سلب مسئولیت ضمانت" lang="fa">
-      <p>
-        [محتوای کامل در انتظار نگارش نهایی است — این بخش جای‌نگه‌دار برای بخش «سلب مسئولیت ضمانت»
-        است.]
-      </p>
-    </LegalSection>
-
-    <LegalSection heading="۱۰. محدودیت مسئولیت" lang="fa">
-      <p>
-        [محتوای کامل در انتظار نگارش نهایی است — این بخش جای‌نگه‌دار برای بخش «محدودیت مسئولیت»
-        است.]
-      </p>
-    </LegalSection>
-
-    <LegalSection heading="۱۱. تعهد به جبران خسارت" lang="fa">
-      <p>
-        [محتوای کامل در انتظار نگارش نهایی است — این بخش جای‌نگه‌دار برای بخش «تعهد به جبران
-        خسارت» است.]
-      </p>
-    </LegalSection>
-
-    <LegalSection heading="۱۲. تغییرات در این شرایط" lang="fa">
-      <p>
-        [محتوای کامل در انتظار نگارش نهایی است — این بخش جای‌نگه‌دار برای بخش «تغییرات در این
-        شرایط» است.]
-      </p>
-    </LegalSection>
-
-    <LegalSection heading="۱۳. قانون حاکم" lang="fa">
-      <p>
-        این شرایط تابع قوانین ایالت کوئینزلند، استرالیا است. هیچ‌چیز در این شرایط حقوق شما را طبق
-        قانون حمایت از مصرف‌کننده‌ی استرالیا محدود نمی‌کند.
-      </p>
-    </LegalSection>
-
-    <LegalSection heading="۱۴. تماس با ما" lang="fa">
-      <p>
-        برای تماس با ما:
-        <a href="mailto:hello@hamdam.com.au" class="text-saffron-ink underline">hello@hamdam.com.au</a>.
-      </p>
-    </LegalSection>
+    <p class="mt-6 font-serif text-lg text-indigo/90" dir="ltr">
+      Read the full Terms of Service in English:
+      <a href="/terms" class="text-saffron-ink underline">hamdam.com.au/terms</a>
+    </p>
   </div>
 </BaseLayout>

@@ -1,110 +1,238 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import LegalSection from '../components/LegalSection.astro';
+import SectionDivider from '../components/SectionDivider.astro';
 
-const effectiveDate = 'Draft — effective date to be set before v1.0 launch';
+const effectiveDate = 'Effective 3 July 2026';
 ---
 
 <BaseLayout
-  title="Privacy Policy — Hamdam"
-  description="How Hamdam handles data: what it accesses, what it never collects, and how iCloud sync works."
+  title="Privacy Policy | Hamdam"
+  description="How Hamdam handles data: what it accesses, what it never collects, and how iCloud sync works. No accounts, no analytics, no data selling."
   lang="en"
   path="/privacy"
   altPath="/fa/privacy"
 >
-  <div class="mx-auto max-w-[var(--container-reading)] px-6 pb-32 pt-24 sm:pt-[100px]">
-    <div class="mb-10 rounded-[var(--radius-card)] bg-peach/25 px-5 py-4 text-sm text-indigo/80">
-      ⚠️ Placeholder document. Content being finalised before v1.0 launch.
+  <article class="mx-auto max-w-[var(--container-reading)] px-6 pb-32 pt-24 sm:pt-[100px] print:pt-8">
+    <h1 class="font-serif text-5xl font-bold text-indigo sm:text-[56px]">Privacy Policy</h1>
+    <p class="mt-3 font-serif text-sm italic text-indigo/60">{effectiveDate} &middot; ~6 minute read</p>
+
+    <div class="mt-10 space-y-4 font-serif text-lg leading-[1.7] text-indigo/90">
+      <p>
+        Hamdam does not collect your data. It observes a small set of signals, on your own
+        device, to shape today's reflection &mdash; and those signals stay there. There is no
+        Hamdam server watching what you do, no profile built up behind the scenes, and nothing
+        collected to sell or trade.
+      </p>
+      <p>
+        This policy explains, plainly, what Hamdam looks at, why, and what it never touches. It
+        covers the Hamdam app for iPhone and Apple Watch, and this website.
+      </p>
     </div>
 
-    <h1 class="font-serif text-5xl font-bold text-indigo sm:text-[56px]">Privacy Policy</h1>
-    <p class="mt-3 font-serif text-sm italic text-indigo/60">{effectiveDate}</p>
-
-    <LegalSection heading="1. Introduction">
+    <LegalSection heading="1. Data Hamdam Accesses">
       <p>
-        [Full content pending user draft — this is a placeholder for the Introduction section of
-        Hamdam's Privacy Policy.]
+        Each of the following is opt-in. Hamdam works without granting any of them; enabling one
+        simply lets that part of the reflection experience use the relevant signal.
+      </p>
+
+      <h3 class="font-serif text-xl font-semibold text-indigo">1.1 Health data (HealthKit)</h3>
+      <p>With permission, Hamdam reads:</p>
+      <ul class="list-disc space-y-1 pl-6">
+        <li>Heart rate, resting heart rate, and heart rate variability (HRV SDNN)</li>
+        <li>Sleep analysis</li>
+        <li>Wrist temperature (when an Apple Watch is available)</li>
+        <li>Blood oxygen saturation</li>
+        <li>Step count, exercise minutes, and active energy burned</li>
+        <li>Menstrual flow &mdash; only if you separately enable cycle awareness</li>
+      </ul>
+      <p>
+        With permission, Hamdam writes State of Mind entries to Apple Health when you enable mood
+        logging. These signals shape today's reflection qualitatively &mdash; a gentle nudge in
+        tone, not a score or a chart &mdash; and stay on your device. Cycle awareness is a
+        separate opt-in from the other health signals, and is never displayed anywhere in the
+        Hamdam interface.
+      </p>
+
+      <h3 class="font-serif text-xl font-semibold text-indigo">1.2 Calendar data (EventKit)</h3>
+      <p>
+        With permission, Hamdam reads free/busy time only &mdash; never event titles,
+        descriptions, attendees, or locations. Separately, with its own permission, Hamdam can
+        write optional reflection blocks and cultural moment reminders to your calendar. Every
+        event Hamdam creates is prefixed &ldquo;Hamdam:&rdquo; so you can always tell it apart,
+        and Hamdam never modifies any event it didn't create. Reading and writing calendar data
+        are separate opt-ins &mdash; enabling one does not enable the other.
+      </p>
+
+      <h3 class="font-serif text-xl font-semibold text-indigo">1.3 Location and weather</h3>
+      <p>
+        Location is only used when you enable calendar or weather features. Weather comes
+        through Apple's WeatherKit, using your location to theme today's reflection. Hamdam does
+        not store your location and does not share it with anyone.
+      </p>
+
+      <h3 class="font-serif text-xl font-semibold text-indigo">1.4 iCloud synchronisation</h3>
+      <p>
+        If you enable sync, your journal entries, streak counter, and settings sync between your
+        own devices through Apple's CloudKit Private Database, scoped to your Apple ID. Hamdam
+        does not run servers that receive this data. If you delete your iCloud data or sign out,
+        the synced Hamdam data goes with it.
+      </p>
+
+      <h3 class="font-serif text-xl font-semibold text-indigo">1.5 Persian poetry content</h3>
+      <p>
+        The verses in Hamdam &mdash; from Hafez, Rumi, Saadi, Khayyam, and Parvin Etesami &mdash;
+        are curated by Hamdam and stored in a CloudKit Public Database, sourced from the public
+        domain via Ganjoor.net with attribution. This content is read-only for users and contains
+        no data about you.
+      </p>
+
+      <h3 class="font-serif text-xl font-semibold text-indigo">1.6 Discover recommendations (iTunes Search API)</h3>
+      <p>
+        Hamdam's Discover tab refreshes weekly with books and podcasts from Apple's public
+        catalogue. These requests go from your device directly to Apple &mdash; never through a
+        Hamdam server &mdash; and no identifier tied to you is sent with them.
+      </p>
+
+      <h3 class="font-serif text-xl font-semibold text-indigo">1.7 AI-generated reflections (Apple Intelligence)</h3>
+      <p>
+        On supported hardware (iPhone 15 Pro and later, iOS 26+), reflections are generated
+        on-device using Apple's Foundation Models. No text and no personal data leaves your
+        device for this. On unsupported devices, Hamdam falls back to a static, pre-written
+        content library.
       </p>
     </LegalSection>
 
-    <LegalSection heading="2. What Data Hamdam Accesses">
+    <SectionDivider />
+
+    <LegalSection heading="2. What Hamdam Does Not Collect">
+      <ul class="list-disc space-y-1 pl-6">
+        <li>No user accounts, and no email collection at signup</li>
+        <li>No third-party analytics &mdash; no Firebase, Mixpanel, Amplitude, or Google Analytics</li>
+        <li>No advertising SDKs &mdash; no AdMob, Meta Pixel, or tracking pixels</li>
+        <li>No behavioural tracking and no user profiling</li>
+        <li>No selling of data, ever</li>
+        <li>No Hamdam-owned backend servers receiving user data</li>
+        <li>No newsletter and no marketing automation</li>
+        <li>No cross-app tracking</li>
+        <li>No SDK collecting personal data on Hamdam's behalf</li>
+        <li>No cookies &mdash; this website is fully static</li>
+      </ul>
+    </LegalSection>
+
+    <LegalSection heading="3. How Your Data Is Used">
+      <p>The signals described in Section 1, where you've enabled them, are used only to:</p>
+      <ul class="list-disc space-y-1 pl-6">
+        <li>Shape the tone and content of today's reflection</li>
+      </ul>
+      <p>They are never used:</p>
+      <ul class="list-disc space-y-1 pl-6">
+        <li>For advertising</li>
+        <li>To train AI models outside your device</li>
+        <li>Shared with third parties</li>
+        <li>Sold, under any circumstance</li>
+      </ul>
+    </LegalSection>
+
+    <LegalSection heading="4. Data Storage and Retention">
+      <ul class="list-disc space-y-1 pl-6">
+        <li>Locally, on your device, using Apple's SwiftData framework</li>
+        <li>In the cloud, only in your own iCloud account, if you enable sync</li>
+        <li>Never on a Hamdam-owned server</li>
+      </ul>
+      <p>Data is retained until you delete it in the app or uninstall Hamdam.</p>
+    </LegalSection>
+
+    <LegalSection heading="5. Third-Party Services">
       <p>
-        [Full content pending user draft — this is a placeholder for the What Data Hamdam Accesses
-        section of Hamdam's Privacy Policy, covering HealthKit, EventKit, WeatherKit, Location, and
-        iCloud.]
+        Hamdam is built on Apple's frameworks: iCloud, HealthKit, EventKit, WeatherKit,
+        StoreKit, and Foundation Models. Apple's own privacy policies govern how these
+        frameworks handle data on Apple's side. Ganjoor.net is credited as the public-domain
+        source of Persian poetry text &mdash; no data is exchanged with Ganjoor.net at runtime.
+        The iTunes Search API is an Apple public API, called directly from your device.
       </p>
     </LegalSection>
 
-    <LegalSection heading="3. What Hamdam Does NOT Do">
-      <p>
-        [Full content pending user draft — this is a placeholder for the What Hamdam Does NOT Do
-        section of Hamdam's Privacy Policy, covering no accounts, no analytics, no advertising, and
-        no selling of data.]
-      </p>
-    </LegalSection>
-
-    <LegalSection heading="4. iCloud Sync">
-      <p>
-        [Full content pending user draft — this is a placeholder for the iCloud Sync section of
-        Hamdam's Privacy Policy. Sync occurs via the user's own iCloud account, not Hamdam servers.]
-      </p>
-    </LegalSection>
-
-    <LegalSection heading="5. Apple's Role">
-      <p>
-        [Full content pending user draft — this is a placeholder for the Apple's Role section of
-        Hamdam's Privacy Policy, covering platform services provided by Apple.]
-      </p>
-    </LegalSection>
-
-    <LegalSection heading="6. iTunes Search API">
-      <p>
-        [Full content pending user draft — this is a placeholder for the iTunes Search API section
-        of Hamdam's Privacy Policy, covering the weekly Discover refresh.]
-      </p>
-    </LegalSection>
+    <div class="mt-14 rounded-[var(--radius-card)] bg-peach/20 p-6 shadow-card sm:p-8">
+      <LegalSection heading="6. Your Rights (Australian Privacy Principles)">
+        <ul class="list-disc space-y-1 pl-6">
+          <li><strong>Access</strong> &mdash; your data lives on your own device (and your own iCloud, if sync is on)</li>
+          <li><strong>Correction</strong> &mdash; edit or delete any entry in the app, any time</li>
+          <li><strong>Complaint</strong> &mdash; contact Hamdam first (Section 11); if unresolved, the OAIC (Section 12)</li>
+          <li><strong>Opt out</strong> &mdash; turn off any feature in Settings, at any time</li>
+        </ul>
+      </LegalSection>
+    </div>
 
     <LegalSection heading="7. Account Deletion">
       <p>
-        [Full content pending user draft — this is a placeholder for the Account Deletion section of
-        Hamdam's Privacy Policy, covering the in-app delete flow.]
+        Go to Settings &rarr; Delete My Data in the app. This clears local SwiftData storage and
+        your CloudKit Private Database records. Signing out of iCloud on a device also removes
+        Hamdam's synced data from that device. There is no account to delete, because Hamdam
+        doesn't have accounts.
       </p>
     </LegalSection>
 
-    <LegalSection heading="8. Persian Content Attribution">
-      <p>
-        [Full content pending user draft — this is a placeholder for the Persian Content
-        Attribution section of Hamdam's Privacy Policy, covering sourcing from Ganjoor.net.]
-      </p>
+    <LegalSection heading="8. Data Security">
+      <ul class="list-disc space-y-1 pl-6">
+        <li>iOS Data Protection encrypts data at rest on your device</li>
+        <li>Apple's end-to-end encryption applies to iCloud data where you've enabled it</li>
+        <li>Any network request Hamdam makes uses HTTPS/TLS</li>
+      </ul>
     </LegalSection>
 
     <LegalSection heading="9. Children">
       <p>
-        [Full content pending user draft — this is a placeholder for the Children section of
-        Hamdam's Privacy Policy. Hamdam is not directed at children under 13.]
+        Hamdam is not intended for users under 13, and Hamdam does not knowingly collect data
+        from anyone under 13. Hamdam is designed to be age-appropriate for users 13 and over.
       </p>
     </LegalSection>
 
     <LegalSection heading="10. Changes to This Policy">
       <p>
-        [Full content pending user draft — this is a placeholder for the Changes to Policy section
-        of Hamdam's Privacy Policy, covering how updates are communicated.]
+        If this policy changes materially, you'll be notified through an app update. Continuing
+        to use Hamdam after a change means you accept the update. The effective date at the top
+        of this page always reflects the current version.
       </p>
     </LegalSection>
 
     <LegalSection heading="11. Contact">
       <p>
-        [Full content pending user draft — this is a placeholder for the Contact section of
-        Hamdam's Privacy Policy.] Reach us at
-        <a href="mailto:hello@hamdam.com.au" class="text-saffron-ink underline">hello@hamdam.com.au</a>.
+        Email <a href="mailto:developer@hamdam.com.au" class="text-saffron-ink underline">developer@hamdam.com.au</a>.
+      </p>
+      <p class="text-base text-indigo/70">
+        Ealia Azizollahi (sole trader) &middot; ABN 74 389 481 503 &middot; Brisbane, Queensland,
+        Australia
       </p>
     </LegalSection>
 
-    <LegalSection heading="12. Governing Law">
+    <LegalSection heading="12. Complaints and Regulatory Contact">
       <p>
-        [Full content pending user draft — this is a placeholder for the Governing Law section of
-        Hamdam's Privacy Policy. Governed by the laws of Queensland, Australia.]
+        If you raise a concern with Hamdam and it isn't resolved to your satisfaction, you can
+        contact the Office of the Australian Information Commissioner (OAIC) at
+        <a href="https://www.oaic.gov.au" class="text-saffron-ink underline" target="_blank" rel="noopener noreferrer">oaic.gov.au</a>.
       </p>
     </LegalSection>
-  </div>
+
+    <LegalSection heading="13. Governing Law">
+      <p>
+        This policy is governed by the laws of Queensland, Australia. The Australian Privacy
+        Principles under the Privacy Act 1988 (Cth) apply to how Hamdam handles personal
+        information.
+      </p>
+    </LegalSection>
+
+    <p class="mt-14 font-serif text-base text-indigo/70">
+      See also our <a href="/terms" class="text-saffron-ink underline">Terms of Service</a>.
+    </p>
+  </article>
 </BaseLayout>
+
+<style>
+  @media print {
+    :global(header),
+    :global(nav) {
+      display: none;
+    }
+  }
+</style>

@@ -1,131 +1,279 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import LegalSection from '../components/LegalSection.astro';
+import SectionDivider from '../components/SectionDivider.astro';
 
-const effectiveDate = 'Draft — effective date to be set before v1.0 launch';
+const effectiveDate = 'Effective 3 July 2026';
 ---
 
 <BaseLayout
-  title="Terms of Service — Hamdam"
-  description="The terms governing use of the Hamdam app, subscription, and journal content."
+  title="Terms of Service | Hamdam"
+  description="The terms governing use of the Hamdam app, Hamdam Plus subscription, and journal content, including health disclaimers."
   lang="en"
   path="/terms"
   altPath="/fa/terms"
 >
-  <div class="mx-auto max-w-[var(--container-reading)] px-6 pb-32 pt-24 sm:pt-[100px]">
-    <div class="mb-10 rounded-[var(--radius-card)] bg-peach/25 px-5 py-4 text-sm text-indigo/80">
-      ⚠️ Placeholder document. Content being finalised before v1.0 launch.
-    </div>
-
+  <article class="mx-auto max-w-[var(--container-reading)] px-6 pb-32 pt-24 sm:pt-[100px] print:pt-8">
     <h1 class="font-serif text-5xl font-bold text-indigo sm:text-[56px]">Terms of Service</h1>
-    <p class="mt-3 font-serif text-sm italic text-indigo/60">{effectiveDate}</p>
+    <p class="mt-3 font-serif text-sm italic text-indigo/60">{effectiveDate} &middot; ~8 minute read</p>
+
+    <div class="mt-10 space-y-4 font-serif text-lg leading-[1.7] text-indigo/90">
+      <p>
+        Hamdam is a reflection companion grounded in Persian poetic wisdom. These Terms cover
+        your licence to use the app, the Hamdam Plus subscription, and how your journal content
+        is treated.
+      </p>
+      <p>
+        It's worth the eight minutes, especially Section 4. Hamdam offers gentle reflection, not
+        medical or mental health advice, and that distinction matters for how you use it.
+      </p>
+    </div>
 
     <LegalSection heading="1. Acceptance">
       <p>
-        [Full content pending user draft — this is a placeholder for the Acceptance section of
-        Hamdam's Terms of Service.]
+        By downloading, installing, or using Hamdam, you agree to these Terms. If you don't
+        agree, don't use Hamdam.
       </p>
     </LegalSection>
 
     <LegalSection heading="2. License">
       <p>
-        [Full content pending user draft — this is a placeholder for the License section of
-        Hamdam's Terms of Service.]
+        Hamdam grants you a personal, non-transferable, revocable licence to use the app on
+        Apple devices you own or control, obtained through the App Store. This licence doesn't
+        extend to commercial use or redistribution of the app or its content.
       </p>
     </LegalSection>
 
-    <LegalSection heading="3. Subscription">
+    <LegalSection heading="3. Hamdam Plus Subscription">
+      <h3 class="font-serif text-xl font-semibold text-indigo">3.1 Pricing</h3>
       <p>
-        Hamdam offers an optional subscription with a 7-day free trial. Current pricing and billing
-        terms are set by Apple and displayed in the App Store at the time of purchase.
+        Pricing is set and displayed by Apple at the point of purchase. Current pricing is
+        available on the App Store, subject to change.
       </p>
+
+      <h3 class="font-serif text-xl font-semibold text-indigo">3.2 Free trial</h3>
       <p>
-        [Full content pending user draft — this is a placeholder for the Subscription section of
-        Hamdam's Terms of Service, covering renewal, cancellation, and refund terms.]
+        Monthly and Yearly plans include a 7-day free trial for new subscribers. Your trial
+        converts to a paid subscription unless you cancel before it ends &mdash; see Section 3.5
+        for how.
+      </p>
+
+      <h3 class="font-serif text-xl font-semibold text-indigo">3.3 Family Sharing</h3>
+      <p>
+        The Lifetime plan supports Family Sharing, for up to six members through Apple's Family
+        Sharing. Monthly and Yearly plans are single-user.
+      </p>
+
+      <h3 class="font-serif text-xl font-semibold text-indigo">3.4 Auto-renewal</h3>
+      <p>
+        Monthly and Yearly plans auto-renew unless cancelled, at the then-current price, charged
+        to your Apple ID. Manage or cancel renewal through your Apple ID subscription settings.
+      </p>
+
+      <h3 class="font-serif text-xl font-semibold text-indigo">3.5 Cancellation</h3>
+      <p>
+        Cancel anytime via Settings &rarr; your Apple ID &rarr; Subscriptions on your device.
+        Cancelling stops the next renewal; you keep access until the end of the current billing
+        period. There's no refund for the unused portion of a current period, subject to Apple's
+        own refund policy.
+      </p>
+
+      <h3 class="font-serif text-xl font-semibold text-indigo">3.6 Price changes</h3>
+      <p>
+        You'll be notified of any price change in advance through the App Store. Continuing your
+        subscription after that notice means you accept the new price.
       </p>
     </LegalSection>
 
-    <LegalSection heading="4. Health and Wellness Disclaimers">
-      <p>
-        Hamdam is a reflection companion, not a medical device or a substitute for professional
-        mental health care. If you are in crisis or need immediate support, please contact Lifeline
-        on 13 11 14 (Australia) or your local emergency services.
-      </p>
-      <p>
-        [Full content pending user draft — this is a placeholder for the Health and Wellness
-        Disclaimers section of Hamdam's Terms of Service.]
-      </p>
-    </LegalSection>
+    <SectionDivider />
+
+    <div class="mt-14 rounded-[var(--radius-card)] bg-peach/20 p-6 shadow-card sm:p-8">
+      <LegalSection heading="4. Health and Wellness Disclaimers">
+        <h3 class="font-serif text-xl font-semibold text-indigo">4.1 Not medical advice</h3>
+        <p>
+          Hamdam is a reflection companion, not medical, mental health, or wellness advice.
+          Nothing in Hamdam substitutes for professional healthcare, mental health support,
+          medical diagnosis, or treatment.
+        </p>
+
+        <h3 class="font-serif text-xl font-semibold text-indigo">4.2 Consult professionals</h3>
+        <p>
+          For medical questions, physical or mental health concerns, or health decisions,
+          consult a qualified healthcare provider.
+        </p>
+
+        <h3 class="font-serif text-xl font-semibold text-indigo">4.3 Mental health crisis</h3>
+        <p>If you or someone you know is in crisis or needs immediate mental health support:</p>
+        <ul class="list-disc space-y-1 pl-6">
+          <li>Australia: Lifeline, 13 11 14 (24/7)</li>
+          <li>Australia emergency: 000</li>
+          <li>International: contact your local crisis line or emergency services</li>
+        </ul>
+        <p>Hamdam is not a substitute for crisis support.</p>
+
+        <h3 class="font-serif text-xl font-semibold text-indigo">4.4 Body observations</h3>
+        <p>
+          Hamdam offers gentle observations about body signals &mdash; sleep, activity, cycle.
+          These are contextual observations, not medical assessments or diagnoses.
+        </p>
+
+        <h3 class="font-serif text-xl font-semibold text-indigo">4.5 Fitness features</h3>
+        <p>
+          Fitness observations are contextual only. Consult your doctor before starting an
+          exercise routine, changing your physical activity, or acting on any fitness
+          observation.
+        </p>
+
+        <h3 class="font-serif text-xl font-semibold text-indigo">4.6 Cycle awareness</h3>
+        <p>
+          Cycle observations use your logged menstrual data only. They are not a substitute for
+          medical cycle tracking, pregnancy prevention, pregnancy planning, or medical
+          consultation.
+        </p>
+
+        <h3 class="font-serif text-xl font-semibold text-indigo">4.7 Reflection content</h3>
+        <p>
+          Reflections and observations are contemplative in nature. They are not therapy,
+          counselling, or spiritual guidance for medical use.
+        </p>
+      </LegalSection>
+    </div>
 
     <LegalSection heading="5. Cultural Content Attribution">
+      <h3 class="font-serif text-xl font-semibold text-indigo">5.1 Persian poetry sources</h3>
       <p>
-        [Full content pending user draft — this is a placeholder for the Cultural Content
-        Attribution section of Hamdam's Terms of Service. Persian poetry sourced from Ganjoor.net;
-        featured poets are in the public domain. Reflections and original content are
-        &copy; Hamdam Team.]
+        Verses from Hafez, Rumi, Saadi, Khayyam, and Parvin Etesami are in the public domain,
+        sourced from the Ganjoor.net archive with attribution. Hamdam's curation and English
+        translations, along with its cultural context and reflections, are &copy; Ealia
+        Azizollahi.
+      </p>
+
+      <h3 class="font-serif text-xl font-semibold text-indigo">5.2 Your rights to Hamdam content</h3>
+      <p>Content is for your personal use within the app only. No commercial redistribution, and no republishing without permission.</p>
+
+      <h3 class="font-serif text-xl font-semibold text-indigo">5.3 Cultural sensitivity</h3>
+      <p>
+        Persian poetry references wine, love, and mystical imagery as literary and spiritual
+        metaphor. These are historical Persian literary conventions, not endorsements of
+        substance use.
       </p>
     </LegalSection>
 
-    <LegalSection heading="6. User-Generated Content">
+    <LegalSection heading="6. User Content">
+      <h3 class="font-serif text-xl font-semibold text-indigo">6.1 Journal entries</h3>
       <p>
-        [Full content pending user draft — this is a placeholder for the User-Generated Content
-        section of Hamdam's Terms of Service, covering ownership of journal entries.]
+        You own your journal entries. Hamdam holds no licence to your journal content, and you
+        can delete any entry at any time. Your journal syncs only through your own iCloud
+        account.
+      </p>
+
+      <h3 class="font-serif text-xl font-semibold text-indigo">6.2 No sharing</h3>
+      <p>
+        Hamdam does not share your journal content with anyone. There's no public feed and no
+        social features.
       </p>
     </LegalSection>
 
-    <LegalSection heading="7. Prohibited Use">
-      <p>
-        [Full content pending user draft — this is a placeholder for the Prohibited Use section of
-        Hamdam's Terms of Service.]
-      </p>
+    <LegalSection heading="7. Prohibited Uses">
+      <ul class="list-disc space-y-1 pl-6">
+        <li>Reverse engineering the app</li>
+        <li>Redistributing app content</li>
+        <li>Commercial use of the app or its content</li>
+        <li>Using Hamdam to harm yourself or others</li>
+        <li>Using Hamdam in violation of applicable law</li>
+      </ul>
     </LegalSection>
 
     <LegalSection heading="8. Termination">
       <p>
-        [Full content pending user draft — this is a placeholder for the Termination section of
-        Hamdam's Terms of Service.]
+        You can stop using Hamdam anytime by uninstalling it. Hamdam may terminate your access
+        for violating these Terms. For subscription cancellation, see Section 3.5.
       </p>
     </LegalSection>
 
-    <LegalSection heading="9. Warranty Disclaimer">
+    <LegalSection heading="9. Warranty Disclaimers">
+      <h3 class="font-serif text-xl font-semibold text-indigo">9.1 As-is</h3>
       <p>
-        [Full content pending user draft — this is a placeholder for the Warranty Disclaimer
-        section of Hamdam's Terms of Service.]
+        Hamdam is provided &ldquo;as is&rdquo; without warranties of any kind, except where
+        non-excludable guarantees under Australian Consumer Law apply.
+      </p>
+
+      <h3 class="font-serif text-xl font-semibold text-indigo">9.2 Australian Consumer Law</h3>
+      <p>
+        Nothing in these Terms excludes, restricts, or modifies any non-excludable right under
+        Australian Consumer Law. Where the ACL implies a condition, warranty, or guarantee, our
+        liability for breach is limited to the extent the law permits.
       </p>
     </LegalSection>
 
     <LegalSection heading="10. Limitation of Liability">
+      <h3 class="font-serif text-xl font-semibold text-indigo">10.1 Standard limitations</h3>
       <p>
-        [Full content pending user draft — this is a placeholder for the Limitation of Liability
-        section of Hamdam's Terms of Service.]
+        To the maximum extent the law permits, Hamdam is not liable for indirect, incidental,
+        special, or consequential damages.
+      </p>
+
+      <h3 class="font-serif text-xl font-semibold text-indigo">10.2 Non-excludable rights</h3>
+      <p>Where the ACL grants a non-excludable right, that right applies and this limitation does not restrict it.</p>
+
+      <h3 class="font-serif text-xl font-semibold text-indigo">10.3 Health-related limitations</h3>
+      <p>
+        Hamdam is not liable for decisions made based on reflections, observations, or content in
+        the app. Health decisions are yours, made in consultation with qualified professionals.
       </p>
     </LegalSection>
 
     <LegalSection heading="11. Indemnification">
       <p>
-        [Full content pending user draft — this is a placeholder for the Indemnification section of
-        Hamdam's Terms of Service.]
+        You agree to indemnify Hamdam for claims arising from your misuse of the app or
+        violation of these Terms, to the extent the law permits.
       </p>
     </LegalSection>
 
-    <LegalSection heading="12. Changes to These Terms">
+    <LegalSection heading="12. Third-Party Services">
       <p>
-        [Full content pending user draft — this is a placeholder for the Changes to Terms section
-        of Hamdam's Terms of Service.]
+        Hamdam uses Apple's HealthKit, EventKit, WeatherKit, iCloud, StoreKit, and Foundation
+        Models frameworks. Apple's own terms and privacy policies apply to those services.
       </p>
     </LegalSection>
 
-    <LegalSection heading="13. Governing Law">
+    <LegalSection heading="13. Changes to These Terms">
       <p>
-        These Terms are governed by the laws of Queensland, Australia. Nothing in these Terms
-        limits any rights you have under the Australian Consumer Law.
+        If these Terms change materially, you'll be notified through an app update. Continuing
+        to use Hamdam after a change means you accept the update. The effective date at the top
+        of this page always reflects the current version.
       </p>
     </LegalSection>
 
-    <LegalSection heading="14. Contact">
+    <LegalSection heading="14. Governing Law and Jurisdiction">
       <p>
-        Reach us at <a href="mailto:hello@hamdam.com.au" class="text-saffron-ink underline">hello@hamdam.com.au</a>.
+        These Terms are governed by the laws of Queensland, Australia. Australian Consumer Law
+        applies where relevant. Disputes are subject to the jurisdiction of Queensland courts,
+        unless the ACL provides otherwise.
       </p>
     </LegalSection>
-  </div>
+
+    <LegalSection heading="15. Contact">
+      <p>
+        Email <a href="mailto:developer@hamdam.com.au" class="text-saffron-ink underline">developer@hamdam.com.au</a>.
+      </p>
+      <p class="text-base text-indigo/70">
+        Ealia Azizollahi (sole trader) &middot; ABN 74 389 481 503 &middot; Brisbane, Queensland,
+        Australia
+      </p>
+    </LegalSection>
+
+    <p class="mt-14 font-serif text-base text-indigo/70">
+      See also our <a href="/privacy" class="text-saffron-ink underline">Privacy Policy</a>.
+    </p>
+  </article>
 </BaseLayout>
+
+<style>
+  @media print {
+    :global(header),
+    :global(nav) {
+      display: none;
+    }
+  }
+</style>
