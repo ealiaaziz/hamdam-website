@@ -4,5 +4,9 @@
   "assets": {
     "directory": "./dist",
     "not_found_handling": "404-page"
-  }
+  },
+  "routes": [
+    { "pattern": "hamdam.com.au", "custom_domain": true },
+    { "pattern": "www.hamdam.com.au", "custom_domain": true }
+  ]
 }
