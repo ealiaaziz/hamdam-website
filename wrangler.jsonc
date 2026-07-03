@@ -5,6 +5,7 @@
     "directory": "./dist",
     "not_found_handling": "404-page"
   },
+  "workers_dev": false,
   "routes": [
     { "pattern": "hamdam.com.au", "custom_domain": true },
     { "pattern": "www.hamdam.com.au", "custom_domain": true }
