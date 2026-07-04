@@ -8,9 +8,10 @@ interface Props {
   lang: 'en' | 'fa';
   path: string;
   altPath: string;
+  jsonLd?: Record<string, unknown>;
 }
 
-const { title, description, lang, path, altPath } = Astro.props;
+const { title, description, lang, path, altPath, jsonLd } = Astro.props;
 const dir = lang === 'fa' ? 'rtl' : 'ltr';
 const canonicalURL = new URL(path, Astro.site);
 ---
@@ -37,6 +38,8 @@ const canonicalURL = new URL(path, Astro.site);
     <meta name="twitter:card" content="summary" />
     <meta name="twitter:title" content={title} />
     <meta name="twitter:description" content={description} />
+
+    {jsonLd && <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />}
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />

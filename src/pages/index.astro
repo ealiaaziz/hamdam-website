@@ -7,14 +7,43 @@ import PoetCard from '../components/PoetCard.astro';
 import SectionDivider from '../components/SectionDivider.astro';
 import HamdamLogotype from '../components/HamdamLogotype.astro';
 import { poets } from '../data/poets';
+
+const description =
+  "Hamdam reflects your heart and your sky. A daily reflection companion grounded in Persian poetic wisdom, coming to iPhone August 2026.";
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'MobileApplication',
+  name: 'Hamdam',
+  description,
+  operatingSystem: 'iOS',
+  applicationCategory: 'LifestyleApplication',
+  publisher: {
+    '@type': 'Person',
+    name: 'Ealia Azizollahi',
+  },
+  offers: {
+    '@type': 'Offer',
+    price: '0',
+    priceCurrency: 'AUD',
+    description: 'Free with in-app purchases',
+  },
+  url: 'https://hamdam.com.au',
+  contactPoint: {
+    '@type': 'ContactPoint',
+    email: 'developer@hamdam.com.au',
+    contactType: 'customer support',
+  },
+};
 ---
 
 <BaseLayout
   title="Hamdam — A reflection companion grounded in Persian poetic wisdom"
-  description="Hamdam reflects your heart and your sky. A daily reflection companion grounded in Persian poetic wisdom, coming to iPhone August 2026."
+  description={description}
   lang="en"
   path="/"
   altPath="/fa"
+  jsonLd={jsonLd}
 >
   <!-- HERO -->
   <section class="relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-6 py-32 text-center">

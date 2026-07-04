@@ -4,14 +4,31 @@ import LegalSection from '../components/LegalSection.astro';
 import SectionDivider from '../components/SectionDivider.astro';
 
 const effectiveDate = 'Effective 3 July 2026';
+
+const description =
+  'How Hamdam handles data: what it accesses, what it never collects, and how iCloud sync works. No accounts, no analytics, no data selling.';
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'PrivacyPolicy',
+  name: 'Hamdam Privacy Policy',
+  description,
+  url: 'https://hamdam.com.au/privacy',
+  datePublished: '2026-07-03',
+  publisher: {
+    '@type': 'Person',
+    name: 'Ealia Azizollahi',
+  },
+};
 ---
 
 <BaseLayout
   title="Privacy Policy | Hamdam"
-  description="How Hamdam handles data: what it accesses, what it never collects, and how iCloud sync works. No accounts, no analytics, no data selling."
+  description={description}
   lang="en"
   path="/privacy"
   altPath="/fa/privacy"
+  jsonLd={jsonLd}
 >
   <article class="mx-auto max-w-[var(--container-reading)] px-6 pb-32 pt-24 sm:pt-[100px] print:pt-8">
     <h1 class="font-serif text-5xl font-bold text-indigo sm:text-[56px]">Privacy Policy</h1>
