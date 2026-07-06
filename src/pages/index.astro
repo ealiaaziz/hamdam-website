@@ -5,7 +5,7 @@ import AppStoreBadge from '../components/AppStoreBadge.astro';
 import VerseCard from '../components/VerseCard.astro';
 import PoetCard from '../components/PoetCard.astro';
 import SectionDivider from '../components/SectionDivider.astro';
-import HamdamLogotype from '../components/HamdamLogotype.astro';
+import Footer from '../components/Footer.astro';
 import { poets } from '../data/poets';
 
 const description =
@@ -169,21 +169,5 @@ const jsonLd = {
     <p class="mt-4 text-sm text-indigo/60">Coming August 2026</p>
   </section>
 
-  <!-- FOOTER -->
-  <footer class="border-t border-saffron/30 px-6 py-20">
-    <div class="mx-auto flex max-w-xl flex-col items-center gap-4 text-center">
-      <PersianShamseh size={16} opacity={0.7} />
-      <HamdamLogotype size={24} showMark={false} />
-      <p class="text-sm text-indigo/70">An app by the Hamdam Team</p>
-      <nav aria-label="Footer" class="flex items-center gap-3 text-sm text-indigo/70">
-        <a href="/privacy" class="hover:text-indigo">Privacy</a>
-        <span aria-hidden="true">·</span>
-        <a href="/terms" class="hover:text-indigo">Terms</a>
-        <span aria-hidden="true">·</span>
-        <a href="mailto:developer@hamdam.com.au" class="hover:text-indigo">Contact</a>
-      </nav>
-      <p class="text-sm text-indigo/70">Made with love in Brisbane.</p>
-      <p class="text-xs text-indigo/50">&copy; {new Date().getFullYear()} Ealia Azizollahi. All rights reserved. Hamdam&trade; is a trade mark of Ealia Azizollahi (ABN 74 389 481 503). Trade mark application pending.</p>
-    </div>
-  </footer>
+  <Footer />
 </BaseLayout>

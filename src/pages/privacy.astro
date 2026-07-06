@@ -2,6 +2,7 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import LegalSection from '../components/LegalSection.astro';
 import SectionDivider from '../components/SectionDivider.astro';
+import Footer from '../components/Footer.astro';
 
 const effectiveDate = 'Effective 3 July 2026';
 
@@ -239,10 +240,17 @@ const jsonLd = {
       </p>
     </LegalSection>
 
-    <p class="mt-14 font-serif text-base text-indigo/70">
+    <p class="mt-14 text-sm text-indigo/60">
+      HAMDAM&trade; and the HAMDAM name are trade marks of Seyed Valiallah Azizollahi. All rights
+      reserved.
+    </p>
+
+    <p class="mt-4 font-serif text-base text-indigo/70">
       See also our <a href="/terms" class="text-saffron-ink underline">Terms of Service</a>.
     </p>
   </article>
+
+  <Footer />
 </BaseLayout>
 
 <style>

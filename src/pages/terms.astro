@@ -2,6 +2,7 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import LegalSection from '../components/LegalSection.astro';
 import SectionDivider from '../components/SectionDivider.astro';
+import Footer from '../components/Footer.astro';
 
 const effectiveDate = 'Effective 3 July 2026';
 
@@ -271,7 +272,30 @@ const jsonLd = {
       </p>
     </LegalSection>
 
-    <LegalSection heading="15. Contact">
+    <LegalSection heading="15. Intellectual Property">
+      <p>
+        The HAMDAM&trade; name, trade mark, and the Hamdam app (including the iOS app, watchOS
+        app, and any related services), content (including curated Persian poetry selections,
+        reflection prompts, and cultural moment content), and all associated intellectual
+        property are owned by Seyed Valiallah Azizollahi.
+      </p>
+      <p>
+        HAMDAM&trade; is the subject of a pending trade mark application with IP Australia (filed
+        July 2026, Classes 9 and 42).
+      </p>
+      <p>
+        You may not use the HAMDAM name, trade mark, or any associated intellectual property
+        without prior written permission from the owner.
+      </p>
+      <p>
+        Persian poetry featured within the application is sourced from public domain works by
+        classical Persian poets (Hafez, Rumi, Saadi, Khayyam, and Parvin Etesami). Original
+        Persian text is sourced from Ganjoor.net. Reflections, curation, and English translations
+        (where applicable) are the original work of the Hamdam team.
+      </p>
+    </LegalSection>
+
+    <LegalSection heading="16. Contact">
       <p>
         Email <a href="mailto:developer@hamdam.com.au" class="text-saffron-ink underline">developer@hamdam.com.au</a>.
       </p>
@@ -285,6 +309,8 @@ const jsonLd = {
       See also our <a href="/privacy" class="text-saffron-ink underline">Privacy Policy</a>.
     </p>
   </article>
+
+  <Footer />
 </BaseLayout>
 
 <style>
