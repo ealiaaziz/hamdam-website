@@ -1,5 +1,15 @@
 @import "tailwindcss";
 
+/* Self-hosted fonts (no third-party font CDN, no visitor IP exposure to Google) */
+@import "@fontsource/source-serif-pro/latin-400.css";
+@import "@fontsource/source-serif-pro/latin-400-italic.css";
+@import "@fontsource/source-serif-pro/latin-600.css";
+@import "@fontsource/source-serif-pro/latin-600-italic.css";
+@import "@fontsource/source-serif-pro/latin-700.css";
+@import "@fontsource/vazirmatn/400.css";
+@import "@fontsource/vazirmatn/500.css";
+@import "@fontsource/vazirmatn/700.css";
+
 @theme {
   /* Colors */
   --color-cream: #F4EDD8;
