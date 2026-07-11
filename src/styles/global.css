@@ -88,3 +88,10 @@ body {
     animation: none !important;
   }
 }
+
+@media print {
+  header,
+  nav {
+    display: none;
+  }
+}
