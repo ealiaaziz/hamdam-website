@@ -5,6 +5,7 @@ import AppStoreBadge from '../../components/AppStoreBadge.astro';
 import VerseCard from '../../components/VerseCard.astro';
 import PoetCard from '../../components/PoetCard.astro';
 import SectionDivider from '../../components/SectionDivider.astro';
+import FeatureIcon from '../../components/FeatureIcon.astro';
 import HamdamLogotype from '../../components/HamdamLogotype.astro';
 import { poets } from '../../data/poets';
 ---
@@ -24,7 +25,11 @@ import { poets } from '../../data/poets';
   <!-- HERO -->
   <section class="relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-6 py-32 text-center">
     <div
-      class="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-b from-peach/20 via-cream to-cream"
+      class="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-b from-peach/40 via-peach/10 to-cream"
+      aria-hidden="true"
+    ></div>
+    <div
+      class="pointer-events-none absolute left-1/2 top-[16%] -z-10 h-[560px] w-[560px] -translate-x-1/2 rounded-full bg-saffron/25 blur-[130px]"
       aria-hidden="true"
     ></div>
 
@@ -87,11 +92,11 @@ import { poets } from '../../data/poets';
   <SectionDivider />
 
   <!-- FIVE POETS -->
-  <section class="px-6 py-[var(--spacing-section-mobile)] sm:py-[var(--spacing-section-desktop)]">
+  <section class="bg-gradient-to-b from-peach/15 via-peach/5 to-transparent px-6 py-[var(--spacing-section-mobile)] sm:py-[var(--spacing-section-desktop)]">
     <h2 data-fade-in class="text-balance text-center font-farsi text-3xl font-bold text-indigo sm:text-4xl">
       پنج شاعر، پنج صدا.
     </h2>
-    <div class="mx-auto mt-16 grid max-w-5xl grid-cols-1 gap-x-16 gap-y-16 sm:grid-cols-2 lg:grid-cols-3">
+    <div class="mx-auto mt-16 grid max-w-5xl grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
       {poets.map((poet) => (
         <PoetCard
           persianName={poet.persianName}
@@ -122,7 +127,7 @@ import { poets } from '../../data/poets';
   <SectionDivider />
 
   <!-- QUIET INTELLIGENCE -->
-  <section class="px-6 py-[var(--spacing-section-mobile)] sm:py-[var(--spacing-section-desktop)]">
+  <section class="bg-gradient-to-b from-peach/15 via-peach/5 to-transparent px-6 py-[var(--spacing-section-mobile)] sm:py-[var(--spacing-section-desktop)]">
     <div data-fade-in class="mx-auto max-w-[var(--container-reading)]">
       <h2 class="text-balance font-farsi text-3xl font-bold text-indigo sm:text-4xl">
         همدم هر جا که نگاه کنی، همراه توست.
@@ -133,6 +138,13 @@ import { poets } from '../../data/poets';
         تأمل می‌تواند به‌عنوان یک ثبت حالت ذهنی در اپل هلث ذخیره شود، همراه با موسیقی آرام از اپل
         موزیک.
       </p>
+    </div>
+    <div class="mx-auto mt-14 flex max-w-2xl flex-wrap justify-center gap-x-10 gap-y-8">
+      <FeatureIcon name="siri" label="سیری" lang="fa" />
+      <FeatureIcon name="widget" label="ابزارک" lang="fa" />
+      <FeatureIcon name="watch" label="اپل واچ" lang="fa" />
+      <FeatureIcon name="health" label="اپل هلث" lang="fa" />
+      <FeatureIcon name="music" label="اپل موزیک" lang="fa" />
     </div>
   </section>
 
@@ -153,7 +165,11 @@ import { poets } from '../../data/poets';
   </section>
 
   <!-- FINAL CTA -->
-  <section class="flex flex-col items-center px-6 py-[var(--spacing-section-mobile)] text-center sm:py-[var(--spacing-section-desktop)]">
+  <section class="relative flex flex-col items-center overflow-hidden px-6 py-[var(--spacing-section-mobile)] text-center sm:py-[var(--spacing-section-desktop)]">
+    <div
+      class="pointer-events-none absolute left-1/2 top-1/2 -z-10 h-[420px] w-[420px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-saffron/15 blur-[120px]"
+      aria-hidden="true"
+    ></div>
     <PersianShamseh size={32} />
     <p class="mt-8 font-farsi text-xl leading-[1.9] text-indigo sm:text-2xl">
       با شعری بنشین. تأمل کن. فردا برگرد.
@@ -177,12 +193,14 @@ import { poets } from '../../data/poets';
         <a href="mailto:developer@hamdam.com.au" class="hover:text-indigo">تماس با ما</a>
       </nav>
       <p class="font-farsi text-sm text-indigo/70">ساخته شده با عشق در بریزبن</p>
+    </div>
+    <div class="mx-auto mt-10 flex max-w-xl flex-col items-center gap-2 border-t border-saffron/20 pt-8 text-center">
       <p class="text-xs text-indigo/50" lang="en" dir="ltr">&copy; {new Date().getFullYear()} Hamdam. All rights reserved.</p>
-      <p class="text-xs text-indigo/60" lang="en" dir="ltr">
+      <p class="text-xs text-indigo/50" lang="en" dir="ltr">
         HAMDAM&trade; is the subject of Australian trade mark application no. 2674427, filed 11
         July 2026.
       </p>
-      <p class="text-xs text-indigo/60" lang="en" dir="ltr">
+      <p class="text-xs text-indigo/50" lang="en" dir="ltr">
         For support, contact <a href="mailto:developer@hamdam.com.au" class="underline hover:text-indigo">developer@hamdam.com.au</a>.
       </p>
     </div>

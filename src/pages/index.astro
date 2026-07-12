@@ -5,6 +5,7 @@ import AppStoreBadge from '../components/AppStoreBadge.astro';
 import VerseCard from '../components/VerseCard.astro';
 import PoetCard from '../components/PoetCard.astro';
 import SectionDivider from '../components/SectionDivider.astro';
+import FeatureIcon from '../components/FeatureIcon.astro';
 import Footer from '../components/Footer.astro';
 import { poets } from '../data/poets';
 
@@ -48,7 +49,11 @@ const jsonLd = {
   <!-- HERO -->
   <section class="relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-6 py-32 text-center">
     <div
-      class="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-b from-peach/20 via-cream to-cream"
+      class="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-b from-peach/40 via-peach/10 to-cream"
+      aria-hidden="true"
+    ></div>
+    <div
+      class="pointer-events-none absolute left-1/2 top-[16%] -z-10 h-[560px] w-[560px] -translate-x-1/2 rounded-full bg-saffron/25 blur-[130px]"
       aria-hidden="true"
     ></div>
 
@@ -110,11 +115,11 @@ const jsonLd = {
   <SectionDivider />
 
   <!-- FIVE POETS -->
-  <section class="px-6 py-[var(--spacing-section-mobile)] sm:py-[var(--spacing-section-desktop)]">
+  <section class="bg-gradient-to-b from-peach/15 via-peach/5 to-transparent px-6 py-[var(--spacing-section-mobile)] sm:py-[var(--spacing-section-desktop)]">
     <h2 data-fade-in class="text-balance text-center font-serif text-4xl font-semibold text-indigo sm:text-5xl">
       Five poets, five voices.
     </h2>
-    <div class="mx-auto mt-16 grid max-w-5xl grid-cols-1 gap-x-16 gap-y-16 sm:grid-cols-2 lg:grid-cols-3">
+    <div class="mx-auto mt-16 grid max-w-5xl grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
       {poets.map((poet) => (
         <PoetCard
           persianName={poet.persianName}
@@ -145,7 +150,7 @@ const jsonLd = {
   <SectionDivider />
 
   <!-- QUIET INTELLIGENCE -->
-  <section class="px-6 py-[var(--spacing-section-mobile)] sm:py-[var(--spacing-section-desktop)]">
+  <section class="bg-gradient-to-b from-peach/15 via-peach/5 to-transparent px-6 py-[var(--spacing-section-mobile)] sm:py-[var(--spacing-section-desktop)]">
     <div data-fade-in class="mx-auto max-w-[var(--container-reading)]">
       <h2 class="text-balance font-serif text-4xl font-semibold text-indigo sm:text-5xl">
         Hamdam meets you wherever you look.
@@ -156,6 +161,13 @@ const jsonLd = {
         you choose, each reflection can be saved to Apple Health as a State of Mind entry, with
         calm music playing alongside through Apple Music.
       </p>
+    </div>
+    <div class="mx-auto mt-14 flex max-w-2xl flex-wrap justify-center gap-x-10 gap-y-8">
+      <FeatureIcon name="siri" label="Siri" />
+      <FeatureIcon name="widget" label="Widgets" />
+      <FeatureIcon name="watch" label="Watch" />
+      <FeatureIcon name="health" label="Health" />
+      <FeatureIcon name="music" label="Music" />
     </div>
   </section>
 
@@ -176,7 +188,11 @@ const jsonLd = {
   </section>
 
   <!-- FINAL CTA -->
-  <section class="flex flex-col items-center px-6 py-[var(--spacing-section-mobile)] text-center sm:py-[var(--spacing-section-desktop)]">
+  <section class="relative flex flex-col items-center overflow-hidden px-6 py-[var(--spacing-section-mobile)] text-center sm:py-[var(--spacing-section-desktop)]">
+    <div
+      class="pointer-events-none absolute left-1/2 top-1/2 -z-10 h-[420px] w-[420px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-saffron/15 blur-[120px]"
+      aria-hidden="true"
+    ></div>
     <PersianShamseh size={32} />
     <p class="mt-8 font-serif text-2xl italic text-indigo sm:text-[26px]">
       Sit with a verse. Reflect. Return tomorrow.

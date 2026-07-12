@@ -11,7 +11,13 @@ interface Props {
 const { persianName, transliteration, description, class: className = '' } = Astro.props;
 ---
 
-<div data-fade-in class:list={['group text-center', className]}>
+<div
+  data-fade-in
+  class:list={[
+    'group rounded-[var(--radius-card)] bg-card p-8 text-center shadow-card backdrop-blur-sm transition-transform duration-300 hover:-translate-y-1',
+    className,
+  ]}
+>
   <div class="flex items-center justify-center gap-2">
     <h3 dir="rtl" class="font-farsi text-3xl font-bold text-indigo sm:text-4xl">
       {persianName}
