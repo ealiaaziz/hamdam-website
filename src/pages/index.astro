@@ -9,7 +9,7 @@ import Footer from '../components/Footer.astro';
 import { poets } from '../data/poets';
 
 const description =
-  "Hamdam reflects your heart and your sky. A daily reflection companion grounded in Persian poetic wisdom, coming to iPhone August 2026.";
+  "Hamdam reflects your heart and your sky. A daily reflection companion grounded in Persian poetic wisdom, coming soon to iPhone.";
 
 const jsonLd = {
   '@context': 'https://schema.org',
@@ -66,8 +66,6 @@ const jsonLd = {
       <div class="mt-14">
         <AppStoreBadge />
       </div>
-
-      <p class="mt-4 text-sm text-indigo/60">Coming August 2026</p>
     </div>
   </section>
 
@@ -93,15 +91,17 @@ const jsonLd = {
       </h2>
       <div class="mt-8 space-y-6 font-serif text-xl leading-[1.7] text-indigo/90">
         <p>
-          Hamdam is a daily reflection companion. Every morning, a verse from the Persian poetic
-          tradition arrives, met by a moment of stillness. Every evening, a reflection settles the day.
+          Every day, Hamdam meets you at the hour it finds you: a morning that opens gently, an
+          afternoon that steadies, an evening that settles. Tell it how your heart feels with a
+          simple slider, and it offers a verse and a reflection chosen for that feeling.
         </p>
         <p>
-          It notices your body's rhythms, your calendar's shape, the weather outside, and the season
-          of the year. Not to fix or optimise, but to accompany.
+          Every verse arrives in its original Persian beside a careful English translation, drawn
+          from Hafez, Rumi, Saadi, Khayyam and Parvin Etesami.
         </p>
         <p>
-          Five poets carry the seasons of the soul. Their verses, their voices, their questions.
+          A gentle streak keeps count, forgiving a missed day. Every reflection is kept in a
+          private journal, searchable from your Home Screen, with your favourites always at hand.
         </p>
       </div>
     </div>
@@ -136,7 +136,25 @@ const jsonLd = {
       <p class="mt-8 font-serif text-xl leading-[1.7] text-indigo/90">
         Yalda in December, the longest night when families read Hafez together. Norooz in spring,
         the new year that renews the world. Chaharshanbe Suri, Mehregan, Sizdah Bedar. Cultural
-        moments arrive as gentle presences, not calendar reminders.
+        moments arrive as gentle presences, not calendar reminders. Ask the Fal e Hafez a question
+        the way generations have, and receive a verse in answer.
+      </p>
+    </div>
+  </section>
+
+  <SectionDivider />
+
+  <!-- QUIET INTELLIGENCE -->
+  <section class="px-6 py-[var(--spacing-section-mobile)] sm:py-[var(--spacing-section-desktop)]">
+    <div data-fade-in class="mx-auto max-w-[var(--container-reading)]">
+      <h2 class="text-balance font-serif text-4xl font-semibold text-indigo sm:text-5xl">
+        Hamdam meets you wherever you look.
+      </h2>
+      <p class="mt-8 font-serif text-xl leading-[1.7] text-indigo/90">
+        Ask Siri to start a reflection, hear today's verse, or check your streak. Add a widget to
+        your Home Screen. If you wear an Apple Watch, your verse and streak travel with you. If
+        you choose, each reflection can be saved to Apple Health as a State of Mind entry, with
+        calm music playing alongside through Apple Music.
       </p>
     </div>
   </section>
@@ -166,7 +184,6 @@ const jsonLd = {
     <div class="mt-10">
       <AppStoreBadge />
     </div>
-    <p class="mt-4 text-sm text-indigo/60">Coming August 2026</p>
   </section>
 
   <Footer />
