@@ -1,6 +1,12 @@
 ---
 import LanguageToggle from '../components/LanguageToggle.astro';
 import '../styles/global.css';
+// Hashed URLs for the two above-the-fold font files per locale, so preloads
+// stay in lockstep with the @fontsource-bundled @font-face sources.
+import sspSemiboldUrl from '@fontsource/source-serif-pro/files/source-serif-pro-latin-600-normal.woff2?url';
+import sspItalicUrl from '@fontsource/source-serif-pro/files/source-serif-pro-latin-400-italic.woff2?url';
+import vazirMediumUrl from '@fontsource/vazirmatn/files/vazirmatn-arabic-500-normal.woff2?url';
+import vazirRegularUrl from '@fontsource/vazirmatn/files/vazirmatn-arabic-400-normal.woff2?url';
 
 interface Props {
   title: string;
@@ -24,6 +30,20 @@ const faPath = lang === 'fa' ? path : altPath;
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+    {
+      lang === 'fa' ? (
+        <>
+          <link rel="preload" href={vazirMediumUrl} as="font" type="font/woff2" crossorigin />
+          <link rel="preload" href={vazirRegularUrl} as="font" type="font/woff2" crossorigin />
+        </>
+      ) : (
+        <>
+          <link rel="preload" href={sspSemiboldUrl} as="font" type="font/woff2" crossorigin />
+          <link rel="preload" href={sspItalicUrl} as="font" type="font/woff2" crossorigin />
+        </>
+      )
+    }
 
     <title>{title}</title>
     <meta name="description" content={description} />

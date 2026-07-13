@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "./tokens.css";
 
 /* Self-hosted fonts (no third-party font CDN, no visitor IP exposure to Google) */
 @import "@fontsource/source-serif-pro/latin-400.css";

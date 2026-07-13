@@ -1,0 +1,31 @@
+/*
+  Hamdam warm-dawn brand tokens (Phase W1.2).
+  Consumed by the cinematic hero and any component styled with custom CSS.
+  The Tailwind @theme block in global.css remains the source of utility-class
+  colours until sections migrate onto these tokens.
+*/
+:root {
+  color-scheme: light dark;
+  --hamdam-saffron: #E8A03D;
+  --hamdam-ember: #C9502C;
+  --hamdam-mist-amber-grey: #A89584;
+  --hamdam-night-gold: #7A5A28;
+  --hamdam-night-deep: #1A1611;
+  --hamdam-dawn-cream: #F5EEE0;
+  --hamdam-dawn-pink: #F2C9A0;
+  --hamdam-text: #241E15;
+  --hamdam-text-soft: #574A38;
+  --hamdam-bg: var(--hamdam-dawn-cream);
+
+  --ease-dawn: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --dur-reveal: 900ms;
+  --dur-crossfade: 1600ms;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --hamdam-text: #F5EEE0;
+    --hamdam-text-soft: #C9B99C;
+    --hamdam-bg: var(--hamdam-night-deep);
+  }
+}
