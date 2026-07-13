@@ -71,7 +71,6 @@ const faPath = switchLocalePath(path, LOCALES.FA);
 
     {jsonLd && <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />}
 
-    <script type="module" src="/scripts/fade-in.js"></script>
   </head>
   <body class:list={['bg-cream text-indigo antialiased', lang === 'fa' ? 'font-farsi' : 'font-sans']}>
     <a
@@ -86,5 +85,36 @@ const faPath = switchLocalePath(path, LOCALES.FA);
     <main id="main-content">
       <slot />
     </main>
+
+    <script>
+      import { REVEAL, staggerDelayMs, prefersReducedMotion } from '../lib/reveal';
+
+      const revealables = document.querySelectorAll<HTMLElement>('[data-reveal]');
+
+      if (prefersReducedMotion()) {
+        // Final state immediately; the reduced-motion CSS already shows
+        // everything, this just keeps the DOM state consistent.
+        revealables.forEach((el) => el.setAttribute('data-reveal-state', REVEAL.VISIBLE));
+      } else {
+        document.querySelectorAll<HTMLElement>('[data-reveal-group]').forEach((group) => {
+          group.querySelectorAll<HTMLElement>('[data-reveal]').forEach((el, i) => {
+            el.style.setProperty('--reveal-delay', `${staggerDelayMs(i)}ms`);
+          });
+        });
+
+        const observer = new IntersectionObserver(
+          (entries) => {
+            for (const entry of entries) {
+              if (entry.isIntersecting) {
+                entry.target.setAttribute('data-reveal-state', REVEAL.VISIBLE);
+                observer.unobserve(entry.target);
+              }
+            }
+          },
+          { threshold: 0.2 }
+        );
+        revealables.forEach((el) => observer.observe(el));
+      }
+    </script>
   </body>
 </html>
