@@ -6,7 +6,17 @@ import sitemap from '@astrojs/sitemap';
 // https://astro.build/config
 export default defineConfig({
   site: 'https://hamdam.com.au',
-  integrations: [sitemap()],
+  integrations: [
+    sitemap({
+      i18n: {
+        defaultLocale: 'en',
+        locales: {
+          en: 'en-AU',
+          fa: 'fa',
+        },
+      },
+    }),
+  ],
   vite: {
     plugins: [tailwindcss()],
     build: {

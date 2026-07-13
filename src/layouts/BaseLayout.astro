@@ -24,6 +24,10 @@ const dir = LOCALE_META[lang].dir;
 const canonicalURL = new URL(path, Astro.site);
 const enPath = switchLocalePath(path, LOCALES.EN);
 const faPath = switchLocalePath(path, LOCALES.FA);
+const ogImage = new URL(
+  lang === 'fa' ? '/og/hamdam-dawn-fa-1200x630.jpg' : '/og/hamdam-dawn-1200x630.jpg',
+  Astro.site
+);
 ---
 
 <!doctype html>
@@ -52,22 +56,30 @@ const faPath = switchLocalePath(path, LOCALES.FA);
 
     <title>{title}</title>
     <meta name="description" content={description} />
+    <meta name="theme-color" content="#E8A03D" />
     <link rel="canonical" href={canonicalURL} />
+    <link rel="manifest" href="/site.webmanifest" />
     <link rel="alternate" hreflang="en" href={new URL(enPath, Astro.site)} />
     <link rel="alternate" hreflang="fa" href={new URL(faPath, Astro.site)} />
     <link rel="alternate" hreflang="x-default" href={new URL(enPath, Astro.site)} />
 
     <!-- Open Graph -->
     <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Hamdam" />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonicalURL} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
     <meta property="og:locale" content={lang === 'fa' ? 'fa_IR' : 'en_AU'} />
+    <meta property="og:locale:alternate" content={lang === 'fa' ? 'en_AU' : 'fa_IR'} />
 
     <!-- Twitter Card -->
-    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={title} />
     <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage} />
 
     {jsonLd && <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />}
 

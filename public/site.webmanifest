@@ -1,0 +1,13 @@
+{
+  "name": "Hamdam",
+  "short_name": "Hamdam",
+  "description": "A bilingual reflection companion rooted in Persian poetry.",
+  "start_url": "/",
+  "display": "browser",
+  "theme_color": "#E8A03D",
+  "background_color": "#F5EEE0",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

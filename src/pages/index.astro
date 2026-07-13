@@ -15,22 +15,25 @@ const description =
 
 const jsonLd = {
   '@context': 'https://schema.org',
-  '@type': 'MobileApplication',
+  '@type': 'SoftwareApplication',
   name: 'Hamdam',
+  alternateName: 'Hamdam — Poetry and Reflections',
   description,
-  operatingSystem: 'iOS',
+  operatingSystem: 'iOS 26+',
   applicationCategory: 'LifestyleApplication',
+  url: 'https://hamdam.com.au/',
+  inLanguage: ['en', 'fa'],
   publisher: {
     '@type': 'Organization',
     name: 'Hamdam',
   },
+  // Paid-tier prices intentionally not published (decision 2026-07-02).
   offers: {
     '@type': 'Offer',
     price: '0',
     priceCurrency: 'AUD',
     description: 'Free with in-app purchases',
   },
-  url: 'https://hamdam.com.au',
   contactPoint: {
     '@type': 'ContactPoint',
     email: 'developer@hamdam.com.au',
