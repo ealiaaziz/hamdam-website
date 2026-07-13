@@ -15,7 +15,9 @@ const fontClass = lang === 'fa' ? 'font-farsi' : 'font-serif';
 
 <span class:list={['inline-flex items-center gap-2', className]}>
   {showMark && <PersianShamseh size={size * 0.7} />}
-  <span class:list={[fontClass, 'font-bold text-indigo']} style={{ fontSize: `${size}px` }}>
+  {/* 24px (text-2xl) is the only size in use; a literal class keeps the
+      wordmark styleable under the no-inline-styles CSP. */}
+  <span class:list={[fontClass, 'font-bold text-indigo text-2xl']}>
     {wordmark}
   </span>
 </span>
