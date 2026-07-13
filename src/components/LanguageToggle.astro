@@ -19,7 +19,7 @@ const ariaLabel = lang === 'fa' ? 'به انگلیسی' : 'Switch to Farsi';
 
 <a
   href={href}
-  aria-label={ariaLabel}
+  aria-label={`${ariaLabel} (${label})`}
   class="fixed top-6 end-6 z-40 inline-flex min-h-[44px] items-center rounded-full bg-white/60 px-5 text-sm font-medium text-indigo backdrop-blur transition-colors duration-200 hover:bg-white/90"
 >
   {label}
