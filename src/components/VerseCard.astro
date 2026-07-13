@@ -1,35 +1,32 @@
 ---
-import PersianShamseh from './PersianShamseh.astro';
-
 interface Props {
   persian: string;
   translation: string;
-  attribution: string;
+  poet: string;
   class?: string;
 }
 
-const { persian, translation, attribution, class: className = '' } = Astro.props;
+const { persian, translation, poet, class: className = '' } = Astro.props;
 ---
 
 <figure
-  data-fade-in
+  data-reveal
   class:list={[
-    'mx-auto max-w-[var(--container-design)] rounded-[var(--radius-card)] bg-card p-8 shadow-card backdrop-blur-sm sm:p-12',
+    'flex h-full flex-col rounded-[var(--radius-card)] bg-card p-8 shadow-card backdrop-blur-sm',
     className,
   ]}
 >
-  <blockquote>
-    <p dir="rtl" class="font-farsi text-start text-2xl leading-[1.9] text-indigo">
+  <blockquote lang="fa" dir="rtl" class="grow">
+    <p class="font-farsi text-[1.5rem] font-medium leading-[1.9] text-start text-indigo whitespace-pre-line">
       {persian}
     </p>
-    <div class="my-6 flex justify-center">
-      <PersianShamseh size={24} opacity={0.7} />
-    </div>
-    <p class="font-serif text-xl italic leading-[1.7] text-indigo/90">
-      {translation}
-    </p>
   </blockquote>
-  <figcaption class="mt-6 text-sm font-medium not-italic text-saffron-ink">
-    — {attribution}
+  <p lang="en" class="mt-6 font-serif italic leading-[1.7] text-[var(--hamdam-text-soft)]">
+    {translation}
+  </p>
+  <figcaption class="mt-6">
+    <cite class="text-sm font-medium not-italic tracking-[0.08em] text-saffron-ink [font-variant:small-caps]">
+      {poet}
+    </cite>
   </figcaption>
 </figure>

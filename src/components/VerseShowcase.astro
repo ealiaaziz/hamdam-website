@@ -1,0 +1,32 @@
+---
+import VerseCard from './VerseCard.astro';
+import { verses } from '../data/verses';
+
+interface Props {
+  lang: 'en' | 'fa';
+  intro: string;
+}
+
+const { lang, intro } = Astro.props;
+---
+
+<section class="px-6 py-[var(--spacing-section-mobile)] sm:py-[var(--spacing-section-desktop)]">
+  <div class="mx-auto grid max-w-6xl grid-cols-1 gap-8 lg:grid-cols-3" data-reveal-group>
+    {verses.map((verse) => (
+      <VerseCard
+        persian={verse.persian}
+        translation={verse.english}
+        poet={lang === 'fa' ? verse.poetFa : verse.poetEn}
+      />
+    ))}
+  </div>
+  <p
+    class:list={[
+      'mx-auto mt-12 max-w-md text-center',
+      lang === 'fa' ? 'font-farsi text-lg leading-[1.9]' : 'font-serif italic',
+      'text-indigo/70',
+    ]}
+  >
+    {intro}
+  </p>
+</section>

@@ -2,7 +2,8 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import PersianShamseh from '../components/PersianShamseh.astro';
 import AppStoreBadge from '../components/AppStoreBadge.astro';
-import VerseCard from '../components/VerseCard.astro';
+import HeroCinematic from '../components/HeroCinematic.astro';
+import VerseShowcase from '../components/VerseShowcase.astro';
 import PoetCard from '../components/PoetCard.astro';
 import SectionDivider from '../components/SectionDivider.astro';
 import FeatureIcon from '../components/FeatureIcon.astro';
@@ -43,47 +44,20 @@ const jsonLd = {
   description={description}
   lang="en"
   path="/"
+  preloadFarsiVerse={true}
   jsonLd={jsonLd}
 >
-  <!-- HERO -->
-  <section class="relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-6 py-32 text-center">
-    <div
-      class="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-b from-peach/40 via-peach/10 to-cream"
-      aria-hidden="true"
-    ></div>
-    <div
-      class="pointer-events-none absolute left-1/2 top-[16%] -z-10 h-[560px] w-[560px] -translate-x-1/2 rounded-full bg-saffron/25 blur-[130px]"
-      aria-hidden="true"
-    ></div>
-
-    <div class="mx-auto flex max-w-[800px] flex-col items-center">
-      <PersianShamseh size={64} animated={true} />
-
-      <h1 class="text-balance mt-10 font-serif text-[48px] font-semibold leading-[0.95] text-indigo sm:text-[72px] lg:text-[88px]">
-        Hamdam reflects your heart and your sky.
-      </h1>
-
-      <p class="mt-8 max-w-xl font-serif text-xl italic leading-[1.7] text-indigo/80 sm:text-2xl">
-        A reflection companion grounded in Persian poetic wisdom.
-      </p>
-
-      <div class="mt-14">
-        <AppStoreBadge />
-      </div>
-    </div>
-  </section>
+  <HeroCinematic
+    lang="en"
+    title="Hamdam reflects your heart and your sky."
+    subhead="A bilingual reflection companion rooted in Persian poetry."
+  />
 
   <!-- VERSE SHOWCASE -->
-  <section class="px-6 py-[var(--spacing-section-mobile)] sm:py-[var(--spacing-section-desktop)]">
-    <VerseCard
-      persian={`این جهان کوه است و فعل ما ندا\nسوی ما آید نداها را صدا`}
-      translation="This world is a mountain, our actions echoes. Our echoes return to us as sound."
-      attribution="Hafez"
-    />
-    <p class="mx-auto mt-10 max-w-md text-center font-serif italic text-indigo/70">
-      A verse for every morning. Five poets. Two languages. Centuries of wisdom.
-    </p>
-  </section>
+  <VerseShowcase
+    lang="en"
+    intro="A verse for every morning. Five poets. Two languages. Centuries of wisdom."
+  />
 
   <SectionDivider />
 

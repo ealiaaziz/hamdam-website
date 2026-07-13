@@ -2,7 +2,9 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import PersianShamseh from '../../components/PersianShamseh.astro';
 import AppStoreBadge from '../../components/AppStoreBadge.astro';
-import VerseCard from '../../components/VerseCard.astro';
+import HeroCinematic from '../../components/HeroCinematic.astro';
+import VerseShowcase from '../../components/VerseShowcase.astro';
+import { faCopy } from '../../data/siteCopy';
 import PoetCard from '../../components/PoetCard.astro';
 import SectionDivider from '../../components/SectionDivider.astro';
 import FeatureIcon from '../../components/FeatureIcon.astro';
@@ -16,45 +18,10 @@ import { poets } from '../../data/poets';
   lang="fa"
   path="/fa/"
 >
-  <!-- HERO -->
-  <section class="relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-6 py-32 text-center">
-    <div
-      class="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-b from-peach/40 via-peach/10 to-cream"
-      aria-hidden="true"
-    ></div>
-    <div
-      class="pointer-events-none absolute left-1/2 top-[16%] -z-10 h-[560px] w-[560px] -translate-x-1/2 rounded-full bg-saffron/25 blur-[130px]"
-      aria-hidden="true"
-    ></div>
-
-    <div class="mx-auto flex max-w-[800px] flex-col items-center">
-      <PersianShamseh size={64} animated={true} />
-
-      <h1 class="text-balance mt-10 font-farsi text-[40px] font-medium leading-[1.3] text-indigo sm:text-[60px] lg:text-[72px]">
-        همدم، آینه‌ی قلب و آسمان توست.
-      </h1>
-
-      <p class="mt-8 max-w-xl font-farsi text-xl leading-[1.9] text-indigo/80 sm:text-2xl">
-        همدمی برای تأمل روزانه، ریشه‌دار در خرد شعر فارسی.
-      </p>
-
-      <div class="mt-14">
-        <AppStoreBadge lang="fa" />
-      </div>
-    </div>
-  </section>
+  <HeroCinematic lang="fa" title={faCopy.tagline} subhead={faCopy.subhead} />
 
   <!-- VERSE SHOWCASE -->
-  <section class="px-6 py-[var(--spacing-section-mobile)] sm:py-[var(--spacing-section-desktop)]">
-    <VerseCard
-      persian={`این جهان کوه است و فعل ما ندا\nسوی ما آید نداها را صدا`}
-      translation="This world is a mountain, our actions echoes. Our echoes return to us as sound."
-      attribution="Hafez"
-    />
-    <p class="mx-auto mt-10 max-w-md text-center font-farsi text-lg leading-[1.9] text-indigo/70">
-      شعری برای هر صبح. پنج شاعر. دو زبان. قرن‌ها خرد.
-    </p>
-  </section>
+  <VerseShowcase lang="fa" intro={faCopy.verseIntro} />
 
   <SectionDivider />
 

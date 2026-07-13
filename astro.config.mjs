@@ -9,8 +9,15 @@ export default defineConfig({
   integrations: [sitemap()],
   vite: {
     plugins: [tailwindcss()],
+    build: {
+      // Never inline bundled scripts/assets: the production CSP has no
+      // 'unsafe-inline', so inline <script> tags would be blocked.
+      assetsInlineLimit: 0,
+    },
   },
   build: {
-    inlineStylesheets: 'auto',
+    // 'never': the production CSP is style-src 'self' with no unsafe-inline,
+    // so inlined <style> tags would be blocked at the edge.
+    inlineStylesheets: 'never',
   },
 });
