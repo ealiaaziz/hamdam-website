@@ -1,18 +1,26 @@
 ---
+import { LOCALES, resolveLocaleFromPath, switchLocalePath } from '../lib/locale';
+
 interface Props {
   lang: 'en' | 'fa';
-  altPath: string;
 }
 
-const { lang, altPath } = Astro.props;
+const { lang } = Astro.props;
+const target = lang === 'fa' ? LOCALES.EN : LOCALES.FA;
+const href = switchLocalePath(Astro.url.pathname, target);
+// Sanity: the computed target path must resolve to the target locale.
+if (resolveLocaleFromPath(href) !== target) {
+  throw new Error(`LanguageToggle: ${Astro.url.pathname} -> ${href} does not resolve to ${target}`);
+}
 const label = lang === 'fa' ? 'English' : 'فارسی';
-const ariaLabel = lang === 'fa' ? 'Switch to English' : 'تغییر زبان به فارسی';
+// aria-label speaks the source locale (the language the visitor is reading now).
+const ariaLabel = lang === 'fa' ? 'به انگلیسی' : 'Switch to Farsi';
 ---
 
 <a
-  href={altPath}
+  href={href}
   aria-label={ariaLabel}
-  class="fixed top-6 right-6 z-40 rounded-full bg-white/60 px-4 py-2 text-sm font-medium text-indigo backdrop-blur transition-colors duration-200 hover:bg-white/90"
+  class="fixed top-6 end-6 z-40 rounded-full bg-white/60 px-4 py-2 text-sm font-medium text-indigo backdrop-blur transition-colors duration-200 hover:bg-white/90"
 >
   {label}
 </a>

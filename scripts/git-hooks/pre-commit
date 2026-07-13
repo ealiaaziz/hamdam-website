@@ -1,0 +1,3 @@
+#!/bin/sh
+# Persian byte-check gate — see scripts/check-persian.mjs. Do not skip.
+npm run -s check:persian
