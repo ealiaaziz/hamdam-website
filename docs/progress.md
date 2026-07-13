@@ -29,7 +29,8 @@ rings, 44px targets, footer contrast, label-in-name fix).
 
 | Row | Result |
 |---|---|
-| Lighthouse local (mobile): `/` 98/100/100/100, `/fa/` 97/100/100/100 | PASS (targets 95+/100/100/100) |
+| Lighthouse **production** (mobile): `/` 96/100/100/100, `/fa/` 98/100/100/100, zero console errors | PASS (targets 95+/100/100/100) |
+| Lighthouse local (mobile): `/` 98/100/100/100, `/fa/` 97/100/100/100 | PASS |
 | CLS | 0 (target < 0.05) |
 | Switcher round-trip preserves path (all page pairs) | PASS |
 | `npm run check:persian` | PASS (pre-commit gated) |
@@ -39,10 +40,13 @@ rings, 44px targets, footer contrast, label-in-name fix).
 | VoiceOver language voices | PENDING — Ealia |
 | Smart App Banner visible on iPhone | N/A until app is live (2 Aug) |
 
-**CSP note:** already enforcing before W1 (not Report-Only); root cause of the
-pre-W1 live violations (Astro-inlined styles/scripts) fixed at build level
-(`inlineStylesheets: 'never'`, `assetsInlineLimit: 0`). Post-deploy check:
-zero console CSP violations, analytics pageviews flowing.
+**CSP note:** already enforcing before W1 (not Report-Only); Astro-inlined
+styles/scripts fixed at build level (`inlineStylesheets: 'never'`,
+`assetsInlineLimit: 0`), and the last 16 live violations (style attributes
+from PersianShamseh/HamdamLogotype, invisible locally because astro preview
+serves no `_headers`) fixed in `1e2196c`. Post-deploy verified 2026-07-13:
+zero console CSP violations on `/` and `/fa/`, new HSTS + analytics-allowing
+CSP live at the edge.
 
 **Launch-day flips (2 Aug):** set `APP_STORE.RELEASED = true`; supply Ealia's
 Persian aria-label for the download badge (currently English on both locales).
