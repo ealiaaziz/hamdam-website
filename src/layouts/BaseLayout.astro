@@ -1,6 +1,7 @@
 ---
 import LanguageToggle from '../components/LanguageToggle.astro';
 import { LOCALES, LOCALE_META, switchLocalePath } from '../lib/locale';
+import { APP_STORE } from '../lib/appStore';
 import '../styles/global.css';
 // Hashed URLs for the two above-the-fold font files per locale, so preloads
 // stay in lockstep with the @fontsource-bundled @font-face sources.
@@ -57,6 +58,7 @@ const ogImage = new URL(
     <title>{title}</title>
     <meta name="description" content={description} />
     <meta name="theme-color" content="#E8A03D" />
+    <meta name="apple-itunes-app" content={`app-id=${APP_STORE.ID}`} />
     <link rel="canonical" href={canonicalURL} />
     <link rel="manifest" href="/site.webmanifest" />
     <link rel="alternate" hreflang="en" href={new URL(enPath, Astro.site)} />

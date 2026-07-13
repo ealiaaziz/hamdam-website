@@ -1,5 +1,6 @@
 ---
 import PersianShamseh from './PersianShamseh.astro';
+import { APP_STORE, appStoreUrl } from '../lib/appStore';
 
 interface Props {
   lang?: 'en' | 'fa';
@@ -11,17 +12,35 @@ const eyebrow = lang === 'fa' ? 'به‌زودی' : 'Coming soon';
 const headline = lang === 'fa' ? 'برای آیفون' : 'to iPhone';
 ---
 
-<div
-  class:list={[
-    'inline-flex h-[54px] items-center gap-3 rounded-[12px] bg-indigo px-5 text-cream shadow-card',
-    className,
-  ]}
-  role="img"
-  aria-label={`${eyebrow}. ${headline}.`}
->
-  <PersianShamseh size={20} color="currentColor" opacity={0.9} />
-  <span class="flex flex-col leading-tight">
-    <span class="font-sans text-xs">{eyebrow}</span>
-    <span class="font-serif text-lg font-semibold">{headline}</span>
-  </span>
-</div>
+{
+  APP_STORE.RELEASED ? (
+    <a
+      href={appStoreUrl(lang)}
+      class:list={['inline-flex min-h-[44px] min-w-[44px] items-center', className]}
+      aria-label="Download Hamdam on the App Store"
+    >
+      <img
+        src="/badges/app-store-badge.svg"
+        alt="Download on the App Store"
+        width="180"
+        height="60"
+        class="h-[60px] w-auto"
+      />
+    </a>
+  ) : (
+    <div
+      class:list={[
+        'inline-flex h-[54px] items-center gap-3 rounded-[12px] bg-indigo px-5 text-cream shadow-card',
+        className,
+      ]}
+      role="img"
+      aria-label={`${eyebrow}. ${headline}.`}
+    >
+      <PersianShamseh size={20} color="currentColor" opacity={0.9} />
+      <span class="flex flex-col leading-tight">
+        <span class="font-sans text-xs">{eyebrow}</span>
+        <span class="font-serif text-lg font-semibold">{headline}</span>
+      </span>
+    </div>
+  )
+}
