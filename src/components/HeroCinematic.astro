@@ -2,7 +2,6 @@
 import PersianShamseh from './PersianShamseh.astro';
 import AppStoreBadge from './AppStoreBadge.astro';
 import { starField } from '../lib/cinematic';
-import { heroVerse } from '../data/verses';
 
 interface Props {
   lang: 'en' | 'fa';
@@ -11,7 +10,6 @@ interface Props {
 }
 
 const { lang, title, subhead } = Astro.props;
-const poet = lang === 'fa' ? heroVerse.poetFa : heroVerse.poetEn;
 // Deterministic star field (seed 42 by spec), rendered at build time so the
 // client never computes positions and they can never jitter.
 const stars = starField(40, 42);
@@ -43,12 +41,6 @@ const stars = starField(40, 42);
       <div class="hero__cta">
         <AppStoreBadge lang={lang} />
       </div>
-    </div>
-
-    <div class="hero__verse" aria-live="polite">
-      <blockquote lang="fa" dir="rtl" class="hero__verse-fa">{heroVerse.persian}</blockquote>
-      <p lang="en" class="hero__verse-en">{heroVerse.english}</p>
-      <cite class="hero__verse-poet">{poet}</cite>
     </div>
   </div>
 </section>
@@ -84,8 +76,6 @@ const stars = starField(40, 42);
     justify-content: center;
     text-align: center;
     padding-inline: 1.5rem;
-    /* Reserve the bottom band for the verse so the CTA never collides. */
-    padding-block-end: clamp(9rem, 22vh, 13rem);
   }
 
   .hero__sky {
@@ -195,44 +185,6 @@ const stars = starField(40, 42);
     margin-top: 3rem;
   }
 
-  .hero__verse {
-    position: absolute;
-    inset-block-end: clamp(1.5rem, 5vh, 3.5rem);
-    inset-inline: 0;
-    margin-inline: auto;
-    width: min(46rem, calc(100% - 3rem));
-    color: var(--hero-text);
-    background: rgb(26 22 17 / var(--scrim-o));
-    border-radius: var(--radius-card, 16px);
-    padding: 1rem 1.5rem;
-  }
-
-  .hero__verse-fa {
-    font-family: var(--font-farsi);
-    font-weight: 500;
-    font-size: clamp(1.05rem, 1.8vw, 1.35rem);
-    line-height: 1.9;
-    white-space: pre-line;
-  }
-
-  .hero__verse-en {
-    margin-top: 0.5rem;
-    font-family: var(--font-serif);
-    font-style: italic;
-    font-size: clamp(0.9rem, 1.4vw, 1.05rem);
-    opacity: 0.85;
-  }
-
-  .hero__verse-poet {
-    display: block;
-    margin-top: 0.5rem;
-    font-variant: small-caps;
-    font-style: normal;
-    font-size: 0.9rem;
-    letter-spacing: 0.08em;
-    opacity: 0.75;
-  }
-
   /* Entrance choreography — motion-enabled visitors only. One-time settle,
      no infinite pulse. */
   @media (prefers-reduced-motion: no-preference) {
@@ -245,19 +197,13 @@ const stars = starField(40, 42);
     .hero__title { animation-delay: 200ms; }
     .hero__sub { animation-delay: 500ms; }
     .hero__cta { animation-delay: 800ms; }
-    .hero__verse {
-      opacity: 0;
-      animation: hero-fade var(--dur-crossfade) ease forwards;
-      animation-delay: 1200ms;
-    }
   }
 
   /* ?dawn=N design-review mode: timeline pinned, entrance pre-settled so
      screenshots are deterministic. */
   .hero--settled .hero__title,
   .hero--settled .hero__sub,
-  .hero--settled .hero__cta,
-  .hero--settled .hero__verse {
+  .hero--settled .hero__cta {
     animation: none;
     opacity: 1;
     transform: none;
@@ -266,11 +212,6 @@ const stars = starField(40, 42);
   @keyframes hero-rise {
     from { opacity: 0; transform: translateY(20px); }
     to { opacity: 1; transform: translateY(0); }
-  }
-
-  @keyframes hero-fade {
-    from { opacity: 0; }
-    to { opacity: 1; }
   }
 
   /* Reduced motion: static MORNING scene, no stars, no transitions (4.4). */

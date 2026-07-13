@@ -37,5 +37,3 @@ export const verses: readonly Verse[] = [
     source: "Divan of Parvin Etesami, Mathnavis (حدیث مهر)",
   },
 ] as const;
-
-export const heroVerse = verses[0];
