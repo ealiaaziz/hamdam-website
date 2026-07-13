@@ -1,3 +1,21 @@
+## Current state (Phase W1, shipped 2026-07-13)
+
+Cinematic warm-dawn bilingual landing site for the 2 August 2026 app launch.
+Astro 7 + Tailwind v4, deployed to hamdam.com.au via Cloudflare on push to
+`main`. EN at `/`, Farsi (RTL, Vazirmatn) at `/fa/`. Scroll-driven sunrise
+hero: pure timeline logic in `src/lib/cinematic.js`, night → morning over the
+first 100vh, reduced-motion renders static morning; pin with `?dawn=N` for
+review. Locale logic in `src/lib/locale.js`; store link state in
+`src/lib/appStore.js` — `APP_STORE.RELEASED` is the launch-day flip that swaps
+the "Coming soon" pill for the official badge. Verses come byte-exact from the
+iOS app's verse bank via generated `src/data/verses.ts`; Farsi hero copy from
+generated `src/data/siteCopy.ts`. Never hand-type Persian — regenerate.
+`npm test` (Vitest, 60 cases) and `npm run check:persian` (also a pre-commit
+hook) must pass. OG images/icons regenerate via `node scripts/generate-og.mjs`.
+CSP is enforcing (`public/_headers`): no inline styles or scripts, so keep
+`inlineStylesheets: 'never'` and `assetsInlineLimit: 0` in astro.config.
+History and verification matrix: `docs/progress.md`.
+
 ## Development
 
 When starting the dev server, use background mode:
