@@ -9,7 +9,11 @@ import PoetCard from '../../components/PoetCard.astro';
 import SectionDivider from '../../components/SectionDivider.astro';
 import FeatureIcon from '../../components/FeatureIcon.astro';
 import HamdamLogotype from '../../components/HamdamLogotype.astro';
+import SceneBackground from '../../components/SceneBackground.astro';
 import { poets } from '../../data/poets';
+import norooz from '../../assets/scenes/norooz-morning-section.jpg';
+import quietGarden from '../../assets/scenes/quiet-garden-section.jpg';
+import dawn from '../../assets/scenes/dawn-section.jpg';
 ---
 
 <BaseLayout
@@ -21,7 +25,7 @@ import { poets } from '../../data/poets';
   <HeroCinematic lang="fa" title={faCopy.tagline} subhead={faCopy.subhead} />
 
   <!-- VERSE SHOWCASE -->
-  <VerseShowcase lang="fa" intro={faCopy.verseIntro} />
+  <VerseShowcase lang="fa" intro={faCopy.verseIntro} sceneImage={dawn} />
 
   <SectionDivider />
 
@@ -71,8 +75,9 @@ import { poets } from '../../data/poets';
   <SectionDivider />
 
   <!-- IRANIAN CULTURAL DEPTH -->
-  <section class="px-6 py-[var(--spacing-section-mobile)] sm:py-[var(--spacing-section-desktop)]">
-    <div data-reveal class="mx-auto max-w-[var(--container-reading)]">
+  <section class="relative px-6 py-[var(--spacing-section-mobile)] sm:py-[var(--spacing-section-desktop)]">
+    <SceneBackground image={norooz} />
+    <div data-reveal class="relative mx-auto max-w-[var(--container-reading)]">
       <h2 class="text-balance font-farsi text-3xl font-medium text-indigo sm:text-4xl">
         تقویم ایرانی در همدم نفس می‌کشد.
       </h2>
@@ -88,8 +93,9 @@ import { poets } from '../../data/poets';
   <SectionDivider />
 
   <!-- QUIET INTELLIGENCE -->
-  <section class="bg-gradient-to-b from-peach/15 via-peach/5 to-transparent px-6 py-[var(--spacing-section-mobile)] sm:py-[var(--spacing-section-desktop)]">
-    <div data-reveal class="mx-auto max-w-[var(--container-reading)]">
+  <section class="relative bg-gradient-to-b from-peach/15 via-peach/5 to-transparent px-6 py-[var(--spacing-section-mobile)] sm:py-[var(--spacing-section-desktop)]">
+    <SceneBackground image={quietGarden} />
+    <div data-reveal class="relative mx-auto max-w-[var(--container-reading)]">
       <h2 class="text-balance font-farsi text-3xl font-medium text-indigo sm:text-4xl">
         همدم هر جا که نگاه کنی، همراه توست.
       </h2>

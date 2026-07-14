@@ -6,10 +6,13 @@
 */
 :root {
   color-scheme: light dark;
-  --hamdam-saffron: #E8A03D;
-  --hamdam-ember: #C9502C;
-  --hamdam-mist-amber-grey: #A89584;
-  --hamdam-night-gold: #7A5A28;
+  /* Reconciled to the app's DesignSystem/Colors.swift (single source of
+     truth per the approved Hamdam Website Art Direction); these previously
+     disagreed with both the app and this repo's own global.css. */
+  --hamdam-saffron: #E8B04B;
+  --hamdam-ember: #D07B3F;
+  --hamdam-mist-amber-grey: #C98F45;
+  --hamdam-night-gold: #F0C878;
   --hamdam-night-deep: #1A1611;
   --hamdam-dawn-cream: #F5EEE0;
   --hamdam-dawn-pink: #F2C9A0;

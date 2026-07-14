@@ -1,0 +1,25 @@
+---
+// Low-opacity, edge-anchored scene photograph for section backgrounds
+// (Canva "Hamdam Website Art Direction" — Section Background Rhythm).
+// Desktop/tablet only: on narrow mobile viewports there is no room to bleed
+// an image from the edge without risking it sitting behind the text column,
+// so it is hidden below the sm breakpoint rather than assumed safe.
+import { Image } from 'astro:assets';
+import type { ImageMetadata } from 'astro:assets';
+
+interface Props {
+  image: ImageMetadata;
+}
+
+const { image } = Astro.props;
+---
+
+<div class="scene-bg pointer-events-none absolute inset-y-0 end-0 -z-10 hidden w-3/5 max-w-3xl overflow-hidden sm:block" aria-hidden="true">
+  <Image
+    src={image}
+    alt=""
+    width={image.width}
+    height={image.height}
+    class="h-full w-full object-cover opacity-25"
+  />
+</div>

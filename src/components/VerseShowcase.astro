@@ -1,17 +1,21 @@
 ---
+import type { ImageMetadata } from 'astro:assets';
 import VerseCard from './VerseCard.astro';
+import SceneBackground from './SceneBackground.astro';
 import { verses } from '../data/verses';
 
 interface Props {
   lang: 'en' | 'fa';
   intro: string;
+  sceneImage?: ImageMetadata;
 }
 
-const { lang, intro } = Astro.props;
+const { lang, intro, sceneImage } = Astro.props;
 ---
 
-<section class="px-6 py-[var(--spacing-section-mobile)] sm:py-[var(--spacing-section-desktop)]">
-  <div class="mx-auto grid max-w-6xl grid-cols-1 gap-8 lg:grid-cols-3" data-reveal-group>
+<section class="relative px-6 py-[var(--spacing-section-mobile)] sm:py-[var(--spacing-section-desktop)]">
+  {sceneImage && <SceneBackground image={sceneImage} />}
+  <div class="relative mx-auto grid max-w-6xl grid-cols-1 gap-8 lg:grid-cols-3" data-reveal-group>
     {verses.map((verse) => (
       <VerseCard
         persian={verse.persian}

@@ -17,6 +17,9 @@
   --color-indigo: #1B1B3A;
   --color-saffron: #E8B04B;
   --color-saffron-ink: #7F6029; /* darkened for AA text contrast (4.98:1 on cream); use for readable text, keep --color-saffron for decorative/background use */
+  --color-ember: #D07B3F;
+  --color-mist-amber-grey: #C98F45;
+  --color-night-gold: #F0C878;
   --color-peach: #F4C6A8;
   --color-divider: rgba(27, 27, 58, 0.12);
   --color-card: rgba(255, 255, 255, 0.6);
@@ -103,4 +106,18 @@ body {
   nav {
     display: none;
   }
+}
+
+/* Scene backgrounds (Phase: website evolution): edge-anchored photo bleeds
+   in from the section's outer edge and fades toward the centre so it never
+   sits at full strength behind the text column. :dir() flips which physical
+   side is "outer" vs "centre" so the fade is correct in both EN (LTR) and
+   FA (RTL) without a per-call side prop. */
+.scene-bg img {
+  mask-image: linear-gradient(to left, black 35%, transparent 92%);
+  -webkit-mask-image: linear-gradient(to left, black 35%, transparent 92%);
+}
+:dir(rtl) .scene-bg img {
+  mask-image: linear-gradient(to right, black 35%, transparent 92%);
+  -webkit-mask-image: linear-gradient(to right, black 35%, transparent 92%);
 }
