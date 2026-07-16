@@ -1,25 +1,260 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import LegalSection from '../../components/LegalSection.astro';
+import SectionDivider from '../../components/SectionDivider.astro';
+import Footer from '../../components/Footer.astro';
+
+const effectiveDate = 'تاریخ اجرا: 3 ژوئیه 2026';
+
+const description =
+  'همدم چگونه با اطلاعات رفتار می‌کند: به چه چیزی دسترسی دارد، چه چیزی را هرگز جمع‌آوری نمی‌کند، و همگام‌سازی iCloud چگونه کار می‌کند. بدون حساب کاربری، بدون آمارگیری، بدون فروش اطلاعات.';
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'PrivacyPolicy',
+  name: 'سیاست حریم خصوصی همدم',
+  description,
+  url: 'https://hamdam.com.au/fa/privacy',
+  datePublished: '2026-07-03',
+  publisher: {
+    '@type': 'Person',
+    name: 'Ealia Azizollahi',
+  },
+};
 ---
 
 <BaseLayout
-  title="Privacy Policy | Hamdam"
-  description="How Hamdam handles data: what it accesses, what it never collects, and how iCloud sync works."
+  title="حریم خصوصی | همدم"
+  description={description}
   lang="fa"
   path="/fa/privacy"
+  jsonLd={jsonLd}
 >
-  <div class="mx-auto max-w-[var(--container-reading)] px-6 pb-32 pt-24 sm:pt-[100px]" lang="en" dir="ltr">
-    <div class="mb-10 rounded-[var(--radius-card)] bg-peach/25 px-5 py-4 text-sm text-indigo/80">
-      This page will contain the Persian translation of Hamdam's Privacy Policy. Native-speaker
-      review is scheduled for the next content pass. The English version is available at
-      <a href="/privacy" class="text-saffron-ink underline">/privacy</a>.
+  <article class="mx-auto max-w-[var(--container-reading)] px-6 pb-32 pt-24 sm:pt-[100px] print:pt-8">
+    <h1 class="font-farsi text-5xl font-bold text-indigo sm:text-[56px]">حریم خصوصی</h1>
+    <p class="mt-3 font-farsi text-sm italic text-indigo/60">{effectiveDate} &middot; زمان مطالعه: حدود 6 دقیقه</p>
+
+    <div class="mt-10 space-y-4 font-farsi text-lg leading-[1.9] text-indigo/90">
+      <p>
+        همدم اطلاعات تو را جمع‌آوری نمی‌کند. تنها مجموعه‌ی کوچکی از نشانه‌ها را، روی دستگاه خودت،
+        می‌بیند تا تأمل امروز را شکل دهد؛ و همان‌جا می‌مانند. هیچ سروری از سوی همدم رفتار تو را زیر
+        نظر ندارد، هیچ پروفایلی در پشت صحنه ساخته نمی‌شود، و هیچ‌چیز برای فروش یا معامله جمع‌آوری
+        نمی‌شود.
+      </p>
+      <p>
+        این سیاست به‌روشنی توضیح می‌دهد که همدم به چه چیزهایی نگاه می‌کند، چرا، و به چه چیزهایی
+        هرگز دست نمی‌زند. این سیاست، اپلیکیشن همدم برای آیفون و اپل واچ، و همچنین این وب‌سایت را
+        دربرمی‌گیرد.
+      </p>
     </div>
 
-    <h1 class="font-serif text-5xl font-bold text-indigo sm:text-[56px]">Privacy Policy</h1>
+    <LegalSection heading="1. اطلاعاتی که همدم به آن‌ها دسترسی دارد" lang="fa">
+      <p>
+        هرکدام از موارد زیر اختیاری است. همدم بدون فعال‌سازی هیچ‌کدام از آن‌ها کار می‌کند؛
+        فعال‌کردن هرکدام فقط به آن بخش از تجربه‌ی تأمل اجازه می‌دهد از نشانه‌ی مربوطه استفاده کند.
+      </p>
 
-    <p class="mt-6 font-serif text-lg text-indigo/90">
-      Read the full Privacy Policy in English:
-      <a href="/privacy" class="text-saffron-ink underline">hamdam.com.au/privacy</a>
+      <h3 class="font-farsi text-xl font-semibold text-indigo">1.1 اطلاعات سلامت (HealthKit)</h3>
+      <p>با اجازه‌ی تو، همدم موارد زیر را می‌خواند:</p>
+      <ul class="list-disc space-y-1 pr-6">
+        <li>ضربان قلب، ضربان قلب در حالت استراحت، و تغییرپذیری ضربان قلب (HRV SDNN)</li>
+        <li>تحلیل خواب</li>
+        <li>دمای مچ دست (در صورت وجود اپل واچ)</li>
+        <li>اشباع اکسیژن خون</li>
+        <li>تعداد قدم‌ها، دقایق ورزش، و انرژی فعال مصرف‌شده</li>
+        <li>جریان قاعدگی &mdash; فقط در صورتی که «آگاهی از چرخه» را جداگانه فعال کنی</li>
+      </ul>
+      <p>
+        با اجازه‌ی تو، وقتی ثبت حالت روحی را فعال می‌کنی، همدم رکوردهای «حالت ذهنی» را در اپل هلث
+        می‌نویسد. این نشانه‌ها تأمل امروز را به‌شکلی کیفی شکل می‌دهند &mdash; یک تلنگر ملایم در لحن،
+        نه یک امتیاز یا نمودار &mdash; و روی دستگاه تو باقی می‌مانند. آگاهی از چرخه، جدا از دیگر
+        نشانه‌های سلامت، به‌صورت اختیاری فعال می‌شود و هرگز در هیچ‌جای رابط کاربری همدم نمایش داده
+        نمی‌شود.
+      </p>
+
+      <h3 class="font-farsi text-xl font-semibold text-indigo">1.2 اطلاعات تقویم (EventKit)</h3>
+      <p>
+        با اجازه‌ی تو، همدم فقط زمان‌های «آزاد/مشغول» را می‌خواند؛ هرگز عنوان رویداد، توضیحات،
+        شرکت‌کنندگان، یا مکان را نمی‌خواند. جداگانه، با اجازه‌ی خودش، همدم می‌تواند بلوک‌های تأمل
+        اختیاری و یادآوری لحظه‌های فرهنگی را در تقویم تو بنویسد. هر رویدادی که همدم می‌سازد با
+        پیشوند «Hamdam:» مشخص می‌شود تا همیشه بتوانی آن را تشخیص دهی، و همدم هرگز رویدادی را که
+        خودش نساخته تغییر نمی‌دهد. خواندن و نوشتن اطلاعات تقویم، دو فعال‌سازی جداگانه‌اند؛
+        فعال‌کردن یکی، دیگری را فعال نمی‌کند.
+      </p>
+
+      <h3 class="font-farsi text-xl font-semibold text-indigo">1.3 موقعیت مکانی و آب‌وهوا</h3>
+      <p>
+        موقعیت مکانی تنها زمانی استفاده می‌شود که ویژگی‌های آب‌وهوا یا لحظه‌های فرهنگی را فعال
+        کنی. اطلاعات آب‌وهوا از طریق WeatherKit اپل دریافت می‌شود و از موقعیت تو برای تعیین
+        حال‌وهوای تأمل امروز استفاده می‌کند. همدم موقعیت مکانی تو را ذخیره نمی‌کند و آن را با کسی
+        به اشتراک نمی‌گذارد.
+      </p>
+
+      <h3 class="font-farsi text-xl font-semibold text-indigo">1.4 همگام‌سازی iCloud</h3>
+      <p>
+        اگر همگام‌سازی را فعال کنی، یادداشت‌ها، شمارنده‌ی روزشمار، و تنظیمات تو از طریق CloudKit
+        Private Database اپل، که محدود به Apple ID خودت است، میان دستگاه‌های خودت همگام می‌شوند.
+        همدم هیچ سروری اجرا نمی‌کند که این اطلاعات را دریافت کند. اگر اطلاعات iCloud خود را حذف
+        کنی یا از آن خارج شوی، اطلاعات همگام‌شده‌ی همدم نیز همراه آن حذف می‌شود.
+      </p>
+
+      <h3 class="font-farsi text-xl font-semibold text-indigo">1.5 محتوای شعر فارسی</h3>
+      <p>
+        شعرهای موجود در همدم &mdash; از حافظ، مولانا، سعدی، خیام و پروین اعتصامی &mdash; توسط
+        همدم گردآوری شده و در CloudKit Public Database ذخیره می‌شوند، که از منابع دامنه‌ی عمومی از
+        طریق گنجور با ذکر منبع تهیه شده‌اند. این محتوا برای کاربران فقط قابل خواندن است و هیچ
+        اطلاعاتی درباره‌ی تو در بر ندارد.
+      </p>
+
+      <h3 class="font-farsi text-xl font-semibold text-indigo">1.6 پیشنهادهای بخش کاوش (iTunes Search API)</h3>
+      <p>
+        بخش «کاوش» همدم هر هفته با کتاب‌ها و پادکست‌هایی از کاتالوگ عمومی اپل به‌روزرسانی
+        می‌شود. این درخواست‌ها مستقیماً از دستگاه تو به اپل ارسال می‌شوند &mdash; هرگز از طریق
+        سرور همدم &mdash; و هیچ شناسه‌ی مرتبط با تو همراه آن‌ها ارسال نمی‌شود.
+      </p>
+
+      <h3 class="font-farsi text-xl font-semibold text-indigo">1.7 تأمل‌های تولیدشده با هوش مصنوعی (Apple Intelligence)</h3>
+      <p>
+        روی سخت‌افزارهای پشتیبانی‌شده (آیفون 15 پرو و جدیدتر، iOS 26 به بعد)، تأمل‌ها روی خود
+        دستگاه و با استفاده از Foundation Models اپل تولید می‌شوند. برای این کار، هیچ متن و هیچ
+        اطلاعات شخصی‌ای دستگاه تو را ترک نمی‌کند. روی دستگاه‌های پشتیبانی‌نشده، همدم از یک
+        کتابخانه‌ی محتوای از پیش نوشته‌شده و ثابت استفاده می‌کند.
+      </p>
+    </LegalSection>
+
+    <SectionDivider />
+
+    <LegalSection heading="2. آنچه همدم جمع‌آوری نمی‌کند" lang="fa">
+      <ul class="list-disc space-y-1 pr-6">
+        <li>بدون حساب کاربری، و بدون جمع‌آوری ایمیل هنگام ثبت‌نام</li>
+        <li>بدون آمارگیری شخص ثالث &mdash; بدون Firebase، Mixpanel، Amplitude، یا Google Analytics</li>
+        <li>بدون SDK اختصاصی گزارش خرابی یا آمارگیری &mdash; تنها اطلاعات خرابی جمع‌آوری‌شده،
+        گزارش خرابی داخلی خود iOS از طریق App Store Connect است که به‌صورت تجمیعی و ناشناس
+        است</li>
+        <li>بدون SDK تبلیغاتی &mdash; بدون AdMob، Meta Pixel، یا پیکسل‌های ردیابی</li>
+        <li>بدون ردیابی رفتاری و بدون پروفایل‌سازی کاربر</li>
+        <li>هرگز فروش اطلاعات</li>
+        <li>بدون سرور بک‌اند متعلق به همدم که اطلاعات کاربر را دریافت کند</li>
+        <li>بدون خبرنامه و بدون اتوماسیون بازاریابی</li>
+        <li>بدون ردیابی میان‌برنامه‌ای</li>
+        <li>بدون SDK که از طرف همدم اطلاعات شخصی جمع‌آوری کند</li>
+        <li>بدون کوکی &mdash; این وب‌سایت کاملاً استاتیک است</li>
+        <li>بدون بارگذاری فونت از منابع شخص ثالث &mdash; فونت‌ها به‌صورت محلی میزبانی می‌شوند و
+        هیچ درخواستی به Google Fonts یا هر CDN فونت دیگری ارسال نمی‌شود</li>
+      </ul>
+    </LegalSection>
+
+    <LegalSection heading="3. چگونگی استفاده از اطلاعات تو" lang="fa">
+      <p>نشانه‌های توضیح‌داده‌شده در بخش 1، در صورتی که فعال کرده باشی، فقط برای موارد زیر استفاده می‌شوند:</p>
+      <ul class="list-disc space-y-1 pr-6">
+        <li>شکل‌دادن به لحن و محتوای تأمل امروز</li>
+      </ul>
+      <p>هرگز برای موارد زیر استفاده نمی‌شوند:</p>
+      <ul class="list-disc space-y-1 pr-6">
+        <li>برای تبلیغات</li>
+        <li>برای آموزش مدل‌های هوش مصنوعی خارج از دستگاه تو</li>
+        <li>اشتراک‌گذاری با اشخاص ثالث</li>
+        <li>فروش، تحت هیچ شرایطی</li>
+      </ul>
+    </LegalSection>
+
+    <LegalSection heading="4. ذخیره‌سازی و نگهداری اطلاعات" lang="fa">
+      <ul class="list-disc space-y-1 pr-6">
+        <li>به‌صورت محلی، روی دستگاه تو، با استفاده از فریم‌ورک SwiftData اپل</li>
+        <li>در فضای ابری، فقط در حساب iCloud خودت، در صورت فعال‌بودن همگام‌سازی</li>
+        <li>هرگز روی سروری متعلق به همدم</li>
+      </ul>
+      <p>اطلاعات تا زمانی که آن را در اپلیکیشن حذف کنی یا همدم را حذف نصب کنی، نگهداری می‌شود.</p>
+    </LegalSection>
+
+    <LegalSection heading="5. خدمات شخص ثالث" lang="fa">
+      <p>
+        همدم بر پایه‌ی فریم‌ورک‌های اپل ساخته شده است: iCloud، HealthKit، EventKit، WeatherKit،
+        StoreKit، و Foundation Models. سیاست‌های حریم خصوصی خود اپل، نحوه‌ی مدیریت اطلاعات توسط
+        این فریم‌ورک‌ها را در سمت اپل تعیین می‌کند. گنجور به‌عنوان منبع دامنه‌ی عمومی متن اشعار
+        فارسی ذکر شده است &mdash; هیچ اطلاعاتی در زمان اجرا با گنجور مبادله نمی‌شود. iTunes Search
+        API یک رابط برنامه‌نویسی عمومی اپل است که مستقیماً از دستگاه تو فراخوانی می‌شود.
+      </p>
+    </LegalSection>
+
+    <div class="mt-14 rounded-[var(--radius-card)] bg-peach/20 p-6 shadow-card sm:p-8">
+      <LegalSection heading="6. حقوق تو (اصول حریم خصوصی استرالیا)" lang="fa">
+        <ul class="list-disc space-y-1 pr-6">
+          <li><strong>دسترسی</strong> &mdash; اطلاعات تو روی دستگاه خودت زندگی می‌کند (و در iCloud خودت، اگر همگام‌سازی فعال باشد)</li>
+          <li><strong>اصلاح</strong> &mdash; هر زمان می‌توانی هر یادداشتی را در اپلیکیشن ویرایش یا حذف کنی</li>
+          <li><strong>شکایت</strong> &mdash; ابتدا با همدم تماس بگیر (بخش 11)؛ اگر حل نشد، با OAIC (بخش 12)</li>
+          <li><strong>انصراف</strong> &mdash; هر زمان می‌توانی هر ویژگی را از تنظیمات خاموش کنی</li>
+        </ul>
+      </LegalSection>
+    </div>
+
+    <LegalSection heading="7. حذف حساب کاربری" lang="fa">
+      <p>
+        به تنظیمات &larr; حذف اطلاعات من در اپلیکیشن برو. این کار حافظه‌ی محلی SwiftData و
+        رکوردهای CloudKit Private Database تو را پاک می‌کند. خروج از iCloud روی یک دستگاه،
+        اطلاعات همگام‌شده‌ی همدم را نیز از آن دستگاه حذف می‌کند. حسابی برای حذف‌کردن وجود ندارد،
+        چون همدم اصلاً حساب کاربری ندارد.
+      </p>
+    </LegalSection>
+
+    <LegalSection heading="8. امنیت اطلاعات" lang="fa">
+      <ul class="list-disc space-y-1 pr-6">
+        <li>iOS Data Protection اطلاعات ذخیره‌شده روی دستگاه تو را رمزگذاری می‌کند</li>
+        <li>رمزگذاری سرتاسری اپل، در صورت فعال‌بودن، برای اطلاعات iCloud اعمال می‌شود</li>
+        <li>هر درخواست شبکه‌ای که همدم انجام می‌دهد، از HTTPS/TLS استفاده می‌کند</li>
+      </ul>
+    </LegalSection>
+
+    <LegalSection heading="9. کودکان" lang="fa">
+      <p>
+        همدم برای کاربران زیر 13 سال طراحی نشده است، و همدم آگاهانه از هیچ فردی زیر 13 سال
+        اطلاعات جمع‌آوری نمی‌کند. همدم برای کاربران 13 سال به بالا مناسب طراحی شده است.
+      </p>
+    </LegalSection>
+
+    <LegalSection heading="10. تغییرات در این سیاست" lang="fa">
+      <p>
+        اگر این سیاست به‌طور قابل‌توجهی تغییر کند، از طریق به‌روزرسانی اپلیکیشن به تو اطلاع داده
+        می‌شود. ادامه‌ی استفاده از همدم پس از یک تغییر، به‌معنای پذیرفتن آن به‌روزرسانی است. تاریخ
+        اجرا در بالای این صفحه، همیشه نسخه‌ی فعلی را نشان می‌دهد.
+      </p>
+    </LegalSection>
+
+    <LegalSection heading="11. تماس" lang="fa">
+      <p>
+        ایمیل: <a href="mailto:developer@hamdam.com.au" class="text-saffron-ink underline">developer@hamdam.com.au</a>
+      </p>
+      <p class="text-base text-indigo/70">
+        Ealia Azizollahi (تاجر مستقل) &middot; ABN 74 389 481 503 &middot; بریزبن، کوئینزلند،
+        استرالیا
+      </p>
+    </LegalSection>
+
+    <LegalSection heading="12. شکایات و تماس با نهاد نظارتی" lang="fa">
+      <p>
+        اگر نگرانی‌ای را با همدم مطرح کنی و به شکلی رضایت‌بخش حل نشود، می‌توانی با دفتر
+        کمیسیونر اطلاعات استرالیا (OAIC) به نشانی
+        <a href="https://www.oaic.gov.au" class="text-saffron-ink underline" target="_blank" rel="noopener noreferrer">oaic.gov.au</a>
+        تماس بگیری.
+      </p>
+    </LegalSection>
+
+    <LegalSection heading="13. قانون حاکم" lang="fa">
+      <p>
+        این سیاست تابع قوانین ایالت کوئینزلند، استرالیا است. اصول حریم خصوصی استرالیا، تحت قانون
+        حریم خصوصی 1988 (قانون فدرال)، بر نحوه‌ی مدیریت اطلاعات شخصی توسط همدم حاکم است.
+      </p>
+    </LegalSection>
+
+    <p class="mt-14 text-sm text-indigo/60">
+      HAMDAM&trade; موضوع درخواست ثبت علامت تجاری استرالیا به شماره‌ی 2674427 (ثبت‌شده در 11
+      جولای 2026) است که متعلق به Seyed Valiallah Azizollahi می‌باشد. کلیه‌ی حقوق محفوظ است.
     </p>
-  </div>
+
+    <p class="mt-4 font-farsi text-base text-indigo/70">
+      شرایط استفاده‌ی ما را نیز ببین: <a href="/fa/terms" class="text-saffron-ink underline">شرایط استفاده</a>.
+    </p>
+  </article>
+
+  <Footer />
 </BaseLayout>

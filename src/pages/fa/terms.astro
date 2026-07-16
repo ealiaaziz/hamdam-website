@@ -1,25 +1,306 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import LegalSection from '../../components/LegalSection.astro';
+import SectionDivider from '../../components/SectionDivider.astro';
+import Footer from '../../components/Footer.astro';
+
+const effectiveDate = 'تاریخ اجرا: 3 ژوئیه 2026';
+
+const description =
+  'شرایط حاکم بر استفاده از اپلیکیشن همدم، اشتراک همدم پلاس، و محتوای یادداشت، شامل سلب مسئولیت‌های سلامت.';
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'TermsAndConditions',
+  name: 'شرایط استفاده‌ی همدم',
+  description,
+  url: 'https://hamdam.com.au/fa/terms',
+  datePublished: '2026-07-03',
+  publisher: {
+    '@type': 'Person',
+    name: 'Ealia Azizollahi',
+  },
+};
 ---
 
 <BaseLayout
-  title="Terms of Service | Hamdam"
-  description="The terms governing use of the Hamdam app, subscription, and journal content."
+  title="شرایط استفاده | همدم"
+  description={description}
   lang="fa"
   path="/fa/terms"
+  jsonLd={jsonLd}
 >
-  <div class="mx-auto max-w-[var(--container-reading)] px-6 pb-32 pt-24 sm:pt-[100px]" lang="en" dir="ltr">
-    <div class="mb-10 rounded-[var(--radius-card)] bg-peach/25 px-5 py-4 text-sm text-indigo/80">
-      This page will contain the Persian translation of Hamdam's Terms of Service. Native-speaker
-      review is scheduled for the next content pass. The English version is available at
-      <a href="/terms" class="text-saffron-ink underline">/terms</a>.
+  <article class="mx-auto max-w-[var(--container-reading)] px-6 pb-32 pt-24 sm:pt-[100px] print:pt-8">
+    <h1 class="font-farsi text-5xl font-bold text-indigo sm:text-[56px]">شرایط استفاده</h1>
+    <p class="mt-3 font-farsi text-sm italic text-indigo/60">{effectiveDate} &middot; زمان مطالعه: حدود 8 دقیقه</p>
+
+    <div class="mt-10 space-y-4 font-farsi text-lg leading-[1.9] text-indigo/90">
+      <p>
+        همدم همراهی برای تأمل است که در خرد شعر فارسی ریشه دارد. این شرایط، مجوز استفاده‌ی تو از
+        اپلیکیشن، اشتراک همدم پلاس، و نحوه‌ی رفتار با محتوای یادداشت‌های تو را دربرمی‌گیرد.
+      </p>
+      <p>
+        ارزش هشت دقیقه را دارد، به‌ویژه بخش 4. همدم تأملی ملایم ارائه می‌دهد، نه توصیه‌ی پزشکی یا
+        سلامت روان، و این تفاوت برای نحوه‌ی استفاده‌ی تو اهمیت دارد.
+      </p>
     </div>
 
-    <h1 class="font-serif text-5xl font-bold text-indigo sm:text-[56px]">Terms of Service</h1>
+    <LegalSection heading="1. پذیرش" lang="fa">
+      <p>
+        با دانلود، نصب، یا استفاده از همدم، این شرایط را می‌پذیری. اگر موافق نیستی، از همدم
+        استفاده نکن.
+      </p>
+    </LegalSection>
 
-    <p class="mt-6 font-serif text-lg text-indigo/90">
-      Read the full Terms of Service in English:
-      <a href="/terms" class="text-saffron-ink underline">hamdam.com.au/terms</a>
+    <LegalSection heading="2. مجوز استفاده" lang="fa">
+      <p>
+        همدم مجوزی شخصی، غیرقابل‌انتقال، و قابل‌لغو برای استفاده از اپلیکیشن روی دستگاه‌های اپلی
+        که مالک یا کنترل‌کننده‌ی آن‌ها هستی، از طریق App Store به تو می‌دهد. این مجوز شامل
+        استفاده‌ی تجاری یا بازتوزیع اپلیکیشن یا محتوای آن نمی‌شود.
+      </p>
+    </LegalSection>
+
+    <LegalSection heading="3. اشتراک همدم پلاس" lang="fa">
+      <h3 class="font-farsi text-xl font-semibold text-indigo">3.1 قیمت‌گذاری</h3>
+      <p>
+        قیمت‌گذاری توسط اپل تعیین و در لحظه‌ی خرید نمایش داده می‌شود. قیمت فعلی در App Store در
+        دسترس است و ممکن است توسط اپل تغییر کند.
+      </p>
+
+      <h3 class="font-farsi text-xl font-semibold text-indigo">3.2 دوره‌ی آزمایشی رایگان</h3>
+      <p>
+        اشتراک‌های ماهانه و سالانه شامل یک دوره‌ی آزمایشی رایگان 7 روزه برای مشترکان جدید هستند.
+        این دوره، مگر اینکه پیش از پایان لغو شود، به اشتراک پولی تبدیل می‌شود؛ برای راهنمای لغو،
+        بخش 3.5 را ببین.
+      </p>
+
+      <h3 class="font-farsi text-xl font-semibold text-indigo">3.3 اشتراک‌گذاری خانوادگی</h3>
+      <p>
+        طرح مادام‌العمر از اشتراک‌گذاری خانوادگی، برای حداکثر شش عضو از طریق Family Sharing اپل،
+        پشتیبانی می‌کند. طرح‌های ماهانه و سالانه تک‌کاربره هستند.
+      </p>
+
+      <h3 class="font-farsi text-xl font-semibold text-indigo">3.4 تمدید خودکار</h3>
+      <p>
+        طرح‌های ماهانه و سالانه، مگر اینکه لغو شوند، به‌صورت خودکار با قیمت رایج آن زمان تمدید
+        می‌شوند و از Apple ID تو کسر می‌شود. تمدید را می‌توانی از طریق تنظیمات اشتراک Apple ID خود
+        مدیریت یا لغو کنی.
+      </p>
+
+      <h3 class="font-farsi text-xl font-semibold text-indigo">3.5 لغو اشتراک</h3>
+      <p>
+        هر زمان می‌توانی از طریق تنظیمات دستگاه &larr; Apple ID خودت &larr; اشتراک‌ها، لغو کنی.
+        لغو، تمدید بعدی را متوقف می‌کند؛ دسترسی تو تا پایان دوره‌ی صورت‌حساب فعلی باقی می‌ماند.
+        برای بخش استفاده‌نشده‌ی دوره‌ی فعلی، با توجه به سیاست بازپرداخت اپل، بازپرداختی صورت
+        نمی‌گیرد.
+      </p>
+
+      <h3 class="font-farsi text-xl font-semibold text-indigo">3.6 تغییر قیمت</h3>
+      <p>
+        اپل ممکن است قیمت را تغییر دهد. طبق روال استاندارد اپل، از پیش از طریق App Store به تو
+        اطلاع داده می‌شود. ادامه‌ی اشتراک تو پس از آن اطلاعیه، به‌معنای پذیرفتن آن تغییر است.
+      </p>
+    </LegalSection>
+
+    <SectionDivider />
+
+    <div class="mt-14 rounded-[var(--radius-card)] bg-peach/20 p-6 shadow-card sm:p-8">
+      <LegalSection heading="4. سلب مسئولیت سلامت و تندرستی" lang="fa">
+        <h3 class="font-farsi text-xl font-semibold text-indigo">4.1 توصیه‌ی پزشکی نیست</h3>
+        <p>
+          همدم همراهی برای تأمل است، نه توصیه‌ی پزشکی، سلامت روان، یا تندرستی. هیچ‌چیز در همدم
+          جایگزین مراقبت‌های پزشکی حرفه‌ای، حمایت سلامت روان، تشخیص پزشکی، یا درمان نیست.
+        </p>
+
+        <h3 class="font-farsi text-xl font-semibold text-indigo">4.2 مشورت با متخصصان</h3>
+        <p>
+          برای پرسش‌های پزشکی، نگرانی‌های سلامت جسمی یا روانی، یا تصمیم‌های مرتبط با سلامت، با
+          یک ارائه‌دهنده‌ی مراقبت‌های بهداشتی واجد شرایط مشورت کن.
+        </p>
+
+        <h3 class="font-farsi text-xl font-semibold text-indigo">4.3 بحران سلامت روان</h3>
+        <p>اگر خودت یا کسی که می‌شناسی در بحران است یا به حمایت فوری سلامت روان نیاز دارد:</p>
+        <ul class="list-disc space-y-1 pr-6">
+          <li>استرالیا: Lifeline، 13 11 14 (شبانه‌روزی)</li>
+          <li>اورژانس استرالیا: 000</li>
+          <li>بین‌المللی: با خط بحران محلی یا خدمات اورژانس خودت تماس بگیر</li>
+        </ul>
+        <p>همدم جایگزین حمایت در بحران نیست.</p>
+
+        <h3 class="font-farsi text-xl font-semibold text-indigo">4.4 مشاهدات بدنی</h3>
+        <p>
+          همدم مشاهدات ملایمی درباره‌ی نشانه‌های بدنی &mdash; خواب، فعالیت، چرخه &mdash; ارائه
+          می‌دهد. این‌ها مشاهدات بافتاری‌اند، نه ارزیابی یا تشخیص پزشکی.
+        </p>
+
+        <h3 class="font-farsi text-xl font-semibold text-indigo">4.5 ویژگی‌های تناسب اندام</h3>
+        <p>
+          مشاهدات تناسب اندام فقط بافتاری‌اند. پیش از شروع یک برنامه‌ی ورزشی، تغییر فعالیت بدنی، یا
+          عمل‌کردن بر اساس هر مشاهده‌ی تناسب اندام، با پزشک خود مشورت کن.
+        </p>
+
+        <h3 class="font-farsi text-xl font-semibold text-indigo">4.6 آگاهی از چرخه</h3>
+        <p>
+          مشاهدات چرخه فقط از اطلاعات قاعدگی ثبت‌شده‌ی تو استفاده می‌کنند. این‌ها جایگزین پیگیری
+          پزشکی چرخه، پیشگیری از بارداری، برنامه‌ریزی بارداری، یا مشورت پزشکی نیستند.
+        </p>
+
+        <h3 class="font-farsi text-xl font-semibold text-indigo">4.7 محتوای تأمل</h3>
+        <p>
+          تأمل‌ها و مشاهدات ماهیتی تعمقی دارند. این‌ها درمان، مشاوره، یا راهنمایی معنوی برای
+          مصارف پزشکی نیستند.
+        </p>
+      </LegalSection>
+    </div>
+
+    <LegalSection heading="5. انتساب محتوای فرهنگی" lang="fa">
+      <h3 class="font-farsi text-xl font-semibold text-indigo">5.1 منابع شعر فارسی</h3>
+      <p>
+        اشعار حافظ، مولانا، سعدی، خیام، و پروین اعتصامی در دامنه‌ی عمومی هستند و با ذکر منبع از
+        آرشیو گنجور تهیه شده‌اند. گردآوری و ترجمه‌های انگلیسی همدم، همراه با بافت فرهنگی و
+        تأمل‌های آن، &copy; Ealia Azizollahi است.
+      </p>
+
+      <h3 class="font-farsi text-xl font-semibold text-indigo">5.2 حقوق تو نسبت به محتوای همدم</h3>
+      <p>محتوا فقط برای استفاده‌ی شخصی تو در داخل اپلیکیشن است. بدون بازتوزیع تجاری، و بدون بازنشر بدون اجازه.</p>
+
+      <h3 class="font-farsi text-xl font-semibold text-indigo">5.3 حساسیت فرهنگی</h3>
+      <p>
+        شعر فارسی به می، عشق، و تصاویر عرفانی به‌عنوان استعاره‌ی ادبی و معنوی اشاره می‌کند. این‌ها
+        قراردادهای تاریخی ادبیات فارسی‌اند، نه تأیید مصرف مواد.
+      </p>
+    </LegalSection>
+
+    <LegalSection heading="6. محتوای کاربر" lang="fa">
+      <h3 class="font-farsi text-xl font-semibold text-indigo">6.1 یادداشت‌های روزانه</h3>
+      <p>
+        یادداشت‌های تو متعلق به خودت هستند. همدم هیچ مجوزی نسبت به محتوای یادداشت‌های تو ندارد، و
+        می‌توانی هر زمان هر یادداشتی را حذف کنی. یادداشت تو فقط از طریق حساب iCloud خودت همگام
+        می‌شود.
+      </p>
+
+      <h3 class="font-farsi text-xl font-semibold text-indigo">6.2 بدون اشتراک‌گذاری</h3>
+      <p>
+        همدم محتوای یادداشت تو را با کسی به اشتراک نمی‌گذارد. هیچ فید عمومی و هیچ ویژگی
+        اجتماعی‌ای وجود ندارد.
+      </p>
+    </LegalSection>
+
+    <LegalSection heading="7. استفاده‌های ممنوع" lang="fa">
+      <ul class="list-disc space-y-1 pr-6">
+        <li>مهندسی معکوس اپلیکیشن</li>
+        <li>بازتوزیع محتوای اپلیکیشن</li>
+        <li>استفاده‌ی تجاری از اپلیکیشن یا محتوای آن</li>
+        <li>استفاده از همدم برای آسیب‌زدن به خود یا دیگران</li>
+        <li>استفاده از همدم به‌شکلی که ناقض قوانین قابل‌اجرا باشد</li>
+      </ul>
+    </LegalSection>
+
+    <LegalSection heading="8. فسخ" lang="fa">
+      <p>
+        هر زمان می‌توانی با حذف‌نصب همدم، استفاده از آن را متوقف کنی. همدم می‌تواند در صورت نقض
+        این شرایط، دسترسی تو را قطع کند. برای لغو اشتراک، بخش 3.5 را ببین.
+      </p>
+    </LegalSection>
+
+    <LegalSection heading="9. سلب مسئولیت ضمانت" lang="fa">
+      <h3 class="font-farsi text-xl font-semibold text-indigo">9.1 همان‌گونه که هست</h3>
+      <p>
+        همدم «همان‌گونه که هست» ارائه می‌شود، بدون هیچ‌گونه ضمانتی، مگر در مواردی که ضمانت‌های
+        غیرقابل‌حذف تحت قانون مصرف‌کننده‌ی استرالیا اعمال شود.
+      </p>
+
+      <h3 class="font-farsi text-xl font-semibold text-indigo">9.2 قانون مصرف‌کننده‌ی استرالیا</h3>
+      <p>
+        هیچ‌چیز در این شرایط، هیچ حق غیرقابل‌حذفی را تحت قانون مصرف‌کننده‌ی استرالیا (ACL) حذف،
+        محدود، یا تغییر نمی‌دهد. در مواردی که ACL شرط، ضمانت، یا تضمینی را ضمنی می‌داند، مسئولیت
+        ما در قبال نقض آن، تا حدی که قانون اجازه می‌دهد، محدود است.
+      </p>
+    </LegalSection>
+
+    <LegalSection heading="10. محدودیت مسئولیت" lang="fa">
+      <h3 class="font-farsi text-xl font-semibold text-indigo">10.1 محدودیت‌های استاندارد</h3>
+      <p>
+        تا حداکثر میزانی که قانون اجازه می‌دهد، همدم مسئول خسارات غیرمستقیم، اتفاقی، ویژه، یا
+        تبعی نیست.
+      </p>
+
+      <h3 class="font-farsi text-xl font-semibold text-indigo">10.2 حقوق غیرقابل‌حذف</h3>
+      <p>در مواردی که ACL حق غیرقابل‌حذفی اعطا می‌کند، آن حق اعمال می‌شود و این محدودیت آن را محدود نمی‌کند.</p>
+
+      <h3 class="font-farsi text-xl font-semibold text-indigo">10.3 محدودیت‌های مرتبط با سلامت</h3>
+      <p>
+        همدم مسئول تصمیم‌هایی که بر اساس تأمل‌ها، مشاهدات، یا محتوای اپلیکیشن گرفته می‌شوند
+        نیست. تصمیم‌های سلامت، تصمیم‌های خودت هستند که باید با مشورت متخصصان واجد شرایط گرفته
+        شوند.
+      </p>
+    </LegalSection>
+
+    <LegalSection heading="11. جبران خسارت" lang="fa">
+      <p>
+        تو موافقت می‌کنی که همدم را، تا حدی که قانون اجازه می‌دهد، در برابر ادعاهای ناشی از
+        سوءاستفاده‌ی تو از اپلیکیشن یا نقض این شرایط، جبران خسارت کنی.
+      </p>
+    </LegalSection>
+
+    <LegalSection heading="12. خدمات شخص ثالث" lang="fa">
+      <p>
+        همدم از فریم‌ورک‌های HealthKit، EventKit، WeatherKit، iCloud، StoreKit، و Foundation
+        Models اپل استفاده می‌کند. شرایط و سیاست‌های حریم خصوصی خود اپل بر این خدمات حاکم است.
+      </p>
+    </LegalSection>
+
+    <LegalSection heading="13. تغییرات در این شرایط" lang="fa">
+      <p>
+        اگر این شرایط به‌طور قابل‌توجهی تغییر کند، از طریق به‌روزرسانی اپلیکیشن به تو اطلاع داده
+        می‌شود. ادامه‌ی استفاده از همدم پس از یک تغییر، به‌معنای پذیرفتن آن به‌روزرسانی است. تاریخ
+        اجرا در بالای این صفحه، همیشه نسخه‌ی فعلی را نشان می‌دهد.
+      </p>
+    </LegalSection>
+
+    <LegalSection heading="14. قانون حاکم و صلاحیت قضایی" lang="fa">
+      <p>
+        این شرایط تابع قوانین ایالت کوئینزلند، استرالیا است. قانون مصرف‌کننده‌ی استرالیا در موارد
+        مربوطه اعمال می‌شود. اختلافات، مگر اینکه ACL به‌گونه‌ی دیگری مقرر کند، تابع صلاحیت قضایی
+        دادگاه‌های کوئینزلند هستند.
+      </p>
+    </LegalSection>
+
+    <LegalSection heading="15. مالکیت فکری" lang="fa">
+      <p>
+        نام و علامت تجاری HAMDAM&trade;، اپلیکیشن همدم (شامل اپلیکیشن iOS، اپلیکیشن watchOS، و
+        هر خدمات مرتبط)، محتوا (شامل گزیده‌های گردآوری‌شده‌ی شعر فارسی، محرک‌های تأمل، و محتوای
+        لحظه‌های فرهنگی)، و تمام مالکیت فکری مرتبط، متعلق به Seyed Valiallah Azizollahi است.
+      </p>
+      <p>
+        HAMDAM&trade; موضوع یک درخواست ثبت علامت تجاری در حال بررسی در استرالیا (شماره‌ی
+        2674427، ثبت‌شده در 11 جولای 2026، طبقات 9 و 42) نزد IP Australia است.
+      </p>
+      <p>
+        استفاده از نام HAMDAM، علامت تجاری، یا هر مالکیت فکری مرتبط، بدون اجازه‌ی کتبی پیشین از
+        مالک آن، مجاز نیست.
+      </p>
+      <p>
+        شعر فارسی موجود در اپلیکیشن، از آثار دامنه‌ی عمومی شاعران کلاسیک فارسی (حافظ، مولانا،
+        سعدی، خیام، و پروین اعتصامی) تهیه شده است. متن اصلی فارسی از گنجور تهیه شده است.
+        تأمل‌ها، گردآوری، و ترجمه‌های انگلیسی (در موارد مربوطه)، آثار اصیل تیم همدم هستند.
+      </p>
+    </LegalSection>
+
+    <LegalSection heading="16. تماس" lang="fa">
+      <p>
+        ایمیل: <a href="mailto:developer@hamdam.com.au" class="text-saffron-ink underline">developer@hamdam.com.au</a>
+      </p>
+      <p class="text-base text-indigo/70">
+        Ealia Azizollahi (تاجر مستقل) &middot; ABN 74 389 481 503 &middot; بریزبن، کوئینزلند،
+        استرالیا
+      </p>
+    </LegalSection>
+
+    <p class="mt-14 font-farsi text-base text-indigo/70">
+      سیاست حریم خصوصی ما را نیز ببین: <a href="/fa/privacy" class="text-saffron-ink underline">حریم خصوصی</a>.
     </p>
-  </div>
+  </article>
+
+  <Footer />
 </BaseLayout>
