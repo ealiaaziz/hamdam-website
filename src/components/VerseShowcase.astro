@@ -11,12 +11,21 @@ interface Props {
 }
 
 const { lang, intro, sceneImage } = Astro.props;
+
+// Curated 3-up homepage showcase (unchanged since launch). verses.ts also
+// now holds parvin-013/saadi-003 for the mood demo's 5-stop mapping
+// (post-launch fix, 2026-07-19) -- pinned here by id so that addition
+// doesn't silently grow this grid past its 3-column design.
+const showcaseIds = ['hafez-016', 'rumi-011', 'parvin-008'];
+const showcaseVerses = showcaseIds
+  .map((id) => verses.find((v) => v.id === id))
+  .filter((v): v is (typeof verses)[number] => v !== undefined);
 ---
 
 <section class="relative px-6 py-[var(--spacing-section-mobile)] sm:py-[var(--spacing-section-desktop)]">
   {sceneImage && <SceneBackground image={sceneImage} />}
   <div class="relative mx-auto grid max-w-6xl grid-cols-1 gap-8 lg:grid-cols-3" data-reveal-group>
-    {verses.map((verse) => (
+    {showcaseVerses.map((verse) => (
       <VerseCard
         persian={verse.persian}
         translation={verse.english}

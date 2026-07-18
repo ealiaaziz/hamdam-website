@@ -69,18 +69,21 @@ contrast) were not covered by the first decision and are newly accepted here.
       correction on this branch, but not resolved either. Local measurement cannot distinguish
       a genuine regression from a local-environment artefact.
 
-## Known post-launch issue (found live, 2026-07-18, recorded for post correction)
+## Known post-launch issue (found live, 2026-07-18, fixed 2026-07-19)
 
-- [ ] **Mood-demo "Bright" stop shows the same verse as "Light."** `src/lib/moodDemo.js`
-      `MOOD_STOPS` maps both `light` and `bright` to `verseId: 'parvin-008'` (the 3-verse
-      `verses.ts` bank is one verse short of the 5 mood stops, and this is the pair that sits
-      at the slider's most-scrubbed edge). Confirmed live at hamdam.com.au via Playwright:
-      moving the slider to Bright correctly updates the sky background (dawn → morning) and
-      `aria-valuetext` ("Bright"), but the verse text and poet credit are byte-identical to
-      Light, reading as "nothing happens." No JS error, no CSP block — a content-mapping gap,
-      not a crash. Fix options recorded, not applied: remap `bright` to reuse `hafez-016` or
-      `rumi-011` instead (one-line change), or add a genuinely distinct 4th verse via Ganjoor.
-      Not fixed this session per Ealia's instruction to record only.
+- [x] **Mood-demo "Bright" stop shows the same verse as "Light."** Fixed 2026-07-19. Root cause
+      was worse than first recorded: the 3-verse `verses.ts` bank was short for the 5 mood
+      stops in *two* places, not one — `unsettled`/`steady` both mapped to `rumi-011` as well,
+      undetected because no test asserted distinct verse ids per stop. Fix applied: extracted
+      `parvin-013` (equanimity/patience — Steady) and `saadi-003` (morning/welcome — Bright)
+      byte-exact from the iOS app's verse bank into `verses.ts`, remapped `MOOD_STOPS` in
+      `src/lib/moodDemo.js` so all 5 stops reference distinct verses, and added a regression
+      test (`moodDemo.test.js`) asserting verse-id uniqueness across stops. `VerseShowcase.astro`
+      was pinned to the original 3 curated ids (`hafez-016`/`rumi-011`/`parvin-008`) so the
+      homepage's 3-column showcase grid is unaffected by the two additions to `verses.ts`.
+      111/111 tests pass; `astro build` clean; built `dist/index.html` still renders exactly 3
+      showcase cards. Still needs: a live re-check at hamdam.com.au once this deploys, and
+      Ealia's sign-off on the two new verse/theme choices.
 
 ## Content / product decisions still Ealia's call
 
@@ -98,10 +101,9 @@ contrast) were not covered by the first decision and are newly accepted here.
 
 ## Minor, non-blocking
 
-- [ ] **FA verse-card translation line** (F2 finding) — the terminal full stop on the English
-      translation line renders at the visual left edge inside the RTL container. Pre-existing,
-      not caused by any correction on this branch. Candidate one-line fix (explicit LTR
-      direction on the element) available at your discretion; not required for release.
+- [x] **FA verse-card translation line** (F2 finding) — fixed 2026-07-19. Added explicit
+      `dir="ltr"` to the English translation `<p>` in `VerseCard.astro`, per the candidate fix
+      already recorded here. Verified in built `dist/fa/index.html`.
 - [ ] **Sticky-CTA boundary behaviour** — whether the mobile CTA pill correctly hides across
       the ceremony-to-footer gap specifically (not just while the ceremony section is in view)
       needs a live scroll-through; a stale Phase-9 TODO the code boundary now exists to
@@ -112,4 +114,7 @@ contrast) were not covered by the first decision and are newly accepted here.
 ## Final sign-off
 
 - [ ] Ealia's own final visual review, side by side with the North Star mockups.
-- [ ] Final production merge approval (nothing has been merged to `main`).
+- [x] Final production merge approval — corrected 2026-07-19: this line was stale.
+      `feature/hamdam-web-redesign` was merged to `main` at `b4c51fc` and is live at
+      hamdam.com.au; `main` is pushed and up to date with `origin/main`. Nothing further to
+      approve here — the open item is the visual review above, not the merge.

@@ -10,12 +10,19 @@
 // دل روشن) at the same emotional range and severity grading as the EN
 // stops. Ealia may still veto in favour of app-string continuity at her
 // review.
+//
+// Each stop maps to a distinct verse (post-launch fix, 2026-07-19): the
+// original 3-verse bank was one short of the 5 stops, so Unsettled/Steady
+// both showed rumi-011 and Light/Bright both showed parvin-008 -- the
+// second pair was the one caught live. parvin-013 (equanimity/patience)
+// and saadi-003 (morning/welcome) were extracted byte-exact from the iOS
+// app's verse bank to fill Steady and Bright respectively.
 export const MOOD_STOPS = Object.freeze([
   Object.freeze({ id: 'heavy', labelEn: 'Heavy', labelFa: 'سنگین', sky: 'night', verseId: 'hafez-016' }),
   Object.freeze({ id: 'unsettled', labelEn: 'Unsettled', labelFa: 'ناآرام', sky: 'dusk', verseId: 'rumi-011' }),
-  Object.freeze({ id: 'steady', labelEn: 'Steady', labelFa: 'آرام', sky: 'firstlight', verseId: 'rumi-011' }),
+  Object.freeze({ id: 'steady', labelEn: 'Steady', labelFa: 'آرام', sky: 'firstlight', verseId: 'parvin-013' }),
   Object.freeze({ id: 'light', labelEn: 'Light', labelFa: 'سبک', sky: 'dawn', verseId: 'parvin-008' }),
-  Object.freeze({ id: 'bright', labelEn: 'Bright', labelFa: 'روشن', sky: 'morning', verseId: 'parvin-008' }),
+  Object.freeze({ id: 'bright', labelEn: 'Bright', labelFa: 'روشن', sky: 'morning', verseId: 'saadi-003' }),
 ]);
 
 export function moodStopForIndex(index) {

@@ -36,4 +36,20 @@ export const verses: readonly Verse[] = [
     poetFa: "پروین",
     source: "Divan of Parvin Etesami, Mathnavis (حدیث مهر)",
   },
+  {
+    id: "parvin-013",
+    persian: "ای دل عبث مخور غم دنیا را\nفکرت مکن نیامده فردا را\nکنج قفس چو نیک بیندیشی\nچون گلشن است مرغ شکیبا را",
+    english: "O heart, do not grieve vainly over this world, do not worry about a tomorrow not yet come / If you think clearly, even a cage's corner is a rose garden for the patient bird.",
+    poetEn: "Parvin",
+    poetFa: "پروین",
+    source: "Divan of Parvin Etesami, Qasidas, Qasida 1",
+  },
+  {
+    id: "saadi-003",
+    persian: "ای نفسِ خرّمِ بادِ صبا\nاز برِ یار آمده‌ای، مرحبا!",
+    english: "O joyful breath of the morning wind — you have come from the beloved; welcome!",
+    poetEn: "Saadi",
+    poetFa: "سعدی",
+    source: "Divan-e Saadi, Ghazal 2",
+  },
 ] as const;

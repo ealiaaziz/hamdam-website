@@ -5,6 +5,8 @@ const verses = [
   { id: 'hafez-016', persian: 'p1', english: 'e1' },
   { id: 'rumi-011', persian: 'p2', english: 'e2' },
   { id: 'parvin-008', persian: 'p3', english: 'e3' },
+  { id: 'parvin-013', persian: 'p4', english: 'e4' },
+  { id: 'saadi-003', persian: 'p5', english: 'e5' },
 ];
 
 describe('MOOD_STOPS', () => {
@@ -22,6 +24,11 @@ describe('MOOD_STOPS', () => {
     for (const stop of MOOD_STOPS) {
       expect(verseForMoodStop(stop, verses)).not.toBeNull();
     }
+  });
+
+  it('every stop maps to a distinct verse (regression: Bright/Light and Unsettled/Steady both duplicated live)', () => {
+    const verseIds = new Set(MOOD_STOPS.map((s) => s.verseId));
+    expect(verseIds.size).toBe(MOOD_STOPS.length);
   });
 });
 
