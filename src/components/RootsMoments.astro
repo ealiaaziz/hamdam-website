@@ -5,6 +5,7 @@ import { upcomingMoments, getBrisbaneToday } from '../lib/countdown';
 import momentYalda from '../assets/website-redesign/moment-yalda.png';
 import momentNorooz from '../assets/website-redesign/moment-norooz.png';
 import momentChaharshanbeSuri from '../assets/website-redesign/moment-chaharshanbe-suri.png';
+import deviceFrame from '../assets/website-redesign/device-frame-iphone.png';
 
 const CARD_IMAGE: Record<string, ImageMetadata> = {
   yalda: momentYalda,
@@ -120,11 +121,21 @@ const copy =
     </div>
 
     {
-      /* DV-01 + orchestrator 04-roots pending (same asset-gate rule as
-         every other device-frame placeholder this redesign uses). */
+      /* DV-01 (device frame) is now real; the orchestrator 04-roots
+         screenshot that belongs inside it is still pending. Same pattern as
+         HeroCinematic.astro's .hero__device: the existing gradient fill
+         shows through the frame's real transparent screen cutout as the
+         honest "screenshot pending" state. */
     }
     <div class="roots__device" role="img" aria-label={copy.deviceAlt}>
-      {import.meta.env.DEV && <span class="roots__device-label">DV-01 pending</span>}
+      <Image
+        src={deviceFrame}
+        alt=""
+        width={520}
+        height={Math.round((520 / deviceFrame.width) * deviceFrame.height)}
+        quality={72}
+        class="roots__device-frame"
+      />
     </div>
   </div>
 </section>
@@ -273,22 +284,21 @@ const copy =
   }
 
   .roots__device {
+    position: relative;
     width: min(220px, 55vw);
     aspect-ratio: 1290 / 2796;
     margin-inline: auto;
     border-radius: var(--radius-device);
     background: linear-gradient(to bottom, var(--surface-dusk), var(--surface-night));
     box-shadow: var(--shadow-lift);
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    overflow: hidden;
   }
-  .roots__device-label {
-    font-family: var(--font-sans);
-    font-size: 11px;
-    color: var(--text-on-night-muted);
-    padding: 0 0.75rem;
-    text-align: center;
+  .roots__device-frame {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
   }
 
   /* Desktop: three cards in a row, equal height, device frame anchors

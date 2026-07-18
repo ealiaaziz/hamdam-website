@@ -1,6 +1,11 @@
 ---
+import { Image } from 'astro:assets';
 import PersianShamseh from './PersianShamseh.astro';
 import AppStoreBadge from './AppStoreBadge.astro';
+import ceremonyMorningHorizon from '../assets/website-redesign/ceremony-morning-horizon.png';
+import petal1 from '../assets/website-redesign/ceremony-petal-1.png';
+import petal2 from '../assets/website-redesign/ceremony-petal-2.png';
+import petal3 from '../assets/website-redesign/ceremony-petal-3.png';
 
 interface Props {
   lang: 'en' | 'fa';
@@ -10,17 +15,38 @@ const { lang } = Astro.props;
 
 const closingLine = lang === 'fa' ? 'با شعری بنشین. تأمل کن. فردا برگرد.' : 'Sit with a verse. Reflect. Return tomorrow.';
 
-// petal count within the spec's 5-7 range (page spec §10 item 3).
-const PETAL_COUNT = 6;
+// CY-01 (14-canva-asset-brief.md) specifies one 600x200 three-cell sprite
+// sheet; shipped instead as three separate small PNGs (same approved source
+// petal, three rotated/rescaled presentations -- see docs/asset-licence-log.md).
+// A CSS sprite crop needs either an inline style attribute (blocked by this
+// site's style-src 'self' CSP) or an RTL-unsafe hardcoded pixel offset;
+// three plain <Image> elements sidestep both for the same visual output.
+// Six fall positions total (page spec §10 item 3's 5-7 range), cycling the
+// three petals twice.
+const PETAL_IMAGES = [petal1, petal2, petal3, petal1, petal2, petal3];
 ---
 
 <section id="ceremony" class="ceremony" aria-labelledby="ceremony-title" data-store-cta="ceremony">
   {
-    /* CY-01 (petal set) is pending; five to seven small CSS shapes stand
-       in for now -- decorative, aria-hidden, not a stock image or an
-       invented product screen, so the asset-gate rule doesn't block this
-       the way a device screenshot would. Real petal sprites simply
-       replace these spans later without touching the trigger logic. */
+    /* HW-03 (14-canva-asset-brief.md): the completed-dawn horizon behind
+       this section. --surface-morning stays as the section's own
+       background-color underneath (the "guaranteed brightest point of the
+       page" per the comment below, not superseded) -- the photo's own
+       alpha channel already carries the top-55%-transparent fade to that
+       colour the brief requires, so it composites as a horizon layer, not
+       a replacement background. */
+  }
+  <Image
+    src={ceremonyMorningHorizon}
+    alt=""
+    width={ceremonyMorningHorizon.width}
+    height={ceremonyMorningHorizon.height}
+    class="ceremony__horizon-photo"
+  />
+  {
+    /* CY-01 (blossom petals): real assets, three approved presentations of
+       one source petal cycled across the six fall positions. Decorative,
+       aria-hidden -- the petals are atmosphere, not content. */
   }
   <div class="ceremony__petals" aria-hidden="true">
     {
@@ -30,7 +56,11 @@ const PETAL_COUNT = 6;
          failing a local check). Position/delay come from nth-child
          selectors below instead of a per-element --i custom property. */
     }
-    {Array.from({ length: PETAL_COUNT }).map(() => <span class="ceremony__petal" />)}
+    {PETAL_IMAGES.map((petalImg) => (
+      <span class="ceremony__petal">
+        <Image src={petalImg} alt="" width={petalImg.width} height={petalImg.height} class="ceremony__petal-img" />
+      </span>
+    ))}
   </div>
 
   <div class="ceremony__content">
@@ -67,6 +97,18 @@ const PETAL_COUNT = 6;
     color: var(--hamdam-text);
   }
 
+  .ceremony__horizon-photo {
+    position: absolute;
+    inset-inline: 0;
+    bottom: 0;
+    width: 100%;
+    height: auto;
+    z-index: 0;
+  }
+  :global([dir='rtl']) .ceremony__horizon-photo {
+    transform: scaleX(-1);
+  }
+
   .ceremony__content {
     position: relative;
     z-index: 1;
@@ -95,19 +137,24 @@ const PETAL_COUNT = 6;
   .ceremony__petals {
     position: absolute;
     inset: 0;
+    z-index: 1;
     pointer-events: none;
   }
 
   .ceremony__petal {
     position: absolute;
     top: -5%;
-    width: 10px;
-    height: 10px;
-    border-radius: 50% 0 50% 50%;
-    background: var(--hamdam-saffron);
+    width: 32px;
+    height: 32px;
     opacity: 0;
   }
-  /* Six fixed horizontal positions (PETAL_COUNT is a fixed constant, not
+
+  .ceremony__petal-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+  /* Six fixed horizontal positions (PETAL_IMAGES has a fixed length, not
      dynamic) -- nth-child instead of a per-element inline --i, which the
      CSP's style-src 'self' (no unsafe-inline) would silently drop. */
   .ceremony__petal:nth-child(1) { inset-inline-start: 10%; }

@@ -1,5 +1,13 @@
 ---
+import { Image } from 'astro:assets';
 import AppStoreBadge from './AppStoreBadge.astro';
+import deviceFrame from '../assets/website-redesign/device-frame-iphone.png';
+
+// On-page display never exceeds 240px CSS width (.journey__frame's own
+// desktop max), so 480px (2x retina headroom) is the real budget-relevant
+// output size -- same split as every other DV-01 consumer.
+const FRAME_DISPLAY_WIDTH = 480;
+const FRAME_DISPLAY_HEIGHT = Math.round((FRAME_DISPLAY_WIDTH / deviceFrame.width) * deviceFrame.height);
 
 interface Props {
   lang: 'en' | 'fa';
@@ -33,11 +41,11 @@ const copy =
     </div>
 
     {
-      /* DV-01 + orchestrator 02-reflect/05-journey are both pending (same
-         asset-gate rule as the hero and constellation). Two labelled
-         placeholder frames, offset ~15%, front one swaps on
-         pointerenter/tap -- reduced motion keeps the swap (it's a state
-         change, not decoration) but drops the scale nudge. */
+      /* DV-01 (device frame) is now real; the orchestrator 02-reflect/
+         05-journey screenshots that belong inside these two frames are
+         still pending. Offset ~15%, front one swaps on pointerenter/tap --
+         reduced motion keeps the swap (it's a state change, not
+         decoration) but drops the scale nudge. */
     }
     <div class="journey__frames" data-journey-frames>
       <button
@@ -46,7 +54,14 @@ const copy =
         data-frame="reflect"
         aria-label={copy.reflectAlt}
       >
-        {import.meta.env.DEV && <span class="journey__frame-label">DV-01 pending</span>}
+        <Image
+          src={deviceFrame}
+          alt=""
+          width={FRAME_DISPLAY_WIDTH}
+          height={FRAME_DISPLAY_HEIGHT}
+          quality={72}
+          class="journey__frame-img"
+        />
       </button>
       <button
         type="button"
@@ -54,7 +69,14 @@ const copy =
         data-frame="journey"
         aria-label={copy.journeyAlt}
       >
-        {import.meta.env.DEV && <span class="journey__frame-label">DV-01 pending</span>}
+        <Image
+          src={deviceFrame}
+          alt=""
+          width={FRAME_DISPLAY_WIDTH}
+          height={FRAME_DISPLAY_HEIGHT}
+          quality={72}
+          class="journey__frame-img"
+        />
       </button>
     </div>
   </div>
@@ -117,6 +139,7 @@ const copy =
 
   .journey__frame {
     all: unset;
+    position: relative;
     cursor: pointer;
     flex-shrink: 0;
     width: min(220px, 60vw);
@@ -125,9 +148,7 @@ const copy =
     border-radius: var(--radius-device);
     background: linear-gradient(to bottom, var(--surface-dusk), var(--surface-firstlight));
     box-shadow: var(--shadow-rest);
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    overflow: hidden;
   }
   .journey__frame:focus-visible {
     /* --color-saffron-ink is tuned for cream; this section sits on
@@ -137,12 +158,12 @@ const copy =
     outline-offset: 3px;
   }
 
-  .journey__frame-label {
-    font-family: var(--font-sans);
-    font-size: 11px;
-    color: var(--text-on-night-muted);
-    padding: 0 0.75rem;
-    text-align: center;
+  .journey__frame-img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
   }
 
   .journey__mid-cta {

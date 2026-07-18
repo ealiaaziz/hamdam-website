@@ -1,7 +1,12 @@
 ---
+import { Image } from 'astro:assets';
 import PersianShamseh from './PersianShamseh.astro';
 import AppStoreBadge from './AppStoreBadge.astro';
 import { starField } from '../lib/cinematic';
+import heroHorizonDesktop from '../assets/website-redesign/hero-horizon-desktop.png';
+import heroHorizonMobile from '../assets/website-redesign/hero-horizon-mobile.png';
+import heroBlossomForeground from '../assets/website-redesign/hero-blossom-foreground.png';
+import deviceFrame from '../assets/website-redesign/device-frame-iphone.png';
 
 interface Props {
   lang: 'en' | 'fa';
@@ -17,7 +22,8 @@ const stars = starField(40, 42);
 // Real device screenshot alt text ("Hamdam Today screen showing a morning
 // verse by [poet]...") is written once the orchestrator asset lands
 // (page spec §2 item 11); this placeholder alt is honest about the
-// current state rather than describing content that isn't there yet.
+// current state rather than describing content that isn't there yet --
+// DV-01 (the frame) is now real, the screenshot inside it is still not.
 const deviceAlt =
   lang === 'fa'
     ? 'پیش‌نمایش صفحه اصلی همدم (تصویر نهایی در دست تهیه)'
@@ -41,10 +47,49 @@ const deviceAlt =
         <div class="hero__sun"></div>
       </div>
       {
-        /* TODO(HW-01/HW-02/HW-03): replace this CSS-gradient horizon with the
-           photographic sky plates once produced (20-implementation-plan.md
-           Phase 3 required assets). Not a stock substitute -- an abstract
-           atmospheric tint that predates the redesign and needs no asset. */
+        /* HW-01/HW-02 (14-canva-asset-brief.md): photographic horizon plate,
+           desktop vs mobile recomposition, swapped by CSS breakpoint (768px,
+           this repo's md breakpoint per StickyDownloadAction.astro's own
+           convention). Each asset's own alpha channel already carries the
+           top-fade-to-transparent gradient the brief requires, so no extra
+           masking is needed here -- just placement and the existing
+           scroll-linked drift. Flipped under RTL per the brief's own
+           acceptance criterion ("mirrors cleanly when flipped horizontally
+           for RTL"). .hero__horizon (the ambient haze band) is kept
+           unchanged underneath as a separate atmospheric layer, not
+           replaced -- it is not a stand-in for the photo, see its own
+           comment below. */
+      }
+      <Image
+        src={heroHorizonDesktop}
+        alt=""
+        width={heroHorizonDesktop.width}
+        height={heroHorizonDesktop.height}
+        class="hero__horizon-photo hero__horizon-photo--desktop"
+      />
+      <Image
+        src={heroHorizonMobile}
+        alt=""
+        width={heroHorizonMobile.width}
+        height={heroHorizonMobile.height}
+        class="hero__horizon-photo hero__horizon-photo--mobile"
+      />
+      {
+        /* HW-04: desktop-only foreground blossom plate. Dropped on mobile
+           per the page spec -- there is no HW-04 mobile variant, this is
+           not an oversight. Real alpha edges (no halo), so no additional
+           masking needed. */
+      }
+      <Image
+        src={heroBlossomForeground}
+        alt=""
+        width={heroBlossomForeground.width}
+        height={heroBlossomForeground.height}
+        class="hero__blossom-photo"
+      />
+      {
+        /* Ambient haze band (predates the redesign, no asset dependency --
+           see the original TODO this replaced, now resolved above). */
       }
       <div class="hero__horizon"></div>
     </div>
@@ -58,20 +103,38 @@ const deviceAlt =
       </div>
 
       {
-        /* DV-01 (device frame) + orchestrator 01-hero-{lang}.png are both
-           pending (see docs/website-redesign/22-dependency-decision.md).
-           Labelled solid-tone placeholder per the plan's asset-gate rule:
-           never a stock image, never an invented screen. Swap the fill for
-           <img src={deviceFrame} ...> once both assets land. */
+        /* DV-01 (device frame) is now real; the orchestrator screenshot that
+           belongs inside it is still pending (see
+           docs/website-redesign/22-dependency-decision.md). Per the frame's
+           own brief (14-canva-asset-brief.md), the screen cutout is real
+           transparency -- the existing gradient fill on .hero__device stays
+           as the honest "screenshot pending" fill showing through that
+           cutout, not baked into the frame image itself, so swapping in a
+           real screenshot later only means adding an <Image> behind this
+           one -- no change to the frame. */
       }
       <div class="hero__device" role="img" aria-label={deviceAlt}>
-        {import.meta.env.DEV && <span class="hero__device-label">DV-01 pending</span>}
+        {
+          /* On-page display never exceeds 360px CSS width (.hero__device's
+             own max), so 720px (2x retina headroom) is the real budget-
+             relevant output size -- the full 1400x2820 source stays intact
+             on disk per the brief's exact-dimensions requirement, only the
+             on-page render is scaled down, same "compression owner:
+             implementation session" split the brief specifies for every
+             asset. */
+        }
+        <Image
+          src={deviceFrame}
+          alt=""
+          width={600}
+          height={Math.round((600 / deviceFrame.width) * deviceFrame.height)}
+          quality={72}
+          class="hero__device-frame"
+        />
       </div>
     </div>
   </div>
 </section>
-
-{/* TODO(HW-04): desktop-only foreground blossom plate, pending Canva production. Omitted entirely for now -- mobile never shows this layer, so its absence changes nothing there, and desktop's composition still reads correctly without it. */}
 
 <style>
   /*
@@ -168,6 +231,51 @@ const deviceAlt =
     transform: translateY(var(--horizon-drift));
   }
 
+  .hero__horizon-photo {
+    position: absolute;
+    inset-inline: 0;
+    bottom: 0;
+    width: 100%;
+    height: auto;
+    transform: translateY(var(--horizon-drift));
+  }
+  :global([dir='rtl']) .hero__horizon-photo {
+    transform: scaleX(-1) translateY(var(--horizon-drift));
+  }
+
+  .hero__horizon-photo--desktop {
+    display: none;
+  }
+  .hero__horizon-photo--mobile {
+    display: block;
+  }
+  @media (min-width: 768px) {
+    .hero__horizon-photo--desktop {
+      display: block;
+    }
+    .hero__horizon-photo--mobile {
+      display: none;
+    }
+  }
+
+  .hero__blossom-photo {
+    display: none;
+  }
+  @media (min-width: 768px) {
+    .hero__blossom-photo {
+      display: block;
+      position: absolute;
+      inset-inline-start: 0;
+      bottom: 0;
+      width: min(32%, 420px);
+      height: auto;
+      transform: translateY(calc(var(--horizon-drift) * 1.5));
+    }
+    :global([dir='rtl']) .hero__blossom-photo {
+      transform: scaleX(-1) translateY(calc(var(--horizon-drift) * 1.5));
+    }
+  }
+
   .hero__content {
     position: relative;
     display: flex;
@@ -213,16 +321,23 @@ const deviceAlt =
   }
 
   .hero__device {
+    position: relative;
     margin-top: 3rem;
     width: min(260px, 62vw);
     aspect-ratio: 1290 / 2796;
     border-radius: var(--radius-device);
     background: linear-gradient(to bottom, var(--surface-dusk), var(--surface-firstlight));
     box-shadow: var(--shadow-lift);
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    overflow: hidden;
     transform: translateY(var(--device-drift));
+  }
+
+  .hero__device-frame {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
   }
 
   @media (min-width: 640px) {
@@ -234,14 +349,6 @@ const deviceAlt =
   .hero--in-view .hero__sun,
   .hero--in-view .hero__stars {
     will-change: transform, opacity;
-  }
-
-  .hero__device-label {
-    font-family: var(--font-sans);
-    font-size: 12px;
-    color: var(--text-on-night-muted);
-    padding: 0 1rem;
-    text-align: center;
   }
 
   /* One-time settle-in on load (motion-specification.md §3): mark, title,

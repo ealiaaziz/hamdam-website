@@ -1,4 +1,7 @@
 ---
+import { Image } from 'astro:assets';
+import deviceFrame from '../assets/website-redesign/device-frame-iphone.png';
+
 interface Props {
   lang: 'en' | 'fa';
 }
@@ -81,7 +84,14 @@ const NODE_ICONS: Record<(typeof NODES)[number]['id'], string> = {
 
     <div class="constellation__diagram">
       <div class="constellation__device" role="img" aria-label={deviceAlt}>
-        {import.meta.env.DEV && <span class="constellation__device-label">DV-01 pending</span>}
+        <Image
+          src={deviceFrame}
+          alt=""
+          width={520}
+          height={Math.round((520 / deviceFrame.width) * deviceFrame.height)}
+          quality={72}
+          class="constellation__device-frame"
+        />
       </div>
 
       {
@@ -154,20 +164,17 @@ const NODE_ICONS: Record<(typeof NODES)[number]['id'], string> = {
     border-radius: var(--radius-device);
     background: linear-gradient(to bottom, var(--surface-dusk), var(--surface-firstlight));
     box-shadow: var(--shadow-lift);
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    overflow: hidden;
     position: relative;
     z-index: 1;
   }
-  .constellation__device-label {
-    font-family: var(--font-sans);
-    font-size: 11px;
-    color: var(--text-on-night-muted);
-    padding: 0 0.75rem;
-    text-align: center;
+  .constellation__device-frame {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
   }
-
   .constellation__arcs {
     display: none;
   }
