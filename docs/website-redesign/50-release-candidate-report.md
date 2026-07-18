@@ -181,7 +181,24 @@ real-device/real-deployment measurement this session cannot supply. A short list
 manual checks (VoiceOver, Windows High Contrast, a live Cloudflare preview-deploy Lighthouse
 run) remains, reproduced accurately in `51-manual-release-checklist.md`.
 
-## 13. Exact next action for Ealia
+## 13. Owner release decision (2026-07-18, Ealia)
+
+Ealia has explicitly authorised production release with the following accepted exceptions,
+superseding the "not ready" framing in §12 above for release-gating purposes:
+
+- F1-00 (DV-01 screen content) accepted for this release; DV-01 ships with its current
+  temporary gradient screen; recorded as an **open post-launch visual replacement**, not
+  closed.
+- No fabricated app screenshot substituted; no new analytics added; no "No analytics" claim
+  made; repository behaviour otherwise preserved.
+- Real VoiceOver, real Windows High Contrast, and Cloudflare preview-dashboard confirmation
+  are accepted as **post-launch** checks for this release, not pre-push blockers.
+- These accepted items do not block production. **No other Blocker, Major, placeholder,
+  failed test, security failure, or build failure is waived** — F3 (contrast, unresolved) and
+  G4 (LCP, recorded FAIL) remain live release gates, evaluated fresh at final validation, not
+  waived by this decision.
+
+## 14. Exact next action for Ealia
 
 1. Run the hamdam-ios Screenshot Orchestrator
    (`Hamdam/Hamdam/DebugTools/ScreenshotOrchestrator/`) for the approved marketing states, per

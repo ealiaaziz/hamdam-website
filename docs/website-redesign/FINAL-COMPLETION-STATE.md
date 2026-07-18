@@ -4,7 +4,35 @@ Reentrant state file for the Final Completion Mega Runner. Read this first on ev
 never repeat a completed stage unless validation proves regression.
 
 ## 1. Current stage
-S7 - Release candidate closeout (complete)
+S7 - Release candidate closeout (complete). Owner release decision recorded below; see §26.
+
+## 26. Owner release decision (2026-07-18, Ealia)
+
+Ealia explicitly authorised production release under the following accepted exceptions,
+recorded here verbatim per her instruction, ahead of any push/merge:
+
+1. F1-00 (DV-01 screen content) is explicitly accepted for this release — the site ships
+   with the gradient fill showing through the six device-frame cutouts, not real app
+   screenshots.
+2. DV-01 may ship with its current temporary gradient screen.
+3. DV-01 stays recorded as an open post-launch visual replacement (not closed, not silently
+   dropped from the record).
+4. No fabricated Hamdam app screenshot is to be composited in as a substitute — confirmed:
+   none was created.
+5. No new analytics added for this release — confirmed: none was added; `26-analytics-plan.md`
+   remains Ealia's unresolved call.
+6. Current repository behaviour is preserved — confirmed: no unrelated behavioural change
+   made as part of this release action.
+7. The site must not claim "No analytics" anywhere — confirmed: no such claim exists in
+   shipped copy; none was added.
+8. Real VoiceOver testing, real Windows High Contrast testing, and Cloudflare preview-
+   dashboard confirmation are owner-accepted **post-launch** checks for this release — not
+   completed checks, and not blockers to this production push.
+9. These nine accepted exceptions do not block production release.
+10. No other Blocker, Major, placeholder, failed test, security failure, or build failure is
+    waived by this decision. Specifically: F3 (contrast, recorded unresolved) and G4 (LCP,
+    recorded FAIL in `18-acceptance-results.md` Phase 13 update) are **not** covered by this
+    exception list and remain subject to the normal release-gate pass/fail rule.
 
 ## 2. Current required model
 **None - the mega runner has reached its final stage.** All stages S0 through S7 are

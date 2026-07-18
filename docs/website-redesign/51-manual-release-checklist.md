@@ -4,27 +4,41 @@ Items Claude cannot truthfully complete from this environment. Everything automa
 already been run and is recorded in `50-release-candidate-report.md`. This list is
 intentionally short — it is not a new test programme.
 
+## Owner release decision (2026-07-18)
+
+Ealia explicitly accepted the following items as **post-launch** checks for this release, not
+pre-push blockers: DV-01 screen content (F1-00, ships with the temporary gradient, recorded as
+an open post-launch visual replacement), real VoiceOver/Safari pass, real Windows High Contrast
+device capture, and Cloudflare preview-dashboard confirmation. These are marked accepted below,
+not removed from the list — they remain open post-launch work. No other item on this checklist
+is waived by that decision.
+
 ## Blocking
 
-- [ ] **DV-01 screen content (F1-00).** Run the hamdam-ios Screenshot Orchestrator
+- [x] **DV-01 screen content (F1-00).** Owner-accepted for this release (2026-07-18) — ships
+      with the current temporary gradient screen. Recorded as an **open post-launch visual
+      replacement**: run the hamdam-ios Screenshot Orchestrator
       (`Hamdam/Hamdam/DebugTools/ScreenshotOrchestrator/`) for the approved marketing states,
-      per locale, at 1290×2796. Deliver outputs to `hamdam-website` for compositing under the
-      six DV-01 frame cutouts. Follow with a short Fable spot check of the composited result.
-      This is the only item standing between this branch and full visual acceptance.
+      per locale, at 1290×2796, deliver outputs to `hamdam-website` for compositing under the
+      six DV-01 frame cutouts, followed by a short Fable spot check — after launch, not before.
 
 ## Before any push
 
-- [ ] **Cloudflare Pages dashboard check.** Confirm the production branch is set to `main`
-      (not `feature/hamdam-web-redesign`, not a wildcard) and "Preview deployments" is enabled,
-      so pushing the feature branch is guaranteed to produce only a `*.pages.dev` preview URL —
-      never `hamdam.com.au` / `www.hamdam.com.au`. Not verifiable from the repository; dashboard
-      only.
+- [x] **Cloudflare Pages dashboard check.** Owner-accepted as a **post-launch** confirmation
+      for this release (2026-07-18) — not verified pre-push. Still needs doing: confirm the
+      production branch is set to `main` (not `feature/hamdam-web-redesign`, not a wildcard)
+      and "Preview deployments" is enabled, so pushing the feature branch is guaranteed to
+      produce only a `*.pages.dev` preview URL — never `hamdam.com.au` / `www.hamdam.com.au`.
+      Not verifiable from the repository; dashboard only.
 
-## Real-device / real-tool checks (cannot be produced from this session)
+## Real-device / real-tool checks (cannot be produced from this session; VoiceOver and Windows
+## High Contrast owner-accepted as post-launch per the 2026-07-18 decision above)
 
-- [ ] **VoiceOver / Safari pass**, both locales.
-- [ ] **Windows High Contrast**, real device. This session's Playwright `forcedColors: 'active'`
-      emulation is an automated proxy only — explicitly not a substitute.
+- [x] **VoiceOver / Safari pass**, both locales. Owner-accepted as post-launch (2026-07-18) —
+      still genuinely pending, not performed.
+- [x] **Windows High Contrast**, real device. Owner-accepted as post-launch (2026-07-18) — this
+      session's Playwright `forcedColors: 'active'` emulation is an automated proxy only,
+      explicitly not a substitute, and remains unperformed on a real device.
 - [ ] **Real-device colour-contrast spot check** on the constellation/journey copper-surface
       text (F3). Lighthouse fails this reproducibly; a local script attempt to independently
       verify was ruled untrustworthy (can't sample a gradient background's rendered pixel
