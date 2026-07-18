@@ -131,6 +131,53 @@ export function starField(count = 40, seed = 42) {
   return stars;
 }
 
+// --- Page-level sky arc (Phase 4, motion-specification.md §2) ---
+// A second, independent progress metric from the hero's own (window.scrollY
+// / window.innerHeight, "0 to 1 viewport" per §3): this one spans 0 at page
+// top to 1 "when the final ceremony section is fully in view" -- which
+// doesn't exist as a landmark yet (it ships in Phase 9), so until then the
+// distance is the page's total scrollable height as an interim proxy.
+// Phase 9 must re-anchor this to the real ceremony element's offset instead.
+export function skyProgressForScroll(scrollY, progressDistancePx) {
+  if (!(progressDistancePx > 0)) return 0;
+  return clamp01(scrollY / progressDistancePx);
+}
+
+export const SKY_TONE = Object.freeze({ NIGHT: 'night', MORNING: 'morning' });
+
+// design-system.md §1's five named surfaces, used as flat colour stops
+// (not gradients -- each surface is one colour). Positions are a first-pass
+// ramp per that section's own note ("starting points... must be finalised
+// in-browser against contrast checks"), not yet visually reviewed.
+const SKY_RAMP = [
+  { at: 0.00, color: '#141430' }, // --surface-night
+  { at: 0.30, color: '#2A2140' }, // --surface-dusk
+  { at: 0.55, color: '#5A3A4A' }, // --surface-firstlight
+  { at: 0.80, color: '#C77E4E' }, // --surface-dawn
+  { at: 1.00, color: '#F4EDD8' }, // --surface-morning
+];
+
+export function skyColorForProgress(p) {
+  const clamped = clamp01(p);
+  let a = SKY_RAMP[0], b = SKY_RAMP[SKY_RAMP.length - 1];
+  for (let i = 0; i < SKY_RAMP.length - 1; i++) {
+    if (clamped >= SKY_RAMP[i].at && clamped <= SKY_RAMP[i + 1].at) { a = SKY_RAMP[i]; b = SKY_RAMP[i + 1]; break; }
+  }
+  const t = (clamped - a.at) / (b.at - a.at || 1);
+  return lerpHex(a.color, b.color, t);
+}
+
+// Two named thresholds (0.45, 0.8) drive one text-tone flip with a
+// hysteresis band between them, not two separate flips: below 0.45 is
+// always NIGHT tone, above 0.8 is always MORNING tone, and progress
+// in between holds whatever tone was already active so a visitor
+// scrolling back and forth near one boundary doesn't flicker.
+export function skyToneForProgress(progress, previousTone = SKY_TONE.NIGHT) {
+  if (progress >= 0.8) return SKY_TONE.MORNING;
+  if (progress <= 0.45) return SKY_TONE.NIGHT;
+  return previousTone;
+}
+
 export function prefersReducedMotion() {
   return typeof window !== 'undefined'
     && typeof window.matchMedia === 'function'
