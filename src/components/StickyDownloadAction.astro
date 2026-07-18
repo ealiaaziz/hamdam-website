@@ -6,7 +6,7 @@ interface Props {
 }
 
 const { lang } = Astro.props;
-// Pre-release: suppressed entirely, not just hidden (conversion spec §2) —
+// Pre-release: suppressed entirely, not just hidden (conversion spec §2);
 // a sticky "coming soon" would be noise without a conversion to serve.
 const label = lang === 'fa' ? 'دریافت همدم' : 'Get Hamdam';
 const ariaLabel = lang === 'fa' ? 'دانلود همدم از اپ‌استور' : 'Download Hamdam on the App Store';

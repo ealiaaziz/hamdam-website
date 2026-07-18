@@ -34,7 +34,7 @@ const copy =
       <div class="mood-demo__verse" aria-live="polite">
         <p class="mood-demo__verse-fa" lang="fa" dir="rtl">{initialVerse.persian}</p>
         <p class="mood-demo__verse-en">{initialVerse.english}</p>
-        <p class="mood-demo__verse-poet">— {lang === 'fa' ? initialVerse.poetFa : initialVerse.poetEn}</p>
+        <p class="mood-demo__verse-poet">{lang === 'fa' ? initialVerse.poetFa : initialVerse.poetEn}</p>
       </div>
     </div>
 
@@ -214,7 +214,7 @@ const copy =
       if (!verse) return;
       verseFa.textContent = verse.persian;
       verseEn.textContent = verse.english;
-      versePoet.textContent = `— ${lang === 'fa' ? verse.poetFa : verse.poetEn}`;
+      versePoet.textContent = lang === 'fa' ? verse.poetFa : verse.poetEn;
     };
 
     // Sky crossfades immediately on input (motion spec §4); the verse
