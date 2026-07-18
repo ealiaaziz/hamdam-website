@@ -4,11 +4,13 @@ Reentrant state file for the Final Completion Mega Runner. Read this first on ev
 never repeat a completed stage unless validation proves regression.
 
 ## 1. Current stage
-S7 - Release candidate closeout (not started)
+S7 - Release candidate closeout (complete)
 
 ## 2. Current required model
-**Sonnet 5.** F2 is complete and committed. Clear this session, select Sonnet 5, paste the
-same mega runner again.
+**None - the mega runner has reached its final stage.** All stages S0 through S7 are
+complete. `50-release-candidate-report.md` and `51-manual-release-checklist.md` are the
+terminal artefacts. Nothing further to execute without new input (real DV-01 screenshots,
+Ealia's manual checks, or a push/merge decision).
 
 ## 3. Completed stages
 - S0 - Safety and recovery (2026-07-18)
@@ -35,24 +37,31 @@ same mega runner again.
   and explicitly not S5-actionable, so the runner's "Blocker remains means return to S5"
   branch would create an empty correction round; routed to S7 with the exception recorded
   instead. Full reasoning: `42-fable-correction-verification.md`.
+- S7 - Release candidate closeout (2026-07-18, Sonnet 5) - full diff/secrets/dependency review
+  across all 28 commits (clean); tests (110/110) and build re-run clean a third time; `astro
+  check` declined again, consistent with every prior stage (requires an undocumented new
+  dependency, build already type-checks implicitly); Cloudflare push-policy risk confirmed via
+  `wrangler.jsonc` (both production custom domains bound as routes, preview-vs-production
+  branch designation is dashboard-only and unverified from this repo, so **not pushed**).
+  Produced `50-release-candidate-report.md` and `51-manual-release-checklist.md`. 1 open
+  Blocker (F1-00), 0 open Majors. Nothing pushed, merged, or deployed.
 
 ## 4. Incomplete stages
-S7
+None. All stages S0 through S7 complete. Remaining work is external to this repo/session:
+real DV-01 screenshots from hamdam-ios, Ealia's manual checklist items, and the eventual
+push/merge decision once the Cloudflare dashboard setting is confirmed.
 
 ## 5. Current branch
 `feature/hamdam-web-redesign`
 
 ## 6. Latest verified commit
-This checkpoint's own commit (F2 verification document plus this state update, message
-`docs: record final Fable website approval`) supersedes `e92c145` (the S6 checkpoint) once
-committed immediately after this file is written.
+`10869c0` ("docs: record final Fable website approval", the F2 checkpoint) was HEAD at S7's
+start. This S7 checkpoint's own commit (release-candidate report, manual checklist, and this
+state update) supersedes it once committed immediately after this file is written.
 
 ## 7. Working tree status
-Clean after the S6 commit: `18-acceptance-results.md` update, `phase-reports/phase-13-report.md`,
-`final-evidence/phase-13/` (curated screenshots, Lighthouse JSON + summary, contrast/a11y/
-keyboard-focus/console-error/broken-asset data), and this state file. `Footer.astro`,
-`fa/privacy.astro`, `fa/terms.astro` were already committed separately in `c3f6b5f` before this
-checkpoint. No merge/rebase in progress. Nothing pushed.
+Clean at S7's start (verified via `git status`), and clean again after this checkpoint's own
+commit. No merge/rebase in progress at any point. Nothing pushed.
 
 ## 8. Asset status (15 of 15 integrated; 14 approved by Fable, 1 content blocker)
 Unchanged since S5/F1. DV-01's *frame* passes; its *screen content* is the sole remaining
@@ -67,13 +76,14 @@ question stays open, app-side and web-side together, per prior ruling).
 Unchanged, still Ealia's call.
 
 ## 11. Test result
-110/110, re-run twice this session (after S5's corrections, and again after S6's footer fix).
-Both clean.
+110/110, re-run three times across this branch's life: after S5's corrections, after S6's
+footer fix, and again fresh at S7. All clean.
 
 ## 12. Build result
-Clean, re-run twice this session for the same two reasons. Zero new dependencies in
-`package.json`/`package-lock.json` (verified via `git status` immediately after every ad hoc
-`npm install --no-save playwright` this session's own evidence tooling needed).
+Clean, re-run three times for the same reasons, including fresh at S7. Zero new dependencies
+in `package.json`/`package-lock.json` (verified via `git diff` at S7 against `main`, byte-
+identical). `astro check` declined again at S7, consistent with every prior stage (requires
+an undocumented new dependency).
 
 ## 13. English result
 Lighthouse: Performance 89-94 (noisy across repeated runs on this machine), Accessibility 97,
@@ -161,7 +171,11 @@ Unchanged list from F1, plus one addition:
   pre-existing, not S5-caused; candidate one-line LTR-direction fix at Ealia's discretion
 
 ## 22. Push status
-Nothing pushed.
+Nothing pushed. `wrangler.jsonc` binds both `hamdam.com.au` and `www.hamdam.com.au` as
+production custom-domain routes; whether pushing the feature branch would create only an
+isolated preview depends on Cloudflare dashboard settings not verifiable from this repo (see
+`27-release-and-rollback-plan.md` and `50-release-candidate-report.md` §11). Per the push
+policy, this ambiguity means: do not push.
 
 ## 23. Merge status
 Nothing merged. `main` untouched.
@@ -170,19 +184,20 @@ Nothing merged. `main` untouched.
 Nothing deployed.
 
 ## 25. Exact next action
-**SWITCH TO SONNET 5.** Begin S7 release candidate closeout. Carry F1-00 as the explicitly
-recorded exception in every S7 verification and report line that touches assets or Blockers
-(the S7 format anticipates this: "15 of 15 or exact exception", "Open Blocker count"). Do
-not soften it, do not call the site visually accepted for production, and hand Ealia the one
-exact action: run the hamdam-ios Screenshot Orchestrator
-(`Hamdam/Hamdam/DebugTools/ScreenshotOrchestrator/`) for the approved marketing states per
-locale at 1290x2796, deliver the outputs to this repo for compositing under the frame
-cutouts with `object-fit: contain`, then a short Fable spot check of the six composited
-frames. S7 must also run the final full test and build pass, review the full branch diff,
-produce `50-release-candidate-report.md` and `51-manual-release-checklist.md` (reproducing
-§21 accurately, including the F2 Minor), respect the push policy (preview behaviour is
-dashboard-only and unverified, so do not push), and close with the exact required final
-response format.
+**The mega runner has reached its terminal stage.** No further model switch is needed unless
+new input arrives (real DV-01 screenshots, a resolved Cloudflare dashboard confirmation, or
+Ealia's own manual-checklist findings reopening a specific item). The three concrete next
+actions, in order:
 
-CLEAR THE CURRENT CLAUDE SESSION, SELECT THE REQUIRED MODEL, THEN PASTE THE SAME MEGA RUNNER
-AGAIN.
+1. Run the hamdam-ios Screenshot Orchestrator
+   (`Hamdam/Hamdam/DebugTools/ScreenshotOrchestrator/`) for the approved marketing states per
+   locale at 1290x2796, deliver outputs to this repo for compositing under the six DV-01 frame
+   cutouts (`object-fit: contain`), then a short Fable spot check of the composited result
+   (closes F1-00, the sole open Blocker).
+2. Confirm the Cloudflare Pages dashboard production-branch/preview-deployments setting
+   described in §22 before authorising any push.
+3. Work through `51-manual-release-checklist.md`.
+
+If any of those actions surfaces a regression or a new Blocker/Major, re-enter this runner at
+S5 (Sonnet 5) for the correction and F2 (Fable 5) for re-verification, per the reentrancy
+rule — do not silently re-run S0 through S4.
