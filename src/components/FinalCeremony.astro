@@ -23,7 +23,14 @@ const PETAL_COUNT = 6;
        replace these spans later without touching the trigger logic. */
   }
   <div class="ceremony__petals" aria-hidden="true">
-    {Array.from({ length: PETAL_COUNT }).map((_, i) => <span class="ceremony__petal" style={`--i: ${i}`} />)}
+    {
+      /* No inline style attribute (CSP is style-src 'self', no
+         unsafe-inline -- public/_headers isn't enforced by the local dev/
+         preview server, so this would have shipped broken without ever
+         failing a local check). Position/delay come from nth-child
+         selectors below instead of a per-element --i custom property. */
+    }
+    {Array.from({ length: PETAL_COUNT }).map(() => <span class="ceremony__petal" />)}
   </div>
 
   <div class="ceremony__content">
@@ -94,13 +101,21 @@ const PETAL_COUNT = 6;
   .ceremony__petal {
     position: absolute;
     top: -5%;
-    inset-inline-start: calc(10% + (var(--i) * 15%));
     width: 10px;
     height: 10px;
     border-radius: 50% 0 50% 50%;
     background: var(--hamdam-saffron);
     opacity: 0;
   }
+  /* Six fixed horizontal positions (PETAL_COUNT is a fixed constant, not
+     dynamic) -- nth-child instead of a per-element inline --i, which the
+     CSP's style-src 'self' (no unsafe-inline) would silently drop. */
+  .ceremony__petal:nth-child(1) { inset-inline-start: 10%; }
+  .ceremony__petal:nth-child(2) { inset-inline-start: 25%; }
+  .ceremony__petal:nth-child(3) { inset-inline-start: 40%; }
+  .ceremony__petal:nth-child(4) { inset-inline-start: 55%; }
+  .ceremony__petal:nth-child(5) { inset-inline-start: 70%; }
+  .ceremony__petal:nth-child(6) { inset-inline-start: 85%; }
 
   /* Petals run once, only after the section is 60% visible (JS toggles
      this class), and only for motion-OK visitors: one 6s pass, never a
@@ -108,8 +123,13 @@ const PETAL_COUNT = 6;
   @media (prefers-reduced-motion: no-preference) {
     .ceremony--petals-active .ceremony__petal {
       animation: ceremony-petal-fall 6s var(--ease-cross) forwards;
-      animation-delay: calc(var(--i) * 300ms);
     }
+    .ceremony--petals-active .ceremony__petal:nth-child(1) { animation-delay: 0ms; }
+    .ceremony--petals-active .ceremony__petal:nth-child(2) { animation-delay: 300ms; }
+    .ceremony--petals-active .ceremony__petal:nth-child(3) { animation-delay: 600ms; }
+    .ceremony--petals-active .ceremony__petal:nth-child(4) { animation-delay: 900ms; }
+    .ceremony--petals-active .ceremony__petal:nth-child(5) { animation-delay: 1200ms; }
+    .ceremony--petals-active .ceremony__petal:nth-child(6) { animation-delay: 1500ms; }
   }
 
   @keyframes ceremony-petal-fall {

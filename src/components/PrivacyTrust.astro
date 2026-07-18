@@ -154,7 +154,9 @@ const termsHref = lang === 'fa' ? '/fa/terms' : '/terms';
 
   .privacy-trust__item-body {
     font-size: var(--text-meta);
-    opacity: 0.75;
+    /* No opacity reduction, same reasoning as ContextConstellation's
+       node-clause fix: --hamdam-text is only 5.13:1 on --surface-dawn,
+       and any opacity reduction drops this small text below 4.5:1. */
   }
 
   .privacy-trust__links {

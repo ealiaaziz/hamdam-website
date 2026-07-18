@@ -26,7 +26,11 @@ const ctaAriaLabel = lang === 'fa' ? 'دانلود همدم از اپ‌استو
   class:list={['nav-bar fixed inset-x-0 top-0 z-40', !overDarkHero && 'nav-bar--on-light']}
 >
   <div class="mx-auto flex h-14 max-w-[1200px] items-center justify-between px-5 sm:px-12">
-    <a href={lang === 'fa' ? '/fa/' : '/'} class="inline-flex min-h-[44px] items-center" aria-label="Hamdam">
+    <a
+      href={lang === 'fa' ? '/fa/' : '/'}
+      class="inline-flex min-h-[44px] items-center"
+      aria-label={lang === 'fa' ? 'همدم' : 'Hamdam'}
+    >
       <HamdamLogotype lang={lang} size={24} />
     </a>
     <div class="flex items-center gap-3">

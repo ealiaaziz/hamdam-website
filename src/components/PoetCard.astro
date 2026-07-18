@@ -91,7 +91,11 @@ const portraitAlt =
     .group:hover .poet-card__portrait,
     .group:focus-within .poet-card__portrait {
       transform: none;
-      box-shadow: 0 0 0 2px var(--color-saffron-ink), var(--shadow-rest);
+      /* --color-saffron-ink is tuned for cream; the poets band sits on
+         --surface-dusk, where it measures 2.60:1 (Phase 11/12 contrast
+         audit) -- below the 3:1 non-text minimum. --hamdam-night-gold
+         gives 9.52:1 here. */
+      box-shadow: 0 0 0 2px var(--hamdam-night-gold), var(--shadow-rest);
     }
   }
 

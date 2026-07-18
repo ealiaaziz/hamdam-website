@@ -133,13 +133,15 @@ const copy =
     font-style: italic;
     font-size: var(--text-verse-en);
     line-height: 1.7;
-    opacity: 0.85;
+    /* No opacity reduction: the panel's "light" stop is only 5.13:1
+       against --mood-text-color at full strength (Phase 11/12 contrast
+       audit); 0.85 measured 4.15:1 there. */
   }
   .mood-demo__verse-poet {
     margin-top: 0.75rem;
     font-family: var(--font-sans);
     font-size: var(--text-meta);
-    opacity: 0.7;
+    /* Same reasoning: 0.7 measured 3.20:1 on the panel's "light" stop. */
   }
 
   .mood-demo__slider-wrap {

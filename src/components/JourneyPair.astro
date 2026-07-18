@@ -100,8 +100,10 @@ const copy =
     margin-top: 1rem;
     font-size: var(--text-body);
     line-height: 1.7;
-    opacity: 0.85;
     max-width: 44rem;
+    /* No opacity reduction: --hamdam-text is only 5.13:1 on
+       --surface-dawn, and 0.85 opacity measured 4.15:1 (Phase 11/12
+       contrast audit) -- below 4.5:1. */
   }
 
   .journey__frames {
@@ -128,7 +130,10 @@ const copy =
     justify-content: center;
   }
   .journey__frame:focus-visible {
-    outline: 2px solid var(--color-saffron-ink);
+    /* --color-saffron-ink is tuned for cream; this section sits on
+       --surface-dawn, where it measures 1.81:1 (Phase 11/12 contrast
+       audit) -- below even the 3:1 non-text minimum a focus ring needs. */
+    outline: 2px solid var(--hamdam-text);
     outline-offset: 3px;
   }
 

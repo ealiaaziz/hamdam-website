@@ -207,7 +207,10 @@ const NODE_ICONS: Record<(typeof NODES)[number]['id'], string> = {
 
   .constellation__node-clause {
     font-size: var(--text-meta);
-    opacity: 0.75;
+    /* No opacity reduction: inherited --hamdam-text is already only
+       5.13:1 on --surface-dawn (Phase 11/12 contrast audit), and even
+       90% opacity drops that to 4.45:1, just under the 4.5:1 this small
+       text needs. Full opacity is the only safe choice on this bg. */
   }
 
   .constellation__link {
@@ -217,7 +220,12 @@ const NODE_ICONS: Record<(typeof NODES)[number]['id'], string> = {
     margin-top: 2.5rem;
     font-family: var(--font-sans);
     font-size: var(--text-body);
-    color: var(--color-saffron-ink);
+    /* --color-saffron-ink is tuned for cream (4.98:1); against this
+       section's --surface-dawn it measured 1.81:1 in a real Lighthouse
+       audit -- a genuine failure, not a false positive. --hamdam-text
+       gives 5.13:1 here (verified against every dark-surface section in
+       Phase 11's contrast pass). */
+    color: var(--hamdam-text);
     text-decoration: underline;
     text-underline-offset: 3px;
   }
