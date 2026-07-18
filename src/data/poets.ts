@@ -13,7 +13,7 @@ export const poets = [
     portrait: portraitHafez,
   },
   {
-    persianName: 'رومی',
+    persianName: 'مولانا',
     transliteration: 'Rumi',
     description: "The reed's song. Longing as its own kind of arrival.",
     descriptionFa: 'نوای نی. اشتیاق، خود گونه‌ای از رسیدن است.',
@@ -36,8 +36,8 @@ export const poets = [
   {
     persianName: 'پروین',
     transliteration: 'Parvin',
-    description: 'Small things speak. The needle, the ant, the mirror — all with lessons.',
-    descriptionFa: 'چیزهای کوچک سخن می‌گویند. سوزن، مورچه، آینه — همه با درسی.',
+    description: 'Small things speak. The needle, the ant, the mirror: all with lessons.',
+    descriptionFa: 'چیزهای کوچک سخن می‌گویند. سوزن، مورچه، آینه؛ همه با درسی.',
     portrait: portraitParvin,
   },
 ] as const;
