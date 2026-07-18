@@ -69,6 +69,19 @@ contrast) were not covered by the first decision and are newly accepted here.
       correction on this branch, but not resolved either. Local measurement cannot distinguish
       a genuine regression from a local-environment artefact.
 
+## Known post-launch issue (found live, 2026-07-18, recorded for post correction)
+
+- [ ] **Mood-demo "Bright" stop shows the same verse as "Light."** `src/lib/moodDemo.js`
+      `MOOD_STOPS` maps both `light` and `bright` to `verseId: 'parvin-008'` (the 3-verse
+      `verses.ts` bank is one verse short of the 5 mood stops, and this is the pair that sits
+      at the slider's most-scrubbed edge). Confirmed live at hamdam.com.au via Playwright:
+      moving the slider to Bright correctly updates the sky background (dawn → morning) and
+      `aria-valuetext` ("Bright"), but the verse text and poet credit are byte-identical to
+      Light, reading as "nothing happens." No JS error, no CSP block — a content-mapping gap,
+      not a crash. Fix options recorded, not applied: remap `bright` to reuse `hafez-016` or
+      `rumi-011` instead (one-line change), or add a genuinely distinct 4th verse via Ganjoor.
+      Not fixed this session per Ealia's instruction to record only.
+
 ## Content / product decisions still Ealia's call
 
 - [ ] Analytics decision (`26-analytics-plan.md`) — nothing implemented yet, by design.
