@@ -1,5 +1,7 @@
 ---
-import LanguageToggle from '../components/LanguageToggle.astro';
+import NavBar from '../components/NavBar.astro';
+import StickyDownloadAction from '../components/StickyDownloadAction.astro';
+import SkySurface from '../components/SkySurface.astro';
 import { LOCALES, LOCALE_META, switchLocalePath } from '../lib/locale';
 import { APP_STORE } from '../lib/appStore';
 import '../styles/global.css';
@@ -22,6 +24,13 @@ interface Props {
 
 const { title, description, lang, path, jsonLd, preloadFarsiVerse = false } = Astro.props;
 const dir = LOCALE_META[lang].dir;
+// Phase 4 restores the night-start scroll arc for motion-OK visitors on
+// the homepage, so the transparent nav is back to needing cream text
+// there. Reduced-motion visitors still open on first-light (page spec §2
+// item 8) even on the homepage, so the shared script below forces the
+// light (dark-text) nav variant back on for them at runtime -- this Astro-
+// time value can only account for the route, not the media query.
+const navOverDarkHero = path === '/' || path === '/fa/';
 const canonicalURL = new URL(path, Astro.site);
 const enPath = switchLocalePath(path, LOCALES.EN);
 const faPath = switchLocalePath(path, LOCALES.FA);
@@ -89,19 +98,116 @@ const ogImage = new URL(
   <body class:list={['bg-cream text-indigo antialiased', lang === 'fa' ? 'font-farsi' : 'font-sans']}>
     <a
       href="#main-content"
-      class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:start-4 focus:z-50 focus:bg-indigo focus:text-cream focus:px-4 focus:py-2 focus:rounded-[var(--radius-button)]"
+      class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:start-4 focus:z-50 focus:inline-flex focus:min-h-[44px] focus:items-center focus:bg-indigo focus:text-cream focus:px-4 focus:py-2 focus:rounded-[var(--radius-button)]"
     >
       {lang === 'fa' ? 'رفتن به محتوای اصلی' : 'Skip to main content'}
     </a>
 
-    <LanguageToggle lang={lang} />
+    <SkySurface />
 
-    <main id="main-content">
+    <NavBar lang={lang} overDarkHero={navOverDarkHero} />
+
+    {
+      /* relative + isolate + bg-cream: an explicit opaque background and
+         its own stacking context, so SkySurface (fixed, behind everything)
+         can't bleed through sections that don't paint their own
+         background -- body's canvas-propagated cream doesn't reliably
+         occlude a position: fixed descendant regardless of how negative
+         its z-index is. */
+    }
+    <main id="main-content" data-sky-tone="night" class="relative isolate bg-cream">
       <slot />
     </main>
 
+    <StickyDownloadAction lang={lang} />
+
     <script>
       import { REVEAL, staggerDelayMs, prefersReducedMotion } from '../lib/reveal';
+      import { observeCtaLandmarks, shouldShowFloatingCta, isPastScrollThreshold } from '../lib/stickyCta';
+      import { skyProgressForScroll, skyColorForProgress, skyToneForProgress, SKY_TONE } from '../lib/cinematic';
+      import { campaignParamsFromSearch } from '../lib/appStore';
+
+      // Campaign parameter preservation (conversion spec §11): this is a
+      // static build, so Astro.url.search is always empty server-side --
+      // the real inbound query only exists here, client-side. No cookies,
+      // no storage: read once per page view and done.
+      const inboundSearch = new URLSearchParams(window.location.search);
+      if (window.location.search) {
+        const langToggle = document.querySelector<HTMLAnchorElement>('[data-lang-toggle]');
+        if (langToggle) {
+          langToggle.href = langToggle.getAttribute('href') + window.location.search;
+        }
+      }
+      const campaignParams = campaignParamsFromSearch(inboundSearch);
+      document.querySelectorAll<HTMLAnchorElement>('a[href^="https://apps.apple.com/"]').forEach((a) => {
+        const url = new URL(a.href);
+        url.searchParams.set('ct', campaignParams.ct);
+        url.searchParams.set('pt', campaignParams.pt);
+        a.href = url.toString();
+      });
+
+      // Single shared rAF scroll loop for everything scroll-position-driven
+      // page-wide (motion-specification.md §8: "one scroll listener... no
+      // per-section listeners"): nav backing (Phase 2) plus the page-level
+      // sky arc (Phase 4). Runs for every visitor, including reduced-motion
+      // (§2: the arc stays position-driven for them too, just with instant
+      // rather than transitioned colour changes -- there simply are no CSS
+      // transitions here to remove). The hero's *own* local scroll wiring
+      // (sun/stars/haze/settle-in) is separate and motion-OK-only; see
+      // HeroCinematic.astro.
+      const navBar = document.querySelector<HTMLElement>('[data-nav-bar]');
+      const skySurface = document.getElementById('sky-surface');
+      const mainEl = document.getElementById('main-content');
+      let skyTone = SKY_TONE.NIGHT;
+
+      // Reduced-motion visitors open the homepage hero on first-light, not
+      // night (page spec §2 item 8), even though overDarkHero was computed
+      // at build time from the route alone. Force the light nav variant
+      // back on here, the one place that can see the media query.
+      if (navBar && prefersReducedMotion()) {
+        navBar.classList.add('nav-bar--on-light');
+      }
+
+      if (navBar || skySurface) {
+        let ticking = false;
+        const applyScrollEffects = () => {
+          navBar?.toggleAttribute('data-nav-solid', isPastScrollThreshold(window.scrollY));
+
+          // TODO(Phase 9): re-anchor progressDistance to the real ceremony
+          // section's offset once it exists, instead of total page height.
+          const progressDistance = document.documentElement.scrollHeight - window.innerHeight;
+          const progress = skyProgressForScroll(window.scrollY, progressDistance);
+          document.documentElement.style.setProperty('--sky-progress', String(progress));
+          document.documentElement.style.setProperty('--sky-color', skyColorForProgress(progress));
+          skyTone = skyToneForProgress(progress, skyTone);
+          mainEl?.setAttribute('data-sky-tone', skyTone);
+
+          ticking = false;
+        };
+        window.addEventListener(
+          'scroll',
+          () => {
+            if (ticking) return;
+            ticking = true;
+            requestAnimationFrame(applyScrollEffects);
+          },
+          { passive: true }
+        );
+        applyScrollEffects();
+      }
+
+      // Floating CTA (nav compact pill + sticky mobile pill): exactly one
+      // App Store action visible at a time, driven by [data-store-cta]
+      // landmark visibility, not scroll percentage.
+      const navCta = document.querySelector<HTMLElement>('[data-nav-cta]');
+      const stickyCta = document.querySelector<HTMLElement>('[data-sticky-cta]');
+      if (navCta || stickyCta) {
+        observeCtaLandmarks((state) => {
+          const show = shouldShowFloatingCta(state);
+          navCta?.toggleAttribute('data-visible', show);
+          stickyCta?.toggleAttribute('data-visible', show);
+        });
+      }
 
       const revealables = document.querySelectorAll<HTMLElement>('[data-reveal]');
 

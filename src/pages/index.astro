@@ -1,16 +1,19 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import PersianShamseh from '../components/PersianShamseh.astro';
-import AppStoreBadge from '../components/AppStoreBadge.astro';
 import HeroCinematic from '../components/HeroCinematic.astro';
+import MoodDemo from '../components/MoodDemo.astro';
 import VerseShowcase from '../components/VerseShowcase.astro';
-import PoetCard from '../components/PoetCard.astro';
+import PoetsBand from '../components/PoetsBand.astro';
+import ContextConstellation from '../components/ContextConstellation.astro';
+import JourneyPair from '../components/JourneyPair.astro';
+import RootsMoments from '../components/RootsMoments.astro';
+import PrivacyTrust from '../components/PrivacyTrust.astro';
+import PlansAndFoundingCompanion from '../components/PlansAndFoundingCompanion.astro';
+import FinalCeremony from '../components/FinalCeremony.astro';
 import SectionDivider from '../components/SectionDivider.astro';
 import FeatureIcon from '../components/FeatureIcon.astro';
 import Footer from '../components/Footer.astro';
 import SceneBackground from '../components/SceneBackground.astro';
-import { poets } from '../data/poets';
-import norooz from '../assets/scenes/norooz-morning-section.jpg';
 import quietGarden from '../assets/scenes/quiet-garden-section.jpg';
 import dawn from '../assets/scenes/dawn-section.jpg';
 
@@ -21,7 +24,7 @@ const jsonLd = {
   '@context': 'https://schema.org',
   '@type': 'SoftwareApplication',
   name: 'Hamdam',
-  alternateName: 'Hamdam — Poetry and Reflections',
+  alternateName: 'Hamdam: Poetry and Reflections',
   description,
   operatingSystem: 'iOS 26+',
   applicationCategory: 'LifestyleApplication',
@@ -47,7 +50,7 @@ const jsonLd = {
 ---
 
 <BaseLayout
-  title="Hamdam — A reflection companion grounded in Persian poetic wisdom"
+  title="Hamdam: A reflection companion grounded in Persian poetic wisdom"
   description={description}
   lang="en"
   path="/"
@@ -59,6 +62,8 @@ const jsonLd = {
     title="Hamdam reflects your heart and your sky."
     subhead="A bilingual reflection companion rooted in Persian poetry."
   />
+
+  <MoodDemo lang="en" />
 
   <!-- VERSE SHOWCASE -->
   <VerseShowcase
@@ -96,38 +101,18 @@ const jsonLd = {
   <SectionDivider />
 
   <!-- FIVE POETS -->
-  <section class="bg-gradient-to-b from-peach/15 via-peach/5 to-transparent px-6 py-[var(--spacing-section-mobile)] sm:py-[var(--spacing-section-desktop)]">
-    <h2 data-reveal class="text-balance text-center font-serif text-4xl font-semibold text-indigo sm:text-5xl">
-      Five poets, five voices.
-    </h2>
-    <div class="mx-auto mt-16 grid max-w-5xl grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
-      {poets.map((poet) => (
-        <PoetCard
-          persianName={poet.persianName}
-          transliteration={poet.transliteration}
-          description={poet.description}
-        />
-      ))}
-    </div>
-  </section>
+  <PoetsBand lang="en" />
+
+  <!-- CONTEXT CONSTELLATION -->
+  <ContextConstellation lang="en" />
+
+  <!-- YOUR JOURNEY -->
+  <JourneyPair lang="en" />
 
   <SectionDivider />
 
-  <!-- IRANIAN CULTURAL DEPTH -->
-  <section class="relative px-6 py-[var(--spacing-section-mobile)] sm:py-[var(--spacing-section-desktop)]">
-    <SceneBackground image={norooz} />
-    <div data-reveal class="relative mx-auto max-w-[var(--container-reading)]">
-      <h2 class="text-balance font-serif text-4xl font-semibold text-indigo sm:text-5xl">
-        The Iranian calendar breathes through Hamdam.
-      </h2>
-      <p class="mt-8 font-serif text-xl leading-[1.7] text-indigo/90">
-        Yalda in December, the longest night when families read Hafez together. Norooz in spring,
-        the new year that renews the world. Chaharshanbe Suri, Mehregan, Sizdah Bedar. Cultural
-        moments arrive as gentle presences, not calendar reminders. Ask the Fal e Hafez a question
-        the way generations have, and receive a verse in answer.
-      </p>
-    </div>
-  </section>
+  <!-- ROOTS AND REGION -->
+  <RootsMoments lang="en" />
 
   <SectionDivider />
 
@@ -156,34 +141,14 @@ const jsonLd = {
 
   <SectionDivider />
 
-  <!-- PRIVACY COMMITMENT -->
-  <section class="px-6 py-[var(--spacing-section-mobile)] sm:py-[var(--spacing-section-desktop)]">
-    <div data-reveal class="mx-auto max-w-[var(--container-reading)]">
-      <h2 class="text-balance font-serif text-4xl font-semibold text-indigo sm:text-5xl">
-        Everything stays on your device.
-      </h2>
-      <p class="mt-8 font-serif text-xl leading-[1.7] text-indigo/90">
-        Hamdam does not use accounts. Does not collect emails. Does not send your data to anyone.
-        Your journal entries sync only via your own iCloud account. No analytics. No advertising.
-        No tracking. Just poetry, presence, and the space between.
-      </p>
-    </div>
-  </section>
+  <!-- PRIVACY -->
+  <PrivacyTrust lang="en" />
 
-  <!-- FINAL CTA -->
-  <section class="relative flex flex-col items-center overflow-hidden px-6 py-[var(--spacing-section-mobile)] text-center sm:py-[var(--spacing-section-desktop)]">
-    <div
-      class="pointer-events-none absolute left-1/2 top-1/2 -z-10 h-[420px] w-[420px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-saffron/15 blur-[120px]"
-      aria-hidden="true"
-    ></div>
-    <PersianShamseh size={32} />
-    <p class="mt-8 font-serif text-2xl italic text-indigo sm:text-[26px]">
-      Sit with a verse. Reflect. Return tomorrow.
-    </p>
-    <div class="mt-10">
-      <AppStoreBadge />
-    </div>
-  </section>
+  <!-- PLANS AND FOUNDING COMPANION -->
+  <PlansAndFoundingCompanion lang="en" />
+
+  <!-- FINAL CEREMONY -->
+  <FinalCeremony lang="en" />
 
   <Footer />
 </BaseLayout>

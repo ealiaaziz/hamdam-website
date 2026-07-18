@@ -1,0 +1,94 @@
+---
+import HamdamLogotype from './HamdamLogotype.astro';
+import LanguageToggle from './LanguageToggle.astro';
+import { APP_STORE, appStoreUrl } from '../lib/appStore';
+
+interface Props {
+  lang: 'en' | 'fa';
+  /** True on the homepage, which opens on the dark hero sky: the
+   * transparent nav needs cream text there. Every other route is cream
+   * from y=0, so the transparent nav needs dark (indigo) text instead:
+   * cream-on-cream is invisible (design-system.md §1 text-on-night is only
+   * legible on a night/dusk surface). Once scrolled past the threshold the
+   * backing is always solid night, so text is always cream from then on. */
+  overDarkHero?: boolean;
+}
+
+const { lang, overDarkHero = false } = Astro.props;
+// Pre-release the bar carries no CTA at all (page spec §1 item 10); the
+// coming-soon state lives in the hero only.
+const ctaLabel = lang === 'fa' ? 'دریافت همدم' : 'Get Hamdam';
+const ctaAriaLabel = lang === 'fa' ? 'دانلود همدم از اپ‌استور' : 'Download Hamdam on the App Store';
+---
+
+<header
+  data-nav-bar
+  class:list={['nav-bar fixed inset-x-0 top-0 z-40', !overDarkHero && 'nav-bar--on-light']}
+>
+  <div class="mx-auto flex h-14 max-w-[1200px] items-center justify-between px-5 sm:px-12">
+    <a
+      href={lang === 'fa' ? '/fa/' : '/'}
+      class="inline-flex min-h-[44px] items-center"
+      aria-label={lang === 'fa' ? 'همدم' : 'Hamdam'}
+    >
+      <HamdamLogotype lang={lang} size={24} />
+    </a>
+    <div class="flex items-center gap-3">
+      <LanguageToggle lang={lang} inNav />
+      {
+        APP_STORE.RELEASED && (
+          <a
+            data-nav-cta
+            href={appStoreUrl(lang)}
+            aria-label={ctaAriaLabel}
+            class="nav-bar__cta inline-flex min-h-[44px] items-center rounded-[var(--radius-pill)] bg-[var(--hamdam-night-gold)] px-5 text-sm font-semibold text-indigo"
+          >
+            {ctaLabel}
+          </a>
+        )
+      }
+    </div>
+  </div>
+</header>
+
+<style>
+  /* Transparent over the night sky at page top; solid night-surface backing
+     with a hairline bottom border after 24px of scroll (page spec §1
+     items 3, 7, 8). Text/logo colour is the on-night pair throughout: the
+     bar is opaque once "solid", so its own contrast never depends on
+     whatever section sits underneath it. */
+  .nav-bar {
+    background-color: transparent;
+    border-bottom: 1px solid transparent;
+    color: var(--text-on-night, #F4EDD8);
+    transition:
+      background-color 200ms var(--ease-dawn, ease),
+      border-color 200ms var(--ease-dawn, ease),
+      color 200ms var(--ease-dawn, ease);
+  }
+  /* Routes with no dark hero (privacy, terms, 404) are cream from y=0;
+     cream nav text would be invisible until the solid backing lands. */
+  .nav-bar--on-light {
+    color: var(--color-indigo, #1B1B3A);
+  }
+  .nav-bar[data-nav-solid] {
+    background-color: var(--surface-night, #141430);
+    border-bottom-color: rgb(244 237 216 / 0.12);
+    color: var(--text-on-night, #F4EDD8);
+  }
+  .nav-bar__cta {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 200ms var(--ease-dawn, ease);
+  }
+  .nav-bar__cta[data-visible] {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .nav-bar,
+    .nav-bar__cta {
+      transition: none;
+    }
+  }
+</style>

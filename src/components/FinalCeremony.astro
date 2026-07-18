@@ -1,0 +1,244 @@
+---
+import { Image } from 'astro:assets';
+import PersianShamseh from './PersianShamseh.astro';
+import AppStoreBadge from './AppStoreBadge.astro';
+import ceremonyMorningHorizon from '../assets/website-redesign/ceremony-morning-horizon.png';
+import petal1 from '../assets/website-redesign/ceremony-petal-1.png';
+import petal2 from '../assets/website-redesign/ceremony-petal-2.png';
+import petal3 from '../assets/website-redesign/ceremony-petal-3.png';
+
+interface Props {
+  lang: 'en' | 'fa';
+}
+
+const { lang } = Astro.props;
+
+const closingLine = lang === 'fa' ? 'با شعری بنشین. تأمل کن. فردا برگرد.' : 'Sit with a verse. Reflect. Return tomorrow.';
+
+// CY-01 (14-canva-asset-brief.md) specifies one 600x200 three-cell sprite
+// sheet; shipped instead as three separate small PNGs (same approved source
+// petal, three rotated/rescaled presentations -- see docs/asset-licence-log.md).
+// A CSS sprite crop needs either an inline style attribute (blocked by this
+// site's style-src 'self' CSP) or an RTL-unsafe hardcoded pixel offset;
+// three plain <Image> elements sidestep both for the same visual output.
+// Ten fall positions (widened from six per Fable F1-04 density correction),
+// cycling the three CY-01 petals; rendered sizes vary per position across
+// the approved 24-48px range (28/36/44px family, see CSS nth-child rules)
+// instead of a uniform 32px.
+const PETAL_IMAGES = [petal1, petal2, petal3, petal1, petal2, petal3, petal1, petal2, petal3, petal1];
+---
+
+<section id="ceremony" class="ceremony" aria-labelledby="ceremony-title" data-store-cta="ceremony">
+  {
+    /* HW-03 (14-canva-asset-brief.md): the completed-dawn horizon behind
+       this section. --surface-morning stays as the section's own
+       background-color underneath (the "guaranteed brightest point of the
+       page" per the comment below, not superseded) -- the photo's own
+       alpha channel already carries the top-55%-transparent fade to that
+       colour the brief requires, so it composites as a horizon layer, not
+       a replacement background. */
+  }
+  <Image
+    src={ceremonyMorningHorizon}
+    alt=""
+    width={ceremonyMorningHorizon.width}
+    height={ceremonyMorningHorizon.height}
+    class="ceremony__horizon-photo"
+  />
+  {
+    /* CY-01 (blossom petals): real assets, three approved presentations of
+       one source petal cycled across the ten fall positions. Decorative,
+       aria-hidden -- the petals are atmosphere, not content. */
+  }
+  <div class="ceremony__petals" aria-hidden="true">
+    {
+      /* No inline style attribute (CSP is style-src 'self', no
+         unsafe-inline -- public/_headers isn't enforced by the local dev/
+         preview server, so this would have shipped broken without ever
+         failing a local check). Position/delay come from nth-child
+         selectors below instead of a per-element --i custom property. */
+    }
+    {PETAL_IMAGES.map((petalImg) => (
+      <span class="ceremony__petal">
+        <Image src={petalImg} alt="" width={petalImg.width} height={petalImg.height} class="ceremony__petal-img" />
+      </span>
+    ))}
+  </div>
+
+  <div class="ceremony__content">
+    <PersianShamseh size={40} animated={false} />
+    <p id="ceremony-title" class="ceremony__line text-balance">{closingLine}</p>
+    <div class="ceremony__cta">
+      <AppStoreBadge lang={lang} />
+    </div>
+    {
+      /* App Store "No data collected" privacy-nutrition cue (page spec
+         §10 item 3) deliberately omitted: claims-verification table item 2
+         requires confirming it against the *live* App Store listing first,
+         which does not exist pre-release. Add it, verified, at launch. */
+    }
+  </div>
+</section>
+
+<style>
+  .ceremony {
+    position: relative;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    padding-block: var(--spacing-section-mobile);
+    padding-inline: 1.5rem;
+    /* Guaranteed brightest point of the page (page spec §10 item 3): a
+       solid --surface-morning fill rather than relying on the shared
+       SkySurface's scroll-computed progress landing exactly on cream at
+       this exact scroll depth, which will keep shifting as more sections
+       are added in later work. */
+    background-color: var(--surface-morning);
+    /* Warm glow reach (F1-04): a class-based radial gradient (no inline
+       style, no new asset, no new colour token -- existing saffron/dawn/
+       morning tokens only) so the warm first-light tone reaches at least
+       the section's vertical midpoint instead of stopping at the
+       horizon photo's own shorter fade. */
+    background-image: radial-gradient(
+      120% 70% at 50% 100%,
+      var(--hamdam-saffron) 0%,
+      var(--surface-dawn) 32%,
+      var(--surface-morning) 62%,
+      var(--surface-morning) 100%
+    );
+    color: var(--hamdam-text);
+  }
+
+  .ceremony__horizon-photo {
+    position: absolute;
+    inset-inline: 0;
+    bottom: 0;
+    width: 100%;
+    height: auto;
+    z-index: 0;
+  }
+  :global([dir='rtl']) .ceremony__horizon-photo {
+    transform: scaleX(-1);
+  }
+
+  /* Mobile empty run (F1-04): below 768px the horizon photo's auto-height
+     (scaled from its own aspect ratio at full width) was short enough to
+     leave a near-viewport-height run of unbroken cream between the nav and
+     the headline block. Tighten the section and raise the horizon's
+     rendered height so imagery/warm gradient occupies that space instead. */
+  @media (max-width: 767px) {
+    .ceremony {
+      min-height: 85vh;
+    }
+    .ceremony__horizon-photo {
+      height: 55vh;
+      object-fit: cover;
+      object-position: bottom;
+    }
+  }
+
+  .ceremony__content {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    max-width: 36rem;
+  }
+
+  .ceremony__line {
+    margin-top: 1.5rem;
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: var(--text-h3);
+  }
+  :global([lang='fa']) .ceremony__line {
+    font-family: var(--font-farsi);
+    font-style: normal;
+  }
+
+  .ceremony__cta {
+    margin-top: 2.5rem;
+  }
+
+  .ceremony__petals {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+  }
+
+  .ceremony__petal {
+    position: absolute;
+    top: -5%;
+    opacity: 0;
+  }
+
+  .ceremony__petal-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+  /* Ten fixed horizontal positions (PETAL_IMAGES has a fixed length, not
+     dynamic) -- nth-child instead of a per-element inline --i, which the
+     CSP's style-src 'self' (no unsafe-inline) would silently drop. Sizes
+     vary across the approved 24-48px range (28/36/44px family) per F1-04
+     instead of a uniform 32px. */
+  .ceremony__petal:nth-child(1) { inset-inline-start: 6%; width: 28px; height: 28px; }
+  .ceremony__petal:nth-child(2) { inset-inline-start: 16%; width: 44px; height: 44px; }
+  .ceremony__petal:nth-child(3) { inset-inline-start: 26%; width: 36px; height: 36px; }
+  .ceremony__petal:nth-child(4) { inset-inline-start: 36%; width: 28px; height: 28px; }
+  .ceremony__petal:nth-child(5) { inset-inline-start: 46%; width: 44px; height: 44px; }
+  .ceremony__petal:nth-child(6) { inset-inline-start: 56%; width: 36px; height: 36px; }
+  .ceremony__petal:nth-child(7) { inset-inline-start: 66%; width: 28px; height: 28px; }
+  .ceremony__petal:nth-child(8) { inset-inline-start: 76%; width: 44px; height: 44px; }
+  .ceremony__petal:nth-child(9) { inset-inline-start: 86%; width: 36px; height: 36px; }
+  .ceremony__petal:nth-child(10) { inset-inline-start: 94%; width: 28px; height: 28px; }
+
+  /* Petals run once, only after the section is 60% visible (JS toggles
+     this class), and only for motion-OK visitors: one 6s pass, never a
+     loop. Reduced motion: no petals at all, static completed morning. */
+  @media (prefers-reduced-motion: no-preference) {
+    .ceremony--petals-active .ceremony__petal {
+      animation: ceremony-petal-fall 6s var(--ease-cross) forwards;
+    }
+    .ceremony--petals-active .ceremony__petal:nth-child(1) { animation-delay: 0ms; }
+    .ceremony--petals-active .ceremony__petal:nth-child(2) { animation-delay: 300ms; }
+    .ceremony--petals-active .ceremony__petal:nth-child(3) { animation-delay: 600ms; }
+    .ceremony--petals-active .ceremony__petal:nth-child(4) { animation-delay: 900ms; }
+    .ceremony--petals-active .ceremony__petal:nth-child(5) { animation-delay: 1200ms; }
+    .ceremony--petals-active .ceremony__petal:nth-child(6) { animation-delay: 1500ms; }
+    .ceremony--petals-active .ceremony__petal:nth-child(7) { animation-delay: 1800ms; }
+    .ceremony--petals-active .ceremony__petal:nth-child(8) { animation-delay: 2100ms; }
+    .ceremony--petals-active .ceremony__petal:nth-child(9) { animation-delay: 2400ms; }
+    .ceremony--petals-active .ceremony__petal:nth-child(10) { animation-delay: 2700ms; }
+  }
+
+  @keyframes ceremony-petal-fall {
+    0% { opacity: 0; transform: translateY(0) rotate(0deg); }
+    10% { opacity: 0.85; }
+    90% { opacity: 0.6; }
+    100% { opacity: 0; transform: translateY(110vh) rotate(220deg); }
+  }
+</style>
+
+<script>
+  const section = document.getElementById('ceremony');
+  if (section) {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            section.classList.add('ceremony--petals-active');
+            observer.disconnect(); // once per visit, never re-triggers
+          }
+        }
+      },
+      { threshold: 0.6 }
+    );
+    observer.observe(section);
+  }
+</script>

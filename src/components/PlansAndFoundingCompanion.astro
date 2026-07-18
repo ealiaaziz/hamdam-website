@@ -1,0 +1,255 @@
+---
+import { Image } from 'astro:assets';
+import { APP_STORE, appStoreUrl } from '../lib/appStore';
+import foundingCompanionBand from '../assets/website-redesign/founding-companion-band.png';
+
+interface Props {
+  lang: 'en' | 'fa';
+}
+
+const { lang } = Astro.props;
+
+// Every figure here is locked and verified (page spec §9, conversion
+// spec §8-9): fifteen free reflections/month (UsageTracker.freeMonthlyLimit
+// in the app), 7-day trial (Terms §3.2), Family Sharing up to six members
+// on Lifetime (Terms §3.3). No dollar figures anywhere (locked decision
+// 2026-07-02) -- "Pricing is shown on the App Store" everywhere a price
+// would otherwise appear. "Hamdam Plus" and "Founding Companion" are the
+// app's own L.* naming (Localization.swift), never a new coinage.
+const copy =
+  lang === 'fa'
+    ? {
+        heading: 'آیین روزانه همیشه رایگان است.',
+        free: {
+          title: 'رایگان',
+          body: 'آیین روزانه همیشه رایگان است، از جمله پانزده تأمل در هر ماه.',
+        },
+        plus: {
+          title: 'همدم پلاس',
+          body: 'همدم پلاس تأملات نامحدود، کتابخانه کامل خرد پنج شاعر، و بایگانی تأملات را باز می‌کند، و بیشتر.',
+          trial: 'ماهانه یا سالانه، با هفت روز آزمایش رایگان برای مشترکان جدید.',
+          pricing: 'قیمت در اپ‌استور نمایش داده می‌شود.',
+        },
+        founding: {
+          title: 'همراه بنیان‌گذار',
+          body: 'یک خرید، برای همیشه مال توست، قابل اشتراک‌گذاری با خانواده‌ات از طریق Apple Family Sharing.',
+          pricing: 'قیمت در اپ‌استور نمایش داده می‌شود.',
+        },
+        startLink: 'شروع در اپ‌استور',
+      }
+    : {
+        heading: 'The daily ritual is free, always.',
+        free: {
+          title: 'Free',
+          body: 'The daily ritual is free, always, including fifteen reflections every month.',
+        },
+        plus: {
+          title: 'Hamdam Plus',
+          body: 'Hamdam Plus opens unlimited reflections, the full wisdom library of all five poets, the reflection archive, and more.',
+          trial: 'Monthly or yearly, with a 7-day free trial for new subscribers.',
+          pricing: 'Pricing is shown on the App Store.',
+        },
+        founding: {
+          title: 'Founding Companion',
+          body: 'A single purchase, yours for life, shareable with your family through Apple Family Sharing.',
+          pricing: 'Pricing is shown on the App Store.',
+        },
+        startLink: 'Start on the App Store',
+      };
+---
+
+<section class="plans" aria-labelledby="plans-title">
+  <div class="plans__inner">
+    <h2 id="plans-title" class="plans__heading text-balance">{copy.heading}</h2>
+
+    <div class="plans__panels">
+      <div class="plans__panel">
+        <h3 class="plans__panel-title">{copy.free.title}</h3>
+        <p class="plans__panel-body">{copy.free.body}</p>
+      </div>
+      <div class="plans__panel plans__panel--plus">
+        <h3 class="plans__panel-title">{copy.plus.title}</h3>
+        <p class="plans__panel-body">{copy.plus.body}</p>
+        <p class="plans__panel-trial">{copy.plus.trial}</p>
+        <p class="plans__panel-pricing">{copy.plus.pricing}</p>
+      </div>
+    </div>
+
+    {
+      /* FC-01 (Founding Companion band texture, 14-canva-asset-brief.md):
+         cultural approval (shamseh relief motif) granted 2026-07-18.
+         Rendered via astro:assets <Image>, not an inline style background,
+         since the CSP's style-src 'self' (no unsafe-inline) blocks inline
+         style attributes the same way it blocks inline <style> blocks --
+         confirmed against this repo's only other CSP fix precedent (the
+         ceremony petals, Phase 12). --hamdam-saffron background-color on
+         the parent is the fallback fill if the image is slow to load or
+         fails. Decorative texture only -- no alt text, the band's meaning
+         is its overlaid live text. */
+    }
+    <div class="plans__founding">
+      <Image
+        src={foundingCompanionBand}
+        alt=""
+        width={foundingCompanionBand.width}
+        height={foundingCompanionBand.height}
+        class="plans__founding-bg"
+      />
+      <h3 class="plans__founding-title">{copy.founding.title}</h3>
+      <p class="plans__founding-body">{copy.founding.body}</p>
+      <p class="plans__founding-pricing">{copy.founding.pricing}</p>
+    </div>
+
+    {
+      /* Pre-release: no store link anywhere (Apple's badge/link rule,
+         conversion spec §1, already governs AppStoreBadge the same way). */
+      APP_STORE.RELEASED && (
+        <a href={appStoreUrl(lang)} class="plans__start-link">
+          {copy.startLink}
+        </a>
+      )
+    }
+  </div>
+</section>
+
+<style>
+  .plans {
+    padding-block: var(--spacing-section-mobile);
+    padding-inline: 1.5rem;
+    background-color: var(--surface-dawn);
+    color: var(--hamdam-text);
+  }
+  @media (min-width: 640px) {
+    .plans {
+      padding-block: var(--spacing-section-desktop);
+    }
+  }
+
+  .plans__inner {
+    max-width: 1000px;
+    margin-inline: auto;
+    text-align: center;
+  }
+
+  .plans__heading {
+    font-family: var(--font-serif);
+    font-size: var(--text-h2);
+    font-weight: 600;
+  }
+  :global([lang='fa']) .plans__heading {
+    font-family: var(--font-farsi);
+    font-weight: 500;
+  }
+
+  .plans__panels {
+    margin-top: 3rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .plans__panel {
+    flex: 1;
+    border-radius: var(--radius-panel);
+    padding: 2rem;
+    text-align: start;
+    background: rgb(244 237 216 / 0.35);
+    border: 1px solid rgb(36 30 21 / 0.1);
+  }
+  .plans__panel--plus {
+    background: rgb(244 237 216 / 0.6);
+    /* --color-saffron-ink is tuned for cream; against this section's
+       --surface-dawn (visible along the panel's outer edge) it measures
+       1.81:1 (Phase 11/12 contrast audit). --hamdam-text gives 5.13:1. */
+    border-color: var(--hamdam-text);
+  }
+
+  .plans__panel-title {
+    font-family: var(--font-serif);
+    font-size: var(--text-h3);
+    font-weight: 600;
+  }
+  :global([lang='fa']) .plans__panel-title {
+    font-family: var(--font-farsi);
+  }
+
+  .plans__panel-body {
+    margin-top: 0.75rem;
+    font-size: var(--text-body);
+    line-height: 1.6;
+  }
+
+  .plans__panel-trial,
+  .plans__panel-pricing {
+    margin-top: 0.75rem;
+    font-size: var(--text-meta);
+    opacity: 0.8;
+  }
+
+  .plans__founding {
+    position: relative;
+    margin-top: 2.5rem;
+    border-radius: var(--radius-panel);
+    padding: 2.5rem 2rem;
+    background-color: var(--hamdam-saffron);
+    color: var(--hamdam-night-deep);
+    overflow: hidden;
+  }
+
+  .plans__founding-bg {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .plans__founding-title,
+  .plans__founding-body,
+  .plans__founding-pricing {
+    position: relative;
+    z-index: 1;
+  }
+
+  .plans__founding-title {
+    font-family: var(--font-serif);
+    font-size: var(--text-h2);
+    font-weight: 700;
+  }
+  :global([lang='fa']) .plans__founding-title {
+    font-family: var(--font-farsi);
+  }
+
+  .plans__founding-body {
+    margin-top: 0.75rem;
+    max-width: 44rem;
+    margin-inline: auto;
+    font-size: var(--text-body);
+    line-height: 1.6;
+  }
+
+  .plans__founding-pricing {
+    margin-top: 0.75rem;
+    font-size: var(--text-meta);
+    opacity: 0.85;
+  }
+
+  .plans__start-link {
+    display: inline-flex;
+    min-height: 44px;
+    align-items: center;
+    margin-top: 2rem;
+    font-family: var(--font-sans);
+    font-size: var(--text-body);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    color: var(--hamdam-text);
+  }
+
+  @media (min-width: 1024px) {
+    .plans__panels {
+      flex-direction: row;
+    }
+  }
+</style>

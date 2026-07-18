@@ -1,0 +1,50 @@
+---
+import { APP_STORE, appStoreUrl } from '../lib/appStore';
+
+interface Props {
+  lang: 'en' | 'fa';
+}
+
+const { lang } = Astro.props;
+// Pre-release: suppressed entirely, not just hidden (conversion spec §2);
+// a sticky "coming soon" would be noise without a conversion to serve.
+const label = lang === 'fa' ? 'دریافت همدم' : 'Get Hamdam';
+const ariaLabel = lang === 'fa' ? 'دانلود همدم از اپ‌استور' : 'Download Hamdam on the App Store';
+---
+
+{
+  APP_STORE.RELEASED && (
+    <a
+      data-sticky-cta
+      href={appStoreUrl(lang)}
+      aria-label={ariaLabel}
+      class="sticky-cta fixed inset-x-0 bottom-[max(1rem,env(safe-area-inset-bottom))] z-30 mx-auto flex min-h-[44px] w-fit items-center rounded-[var(--radius-pill)] bg-[var(--hamdam-night-gold)] px-6 text-sm font-semibold text-indigo shadow-[var(--shadow-lift)] md:hidden"
+    >
+      {label}
+    </a>
+  )
+}
+
+<style>
+  /* Mobile only (<768px, page's md breakpoint). Visibility is driven by the
+     same [data-store-cta] landmark state as the nav bar's compact CTA
+     (stickyCta.js): hidden whenever hero/mid/ceremony's own CTA is in
+     view, so exactly one App Store action is ever on screen.
+     TODO(Phase 9): once the footer/ceremony boundary exists, confirm the
+     pill also hides across that gap, not just while ceremony itself is
+     in view. */
+  .sticky-cta {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 200ms var(--ease-dawn, ease);
+  }
+  .sticky-cta[data-visible] {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .sticky-cta {
+      transition: none;
+    }
+  }
+</style>

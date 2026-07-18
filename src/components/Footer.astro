@@ -1,30 +1,70 @@
 ---
-import PersianShamseh from './PersianShamseh.astro';
 import HamdamLogotype from './HamdamLogotype.astro';
+
+interface Props {
+  lang?: 'en' | 'fa';
+}
+
+// S6 (Phase 13) finding: this component had no lang prop, so fa/privacy.astro
+// and fa/terms.astro (which import it directly) rendered this English text
+// on Farsi-locale pages -- fa/index.astro was unaffected because it never
+// used this shared component, it has always had its own inline Farsi
+// footer. FA copy below is copied verbatim from that existing, already-
+// shipped fa/index.astro footer, not newly authored.
+const { lang = 'en' } = Astro.props;
 ---
 
 <footer class="border-t border-saffron/30 px-6 py-20">
-  <div class="mx-auto flex max-w-xl flex-col items-center gap-4 text-center">
-    <PersianShamseh size={16} opacity={0.7} />
-    <HamdamLogotype size={24} showMark={false} />
-    <p class="text-sm text-indigo/70">An app by the Hamdam Team</p>
-    <nav aria-label="Footer" class="flex items-center gap-3 text-sm text-indigo/70">
-      <a href="/privacy" class="inline-flex min-h-[44px] items-center px-1 hover:text-indigo">Privacy</a>
-      <span aria-hidden="true">&middot;</span>
-      <a href="/terms" class="inline-flex min-h-[44px] items-center px-1 hover:text-indigo">Terms</a>
-      <span aria-hidden="true">&middot;</span>
-      <a href="mailto:developer@hamdam.com.au" class="inline-flex min-h-[44px] items-center px-1 hover:text-indigo">Contact</a>
-    </nav>
-    <p class="text-sm text-indigo/70">Made with love in Brisbane.</p>
-  </div>
+  {
+    lang === 'fa' ? (
+      <div class="mx-auto flex max-w-xl flex-col items-center gap-4 text-center">
+        <HamdamLogotype size={24} lang="fa" />
+        <p class="font-farsi text-sm text-indigo/70">اپلیکیشنی از تیم همدم</p>
+        <nav aria-label="Footer" class="flex items-center gap-3 font-farsi text-sm text-indigo/70">
+          <a href="/fa/privacy" class="inline-flex min-h-[44px] items-center px-1 hover:text-indigo">حریم خصوصی</a>
+          <span aria-hidden="true">·</span>
+          <a href="/fa/terms" class="inline-flex min-h-[44px] items-center px-1 hover:text-indigo">شرایط استفاده</a>
+          <span aria-hidden="true">·</span>
+          <a href="mailto:developer@hamdam.com.au" class="inline-flex min-h-[44px] items-center px-1 hover:text-indigo">تماس با ما</a>
+        </nav>
+        <p class="font-farsi text-sm text-indigo/70">ساخته شده با عشق در بریزبن</p>
+        <p class="font-farsi text-xs text-indigo/70">شعرها از گنجور گردآوری شده‌اند.</p>
+      </div>
+    ) : (
+      <div class="mx-auto flex max-w-xl flex-col items-center gap-4 text-center">
+        <HamdamLogotype size={24} />
+        <p class="text-sm text-indigo/70">An app by the Hamdam Team</p>
+        <nav aria-label="Footer" class="flex items-center gap-3 text-sm text-indigo/70">
+          <a href="/privacy" class="inline-flex min-h-[44px] items-center px-1 hover:text-indigo">Privacy</a>
+          <span aria-hidden="true">&middot;</span>
+          <a href="/terms" class="inline-flex min-h-[44px] items-center px-1 hover:text-indigo">Terms</a>
+          <span aria-hidden="true">&middot;</span>
+          <a href="mailto:developer@hamdam.com.au" class="inline-flex min-h-[44px] items-center px-1 hover:text-indigo">Contact</a>
+        </nav>
+        <p class="text-sm text-indigo/70">Made with love in Brisbane.</p>
+        <p class="text-xs text-indigo/70">Verses sourced from Ganjoor.net.</p>
+      </div>
+    )
+  }
   <div class="mx-auto mt-10 flex max-w-xl flex-col items-center gap-2 border-t border-saffron/20 pt-8 text-center">
-    <p class="text-xs text-indigo/70">&copy; {new Date().getFullYear()} Hamdam. All rights reserved.</p>
-    <p class="text-xs text-indigo/70">
+    {
+      /* Always English/LTR, both locales: legal/trademark boilerplate,
+         matching the precedent already established in fa/index.astro's
+         own inline footer (same three lines, same lang="en" dir="ltr"). */
+    }
+    <p class="text-xs text-indigo/70" lang="en" dir="ltr">&copy; {new Date().getFullYear()} Hamdam. All rights reserved.</p>
+    <p class="text-xs text-indigo/70" lang="en" dir="ltr">
       HAMDAM&trade; is the subject of Australian trade mark application no. 2674427, filed 11
       July 2026.
     </p>
-    <p class="text-xs text-indigo/70">
-      For support, contact <a href="mailto:developer@hamdam.com.au" class="underline hover:text-indigo">developer@hamdam.com.au</a>.
+    {
+      /* Plain text, not a second small link: the properly-sized Contact
+         link above already points at this same address (F7, 44px touch
+         targets) -- a second tappable instance this small would just be
+         a hard-to-hit duplicate of it. */
+    }
+    <p class="text-xs text-indigo/70" lang="en" dir="ltr">
+      For support, contact developer@hamdam.com.au.
     </p>
   </div>
 </footer>

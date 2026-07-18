@@ -1,0 +1,92 @@
+[
+  {
+    "selector": ".journey p",
+    "index": 0,
+    "text": "Over the weeks, Hamdam shows y",
+    "color": "rgb(36, 30, 21)",
+    "bg": "rgb(199,126,78)",
+    "ratio": 5.13,
+    "fontSize": "18px",
+    "fontWeight": "400"
+  },
+  {
+    "selector": ".journey p",
+    "index": 1,
+    "text": "Hamdam is waiting to meet you.",
+    "color": "rgb(36, 30, 21)",
+    "bg": "rgb(199,126,78)",
+    "ratio": 5.13,
+    "fontSize": "18px",
+    "fontWeight": "400"
+  },
+  {
+    "selector": "#mood-demo .mood-demo__caption",
+    "index": 0,
+    "text": "This is how the app works. In ",
+    "color": "rgb(27, 27, 58)",
+    "bg": "rgb(244,237,216)",
+    "ratio": 14.2,
+    "fontSize": "18px",
+    "fontWeight": "400"
+  },
+  {
+    "selector": "#mood-demo .mood-demo__stops span",
+    "index": 0,
+    "text": "Heavy",
+    "color": "rgb(27, 27, 58)",
+    "bg": "rgb(244,237,216)",
+    "ratio": 14.2,
+    "fontSize": "13.992px",
+    "fontWeight": "400"
+  },
+  {
+    "selector": "#mood-demo .mood-demo__stops span",
+    "index": 1,
+    "text": "Unsettled",
+    "color": "rgb(27, 27, 58)",
+    "bg": "rgb(244,237,216)",
+    "ratio": 14.2,
+    "fontSize": "13.992px",
+    "fontWeight": "400"
+  },
+  {
+    "selector": "#mood-demo .mood-demo__stops span",
+    "index": 2,
+    "text": "Steady",
+    "color": "rgb(27, 27, 58)",
+    "bg": "rgb(244,237,216)",
+    "ratio": 14.2,
+    "fontSize": "13.992px",
+    "fontWeight": "400"
+  },
+  {
+    "selector": "#mood-demo .mood-demo__stops span",
+    "index": 3,
+    "text": "Light",
+    "color": "rgb(27, 27, 58)",
+    "bg": "rgb(244,237,216)",
+    "ratio": 14.2,
+    "fontSize": "13.992px",
+    "fontWeight": "400"
+  },
+  {
+    "selector": "#mood-demo .mood-demo__stops span",
+    "index": 4,
+    "text": "Bright",
+    "color": "rgb(27, 27, 58)",
+    "bg": "rgb(244,237,216)",
+    "ratio": 14.2,
+    "fontSize": "13.992px",
+    "fontWeight": "400"
+  },
+  {
+    "selector": "#ceremony .ceremony__line",
+    "index": 0,
+    "text": "Sit with a verse. Reflect. Ret",
+    "color": "rgb(36, 30, 21)",
+    "bg": "rgb(244,237,216)",
+    "ratio": 14.12,
+    "fontSize": "25.9984px",
+    "fontWeight": "400"
+  }
+]

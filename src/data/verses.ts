@@ -25,7 +25,7 @@ export const verses: readonly Verse[] = [
     persian: "گرچه خزان کرد جفاها بسی\nبین که بهاران چه وفا می‌کند",
     english: "Though autumn committed many cruelties — see what faithfulness spring brings.",
     poetEn: "Rumi",
-    poetFa: "رومی",
+    poetFa: "مولانا",
     source: "Divan-e Shams, Ghazal 1000",
   },
   {

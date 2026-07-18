@@ -1,7 +1,12 @@
 ---
+import { Image } from 'astro:assets';
 import PersianShamseh from './PersianShamseh.astro';
 import AppStoreBadge from './AppStoreBadge.astro';
 import { starField } from '../lib/cinematic';
+import heroHorizonDesktop from '../assets/website-redesign/hero-horizon-desktop.png';
+import heroHorizonMobile from '../assets/website-redesign/hero-horizon-mobile.png';
+import heroBlossomForeground from '../assets/website-redesign/hero-blossom-foreground.png';
+import deviceFrame from '../assets/website-redesign/device-frame-iphone.png';
 
 interface Props {
   lang: 'en' | 'fa';
@@ -13,6 +18,16 @@ const { lang, title, subhead } = Astro.props;
 // Deterministic star field (seed 42 by spec), rendered at build time so the
 // client never computes positions and they can never jitter.
 const stars = starField(40, 42);
+
+// Real device screenshot alt text ("Hamdam Today screen showing a morning
+// verse by [poet]...") is written once the orchestrator asset lands
+// (page spec §2 item 11); this placeholder alt is honest about the
+// current state rather than describing content that isn't there yet --
+// DV-01 (the frame) is now real, the screenshot inside it is still not.
+const deviceAlt =
+  lang === 'fa'
+    ? 'پیش‌نمایش صفحه اصلی همدم (تصویر نهایی در دست تهیه)'
+    : 'Hamdam Today screen preview (final screenshot pending)';
 ---
 
 <section id="hero" class="hero" aria-labelledby="hero-title">
@@ -31,15 +46,95 @@ const stars = starField(40, 42);
       <div class="hero__sun-track" aria-hidden="true">
         <div class="hero__sun"></div>
       </div>
+      {
+        /* HW-01/HW-02 (14-canva-asset-brief.md): photographic horizon plate,
+           desktop vs mobile recomposition, swapped by CSS breakpoint (768px,
+           this repo's md breakpoint per StickyDownloadAction.astro's own
+           convention). Each asset's own alpha channel already carries the
+           top-fade-to-transparent gradient the brief requires, so no extra
+           masking is needed here -- just placement and the existing
+           scroll-linked drift. Flipped under RTL per the brief's own
+           acceptance criterion ("mirrors cleanly when flipped horizontally
+           for RTL"). .hero__horizon (the ambient haze band) is kept
+           unchanged underneath as a separate atmospheric layer, not
+           replaced -- it is not a stand-in for the photo, see its own
+           comment below. */
+      }
+      <Image
+        src={heroHorizonDesktop}
+        alt=""
+        width={heroHorizonDesktop.width}
+        height={heroHorizonDesktop.height}
+        loading="eager"
+        fetchpriority="high"
+        class="hero__horizon-photo hero__horizon-photo--desktop"
+      />
+      <Image
+        src={heroHorizonMobile}
+        alt=""
+        width={heroHorizonMobile.width}
+        height={heroHorizonMobile.height}
+        loading="eager"
+        fetchpriority="high"
+        class="hero__horizon-photo hero__horizon-photo--mobile"
+      />
+      {
+        /* HW-04: desktop-only foreground blossom plate. Dropped on mobile
+           per the page spec -- there is no HW-04 mobile variant, this is
+           not an oversight. Real alpha edges (no halo), so no additional
+           masking needed. */
+      }
+      <Image
+        src={heroBlossomForeground}
+        alt=""
+        width={heroBlossomForeground.width}
+        height={heroBlossomForeground.height}
+        class="hero__blossom-photo"
+      />
+      {
+        /* Ambient haze band (predates the redesign, no asset dependency --
+           see the original TODO this replaced, now resolved above). */
+      }
       <div class="hero__horizon"></div>
     </div>
 
     <div class="hero__content">
-      <PersianShamseh size={64} animated={true} color="currentColor" />
+      <PersianShamseh size={64} color="currentColor" class="hero__mark" />
       <h1 id="hero-title" class="hero__title text-balance">{title}</h1>
       <p class="hero__sub text-balance">{subhead}</p>
-      <div class="hero__cta">
+      <div class="hero__cta" data-store-cta="hero">
         <AppStoreBadge lang={lang} />
+      </div>
+
+      {
+        /* DV-01 (device frame) is now real; the orchestrator screenshot that
+           belongs inside it is still pending (see
+           docs/website-redesign/22-dependency-decision.md). Per the frame's
+           own brief (14-canva-asset-brief.md), the screen cutout is real
+           transparency -- the existing gradient fill on .hero__device stays
+           as the honest "screenshot pending" fill showing through that
+           cutout, not baked into the frame image itself, so swapping in a
+           real screenshot later only means adding an <Image> behind this
+           one -- no change to the frame. */
+      }
+      <div class="hero__device" role="img" aria-label={deviceAlt}>
+        {
+          /* On-page display never exceeds 360px CSS width (.hero__device's
+             own max), so 720px (2x retina headroom) is the real budget-
+             relevant output size -- the full 1400x2820 source stays intact
+             on disk per the brief's exact-dimensions requirement, only the
+             on-page render is scaled down, same "compression owner:
+             implementation session" split the brief specifies for every
+             asset. */
+        }
+        <Image
+          src={deviceFrame}
+          alt=""
+          width={600}
+          height={Math.round((600 / deviceFrame.width) * deviceFrame.height)}
+          quality={72}
+          class="hero__device-frame"
+        />
       </div>
     </div>
   </div>
@@ -47,22 +142,33 @@ const stars = starField(40, 42);
 
 <style>
   /*
-    Custom-property defaults describe deep NIGHT (progress 0): that is what a
-    motion-enabled visitor sees on load, so the scroll script's first write is
-    a no-op and there is no flash. Reduced-motion visitors get the static
-    MORNING state via the media query below, per the Phase 4.4 spec.
+    Phase 3 defaults (unchanged): first-light, matching what reduced-motion
+    visitors see permanently (page spec §2 item 8). Phase 4's script
+    overrides these via inline custom properties for motion-OK visitors,
+    starting from night and brightening across the first viewport of
+    scroll; reduced-motion visitors keep these exact defaults except for
+    instant (non-interpolated) threshold jumps -- see the script below.
   */
   .hero {
+    /* Own stacking context: without this, .hero__sky's z-index: -1 (and
+       its position: absolute, lacking a positioned ancestor otherwise)
+       compares against the ROOT stacking context instead of staying
+       scoped to the hero -- exactly the bug that let the page-level
+       SkySurface (Phase 4) bleed through unpredictably. */
+    position: relative;
+    isolation: isolate;
     height: 200vh;
-    --sky-top: #1a1611;
-    --sky-bot: #241e15;
-    --sun-y: 115%;
-    --sun-glow: 0px;
-    --stars-o: 1;
-    --haze-o: 0;
-    --hero-text: var(--hamdam-dawn-cream);
-    --title-shadow-o: 0.28;
+    --sky-top: #E8B04B;
+    --sky-bot: #F5EEE0;
+    --sun-y: -10%;
+    --sun-glow: 24px;
+    --stars-o: 0;
+    --haze-o: 0.12;
+    --hero-text: var(--hamdam-text);
+    --title-shadow-o: 0;
     --scrim-o: 0;
+    --horizon-drift: 0px;
+    --device-drift: 0px;
   }
 
   .hero__viewport {
@@ -73,8 +179,8 @@ const stars = starField(40, 42);
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
     text-align: center;
+    padding-block: 6.5rem 2rem;
     padding-inline: 1.5rem;
   }
 
@@ -83,7 +189,6 @@ const stars = starField(40, 42);
     inset: 0;
     z-index: -1;
     background: linear-gradient(to bottom, var(--sky-top), var(--sky-bot));
-    contain: strict;
   }
 
   .hero__stars {
@@ -95,7 +200,6 @@ const stars = starField(40, 42);
     opacity: var(--stars-o);
   }
 
-  /* Clips the sun below the horizon line so "risen" is literal. */
   .hero__sun-track {
     position: absolute;
     inset-block-start: 0;
@@ -128,41 +232,76 @@ const stars = starField(40, 42);
       transparent
     );
     opacity: var(--haze-o);
+    transform: translateY(var(--horizon-drift));
   }
 
-  .hero--in-view .hero__sun,
-  .hero--in-view .hero__stars {
-    will-change: transform, opacity;
+  .hero__horizon-photo {
+    position: absolute;
+    inset-inline: 0;
+    bottom: 0;
+    width: 100%;
+    height: auto;
+    transform: translateY(var(--horizon-drift));
+  }
+  :global([dir='rtl']) .hero__horizon-photo {
+    transform: scaleX(-1) translateY(var(--horizon-drift));
+  }
+
+  .hero__horizon-photo--desktop {
+    display: none;
+  }
+  .hero__horizon-photo--mobile {
+    display: block;
+  }
+  @media (min-width: 768px) {
+    .hero__horizon-photo--desktop {
+      display: block;
+    }
+    .hero__horizon-photo--mobile {
+      display: none;
+    }
+  }
+
+  .hero__blossom-photo {
+    display: none;
+  }
+  @media (min-width: 768px) {
+    .hero__blossom-photo {
+      display: block;
+      position: absolute;
+      inset-inline-start: 0;
+      bottom: 0;
+      width: min(32%, 420px);
+      height: auto;
+      transform: translateY(calc(var(--horizon-drift) * 1.5));
+    }
+    :global([dir='rtl']) .hero__blossom-photo {
+      transform: scaleX(-1) translateY(calc(var(--horizon-drift) * 1.5));
+    }
   }
 
   .hero__content {
+    position: relative;
     display: flex;
     flex-direction: column;
     align-items: center;
     max-width: 800px;
     color: var(--hero-text);
-    /* Mid-dawn contrast scrim — invisible at both ends of the timeline. */
-    background: rgb(26 22 17 / var(--scrim-o));
-    border-radius: var(--radius-card, 16px);
-    padding: 1.5rem 2rem;
   }
 
   .hero__title {
     margin-top: 2.5rem;
     font-family: var(--font-serif);
     font-weight: 600;
-    font-size: clamp(48px, 8vw, 88px);
+    font-size: var(--text-display);
     line-height: 1.05;
-    /* Soft ground for the mid-dawn frames where sky and text values converge;
-       dissolves via --title-shadow-o as the sky lightens. */
-    text-shadow: 0 1px 28px rgb(26 22 17 / var(--title-shadow-o));
   }
 
   :global([lang='fa']) .hero__title {
     font-family: var(--font-farsi);
     font-weight: 500;
-    font-size: clamp(40px, 7vw, 72px);
-    line-height: 1.3;
+    font-size: var(--text-display-fa);
+    line-height: 1.25;
   }
 
   .hero__sub {
@@ -185,55 +324,72 @@ const stars = starField(40, 42);
     margin-top: 3rem;
   }
 
-  /* Entrance choreography — motion-enabled visitors only. One-time settle,
-     no infinite pulse. */
+  .hero__device {
+    position: relative;
+    margin-top: 3rem;
+    width: min(260px, 62vw);
+    aspect-ratio: 1290 / 2796;
+    border-radius: var(--radius-device);
+    background: linear-gradient(to bottom, var(--surface-dusk), var(--surface-firstlight));
+    box-shadow: var(--shadow-lift);
+    overflow: hidden;
+    transform: translateY(var(--device-drift));
+  }
+
+  .hero__device-frame {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
+  @media (min-width: 640px) {
+    .hero__device {
+      width: min(360px, 32vw);
+    }
+  }
+
+  .hero--in-view .hero__sun,
+  .hero--in-view .hero__stars {
+    will-change: transform, opacity;
+  }
+
+  /* One-time settle-in on load (motion-specification.md §3): mark, title,
+     sub, CTA, device rise 12px and fade in, staggered 80ms, 600ms total.
+     Motion-OK only; reduced-motion renders the final state immediately
+     (no keyframes run at all, so "no settle-in" is exact, not just fast). */
   @media (prefers-reduced-motion: no-preference) {
+    .hero__mark,
     .hero__title,
     .hero__sub,
-    .hero__cta {
+    .hero__cta,
+    .hero__device {
       opacity: 0;
-      animation: hero-rise var(--dur-reveal) var(--ease-dawn) forwards;
+      animation: hero-settle 600ms var(--ease-settle) forwards;
     }
-    .hero__title { animation-delay: 200ms; }
-    .hero__sub { animation-delay: 500ms; }
-    .hero__cta { animation-delay: 800ms; }
+    .hero__mark { animation-delay: 0ms; }
+    .hero__title { animation-delay: 80ms; }
+    .hero__sub { animation-delay: 160ms; }
+    .hero__cta { animation-delay: 240ms; }
+    .hero__device { animation-delay: 320ms; }
   }
 
   /* ?dawn=N design-review mode: timeline pinned, entrance pre-settled so
      screenshots are deterministic. */
+  .hero--settled .hero__mark,
   .hero--settled .hero__title,
   .hero--settled .hero__sub,
-  .hero--settled .hero__cta {
+  .hero--settled .hero__cta,
+  .hero--settled .hero__device {
     animation: none;
     opacity: 1;
     transform: none;
   }
 
-  @keyframes hero-rise {
-    from { opacity: 0; transform: translateY(20px); }
+  @keyframes hero-settle {
+    from { opacity: 0; transform: translateY(12px); }
     to { opacity: 1; transform: translateY(0); }
-  }
-
-  /* Reduced motion: static MORNING scene, no stars, no transitions (4.4). */
-  @media (prefers-reduced-motion: reduce) {
-    .hero {
-      height: 100vh;
-      --sky-top: #e8b04b;
-      --sky-bot: #f5eee0;
-      --sun-y: -10%;
-      --sun-glow: 24px;
-      --stars-o: 0;
-      --haze-o: 0.12;
-      --hero-text: var(--hamdam-text);
-      --title-shadow-o: 0;
-      --scrim-o: 0;
-    }
-    .hero__stars {
-      display: none;
-    }
-    .hero__title {
-      text-shadow: none;
-    }
   }
 </style>
 
@@ -252,10 +408,20 @@ const stars = starField(40, 42);
 
   const hero = document.getElementById('hero');
 
+  // Reduced motion: this script does not run at all. Phase 3's static CSS
+  // defaults on .hero already ARE the exact first-light state ("warm,
+  // legible, complete", page spec §2 item 8) -- not a low-progress point
+  // on this continuous ramp, which is still quite dark until well past
+  // p=0.5. Leaving those defaults completely untouched is simpler and more
+  // correct than trying to reproduce "first-light" by quantizing progress.
   if (hero && !prefersReducedMotion()) {
     const style = hero.style;
+    const navBar = document.querySelector<HTMLElement>('[data-nav-bar]');
+    // textColorForProgress returns lerpHex output ("rgb(r g b)"), never a
+    // raw hex string -- this must match that exact format.
+    const DARK_TEXT = 'rgb(36 30 21)';
 
-    const apply = (p: number) => {
+    const apply = (p) => {
       const g = gradientForProgress(p);
       style.setProperty('--sky-top', g.top);
       style.setProperty('--sky-bot', g.bot);
@@ -263,9 +429,22 @@ const stars = starField(40, 42);
       style.setProperty('--sun-glow', `${sunGlowForProgress(p)}px`);
       style.setProperty('--stars-o', String(starsOpacityForProgress(p)));
       style.setProperty('--haze-o', String(hazeOpacityForProgress(p)));
-      style.setProperty('--hero-text', textColorForProgress(p));
+      const heroText = textColorForProgress(p);
+      style.setProperty('--hero-text', heroText);
       style.setProperty('--title-shadow-o', String(titleShadowOpacityForProgress(p)));
       style.setProperty('--scrim-o', String(scrimOpacityForProgress(p)));
+
+      // Depth-cueing drift (motion-specification.md §3): horizon at 8% of
+      // the hero's own 0-to-1-viewport scroll range; device settles over
+      // the last 24px of its rise.
+      const vh = window.innerHeight;
+      style.setProperty('--horizon-drift', `${(1 - p) * 0.08 * vh}px`);
+      style.setProperty('--device-drift', `${(1 - p) * 24}px`);
+
+      // Nav text tracks the same flip as the hero's own text (transparent
+      // over whatever the hero currently shows behind it): dark ink once
+      // the sky is light enough to hold it, cream otherwise.
+      navBar?.classList.toggle('nav-bar--on-light', heroText === DARK_TEXT);
     };
 
     // ?dawn=0.65 pins the timeline for design review and screenshots.
@@ -286,7 +465,7 @@ const stars = starField(40, 42);
       window.addEventListener('scroll', onScroll, { passive: true });
       onScroll();
 
-      // will-change only while the hero is on screen (4.5).
+      // will-change only while the hero is on screen.
       new IntersectionObserver((entries) => {
         for (const entry of entries) {
           hero.classList.toggle('hero--in-view', entry.isIntersecting);

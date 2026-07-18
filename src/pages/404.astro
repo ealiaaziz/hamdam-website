@@ -4,7 +4,7 @@ import PersianShamseh from '../components/PersianShamseh.astro';
 ---
 
 <BaseLayout
-  title="Page not found — Hamdam"
+  title="Page not found: Hamdam"
   description="The page you're looking for doesn't exist."
   lang="en"
   path="/404"
@@ -23,5 +23,26 @@ import PersianShamseh from '../components/PersianShamseh.astro';
     >
       Back to Hamdam
     </a>
+
+    {/*
+      Static hosting serves exactly one custom 404 document, so a separate
+      fa/404.astro would never be served for missing FA routes -- this
+      bilingual block is the only way FA visitors who land on a broken link
+      see Persian copy at all. Kept in the same document, not split. (F1-05)
+    */}
+    <div lang="fa" dir="rtl" class="mt-12 border-t border-indigo/10 pt-8">
+      <h2 class="text-balance font-serif text-2xl font-bold text-indigo sm:text-3xl">
+        این صفحه راهش را گم کرده است.
+      </h2>
+      <p class="mt-4 font-serif text-lg italic text-indigo/70">
+        به آغاز بازگرد.
+      </p>
+      <a
+        href="/fa/"
+        class="mt-10 inline-block rounded-[var(--radius-button)] bg-indigo px-6 py-3 text-sm font-medium text-cream transition-colors hover:bg-indigo/90"
+      >
+        بازگشت به همدم
+      </a>
+    </div>
   </section>
 </BaseLayout>

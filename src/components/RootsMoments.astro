@@ -1,0 +1,332 @@
+---
+import { Image } from 'astro:assets';
+import type { ImageMetadata } from 'astro:assets';
+import { upcomingMoments, getBrisbaneToday } from '../lib/countdown';
+import momentYalda from '../assets/website-redesign/moment-yalda.png';
+import momentNorooz from '../assets/website-redesign/moment-norooz.png';
+import momentChaharshanbeSuri from '../assets/website-redesign/moment-chaharshanbe-suri.png';
+import deviceFrame from '../assets/website-redesign/device-frame-iphone.png';
+
+const CARD_IMAGE: Record<string, ImageMetadata> = {
+  yalda: momentYalda,
+  norooz: momentNorooz,
+  chaharshanbeSuri: momentChaharshanbeSuri,
+};
+
+const CARD_ALT: Record<string, { en: string; fa: string }> = {
+  yalda: { en: 'Pomegranates and candlelight for Yalda night', fa: 'انار و شمع برای شب یلدا' },
+  norooz: { en: 'Spring blossoms in morning light for Norooz', fa: 'شکوفه‌های بهاری در نور صبح برای نوروز' },
+  chaharshanbeSuri: { en: 'Fire glow at dusk for Chaharshanbe Suri', fa: 'شعله‌ی آتش در غروب برای چهارشنبه‌سوری' },
+};
+
+interface Props {
+  lang: 'en' | 'fa';
+}
+
+const { lang } = Astro.props;
+
+// Computed at build time (Australia/Brisbane, page spec §7 item 12) --
+// static HTML, no client JS needed for the countdown itself. Rebuilds
+// pick up the new day automatically.
+const moments = upcomingMoments(getBrisbaneToday());
+
+// EN/FA sentence pairs reused byte-exact from the shipped app's
+// momentMeaning(id:_:) in Localization.swift (Roots MomentDetailSheet) --
+// EN authored per Ealia's spec, FA authored by Claude with a
+// SIMA-review-pending flag already carried in the app itself; that same
+// pending status applies here, not a new gap this phase introduces.
+const CARD_COPY: Record<string, { nameEn: string; nameFa: string; sentenceEn: string; sentenceFa: string }> = {
+  yalda: {
+    nameEn: 'Yalda',
+    nameFa: 'یلدا',
+    sentenceEn: 'The longest night of the year, when families gather to read Hafez, share pomegranates and watermelon, and welcome the return of the sun.',
+    sentenceFa: 'طولانی‌ترین شب سال، وقتی خانواده‌ها دور هم جمع می‌شوند تا حافظ بخوانند، انار و هندوانه به اشتراک بگذارند، و بازگشت خورشید را خوش‌آمد بگویند.',
+  },
+  norooz: {
+    nameEn: 'Norooz',
+    nameFa: 'نوروز',
+    sentenceEn: 'The first day of spring, marking renewal, rebirth, and the balance of light and dark.',
+    sentenceFa: 'نخستین روز بهار، نشانه‌ی تجدید، تولدی دوباره، و توازن روشنایی و تاریکی.',
+  },
+  chaharshanbeSuri: {
+    nameEn: 'Chaharshanbe Suri',
+    nameFa: 'چهارشنبه‌سوری',
+    sentenceEn: "The last Tuesday night before Norooz, when people leap over small fires whispering 'give me your redness, take my paleness.'",
+    sentenceFa: 'شب سه‌شنبه‌ی آخر پیش از نوروز، وقتی مردم از روی آتش‌های کوچک می‌پرند و زمزمه می‌کنند «سرخی تو از من، زردی من از تو».',
+  },
+};
+
+function countdownText(daysUntil: number, nameEn: string, nameFa: string): string {
+  if (lang === 'fa') {
+    if (daysUntil === 0) return `${nameFa} امروز می‌رسد.`;
+    if (daysUntil === 1) return `${nameFa} فردا می‌رسد.`;
+    return `${nameFa} تا ${daysUntil.toLocaleString('fa-IR')} روز دیگر می‌رسد.`;
+  }
+  if (daysUntil === 0) return `${nameEn} arrives today.`;
+  if (daysUntil === 1) return `${nameEn} arrives tomorrow.`;
+  return `${nameEn} arrives in ${daysUntil} days.`;
+}
+
+const cards = moments.map((m) => ({ ...m, ...CARD_COPY[m.id], countdown: countdownText(m.daysUntil, CARD_COPY[m.id].nameEn, CARD_COPY[m.id].nameFa) }));
+
+const copy =
+  lang === 'fa'
+    ? {
+        heading: 'یلدا، نوروز، چهارشنبه‌سوری. همدم می‌داند کِی از راه می‌رسند، و آن‌ها را با شعری که به خودشان تعلق دارد خوش‌آمد می‌گوید.',
+        closing: 'مهرگان و سیزده بدر هم علامت‌گذاری شده‌اند، هرکدام با آمدنی آرام.',
+        falHafez: 'همان‌گونه که نسل‌ها پرسیده‌اند، بپرس.',
+        deviceAlt: 'صفحه ریشه‌های همدم با فال حافظ و تقویم فرهنگی (تصویر نهایی در دست تهیه)',
+      }
+    : {
+        heading: 'Yalda, Norooz, Chaharshanbe Suri. Hamdam knows when they arrive, and greets them with poetry that belongs to them.',
+        closing: 'Mehregan and Sizdah Bedar are marked too, each with its own quiet arrival.',
+        falHafez: 'Ask, as generations have.',
+        deviceAlt: "Hamdam Roots screen with Fal-e Hafez and the cultural calendar (final screenshot pending)",
+      };
+---
+
+<section class="roots" aria-labelledby="roots-title">
+  <div class="roots__inner">
+    <div class="roots__content">
+      <h2 id="roots-title" class="roots__heading text-balance">{copy.heading}</h2>
+
+      <ul class="roots__cards" data-reveal-group>
+        {cards.map((card) => (
+          <li
+            class:list={['roots__card', card.isNearest && 'roots__card--nearest']}
+            data-reveal
+            data-moment={card.id}
+          >
+            <div class="roots__card-image">
+              <Image
+                src={CARD_IMAGE[card.id]}
+                alt={lang === 'fa' ? CARD_ALT[card.id].fa : CARD_ALT[card.id].en}
+                width={CARD_IMAGE[card.id].width}
+                height={CARD_IMAGE[card.id].height}
+                class="roots__card-image-img"
+              />
+              <div class="roots__card-plate">
+                <span class="roots__card-name font-farsi" dir="rtl">{card.nameFa}</span>
+              </div>
+            </div>
+            <p class="roots__card-translit">{card.nameEn}</p>
+            <p class="roots__card-sentence">{lang === 'fa' ? card.sentenceFa : card.sentenceEn}</p>
+            <p class="roots__card-countdown">{card.countdown}</p>
+          </li>
+        ))}
+      </ul>
+
+      <p class="roots__closing">{copy.closing}</p>
+      <p class="roots__fal">{copy.falHafez}</p>
+    </div>
+
+    {
+      /* DV-01 (device frame) is now real; the orchestrator 04-roots
+         screenshot that belongs inside it is still pending. Same pattern as
+         HeroCinematic.astro's .hero__device: the existing gradient fill
+         shows through the frame's real transparent screen cutout as the
+         honest "screenshot pending" state. */
+    }
+    <div class="roots__device" role="img" aria-label={copy.deviceAlt}>
+      <Image
+        src={deviceFrame}
+        alt=""
+        width={520}
+        height={Math.round((520 / deviceFrame.width) * deviceFrame.height)}
+        quality={72}
+        class="roots__device-frame"
+      />
+    </div>
+  </div>
+</section>
+
+<style>
+  .roots {
+    padding-block: var(--spacing-section-mobile);
+    padding-inline: 1.5rem;
+    background-color: var(--surface-firstlight);
+    color: var(--text-on-night);
+  }
+  @media (min-width: 640px) {
+    .roots {
+      padding-block: var(--spacing-section-desktop);
+    }
+  }
+
+  .roots__inner {
+    max-width: 1200px;
+    margin-inline: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 2.5rem;
+  }
+
+  .roots__heading {
+    text-align: center;
+    font-family: var(--font-serif);
+    font-size: var(--text-h2);
+    font-weight: 600;
+  }
+  :global([lang='fa']) .roots__heading {
+    font-family: var(--font-farsi);
+    font-weight: 500;
+  }
+
+  .roots__cards {
+    margin-top: 2.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .roots__card {
+    border-radius: var(--radius-card);
+    overflow: hidden;
+    background: rgb(244 237 216 / 0.04);
+  }
+
+  .roots__card-image {
+    position: relative;
+    aspect-ratio: 4 / 3;
+    background: linear-gradient(160deg, var(--surface-dusk), var(--surface-night));
+    overflow: hidden;
+  }
+  .roots__card-image-img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .roots__card-plate {
+    position: absolute;
+    inset-block-end: 0;
+    inset-inline: 0;
+    background: rgb(20 20 48 / 0.72);
+    padding: 0.75rem 1rem;
+    text-align: center;
+  }
+  .roots__card-name {
+    font-size: var(--text-h3);
+    font-weight: 700;
+    color: var(--text-on-night);
+  }
+
+  .roots__card-translit {
+    margin-top: 0.75rem;
+    padding-inline: 1rem;
+    font-family: var(--font-sans);
+    font-size: var(--text-meta);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--hamdam-night-gold);
+  }
+
+  .roots__card-sentence {
+    margin-top: 0.5rem;
+    padding-inline: 1rem;
+    font-size: var(--text-body);
+    line-height: 1.6;
+    opacity: 0.85;
+  }
+
+  .roots__card-countdown {
+    margin-top: 0.75rem;
+    padding: 0 1rem 1rem;
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-weight: 600;
+    font-size: var(--text-body);
+  }
+  :global([lang='fa']) .roots__card-countdown {
+    font-family: var(--font-farsi);
+    font-style: normal;
+  }
+
+  /* Nearest-upcoming moment: once-per-load soft glow pulse (2s, one time);
+     reduced motion drops the pulse for a static border tone instead
+     (page spec §7 items 7-8). */
+  .roots__card--nearest {
+    border: 1px solid var(--hamdam-night-gold);
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .roots__card--nearest {
+      animation: roots-pulse 2s var(--ease-cross) 1;
+    }
+  }
+  @keyframes roots-pulse {
+    0%, 100% { box-shadow: 0 0 0 var(--glow-warm); }
+    50% { box-shadow: 0 0 32px var(--glow-warm); }
+  }
+
+  .roots__closing {
+    margin-top: 2rem;
+    text-align: center;
+    font-size: var(--text-body);
+    opacity: 0.8;
+  }
+  :global([lang='fa']) .roots__closing {
+    font-family: var(--font-farsi);
+  }
+
+  .roots__fal {
+    margin-top: 0.75rem;
+    text-align: center;
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: var(--text-body);
+    opacity: 0.9;
+  }
+  :global([lang='fa']) .roots__fal {
+    font-family: var(--font-farsi);
+    font-style: normal;
+  }
+
+  .roots__device {
+    position: relative;
+    width: min(220px, 55vw);
+    aspect-ratio: 1290 / 2796;
+    margin-inline: auto;
+    border-radius: var(--radius-device);
+    background: linear-gradient(to bottom, var(--surface-dusk), var(--surface-night));
+    box-shadow: var(--shadow-lift);
+    overflow: hidden;
+  }
+  .roots__device-frame {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
+  /* Desktop: three cards in a row, equal height, device frame anchors
+     the inline-end (logical property, mirrors for FA automatically). */
+  @media (min-width: 1024px) {
+    .roots__inner {
+      flex-direction: row;
+      align-items: center;
+    }
+    .roots__content {
+      flex: 1;
+    }
+    .roots__cards {
+      flex-direction: row;
+      align-items: stretch;
+    }
+    .roots__card {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    .roots__card-sentence {
+      flex: 1;
+    }
+    .roots__device {
+      flex: 0 0 220px;
+      margin-inline: 0;
+      margin-inline-start: 2.5rem;
+    }
+  }
+</style>

@@ -1,0 +1,127 @@
+---
+import PoetCard from './PoetCard.astro';
+import { poets } from '../data/poets';
+
+interface Props {
+  lang: 'en' | 'fa';
+}
+
+const { lang } = Astro.props;
+
+const heading = lang === 'fa' ? 'پنج شاعر، پنج صدا.' : 'Five poets, five voices.';
+const provenance =
+  lang === 'fa'
+    ? 'شعرها از گنجور گردآوری شده‌اند. پرتره‌ها برداشت‌های هنری هستند.'
+    : 'Verses sourced from Ganjoor.net. Portraits are artistic interpretations.';
+const carouselLabel = lang === 'fa' ? 'پنج شاعر' : 'The five poets';
+---
+
+<section class="poets-band" aria-labelledby="poets-band-title">
+  <h2 id="poets-band-title" class="poets-band__heading text-balance">{heading}</h2>
+
+  {
+    /* Native horizontal scroll (no JS): scroll-snap on mobile, unwrapped
+       row on desktop via min-width media query below. tabindex makes the
+       scroller itself keyboard-reachable/arrow-scrollable (page spec §4
+       item 11) since the cards carry no click action of their own
+       (item 10: "no conversion action, this section builds authority"). */
+  }
+  <div
+    class="poets-band__track"
+    role="region"
+    aria-label={carouselLabel}
+    tabindex="0"
+    data-reveal-group
+  >
+    {poets.map((poet, i) => (
+      <PoetCard
+        lang={lang}
+        persianName={poet.persianName}
+        transliteration={poet.transliteration}
+        description={lang === 'fa' ? poet.descriptionFa : poet.description}
+        portrait={poet.portrait}
+        emphasized={i === 2}
+      />
+    ))}
+  </div>
+
+  <div class="poets-band__dots" aria-hidden="true">
+    {poets.map(() => <span class="poets-band__dot" />)}
+  </div>
+
+  <p class="poets-band__provenance">{provenance}</p>
+</section>
+
+<style>
+  .poets-band {
+    padding-block: var(--spacing-section-mobile);
+    background-color: var(--surface-dusk);
+    color: var(--text-on-night);
+  }
+  @media (min-width: 640px) {
+    .poets-band {
+      padding-block: var(--spacing-section-desktop);
+    }
+  }
+
+  .poets-band__heading {
+    text-align: center;
+    padding-inline: 1.5rem;
+    font-family: var(--font-serif);
+    font-size: var(--text-h2);
+    font-weight: 600;
+  }
+  :global([lang='fa']) .poets-band__heading {
+    font-family: var(--font-farsi);
+    font-weight: 500;
+  }
+
+  .poets-band__track {
+    margin-top: 2.5rem;
+    display: flex;
+    gap: 1.25rem;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    padding-inline: 1.5rem;
+    padding-block-end: 0.5rem;
+  }
+  .poets-band__track:focus-visible {
+    outline: 2px solid var(--hamdam-night-gold);
+    outline-offset: 4px;
+  }
+
+  @media (min-width: 1024px) {
+    .poets-band__track {
+      justify-content: center;
+      overflow-x: visible;
+      align-items: flex-end;
+    }
+  }
+
+  .poets-band__dots {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-top: 1rem;
+  }
+  .poets-band__dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--text-on-night-muted);
+  }
+  @media (min-width: 1024px) {
+    .poets-band__dots {
+      display: none;
+    }
+  }
+
+  .poets-band__provenance {
+    margin-top: 2rem;
+    text-align: center;
+    padding-inline: 1.5rem;
+    font-family: var(--font-sans);
+    font-size: var(--text-meta);
+    color: var(--text-on-night-muted);
+  }
+</style>

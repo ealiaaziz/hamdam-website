@@ -3,9 +3,12 @@ import { LOCALES, resolveLocaleFromPath, switchLocalePath } from '../lib/locale'
 
 interface Props {
   lang: 'en' | 'fa';
+  /** True when rendered inside NavBar.astro: position and colour come from
+   * the nav bar's own layout/colour context instead of floating standalone. */
+  inNav?: boolean;
 }
 
-const { lang } = Astro.props;
+const { lang, inNav = false } = Astro.props;
 const target = lang === 'fa' ? LOCALES.EN : LOCALES.FA;
 const href = switchLocalePath(Astro.url.pathname, target);
 // Sanity: the computed target path must resolve to the target locale.
@@ -19,8 +22,14 @@ const ariaLabel = lang === 'fa' ? 'به انگلیسی' : 'Switch to Farsi';
 
 <a
   href={href}
+  data-lang-toggle
   aria-label={`${ariaLabel} (${label})`}
-  class="fixed top-6 end-6 z-40 inline-flex min-h-[44px] items-center rounded-full bg-white/60 px-5 text-sm font-medium text-indigo backdrop-blur transition-colors duration-200 hover:bg-white/90"
+  class:list={[
+    'inline-flex min-h-[44px] items-center rounded-full px-5 text-sm font-medium transition-colors duration-200',
+    inNav
+      ? 'text-current hover:opacity-80'
+      : 'fixed top-6 end-6 z-40 bg-white/60 text-indigo backdrop-blur hover:bg-white/90',
+  ]}
 >
   {label}
 </a>

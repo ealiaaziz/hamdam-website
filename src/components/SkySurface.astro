@@ -1,0 +1,22 @@
+---
+---
+
+{
+  /* Fixed page-level backdrop consuming --sky-progress (design-system.md §1,
+     motion-specification.md §2). Sits behind everything, including the
+     hero's own local sky gradient, so it has no visible effect yet (every
+     current section, including the hero, paints its own opaque background
+     on top -- "ship behind visual parity"). It exists now as real, tested
+     infrastructure so Phase 5 onward can start making sections translucent
+     and let it show through, without a second scroll listener. */
+}
+<div id="sky-surface" class="sky-surface" aria-hidden="true"></div>
+
+<style>
+  .sky-surface {
+    position: fixed;
+    inset: 0;
+    z-index: -20;
+    background-color: var(--sky-color, #141430);
+  }
+</style>

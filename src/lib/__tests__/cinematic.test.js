@@ -13,6 +13,10 @@ import {
   scrimOpacityForProgress,
   starField,
   prefersReducedMotion,
+  skyProgressForScroll,
+  skyColorForProgress,
+  skyToneForProgress,
+  SKY_TONE,
 } from '../cinematic.js';
 
 const RGB = /^rgb\(\d{1,3} \d{1,3} \d{1,3}\)$/;
@@ -154,5 +158,59 @@ describe('prefersReducedMotion', () => {
       matchMedia: vi.fn().mockReturnValue({ matches: false }),
     });
     expect(prefersReducedMotion()).toBe(false);
+  });
+});
+
+describe('skyProgressForScroll', () => {
+  it('clamps to 0..1 and scales by the given distance', () => {
+    expect(skyProgressForScroll(0, 1000)).toBe(0);
+    expect(skyProgressForScroll(500, 1000)).toBe(0.5);
+    expect(skyProgressForScroll(1000, 1000)).toBe(1);
+    expect(skyProgressForScroll(5000, 1000)).toBe(1);
+    expect(skyProgressForScroll(-100, 1000)).toBe(0);
+  });
+
+  it('returns 0 for a non-positive distance instead of dividing by zero', () => {
+    expect(skyProgressForScroll(500, 0)).toBe(0);
+    expect(skyProgressForScroll(500, -10)).toBe(0);
+  });
+});
+
+describe('skyColorForProgress', () => {
+  it('returns the exact named surface colour at each stop', () => {
+    expect(skyColorForProgress(0)).toBe('rgb(20 20 48)'); // --surface-night
+    expect(skyColorForProgress(1)).toBe('rgb(244 237 216)'); // --surface-morning
+  });
+
+  it('clamps out-of-range progress to the end stops', () => {
+    expect(skyColorForProgress(-1)).toBe(skyColorForProgress(0));
+    expect(skyColorForProgress(2)).toBe(skyColorForProgress(1));
+  });
+
+  it('interpolates monotonically between adjacent stops', () => {
+    const early = skyColorForProgress(0.1);
+    const mid = skyColorForProgress(0.2);
+    expect(early).not.toBe(mid);
+  });
+});
+
+describe('skyToneForProgress (hysteresis at 0.45 / 0.8)', () => {
+  it('is NIGHT at and below 0.45 regardless of previous tone', () => {
+    expect(skyToneForProgress(0, SKY_TONE.MORNING)).toBe(SKY_TONE.NIGHT);
+    expect(skyToneForProgress(0.45, SKY_TONE.MORNING)).toBe(SKY_TONE.NIGHT);
+  });
+
+  it('is MORNING at and above 0.8 regardless of previous tone', () => {
+    expect(skyToneForProgress(0.8, SKY_TONE.NIGHT)).toBe(SKY_TONE.MORNING);
+    expect(skyToneForProgress(1, SKY_TONE.NIGHT)).toBe(SKY_TONE.MORNING);
+  });
+
+  it('holds the previous tone inside the 0.45-0.8 hysteresis band', () => {
+    expect(skyToneForProgress(0.6, SKY_TONE.NIGHT)).toBe(SKY_TONE.NIGHT);
+    expect(skyToneForProgress(0.6, SKY_TONE.MORNING)).toBe(SKY_TONE.MORNING);
+  });
+
+  it('defaults to NIGHT when no previous tone is given', () => {
+    expect(skyToneForProgress(0.6)).toBe(SKY_TONE.NIGHT);
   });
 });

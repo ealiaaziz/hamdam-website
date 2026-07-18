@@ -383,5 +383,5 @@ PT-05 Parvin Etesami. No other poet may be produced.
 - **Review gate:** every asset is reviewed against `16-visual-acceptance-criteria.md` and
   the North Star PNGs before repo entry; the PT and CM series additionally require Ealia's
   cultural approval.
-- **Asset count: 14** (HW-01, HW-02, HW-03, HW-04, PT-01 to PT-05, CM-01 to CM-03, DV-01,
+- **Asset count: 15** (HW-01, HW-02, HW-03, HW-04, PT-01 to PT-05, CM-01 to CM-03, DV-01,
   CY-01, FC-01).

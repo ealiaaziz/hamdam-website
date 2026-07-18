@@ -12,6 +12,21 @@
 @import "@fontsource/vazirmatn/700.css";
 
 @theme {
+  /* Fluid type scale (design-system.md §5). clamp()s between a 390px floor
+     and 1440px ceiling. Additive: no current markup uses these class names
+     (text-display, text-h2, ...) yet, so this is inert until a later phase
+     redesigns a section. FA variants (§4, 6% larger) exist only for the
+     roles the spec calls out explicitly: display and body. */
+  --text-display: clamp(2.5rem, 1.664rem + 3.429vw, 4.75rem);
+  --text-display-fa: clamp(2.65rem, 1.764rem + 3.634vw, 5.035rem);
+  --text-h2: clamp(1.75rem, 1.379rem + 1.524vw, 2.75rem);
+  --text-h3: clamp(1.25rem, 1.111rem + 0.571vw, 1.625rem);
+  --text-verse-fa: clamp(1.375rem, 1.189rem + 0.762vw, 1.875rem);
+  --text-verse-en: clamp(1rem, 0.930rem + 0.286vw, 1.1875rem);
+  --text-body: clamp(1rem, 0.954rem + 0.190vw, 1.125rem);
+  --text-body-fa: clamp(1.06rem, 1.011rem + 0.202vw, 1.1925rem);
+  --text-meta: clamp(0.8125rem, 0.789rem + 0.095vw, 0.875rem);
+
   /* Colors */
   --color-cream: #F4EDD8;
   --color-indigo: #1B1B3A;
@@ -36,13 +51,43 @@
   /* Max widths */
   --container-reading: 65ch;
   --container-design: 720px;
+  /* design-system.md §7 specifies 64ch, 1ch tighter than the existing
+     --container-reading. Left --container-reading untouched here to hold
+     pixel parity on the current copy sections; --measure-copy is the
+     spec-correct value later phases adopt when those sections are rebuilt. */
+  --measure-copy: 64ch;
+
+  /* Layout grid (design-system.md §7). Additive; not consumed until a
+     section adopts an explicit grid layout. */
+  --grid-columns: 12;
+  --grid-gutter: 24px;
+  --content-max-width: 1200px;
+  --page-padding-mobile: 20px;
+  --page-padding-desktop: 48px;
 
   /* Shadows */
   --shadow-card: 0 4px 24px rgba(27, 27, 58, 0.08);
+  /* Two-elevation system (design-system.md §11). Additive; --shadow-card
+     above stays the in-use card shadow until sections migrate. */
+  --shadow-rest: 0 2px 8px rgba(20, 20, 48, 0.10);
+  --shadow-lift: 0 8px 28px rgba(20, 20, 48, 0.18);
 
   /* Radius */
   --radius-card: 16px;
   --radius-button: 12px;
+  /* design-system.md §8: --radius-pill replaces --radius-button as the CTA
+     radius, but that migration happens per-component in the phase that
+     rebuilds each CTA, not here (Phase 1 changes tokens.css/global.css
+     only). --radius-button stays until every consumer is migrated. */
+  --radius-panel: 24px;
+  --radius-pill: 999px;
+  /* Placeholder pending DV-01 (device frame) production; finalise against
+     the actual asset's screen-cutout corner radius once it exists. */
+  --radius-device: 54px;
+
+  /* Card padding (design-system.md §6) */
+  --card-padding-mobile: 24px;
+  --card-padding-desktop: 32px;
 
   /* Animation */
   --animate-breathe: breathe 4s ease-in-out infinite;
@@ -120,4 +165,31 @@ body {
 :dir(rtl) .scene-bg img {
   mask-image: linear-gradient(to right, black 35%, transparent 92%);
   -webkit-mask-image: linear-gradient(to right, black 35%, transparent 92%);
+}
+
+/* prefers-contrast: more (design-system.md §19, acceptance gate F5).
+   Global rules for the two patterns every redesigned section shares:
+   semi-transparent caption plates (poet/roots cards) go fully opaque, and
+   every card/panel gets a visible border so structure survives if a
+   forced-colours mode strips the backplate entirely. This is a first
+   pass covering the shared patterns, not an exhaustive per-component
+   audit -- flagged for a follow-up pass alongside a real Windows High
+   Contrast capture, which this repo has no way to produce itself. */
+@media (prefers-contrast: more) {
+  .poet-card__plate,
+  .roots__card-plate {
+    background: var(--surface-night);
+  }
+  .poet-card__portrait,
+  .roots__card-image,
+  .constellation__device,
+  .journey__frame,
+  .privacy-trust__device,
+  .plans__panel,
+  .plans__founding {
+    border: 2px solid currentColor;
+  }
+  :focus-visible {
+    outline-width: 3px;
+  }
 }
