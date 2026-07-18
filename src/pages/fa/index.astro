@@ -1,6 +1,5 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import PersianShamseh from '../../components/PersianShamseh.astro';
 import HeroCinematic from '../../components/HeroCinematic.astro';
 import MoodDemo from '../../components/MoodDemo.astro';
 import VerseShowcase from '../../components/VerseShowcase.astro';
@@ -115,8 +114,7 @@ import dawn from '../../assets/scenes/dawn-section.jpg';
   <!-- FOOTER -->
   <footer class="border-t border-saffron/30 px-6 py-20">
     <div class="mx-auto flex max-w-xl flex-col items-center gap-4 text-center">
-      <PersianShamseh size={16} opacity={0.7} />
-      <HamdamLogotype size={24} showMark={false} lang="fa" />
+      <HamdamLogotype size={24} lang="fa" />
       <p class="font-farsi text-sm text-indigo/70">اپلیکیشنی از تیم همدم</p>
       <nav aria-label="Footer" class="flex items-center gap-3 font-farsi text-sm text-indigo/70">
         <a href="/fa/privacy" class="inline-flex min-h-[44px] items-center px-1 hover:text-indigo">حریم خصوصی</a>

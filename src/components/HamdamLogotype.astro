@@ -1,6 +1,4 @@
 ---
-import PersianShamseh from './PersianShamseh.astro';
-
 interface Props {
   lang?: 'en' | 'fa';
   size?: number;
@@ -11,10 +9,25 @@ interface Props {
 const { lang = 'en', size = 24, showMark = true, class: className = '' } = Astro.props;
 const wordmark = lang === 'fa' ? 'همدم' : 'Hamdam';
 const fontClass = lang === 'fa' ? 'font-farsi' : 'font-serif';
+// The real app icon (already used for the PWA manifest at icon-192/512),
+// not the abstract shamseh line mark -- the brand identifier in nav/footer
+// should be recognisably the same icon someone sees on their home screen.
+// Self-contained raster square (its own rounded-corner frame and warm
+// gradient), so it reads on both the nav's dark and light states without
+// needing a currentColor treatment the way the line mark did.
+const markSize = Math.round(size * 0.85);
 ---
 
 <span class:list={['inline-flex items-center gap-2', className]}>
-  {showMark && <PersianShamseh size={size * 0.7} />}
+  {showMark && (
+    <img
+      src="/icons/icon-192.png"
+      width={markSize}
+      height={markSize}
+      alt=""
+      class="rounded-[22%]"
+    />
+  )}
   {/* 24px (text-2xl) is the only size in use; a literal class keeps the
       wordmark styleable under the no-inline-styles CSP. text-current so
       callers set colour via their own ancestor (body defaults to indigo,
