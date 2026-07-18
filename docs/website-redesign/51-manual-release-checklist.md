@@ -104,12 +104,29 @@ contrast) were not covered by the first decision and are newly accepted here.
 - [x] **FA verse-card translation line** (F2 finding) — fixed 2026-07-19. Added explicit
       `dir="ltr"` to the English translation `<p>` in `VerseCard.astro`, per the candidate fix
       already recorded here. Verified in built `dist/fa/index.html`.
-- [ ] **Sticky-CTA boundary behaviour** — whether the mobile CTA pill correctly hides across
-      the ceremony-to-footer gap specifically (not just while the ceremony section is in view)
-      needs a live scroll-through; a stale Phase-9 TODO the code boundary now exists to
-      resolve, but resolving it needs a decision, not just a mechanical fix.
-- [ ] **Scroll-progress anchoring** (`BaseLayout.astro`) — currently uses total page height
-      rather than a ceremony-anchored offset. Practical effect likely small; unmeasured.
+- [x] **Sticky-CTA boundary behaviour** — decided and fixed 2026-07-19. Made the call: the
+      floating pill should stay hidden across the footer too, since it's legal/nav content
+      (privacy, terms, contact, trademark line), never a conversion moment. Added a
+      `data-store-cta="footer"` landmark to `Footer.astro`, a new `FOOTER` state in
+      `stickyCta.js`'s state machine (`shouldShowFloatingCta` already treats any non-NONE state
+      as hidden, so no change needed there), and a regression test. Side effect fixed too: this
+      also stops the pill floating for the entire body of `privacy`/`terms` pages, which
+      previously had zero landmarks and so were always in the NONE ("show") state. **Could not
+      do the live scroll-through this recorded as needed** — Playwright browser automation was
+      blocked by this session's permission classifier even for a bare screenshot, and
+      `APP_STORE.RELEASED` is `false` pre-launch so the pill doesn't render at all to observe
+      manually either. Reasoned from DOM structure/geometry instead (Footer directly follows
+      FinalCeremony with no gap in document flow, default IntersectionObserver threshold). A
+      real scroll-through once `RELEASED` flips true on launch day is still owed.
+- [x] **Scroll-progress anchoring** (`BaseLayout.astro`) — fixed 2026-07-19. Was using
+      `document.documentElement.scrollHeight - window.innerHeight` (progress reaches 1 at the
+      very bottom of the page, after the footer). Re-anchored to `#ceremony`'s own offset, per
+      `cinematic.js`'s own doc comment ("1 when the final ceremony section is fully in view"),
+      so the sky-tone ramp completes by the time ceremony begins instead of continuing to shift
+      across the footer's scroll distance below it. Pages with no ceremony section
+      (privacy/terms/404) keep the old total-page-height fallback. 112/112 tests pass, build
+      clean; visual confirmation of the ramp timing still needs a live scroll-through (same
+      Playwright blocker as above).
 
 ## Final sign-off
 

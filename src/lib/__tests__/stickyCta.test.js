@@ -20,6 +20,11 @@ describe('computeCtaState', () => {
   it('returns CEREMONY only when hero and mid are both out of view', () => {
     expect(computeCtaState({ ceremony: true })).toBe(CTA_STATE.CEREMONY);
   });
+
+  it('returns FOOTER when only the footer is visible (regression: pill previously reappeared over the footer)', () => {
+    expect(computeCtaState({ footer: true })).toBe(CTA_STATE.FOOTER);
+    expect(computeCtaState({ ceremony: true, footer: true })).toBe(CTA_STATE.CEREMONY);
+  });
 });
 
 describe('shouldShowFloatingCta', () => {
@@ -28,6 +33,7 @@ describe('shouldShowFloatingCta', () => {
     expect(shouldShowFloatingCta(CTA_STATE.HERO)).toBe(false);
     expect(shouldShowFloatingCta(CTA_STATE.MID)).toBe(false);
     expect(shouldShowFloatingCta(CTA_STATE.CEREMONY)).toBe(false);
+    expect(shouldShowFloatingCta(CTA_STATE.FOOTER)).toBe(false);
   });
 });
 

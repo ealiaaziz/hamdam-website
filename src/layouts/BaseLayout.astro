@@ -158,6 +158,7 @@ const ogImage = new URL(
       const navBar = document.querySelector<HTMLElement>('[data-nav-bar]');
       const skySurface = document.getElementById('sky-surface');
       const mainEl = document.getElementById('main-content');
+      const ceremonyEl = document.getElementById('ceremony');
       let skyTone = SKY_TONE.NIGHT;
 
       // Reduced-motion visitors open the homepage hero on first-light, not
@@ -173,9 +174,17 @@ const ogImage = new URL(
         const applyScrollEffects = () => {
           navBar?.toggleAttribute('data-nav-solid', isPastScrollThreshold(window.scrollY));
 
-          // TODO(Phase 9): re-anchor progressDistance to the real ceremony
-          // section's offset once it exists, instead of total page height.
-          const progressDistance = document.documentElement.scrollHeight - window.innerHeight;
+          // Re-anchored to the real ceremony section's offset (post-launch
+          // fix, 2026-07-19, resolving the Phase 9 TODO cinematic.js still
+          // documents): progress reaches 1 ("fully in view") the moment
+          // ceremony's top edge reaches the viewport top, matching
+          // skyProgressForScroll's own doc comment, rather than continuing
+          // to ramp across the footer's scroll distance below it. Pages
+          // without a ceremony section (privacy/terms/404) keep the old
+          // total-page-height proxy.
+          const progressDistance = ceremonyEl
+            ? ceremonyEl.getBoundingClientRect().top + window.scrollY
+            : document.documentElement.scrollHeight - window.innerHeight;
           const progress = skyProgressForScroll(window.scrollY, progressDistance);
           document.documentElement.style.setProperty('--sky-progress', String(progress));
           document.documentElement.style.setProperty('--sky-color', skyColorForProgress(progress));

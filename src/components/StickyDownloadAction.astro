@@ -29,10 +29,13 @@ const ariaLabel = lang === 'fa' ? 'دانلود همدم از اپ‌استور'
   /* Mobile only (<768px, page's md breakpoint). Visibility is driven by the
      same [data-store-cta] landmark state as the nav bar's compact CTA
      (stickyCta.js): hidden whenever hero/mid/ceremony's own CTA is in
-     view, so exactly one App Store action is ever on screen.
-     TODO(Phase 9): once the footer/ceremony boundary exists, confirm the
-     pill also hides across that gap, not just while ceremony itself is
-     in view. */
+     view, so exactly one App Store action is ever on screen. Also hidden
+     across the footer (post-launch fix, 2026-07-19: Footer.astro now
+     carries its own `data-store-cta="footer"` landmark) so the pill
+     doesn't float over privacy/terms/trademark text. State-machine
+     coverage is in stickyCta.test.js; a real-device scroll-through once
+     APP_STORE.RELEASED flips true is still owed (automated Playwright
+     verification was unavailable this session). */
   .sticky-cta {
     opacity: 0;
     pointer-events: none;

@@ -134,10 +134,10 @@ export function starField(count = 40, seed = 42) {
 // --- Page-level sky arc (Phase 4, motion-specification.md §2) ---
 // A second, independent progress metric from the hero's own (window.scrollY
 // / window.innerHeight, "0 to 1 viewport" per §3): this one spans 0 at page
-// top to 1 "when the final ceremony section is fully in view" -- which
-// doesn't exist as a landmark yet (it ships in Phase 9), so until then the
-// distance is the page's total scrollable height as an interim proxy.
-// Phase 9 must re-anchor this to the real ceremony element's offset instead.
+// top to 1 "when the final ceremony section is fully in view." Anchored to
+// the real #ceremony element's offset in BaseLayout.astro (post-launch fix,
+// 2026-07-19); pages with no ceremony section fall back to total page
+// height as an interim proxy.
 export function skyProgressForScroll(scrollY, progressDistancePx) {
   if (!(progressDistancePx > 0)) return 0;
   return clamp01(scrollY / progressDistancePx);
