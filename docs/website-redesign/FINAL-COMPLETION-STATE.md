@@ -21,11 +21,11 @@ S3, S4, F1, S5, S6, F2, S7
 `feature/hamdam-web-redesign`
 
 ## 6. Latest verified commit
-Pending this checkpoint's commit (`feat: complete website production asset integration`) — will
-supersede `846c22d` (the S1 commit) once created.
+`b941f03` — "docs: correct DV-01 consumer count in asset licence log", on top of `5dee510`
+("feat: complete website production asset integration"), superseding `846c22d` (the S1 commit).
 
 ## 7. Working tree status
-Will be clean after this checkpoint's commit: five new/derived assets (HW-01, HW-02, HW-03,
+Clean. Committed: five new/derived assets (HW-01, HW-02, HW-03,
 HW-04, DV-01) plus three petal PNGs (CY-01), seven components touched — `HeroCinematic.astro`
 (HW-01/02/04 + DV-01), `FinalCeremony.astro` (HW-03 + CY-01), `RootsMoments.astro`,
 `ContextConstellation.astro`, `PrivacyTrust.astro`, `JourneyPair.astro` (DV-01, five components,
