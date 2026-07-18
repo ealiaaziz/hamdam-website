@@ -166,3 +166,30 @@ body {
   mask-image: linear-gradient(to right, black 35%, transparent 92%);
   -webkit-mask-image: linear-gradient(to right, black 35%, transparent 92%);
 }
+
+/* prefers-contrast: more (design-system.md §19, acceptance gate F5).
+   Global rules for the two patterns every redesigned section shares:
+   semi-transparent caption plates (poet/roots cards) go fully opaque, and
+   every card/panel gets a visible border so structure survives if a
+   forced-colours mode strips the backplate entirely. This is a first
+   pass covering the shared patterns, not an exhaustive per-component
+   audit -- flagged for a follow-up pass alongside a real Windows High
+   Contrast capture, which this repo has no way to produce itself. */
+@media (prefers-contrast: more) {
+  .poet-card__plate,
+  .roots__card-plate {
+    background: var(--surface-night);
+  }
+  .poet-card__portrait,
+  .roots__card-image,
+  .constellation__device,
+  .journey__frame,
+  .privacy-trust__device,
+  .plans__panel,
+  .plans__founding {
+    border: 2px solid currentColor;
+  }
+  :focus-visible {
+    outline-width: 3px;
+  }
+}
