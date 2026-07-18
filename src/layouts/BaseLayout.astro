@@ -125,6 +125,26 @@ const ogImage = new URL(
       import { REVEAL, staggerDelayMs, prefersReducedMotion } from '../lib/reveal';
       import { observeCtaLandmarks, shouldShowFloatingCta, isPastScrollThreshold } from '../lib/stickyCta';
       import { skyProgressForScroll, skyColorForProgress, skyToneForProgress, SKY_TONE } from '../lib/cinematic';
+      import { campaignParamsFromSearch } from '../lib/appStore';
+
+      // Campaign parameter preservation (conversion spec §11): this is a
+      // static build, so Astro.url.search is always empty server-side --
+      // the real inbound query only exists here, client-side. No cookies,
+      // no storage: read once per page view and done.
+      const inboundSearch = new URLSearchParams(window.location.search);
+      if (window.location.search) {
+        const langToggle = document.querySelector<HTMLAnchorElement>('[data-lang-toggle]');
+        if (langToggle) {
+          langToggle.href = langToggle.getAttribute('href') + window.location.search;
+        }
+      }
+      const campaignParams = campaignParamsFromSearch(inboundSearch);
+      document.querySelectorAll<HTMLAnchorElement>('a[href^="https://apps.apple.com/"]').forEach((a) => {
+        const url = new URL(a.href);
+        url.searchParams.set('ct', campaignParams.ct);
+        url.searchParams.set('pt', campaignParams.pt);
+        a.href = url.toString();
+      });
 
       // Single shared rAF scroll loop for everything scroll-position-driven
       // page-wide (motion-specification.md §8: "one scroll listener... no

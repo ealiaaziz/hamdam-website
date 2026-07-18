@@ -1,7 +1,6 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import PersianShamseh from '../../components/PersianShamseh.astro';
-import AppStoreBadge from '../../components/AppStoreBadge.astro';
 import HeroCinematic from '../../components/HeroCinematic.astro';
 import MoodDemo from '../../components/MoodDemo.astro';
 import VerseShowcase from '../../components/VerseShowcase.astro';
@@ -10,6 +9,9 @@ import PoetsBand from '../../components/PoetsBand.astro';
 import ContextConstellation from '../../components/ContextConstellation.astro';
 import JourneyPair from '../../components/JourneyPair.astro';
 import RootsMoments from '../../components/RootsMoments.astro';
+import PrivacyTrust from '../../components/PrivacyTrust.astro';
+import PlansAndFoundingCompanion from '../../components/PlansAndFoundingCompanion.astro';
+import FinalCeremony from '../../components/FinalCeremony.astro';
 import SectionDivider from '../../components/SectionDivider.astro';
 import FeatureIcon from '../../components/FeatureIcon.astro';
 import HamdamLogotype from '../../components/HamdamLogotype.astro';
@@ -101,38 +103,14 @@ import dawn from '../../assets/scenes/dawn-section.jpg';
 
   <SectionDivider />
 
-  <!-- PRIVACY COMMITMENT -->
-  <section id="privacy" class="px-6 py-[var(--spacing-section-mobile)] sm:py-[var(--spacing-section-desktop)]">
-    <div data-reveal class="mx-auto max-w-[var(--container-reading)]">
-      <h2 class="text-balance font-farsi text-3xl font-medium text-indigo sm:text-4xl">
-        همه‌چیز روی دستگاه تو می‌ماند.
-      </h2>
-      <p class="mt-8 font-farsi text-lg leading-[1.9] text-indigo/90">
-        همدم حساب کاربری ندارد. ایمیلی جمع‌آوری نمی‌کند. اطلاعات تو را برای کسی نمی‌فرستد.
-        یادداشت‌های تو فقط از طریق حساب iCloud خودت همگام‌سازی می‌شوند. بدون آمار کاربری. بدون
-        تبلیغات. بدون ردیابی. فقط شعر، حضور، و فاصله‌ی میان آن دو.
-      </p>
-    </div>
-  </section>
+  <!-- PRIVACY -->
+  <PrivacyTrust lang="fa" />
 
-  <!-- FINAL CTA -->
-  <section
-    id="ceremony"
-    data-store-cta="ceremony"
-    class="relative flex flex-col items-center overflow-hidden px-6 py-[var(--spacing-section-mobile)] text-center sm:py-[var(--spacing-section-desktop)]"
-  >
-    <div
-      class="pointer-events-none absolute left-1/2 top-1/2 -z-10 h-[420px] w-[420px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-saffron/15 blur-[120px]"
-      aria-hidden="true"
-    ></div>
-    <PersianShamseh size={32} />
-    <p class="mt-8 font-farsi text-xl leading-[1.9] text-indigo sm:text-2xl">
-      با شعری بنشین. تأمل کن. فردا برگرد.
-    </p>
-    <div class="mt-10">
-      <AppStoreBadge lang="fa" />
-    </div>
-  </section>
+  <!-- PLANS AND FOUNDING COMPANION -->
+  <PlansAndFoundingCompanion lang="fa" />
+
+  <!-- FINAL CEREMONY -->
+  <FinalCeremony lang="fa" />
 
   <!-- FOOTER -->
   <footer class="border-t border-saffron/30 px-6 py-20">

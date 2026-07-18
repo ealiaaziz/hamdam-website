@@ -1,0 +1,139 @@
+---
+import PersianShamseh from './PersianShamseh.astro';
+import AppStoreBadge from './AppStoreBadge.astro';
+
+interface Props {
+  lang: 'en' | 'fa';
+}
+
+const { lang } = Astro.props;
+
+const closingLine = lang === 'fa' ? 'با شعری بنشین. تأمل کن. فردا برگرد.' : 'Sit with a verse. Reflect. Return tomorrow.';
+
+// petal count within the spec's 5-7 range (page spec §10 item 3).
+const PETAL_COUNT = 6;
+---
+
+<section id="ceremony" class="ceremony" aria-labelledby="ceremony-title" data-store-cta="ceremony">
+  {
+    /* CY-01 (petal set) is pending; five to seven small CSS shapes stand
+       in for now -- decorative, aria-hidden, not a stock image or an
+       invented product screen, so the asset-gate rule doesn't block this
+       the way a device screenshot would. Real petal sprites simply
+       replace these spans later without touching the trigger logic. */
+  }
+  <div class="ceremony__petals" aria-hidden="true">
+    {Array.from({ length: PETAL_COUNT }).map((_, i) => <span class="ceremony__petal" style={`--i: ${i}`} />)}
+  </div>
+
+  <div class="ceremony__content">
+    <PersianShamseh size={40} animated={false} />
+    <p id="ceremony-title" class="ceremony__line text-balance">{closingLine}</p>
+    <div class="ceremony__cta">
+      <AppStoreBadge lang={lang} />
+    </div>
+    {
+      /* App Store "No data collected" privacy-nutrition cue (page spec
+         §10 item 3) deliberately omitted: claims-verification table item 2
+         requires confirming it against the *live* App Store listing first,
+         which does not exist pre-release. Add it, verified, at launch. */
+    }
+  </div>
+</section>
+
+<style>
+  .ceremony {
+    position: relative;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    padding-block: var(--spacing-section-mobile);
+    padding-inline: 1.5rem;
+    /* Guaranteed brightest point of the page (page spec §10 item 3): a
+       solid --surface-morning fill rather than relying on the shared
+       SkySurface's scroll-computed progress landing exactly on cream at
+       this exact scroll depth, which will keep shifting as more sections
+       are added in later work. */
+    background-color: var(--surface-morning);
+    color: var(--hamdam-text);
+  }
+
+  .ceremony__content {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    max-width: 36rem;
+  }
+
+  .ceremony__line {
+    margin-top: 1.5rem;
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: var(--text-h3);
+  }
+  :global([lang='fa']) .ceremony__line {
+    font-family: var(--font-farsi);
+    font-style: normal;
+  }
+
+  .ceremony__cta {
+    margin-top: 2.5rem;
+  }
+
+  .ceremony__petals {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  .ceremony__petal {
+    position: absolute;
+    top: -5%;
+    inset-inline-start: calc(10% + (var(--i) * 15%));
+    width: 10px;
+    height: 10px;
+    border-radius: 50% 0 50% 50%;
+    background: var(--hamdam-saffron);
+    opacity: 0;
+  }
+
+  /* Petals run once, only after the section is 60% visible (JS toggles
+     this class), and only for motion-OK visitors: one 6s pass, never a
+     loop. Reduced motion: no petals at all, static completed morning. */
+  @media (prefers-reduced-motion: no-preference) {
+    .ceremony--petals-active .ceremony__petal {
+      animation: ceremony-petal-fall 6s var(--ease-cross) forwards;
+      animation-delay: calc(var(--i) * 300ms);
+    }
+  }
+
+  @keyframes ceremony-petal-fall {
+    0% { opacity: 0; transform: translateY(0) rotate(0deg); }
+    10% { opacity: 0.85; }
+    90% { opacity: 0.6; }
+    100% { opacity: 0; transform: translateY(110vh) rotate(220deg); }
+  }
+</style>
+
+<script>
+  const section = document.getElementById('ceremony');
+  if (section) {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            section.classList.add('ceremony--petals-active');
+            observer.disconnect(); // once per visit, never re-triggers
+          }
+        }
+      },
+      { threshold: 0.6 }
+    );
+    observer.observe(section);
+  }
+</script>
