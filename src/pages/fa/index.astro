@@ -6,12 +6,11 @@ import HeroCinematic from '../../components/HeroCinematic.astro';
 import MoodDemo from '../../components/MoodDemo.astro';
 import VerseShowcase from '../../components/VerseShowcase.astro';
 import { faCopy } from '../../data/siteCopy';
-import PoetCard from '../../components/PoetCard.astro';
+import PoetsBand from '../../components/PoetsBand.astro';
 import SectionDivider from '../../components/SectionDivider.astro';
 import FeatureIcon from '../../components/FeatureIcon.astro';
 import HamdamLogotype from '../../components/HamdamLogotype.astro';
 import SceneBackground from '../../components/SceneBackground.astro';
-import { poets } from '../../data/poets';
 import norooz from '../../assets/scenes/norooz-morning-section.jpg';
 import quietGarden from '../../assets/scenes/quiet-garden-section.jpg';
 import dawn from '../../assets/scenes/dawn-section.jpg';
@@ -60,20 +59,7 @@ import dawn from '../../assets/scenes/dawn-section.jpg';
   <SectionDivider />
 
   <!-- FIVE POETS -->
-  <section class="bg-gradient-to-b from-peach/15 via-peach/5 to-transparent px-6 py-[var(--spacing-section-mobile)] sm:py-[var(--spacing-section-desktop)]">
-    <h2 data-reveal class="text-balance text-center font-farsi text-3xl font-medium text-indigo sm:text-4xl">
-      پنج شاعر، پنج صدا.
-    </h2>
-    <div class="mx-auto mt-16 grid max-w-5xl grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
-      {poets.map((poet) => (
-        <PoetCard
-          persianName={poet.persianName}
-          transliteration={poet.transliteration}
-          description={poet.descriptionFa}
-        />
-      ))}
-    </div>
-  </section>
+  <PoetsBand lang="fa" />
 
   <SectionDivider />
 

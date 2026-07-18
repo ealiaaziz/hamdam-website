@@ -1,35 +1,142 @@
 ---
-import PersianShamseh from './PersianShamseh.astro';
-
 interface Props {
   persianName: string;
   transliteration: string;
   description: string;
+  lang: 'en' | 'fa';
+  /** True for the desktop centre card (page spec §4 item 3: "centre card slightly larger"). */
+  emphasized?: boolean;
   class?: string;
 }
 
-const { persianName, transliteration, description, class: className = '' } = Astro.props;
+const { persianName, transliteration, description, lang, emphasized = false, class: className = '' } = Astro.props;
+
+const portraitAlt =
+  lang === 'fa'
+    ? `پرتره ${persianName} (برداشت هنری)`
+    : `Portrait of ${transliteration} (artistic interpretation)`;
 ---
 
 <div
   data-reveal
   class:list={[
-    'group rounded-[var(--radius-card)] bg-card p-8 text-center shadow-card backdrop-blur-sm transition-transform duration-300 hover:-translate-y-1',
+    'poet-card group shrink-0 snap-center',
+    emphasized && 'poet-card--emphasized',
     className,
   ]}
 >
-  <div class="flex items-center justify-center gap-2">
-    <h3 dir="rtl" class="font-farsi text-3xl font-bold text-indigo sm:text-4xl">
-      {persianName}
-    </h3>
-    <span class="opacity-0 transition-opacity duration-200 group-hover:opacity-100">
-      <PersianShamseh size={18} opacity={0.7} />
-    </span>
+  {
+    /* PT-01 through PT-05 pending Ealia's cultural approval (all five ship
+       together or not at all, per 14-canva-asset-brief.md /
+       22-dependency-decision.md). Labelled solid-tone placeholder --
+       never a stock portrait, never an invented likeness. The Persian
+       name below is live text on its own caption plate, never baked into
+       the portrait image, so this placeholder→real-asset swap never
+       touches it. */
+  }
+  <div
+    class="poet-card__portrait"
+    role="img"
+    aria-label={portraitAlt}
+  >
+    {import.meta.env.DEV && <span class="poet-card__portrait-label">PT pending</span>}
+    <div class="poet-card__plate">
+      <h3 dir="rtl" class="poet-card__name font-farsi">{persianName}</h3>
+    </div>
   </div>
-  <p class="mt-2 text-sm font-medium uppercase tracking-wide text-saffron-ink">
-    {transliteration}
-  </p>
-  <p class="mt-3 font-serif italic text-indigo/80">
-    {description}
-  </p>
+  <p class="poet-card__translit">{transliteration}</p>
+  <p class="poet-card__description font-serif italic">{description}</p>
 </div>
+
+<style>
+  .poet-card {
+    width: 220px;
+    display: flex;
+    flex-direction: column;
+    border-radius: var(--radius-card);
+  }
+  .poet-card--emphasized {
+    width: 248px;
+  }
+  @media (min-width: 640px) {
+    .poet-card {
+      width: 240px;
+    }
+    .poet-card--emphasized {
+      width: 272px;
+    }
+  }
+
+  .poet-card__portrait {
+    position: relative;
+    aspect-ratio: 2 / 3;
+    border-radius: var(--radius-card);
+    background: linear-gradient(160deg, var(--surface-dusk), var(--surface-firstlight));
+    box-shadow: var(--shadow-rest);
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    overflow: hidden;
+    transition: box-shadow 150ms var(--ease-cross), transform 150ms var(--ease-cross);
+  }
+  .group:hover .poet-card__portrait,
+  .group:focus-within .poet-card__portrait {
+    transform: translateY(-4px);
+    box-shadow: 0 0 48px var(--glow-warm), var(--shadow-lift);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .poet-card__portrait {
+      transition: none;
+    }
+    .group:hover .poet-card__portrait,
+    .group:focus-within .poet-card__portrait {
+      transform: none;
+      box-shadow: 0 0 0 2px var(--color-saffron-ink), var(--shadow-rest);
+    }
+  }
+
+  .poet-card__portrait-label {
+    position: absolute;
+    top: 0.75rem;
+    inset-inline: 0.75rem;
+    text-align: center;
+    font-family: var(--font-sans);
+    font-size: 11px;
+    color: var(--text-on-night-muted);
+  }
+
+  .poet-card__plate {
+    position: absolute;
+    inset-block-end: 0;
+    inset-inline: 0;
+    background: rgb(20 20 48 / 0.72);
+    padding: 0.75rem 0.5rem;
+    text-align: center;
+  }
+  .poet-card__name {
+    font-size: var(--text-h3);
+    font-weight: 700;
+    color: var(--text-on-night);
+  }
+
+  .poet-card__translit {
+    margin-top: 0.75rem;
+    text-align: center;
+    font-family: var(--font-sans);
+    font-size: var(--text-meta);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    /* --color-saffron-ink is darkened specifically for cream backgrounds;
+       the poets band sits on --surface-dusk (dark), so this needs the
+       night-surface accent pairing instead (design-system.md §1). */
+    color: var(--hamdam-night-gold);
+  }
+
+  .poet-card__description {
+    margin-top: 0.5rem;
+    text-align: center;
+    font-size: var(--text-body);
+    color: var(--text-on-night);
+  }
+</style>

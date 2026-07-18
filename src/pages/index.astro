@@ -5,12 +5,11 @@ import AppStoreBadge from '../components/AppStoreBadge.astro';
 import HeroCinematic from '../components/HeroCinematic.astro';
 import MoodDemo from '../components/MoodDemo.astro';
 import VerseShowcase from '../components/VerseShowcase.astro';
-import PoetCard from '../components/PoetCard.astro';
+import PoetsBand from '../components/PoetsBand.astro';
 import SectionDivider from '../components/SectionDivider.astro';
 import FeatureIcon from '../components/FeatureIcon.astro';
 import Footer from '../components/Footer.astro';
 import SceneBackground from '../components/SceneBackground.astro';
-import { poets } from '../data/poets';
 import norooz from '../assets/scenes/norooz-morning-section.jpg';
 import quietGarden from '../assets/scenes/quiet-garden-section.jpg';
 import dawn from '../assets/scenes/dawn-section.jpg';
@@ -99,20 +98,7 @@ const jsonLd = {
   <SectionDivider />
 
   <!-- FIVE POETS -->
-  <section class="bg-gradient-to-b from-peach/15 via-peach/5 to-transparent px-6 py-[var(--spacing-section-mobile)] sm:py-[var(--spacing-section-desktop)]">
-    <h2 data-reveal class="text-balance text-center font-serif text-4xl font-semibold text-indigo sm:text-5xl">
-      Five poets, five voices.
-    </h2>
-    <div class="mx-auto mt-16 grid max-w-5xl grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
-      {poets.map((poet) => (
-        <PoetCard
-          persianName={poet.persianName}
-          transliteration={poet.transliteration}
-          description={poet.description}
-        />
-      ))}
-    </div>
-  </section>
+  <PoetsBand lang="en" />
 
   <SectionDivider />
 
