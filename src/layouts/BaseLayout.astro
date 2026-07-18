@@ -1,5 +1,6 @@
 ---
-import LanguageToggle from '../components/LanguageToggle.astro';
+import NavBar from '../components/NavBar.astro';
+import StickyDownloadAction from '../components/StickyDownloadAction.astro';
 import { LOCALES, LOCALE_META, switchLocalePath } from '../lib/locale';
 import { APP_STORE } from '../lib/appStore';
 import '../styles/global.css';
@@ -22,6 +23,10 @@ interface Props {
 
 const { title, description, lang, path, jsonLd, preloadFarsiVerse = false } = Astro.props;
 const dir = LOCALE_META[lang].dir;
+// Only the homepage opens on the dark hero sky; every other route (privacy,
+// terms, 404) is cream from y=0, so the transparent nav needs dark text
+// there instead of the on-night cream that would vanish against it.
+const navOverDarkHero = path === '/' || path === '/fa/';
 const canonicalURL = new URL(path, Astro.site);
 const enPath = switchLocalePath(path, LOCALES.EN);
 const faPath = switchLocalePath(path, LOCALES.FA);
@@ -94,14 +99,53 @@ const ogImage = new URL(
       {lang === 'fa' ? 'رفتن به محتوای اصلی' : 'Skip to main content'}
     </a>
 
-    <LanguageToggle lang={lang} />
+    <NavBar lang={lang} overDarkHero={navOverDarkHero} />
 
     <main id="main-content">
       <slot />
     </main>
 
+    <StickyDownloadAction lang={lang} />
+
     <script>
       import { REVEAL, staggerDelayMs, prefersReducedMotion } from '../lib/reveal';
+      import { observeCtaLandmarks, shouldShowFloatingCta, isPastScrollThreshold } from '../lib/stickyCta';
+
+      // Nav backing: solid after 24px of scroll. Single shared rAF scroll
+      // loop — Phase 4's sky choreography extends this same listener
+      // rather than adding a second one (17-sonnet-implementation-handoff.md
+      // §5 performance note).
+      const navBar = document.querySelector<HTMLElement>('[data-nav-bar]');
+      if (navBar) {
+        let ticking = false;
+        const applyNavBacking = () => {
+          navBar.toggleAttribute('data-nav-solid', isPastScrollThreshold(window.scrollY));
+          ticking = false;
+        };
+        window.addEventListener(
+          'scroll',
+          () => {
+            if (ticking) return;
+            ticking = true;
+            requestAnimationFrame(applyNavBacking);
+          },
+          { passive: true }
+        );
+        applyNavBacking();
+      }
+
+      // Floating CTA (nav compact pill + sticky mobile pill): exactly one
+      // App Store action visible at a time, driven by [data-store-cta]
+      // landmark visibility, not scroll percentage.
+      const navCta = document.querySelector<HTMLElement>('[data-nav-cta]');
+      const stickyCta = document.querySelector<HTMLElement>('[data-sticky-cta]');
+      if (navCta || stickyCta) {
+        observeCtaLandmarks((state) => {
+          const show = shouldShowFloatingCta(state);
+          navCta?.toggleAttribute('data-visible', show);
+          stickyCta?.toggleAttribute('data-visible', show);
+        });
+      }
 
       const revealables = document.querySelectorAll<HTMLElement>('[data-reveal]');
 
