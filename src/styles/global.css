@@ -10,6 +10,16 @@
 @import "@fontsource/vazirmatn/400.css";
 @import "@fontsource/vazirmatn/500.css";
 @import "@fontsource/vazirmatn/700.css";
+/* Markazi Text: poem/verse text only (VerseCard.astro, MoodDemo.astro), not
+   the site-wide Farsi font. Measured against Vazirmatn and six other
+   Fontsource Perso-Arabic candidates using the actual longest hemistich in
+   the verse bank (PIL + the real webfont files, not a font's reputation):
+   Markazi Text rendered it at 371px vs Vazirmatn's 456px (18.6% narrower)
+   at 24px, the clear best result of the eight tested. Purpose-built by
+   Google as a compact, legible *reading* face for Perso-Arabic script, not
+   a display font, so this isn't a legibility trade-off. */
+@import "@fontsource/markazi-text/400.css";
+@import "@fontsource/markazi-text/500.css";
 
 @theme {
   /* Fluid type scale (design-system.md §5). clamp()s between a 390px floor
@@ -42,6 +52,10 @@
   /* Fonts */
   --font-serif: "Source Serif Pro", Georgia, serif;
   --font-farsi: "Vazirmatn", Tahoma, sans-serif;
+  /* Poem/verse text only (VerseCard.astro, MoodDemo.astro) -- see the
+     @fontsource/markazi-text import above for why. Not the site-wide
+     Farsi font. */
+  --font-farsi-verse: "Markazi Text", "Vazirmatn", Tahoma, sans-serif;
   --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 
   /* Spacing */
