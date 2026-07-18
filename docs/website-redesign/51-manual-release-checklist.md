@@ -106,30 +106,35 @@ contrast) were not covered by the first decision and are newly accepted here.
       `healthStore.save(sample)` (State of Mind write); `MusicService.swift`/
       `MiniPlayerView.swift` are live and were touched as recently as build 62 (Apple Music
       continue-button wording fix). No claim in that paragraph is unsupported.
-- [ ] **ROOTS-02 FA moment sentences — SIMA review status checked, still NOT cleared.** Verified
+- [~] **ROOTS-02 FA moment sentences — SIMA review status checked, still NOT cleared.** Verified
       2026-07-19: `Localization.swift` still carries the `AUTHORED BY CLAUDE — SIMA REVIEW
-      PENDING` flag on every relevant string (50+ occurrences across the file, unchanged). This
-      is a fact, not a question — the app-side review has not happened. Ealia's call: clear it,
-      or decide how the website should treat this copy while it's still pending.
-- [ ] **Analytics decision** (`26-analytics-plan.md`) — genuinely open, cannot be checked from
-      the repo. The Cloudflare Web Analytics on/off toggle lives at the Cloudflare
-      dashboard/edge level, invisible to source; the CSP permits it (`static.cloudflareinsights.com`)
-      but that doesn't tell us whether it's actually enabled. The site currently claims "No
-      analytics" — that claim is unsubstantiated either way until the dashboard toggle is
-      checked.
-- [ ] **Em dashes in `verses.ts`/`poets.ts` translations** — ruled a joint app+web decision in
-      the prior redesign session, still not settled on either platform.
-- [ ] **Mood-label replacement (F1-02)** — Fable's FA labels (سنگین/ناآرام/آرام/سبک/روشن) replaced
-      the interim Apple-Health-style FA strings for warmer tone; veto window still open if
-      app-string continuity is preferred instead.
-- [ ] **Trademark/IP owner name** — `Footer.astro`/`terms.astro`/`privacy.astro` name the
-      trademark/IP owner as "Seyed Valiallah Azizollahi," while the same pages' Contact
-      sections name "Ealia Azizollahi" as the ABN holder. Structurally consistent across all
-      four legal pages, so plausibly deliberate (family member, tax/IP structuring) — but needs
-      a direct yes/no, not a guess.
-- [ ] **App Store ID** in `src/lib/appStore.js` — already set to a real value (`'6784461990'`,
-      not a placeholder). Just needs confirmation it matches the live App Store Connect record
-      before `RELEASED` flips true.
+      PENDING` flag on every relevant string (50+ occurrences across the file, unchanged).
+      Ealia is reviewing and clearing this herself (2026-07-19) — in progress, not blocked on
+      anything further from this session.
+- [x] **Analytics decision** (`26-analytics-plan.md`) — resolved 2026-07-19. Ealia confirmed
+      Cloudflare Web Analytics is ON in the dashboard (the plan's "Option B"). Fixed the
+      previously-inaccurate "no third-party analytics" claim on both `privacy.astro` and
+      `fa/privacy.astro` (meta description + the "What Hamdam Does Not Collect" bullet list) to
+      disclose Cloudflare Web Analytics explicitly: cookieless, aggregate page counts only, no
+      cross-site tracking, still none of Firebase/Mixpanel/Amplitude/Google Analytics. FA copy
+      Claude-authored and byte-validated (`npm run check:persian` passes). The plan's optional
+      five-event CTA-click tracking (Option B's secondary scope) was **not** implemented —
+      that's a separate decision, not implied by turning the toggle on.
+- [x] **Em dashes in `verses.ts`/`poets.ts` translations** — resolved 2026-07-19. Ealia's call:
+      leave them, translated poetry content is exempt from the no-em-dash rule (which governs
+      generated text). No change made on either platform.
+- [x] **Mood-label replacement (F1-02)** — resolved 2026-07-19. Ealia vetoed Fable's labels in
+      favour of app-string continuity. Reverted `moodDemo.js`'s FA labels to the exact pre-Fable
+      values (`dd09c28`), byte-identical to `appleHealthLabel(for:)`'s five relevant valence
+      buckets.
+- [x] **Trademark/IP owner name** — resolved 2026-07-19. Ealia confirmed: everything should
+      read "Seyed Valiallah Azizollahi," including the ABN/contact line (ABN 74 389 481 503).
+      Replaced every "Ealia Azizollahi" occurrence across all four legal pages (`terms.astro`,
+      `privacy.astro`, `fa/terms.astro`, `fa/privacy.astro`, including each page's JSON-LD
+      `publisher.name`) — confirmed zero remaining occurrences via repo-wide grep.
+- [x] **App Store ID** in `src/lib/appStore.js` — resolved 2026-07-19. Ealia confirmed
+      `'6784461990'` is correct: the app is ASC-approved, just not yet released (matches
+      `RELEASED: false`). No code change needed.
 - [ ] CONST-03 wording sign-off against the shipped privacy policy text.
 
 ## Minor, non-blocking

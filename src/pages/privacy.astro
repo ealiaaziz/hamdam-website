@@ -7,7 +7,7 @@ import Footer from '../components/Footer.astro';
 const effectiveDate = 'Effective 3 July 2026';
 
 const description =
-  'How Hamdam handles data: what it accesses, what it never collects, and how iCloud sync works. No accounts, no third-party analytics, no data selling.';
+  'How Hamdam handles data: what it accesses, what it never collects, and how iCloud sync works. No accounts, no data selling, no tracking cookies.';
 
 const jsonLd = {
   '@context': 'https://schema.org',
@@ -18,7 +18,7 @@ const jsonLd = {
   datePublished: '2026-07-03',
   publisher: {
     '@type': 'Person',
-    name: 'Ealia Azizollahi',
+    name: 'Seyed Valiallah Azizollahi',
   },
 };
 ---
@@ -125,7 +125,8 @@ const jsonLd = {
     <LegalSection heading="2. What Hamdam Does Not Collect">
       <ul class="list-disc space-y-1 pl-6">
         <li>No user accounts, and no email collection at signup</li>
-        <li>No third-party analytics &mdash; no Firebase, Mixpanel, Amplitude, or Google Analytics</li>
+        <li>Cloudflare Web Analytics only, for aggregate and cookieless page counts, with no
+        cross-site tracking and none of Firebase, Mixpanel, Amplitude, or Google Analytics</li>
         <li>No dedicated crash-reporting or analytics SDK &mdash; the only crash data collected is
         Apple's own built-in iOS crash reporting via App Store Connect, aggregated and
         anonymised</li>
@@ -223,7 +224,7 @@ const jsonLd = {
         Email <a href="mailto:developer@hamdam.com.au" class="text-saffron-ink underline">developer@hamdam.com.au</a>.
       </p>
       <p class="text-base text-indigo/70">
-        Ealia Azizollahi (sole trader) &middot; ABN 74 389 481 503 &middot; Brisbane, Queensland,
+        Seyed Valiallah Azizollahi (sole trader) &middot; ABN 74 389 481 503 &middot; Brisbane, Queensland,
         Australia
       </p>
     </LegalSection>
