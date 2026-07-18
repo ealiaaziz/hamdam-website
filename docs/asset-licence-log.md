@@ -69,9 +69,10 @@ petals or should be regenerated as three separate source images — not silently
 equivalent to the brief's literal spec.
 
 **DV-01 screenshot content still separately blocked**: the frame asset is real and integrated
-(transparent screen cutout, per the brief's "Preferred DV-01 architecture") in all four consuming
-components (`HeroCinematic.astro`, `RootsMoments.astro`, `PrivacyTrust.astro`,
-`JourneyPair.astro`'s two frames), but the app screenshot that belongs inside each is a separate,
+(transparent screen cutout, per the brief's "Preferred DV-01 architecture") in all five consuming
+components (`HeroCinematic.astro`, `RootsMoments.astro`, `ContextConstellation.astro`,
+`PrivacyTrust.astro`, `JourneyPair.astro`'s two frames — six frame instances total), but the app
+screenshot that belongs inside each is a separate,
 still-open blocker — hamdam-ios does have a Screenshot Orchestrator
 (`Hamdam/Hamdam/DebugTools/ScreenshotOrchestrator/`), investigated read-only this session; see
 the phase report for what it can and cannot produce without app code changes. Until real
