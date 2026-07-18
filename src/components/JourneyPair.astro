@@ -1,0 +1,218 @@
+---
+import AppStoreBadge from './AppStoreBadge.astro';
+
+interface Props {
+  lang: 'en' | 'fa';
+}
+
+const { lang } = Astro.props;
+
+const copy =
+  lang === 'fa'
+    ? {
+        heading: 'هر تأمل، برای تو نگه داشته می‌شود.',
+        body: 'در طول هفته‌ها، همدم آب‌وهوای خودت را به تو نشان می‌دهد: خلق‌وخوی تو، فصل‌های تو، مسیر تو. دفتر خصوصی، نشان‌شده‌ها، و رگه‌ای ملایم که یک روز از قلم افتاده را می‌بخشد.',
+        midCta: 'همدم منتظر آشنایی با توست.',
+        reflectAlt: 'صفحه تأملات همدم با دفتر خصوصی و نشان‌شده‌ها (تصویر نهایی در دست تهیه)',
+        journeyAlt: 'صفحه سفر شما در همدم با نمودار روند خلق‌وخو (تصویر نهایی در دست تهیه)',
+      }
+    : {
+        heading: 'Every reflection is kept for you.',
+        body: "Over the weeks, Hamdam shows you your own weather: your moods, your seasons, your journey. A private journal, your favourites, and a gentle streak that forgives a missed day.",
+        midCta: 'Hamdam is waiting to meet you.',
+        reflectAlt: 'Hamdam Reflections screen with private journal and favourites (final screenshot pending)',
+        journeyAlt: 'Hamdam Your Journey screen with a mood-trend chart (final screenshot pending)',
+      };
+---
+
+<section class="journey" aria-labelledby="journey-title">
+  <div class="journey__inner">
+    <div class="journey__copy">
+      <h2 id="journey-title" class="journey__heading text-balance">{copy.heading}</h2>
+      <p class="journey__body">{copy.body}</p>
+    </div>
+
+    {
+      /* DV-01 + orchestrator 02-reflect/05-journey are both pending (same
+         asset-gate rule as the hero and constellation). Two labelled
+         placeholder frames, offset ~15%, front one swaps on
+         pointerenter/tap -- reduced motion keeps the swap (it's a state
+         change, not decoration) but drops the scale nudge. */
+    }
+    <div class="journey__frames" data-journey-frames>
+      <button
+        type="button"
+        class="journey__frame journey__frame--reflect journey__frame--front"
+        data-frame="reflect"
+        aria-label={copy.reflectAlt}
+      >
+        {import.meta.env.DEV && <span class="journey__frame-label">DV-01 pending</span>}
+      </button>
+      <button
+        type="button"
+        class="journey__frame journey__frame--journey"
+        data-frame="journey"
+        aria-label={copy.journeyAlt}
+      >
+        {import.meta.env.DEV && <span class="journey__frame-label">DV-01 pending</span>}
+      </button>
+    </div>
+  </div>
+
+  <div class="journey__mid-cta" data-store-cta="mid">
+    <p class="journey__mid-line">{copy.midCta}</p>
+    <AppStoreBadge lang={lang} class="journey__mid-badge" />
+  </div>
+</section>
+
+<style>
+  .journey {
+    padding-block: var(--spacing-section-mobile);
+    padding-inline: 1.5rem;
+    background-color: var(--surface-dawn);
+    color: var(--hamdam-text);
+  }
+  @media (min-width: 640px) {
+    .journey {
+      padding-block: var(--spacing-section-desktop);
+    }
+  }
+
+  .journey__inner {
+    max-width: 1200px;
+    margin-inline: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 2.5rem;
+  }
+
+  .journey__heading {
+    font-family: var(--font-serif);
+    font-size: var(--text-h2);
+    font-weight: 600;
+  }
+  :global([lang='fa']) .journey__heading {
+    font-family: var(--font-farsi);
+    font-weight: 500;
+  }
+
+  .journey__body {
+    margin-top: 1rem;
+    font-size: var(--text-body);
+    line-height: 1.7;
+    opacity: 0.85;
+    max-width: 44rem;
+  }
+
+  .journey__frames {
+    position: relative;
+    display: flex;
+    gap: 1rem;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    padding-block-end: 0.5rem;
+  }
+
+  .journey__frame {
+    all: unset;
+    cursor: pointer;
+    flex-shrink: 0;
+    width: min(220px, 60vw);
+    aspect-ratio: 1290 / 2796;
+    scroll-snap-align: center;
+    border-radius: var(--radius-device);
+    background: linear-gradient(to bottom, var(--surface-dusk), var(--surface-firstlight));
+    box-shadow: var(--shadow-rest);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .journey__frame:focus-visible {
+    outline: 2px solid var(--color-saffron-ink);
+    outline-offset: 3px;
+  }
+
+  .journey__frame-label {
+    font-family: var(--font-sans);
+    font-size: 11px;
+    color: var(--text-on-night-muted);
+    padding: 0 0.75rem;
+    text-align: center;
+  }
+
+  .journey__mid-cta {
+    margin-top: 3rem;
+    text-align: center;
+  }
+  .journey__mid-line {
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: var(--text-body);
+    margin-bottom: 1rem;
+  }
+  :global([lang='fa']) .journey__mid-line {
+    font-family: var(--font-farsi);
+    font-style: normal;
+  }
+
+  /* Desktop: copy 40% / pair 60%, frames overlapped ~15%, front swaps on
+     hover (150ms z + scale nudge; reduced motion drops the scale). */
+  @media (min-width: 1024px) {
+    .journey__inner {
+      flex-direction: row;
+      align-items: center;
+    }
+    .journey__copy {
+      flex: 0 0 40%;
+    }
+    .journey__frames {
+      flex: 0 0 60%;
+      overflow: visible;
+      justify-content: center;
+      padding-block-end: 0;
+    }
+    .journey__frame {
+      width: 240px;
+      position: relative;
+      transition: transform 150ms var(--ease-cross), box-shadow 150ms var(--ease-cross);
+    }
+    .journey__frame--reflect {
+      margin-inline-end: -60px;
+    }
+    .journey__frame--front {
+      z-index: 2;
+      box-shadow: var(--shadow-lift);
+    }
+    .journey__frames:not(:hover) .journey__frame--front,
+    .journey__frame--front:hover {
+      transform: scale(1.03);
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .journey__frame {
+        transition: none;
+      }
+      .journey__frames:not(:hover) .journey__frame--front,
+      .journey__frame--front:hover {
+        transform: none;
+      }
+    }
+  }
+</style>
+
+<script>
+  // Frontmost frame swap: pointerenter (desktop hover) and click (mobile
+  // tap toggle, page spec §6 item 8) both move --front to the target
+  // frame. No scale is driven from JS -- that's CSS-only and already
+  // removed under reduced motion.
+  const wrap = document.querySelector<HTMLElement>('[data-journey-frames]');
+  if (wrap) {
+    const frames = Array.from(wrap.querySelectorAll<HTMLElement>('.journey__frame'));
+    const bringToFront = (target: HTMLElement) => {
+      frames.forEach((f) => f.classList.toggle('journey__frame--front', f === target));
+    };
+    frames.forEach((frame) => {
+      frame.addEventListener('pointerenter', () => bringToFront(frame));
+      frame.addEventListener('click', () => bringToFront(frame));
+    });
+  }
+</script>

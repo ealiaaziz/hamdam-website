@@ -6,6 +6,8 @@ import HeroCinematic from '../components/HeroCinematic.astro';
 import MoodDemo from '../components/MoodDemo.astro';
 import VerseShowcase from '../components/VerseShowcase.astro';
 import PoetsBand from '../components/PoetsBand.astro';
+import ContextConstellation from '../components/ContextConstellation.astro';
+import JourneyPair from '../components/JourneyPair.astro';
 import SectionDivider from '../components/SectionDivider.astro';
 import FeatureIcon from '../components/FeatureIcon.astro';
 import Footer from '../components/Footer.astro';
@@ -100,6 +102,12 @@ const jsonLd = {
   <!-- FIVE POETS -->
   <PoetsBand lang="en" />
 
+  <!-- CONTEXT CONSTELLATION -->
+  <ContextConstellation lang="en" />
+
+  <!-- YOUR JOURNEY -->
+  <JourneyPair lang="en" />
+
   <SectionDivider />
 
   <!-- IRANIAN CULTURAL DEPTH -->
@@ -146,7 +154,7 @@ const jsonLd = {
   <SectionDivider />
 
   <!-- PRIVACY COMMITMENT -->
-  <section class="px-6 py-[var(--spacing-section-mobile)] sm:py-[var(--spacing-section-desktop)]">
+  <section id="privacy" class="px-6 py-[var(--spacing-section-mobile)] sm:py-[var(--spacing-section-desktop)]">
     <div data-reveal class="mx-auto max-w-[var(--container-reading)]">
       <h2 class="text-balance font-serif text-4xl font-semibold text-indigo sm:text-5xl">
         Everything stays on your device.
