@@ -23,10 +23,14 @@ interface Props {
 
 const { title, description, lang, path, jsonLd, preloadFarsiVerse = false } = Astro.props;
 const dir = LOCALE_META[lang].dir;
-// Only the homepage opens on the dark hero sky; every other route (privacy,
-// terms, 404) is cream from y=0, so the transparent nav needs dark text
-// there instead of the on-night cream that would vanish against it.
-const navOverDarkHero = path === '/' || path === '/fa/';
+// As of Phase 3 (20-implementation-plan.md) the hero's static composition
+// opens on the warm first-light state, not the dark night sky -- that
+// state lands in Phase 4, motion-OK visitors only. So every route is
+// light at y=0 today, and the transparent nav needs dark text everywhere.
+// TODO(Phase 4): once the night-start scroll arc returns for motion-OK
+// visitors on the homepage, this needs to be reduced-motion-aware (dark
+// hero text only when motion is enabled and the hero hasn't scrolled).
+const navOverDarkHero = false;
 const canonicalURL = new URL(path, Astro.site);
 const enPath = switchLocalePath(path, LOCALES.EN);
 const faPath = switchLocalePath(path, LOCALES.FA);
