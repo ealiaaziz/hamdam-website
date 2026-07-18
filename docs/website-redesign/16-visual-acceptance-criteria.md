@@ -132,6 +132,10 @@ full-page captures plus motion-enabled hero states via `?dawn=N`).
 
 ## Sign-off record
 
+Claude's detailed self-assessment against every lettered item above is recorded in
+`18-acceptance-results.md`, generated at the end of Phase 12 (2026-07-18). This table is
+Ealia's own sign-off record, separate from that self-assessment.
+
 | Gate | Checked by | Date | Result |
 |---|---|---|---|
 | A. North Star fidelity | | | |
