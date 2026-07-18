@@ -1,0 +1,190 @@
+[
+  {
+    "label": "home-en-390x844",
+    "url": "/",
+    "viewport": "390x844",
+    "file": "/private/tmp/claude-502/-Users-EA-Developer-hamdam-ios/ddce9da8-f13f-4677-8f70-840d0526c299/scratchpad/evidence/home-en-390x844.png"
+  },
+  {
+    "label": "home-fa-390x844",
+    "url": "/fa/",
+    "viewport": "390x844",
+    "file": "/private/tmp/claude-502/-Users-EA-Developer-hamdam-ios/ddce9da8-f13f-4677-8f70-840d0526c299/scratchpad/evidence/home-fa-390x844.png"
+  },
+  {
+    "label": "home-en-430x932",
+    "url": "/",
+    "viewport": "430x932",
+    "file": "/private/tmp/claude-502/-Users-EA-Developer-hamdam-ios/ddce9da8-f13f-4677-8f70-840d0526c299/scratchpad/evidence/home-en-430x932.png"
+  },
+  {
+    "label": "home-fa-430x932",
+    "url": "/fa/",
+    "viewport": "430x932",
+    "file": "/private/tmp/claude-502/-Users-EA-Developer-hamdam-ios/ddce9da8-f13f-4677-8f70-840d0526c299/scratchpad/evidence/home-fa-430x932.png"
+  },
+  {
+    "label": "home-en-768x1024",
+    "url": "/",
+    "viewport": "768x1024",
+    "file": "/private/tmp/claude-502/-Users-EA-Developer-hamdam-ios/ddce9da8-f13f-4677-8f70-840d0526c299/scratchpad/evidence/home-en-768x1024.png"
+  },
+  {
+    "label": "home-fa-768x1024",
+    "url": "/fa/",
+    "viewport": "768x1024",
+    "file": "/private/tmp/claude-502/-Users-EA-Developer-hamdam-ios/ddce9da8-f13f-4677-8f70-840d0526c299/scratchpad/evidence/home-fa-768x1024.png"
+  },
+  {
+    "label": "home-en-1024x768",
+    "url": "/",
+    "viewport": "1024x768",
+    "file": "/private/tmp/claude-502/-Users-EA-Developer-hamdam-ios/ddce9da8-f13f-4677-8f70-840d0526c299/scratchpad/evidence/home-en-1024x768.png"
+  },
+  {
+    "label": "home-fa-1024x768",
+    "url": "/fa/",
+    "viewport": "1024x768",
+    "file": "/private/tmp/claude-502/-Users-EA-Developer-hamdam-ios/ddce9da8-f13f-4677-8f70-840d0526c299/scratchpad/evidence/home-fa-1024x768.png"
+  },
+  {
+    "label": "home-en-1440x900",
+    "url": "/",
+    "viewport": "1440x900",
+    "file": "/private/tmp/claude-502/-Users-EA-Developer-hamdam-ios/ddce9da8-f13f-4677-8f70-840d0526c299/scratchpad/evidence/home-en-1440x900.png"
+  },
+  {
+    "label": "home-fa-1440x900",
+    "url": "/fa/",
+    "viewport": "1440x900",
+    "file": "/private/tmp/claude-502/-Users-EA-Developer-hamdam-ios/ddce9da8-f13f-4677-8f70-840d0526c299/scratchpad/evidence/home-fa-1440x900.png"
+  },
+  {
+    "label": "home-en-1728x1117",
+    "url": "/",
+    "viewport": "1728x1117",
+    "file": "/private/tmp/claude-502/-Users-EA-Developer-hamdam-ios/ddce9da8-f13f-4677-8f70-840d0526c299/scratchpad/evidence/home-en-1728x1117.png"
+  },
+  {
+    "label": "home-fa-1728x1117",
+    "url": "/fa/",
+    "viewport": "1728x1117",
+    "file": "/private/tmp/claude-502/-Users-EA-Developer-hamdam-ios/ddce9da8-f13f-4677-8f70-840d0526c299/scratchpad/evidence/home-fa-1728x1117.png"
+  },
+  {
+    "label": "privacy-en-390x844",
+    "url": "/privacy/",
+    "viewport": "390x844",
+    "file": "/private/tmp/claude-502/-Users-EA-Developer-hamdam-ios/ddce9da8-f13f-4677-8f70-840d0526c299/scratchpad/evidence/privacy-en-390x844.png"
+  },
+  {
+    "label": "terms-en-390x844",
+    "url": "/terms/",
+    "viewport": "390x844",
+    "file": "/private/tmp/claude-502/-Users-EA-Developer-hamdam-ios/ddce9da8-f13f-4677-8f70-840d0526c299/scratchpad/evidence/terms-en-390x844.png"
+  },
+  {
+    "label": "privacy-fa-390x844",
+    "url": "/fa/privacy/",
+    "viewport": "390x844",
+    "file": "/private/tmp/claude-502/-Users-EA-Developer-hamdam-ios/ddce9da8-f13f-4677-8f70-840d0526c299/scratchpad/evidence/privacy-fa-390x844.png"
+  },
+  {
+    "label": "terms-fa-390x844",
+    "url": "/fa/terms/",
+    "viewport": "390x844",
+    "file": "/private/tmp/claude-502/-Users-EA-Developer-hamdam-ios/ddce9da8-f13f-4677-8f70-840d0526c299/scratchpad/evidence/terms-fa-390x844.png"
+  },
+  {
+    "label": "404-390x844",
+    "url": "/nonexistent-xyz",
+    "viewport": "390x844",
+    "file": "/private/tmp/claude-502/-Users-EA-Developer-hamdam-ios/ddce9da8-f13f-4677-8f70-840d0526c299/scratchpad/evidence/404-390x844.png"
+  },
+  {
+    "label": "privacy-en-1440x900",
+    "url": "/privacy/",
+    "viewport": "1440x900",
+    "file": "/private/tmp/claude-502/-Users-EA-Developer-hamdam-ios/ddce9da8-f13f-4677-8f70-840d0526c299/scratchpad/evidence/privacy-en-1440x900.png"
+  },
+  {
+    "label": "terms-en-1440x900",
+    "url": "/terms/",
+    "viewport": "1440x900",
+    "file": "/private/tmp/claude-502/-Users-EA-Developer-hamdam-ios/ddce9da8-f13f-4677-8f70-840d0526c299/scratchpad/evidence/terms-en-1440x900.png"
+  },
+  {
+    "label": "privacy-fa-1440x900",
+    "url": "/fa/privacy/",
+    "viewport": "1440x900",
+    "file": "/private/tmp/claude-502/-Users-EA-Developer-hamdam-ios/ddce9da8-f13f-4677-8f70-840d0526c299/scratchpad/evidence/privacy-fa-1440x900.png"
+  },
+  {
+    "label": "terms-fa-1440x900",
+    "url": "/fa/terms/",
+    "viewport": "1440x900",
+    "file": "/private/tmp/claude-502/-Users-EA-Developer-hamdam-ios/ddce9da8-f13f-4677-8f70-840d0526c299/scratchpad/evidence/terms-fa-1440x900.png"
+  },
+  {
+    "label": "404-1440x900",
+    "url": "/nonexistent-xyz",
+    "viewport": "1440x900",
+    "file": "/private/tmp/claude-502/-Users-EA-Developer-hamdam-ios/ddce9da8-f13f-4677-8f70-840d0526c299/scratchpad/evidence/404-1440x900.png"
+  },
+  {
+    "label": "reducedmotion-en-390x844",
+    "url": "/",
+    "viewport": "390x844",
+    "file": "/private/tmp/claude-502/-Users-EA-Developer-hamdam-ios/ddce9da8-f13f-4677-8f70-840d0526c299/scratchpad/evidence/reducedmotion-en-390x844.png"
+  },
+  {
+    "label": "reducedmotion-fa-390x844",
+    "url": "/fa/",
+    "viewport": "390x844",
+    "file": "/private/tmp/claude-502/-Users-EA-Developer-hamdam-ios/ddce9da8-f13f-4677-8f70-840d0526c299/scratchpad/evidence/reducedmotion-fa-390x844.png"
+  },
+  {
+    "label": "reducedmotion-en-1440x900",
+    "url": "/",
+    "viewport": "1440x900",
+    "file": "/private/tmp/claude-502/-Users-EA-Developer-hamdam-ios/ddce9da8-f13f-4677-8f70-840d0526c299/scratchpad/evidence/reducedmotion-en-1440x900.png"
+  },
+  {
+    "label": "reducedmotion-fa-1440x900",
+    "url": "/fa/",
+    "viewport": "1440x900",
+    "file": "/private/tmp/claude-502/-Users-EA-Developer-hamdam-ios/ddce9da8-f13f-4677-8f70-840d0526c299/scratchpad/evidence/reducedmotion-fa-1440x900.png"
+  },
+  {
+    "label": "forcedcolors-en-390x844",
+    "url": "/",
+    "viewport": "390x844",
+    "file": "/private/tmp/claude-502/-Users-EA-Developer-hamdam-ios/ddce9da8-f13f-4677-8f70-840d0526c299/scratchpad/evidence/forcedcolors-en-390x844.png"
+  },
+  {
+    "label": "forcedcolors-fa-390x844",
+    "url": "/fa/",
+    "viewport": "390x844",
+    "file": "/private/tmp/claude-502/-Users-EA-Developer-hamdam-ios/ddce9da8-f13f-4677-8f70-840d0526c299/scratchpad/evidence/forcedcolors-fa-390x844.png"
+  },
+  {
+    "label": "forcedcolors-en-1440x900",
+    "url": "/",
+    "viewport": "1440x900",
+    "file": "/private/tmp/claude-502/-Users-EA-Developer-hamdam-ios/ddce9da8-f13f-4677-8f70-840d0526c299/scratchpad/evidence/forcedcolors-en-1440x900.png"
+  },
+  {
+    "label": "forcedcolors-fa-1440x900",
+    "url": "/fa/",
+    "viewport": "1440x900",
+    "file": "/private/tmp/claude-502/-Users-EA-Developer-hamdam-ios/ddce9da8-f13f-4677-8f70-840d0526c299/scratchpad/evidence/forcedcolors-fa-1440x900.png"
+  },
+  {
+    "label": "nav-en-390x844",
+    "note": "no collapsible mobile nav exists (NavBar.astro: logo + language toggle + gated CTA only) -- navopen state N/A by design, not a missed capture"
+  },
+  {
+    "label": "nav-fa-390x844",
+    "note": "no collapsible mobile nav exists (NavBar.astro: logo + language toggle + gated CTA only) -- navopen state N/A by design, not a missed capture"
+  }
+]

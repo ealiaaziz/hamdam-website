@@ -4,11 +4,11 @@ Reentrant state file for the Final Completion Mega Runner. Read this first on ev
 never repeat a completed stage unless validation proves regression.
 
 ## 1. Current stage
-S5 - Apply Fable corrections (not yet started)
+F2 - Fable correction verification (not started)
 
 ## 2. Current required model
-**Sonnet 5** - Fable's F1 audit is complete and committed. Clear this session, select
-Sonnet 5, paste the same mega runner again.
+**Fable 5.** S6 is complete and committed. Clear this session, select Fable 5, paste the same
+mega runner again.
 
 ## 3. Completed stages
 - S0 - Safety and recovery (2026-07-18)
@@ -17,91 +17,112 @@ Sonnet 5, paste the same mega runner again.
 - S3 - Copy and product truth package (2026-07-18)
 - S4 - Technical pre-acceptance (2026-07-18)
 - F1 - Fable final design and copy audit (2026-07-18, Fable 5)
+- S5 - Apply Fable corrections (2026-07-18) - F1-01 through F1-07 implemented and verified in
+  built HTML; F1-00 (DV-01 screen content) correctly left for hamdam-ios/Ealia, not S5
+  actionable. Commit `fb479ff`.
+- S6 - Phase 13 full acceptance (2026-07-18) - fresh evidence captured from the corrected
+  build; one new regression found and fixed (FA legal-page footer was rendering English,
+  commit `c3f6b5f`); two honest non-carry-forward findings recorded (F3 contrast unresolved,
+  G4 LCP not verifiably passing locally, proven not to be an S5 regression via A/B testing).
+  Commit `<pending, see §6>`.
 
 ## 4. Incomplete stages
-S5, S6, F2, S7
+F2, S7
 
 ## 5. Current branch
 `feature/hamdam-web-redesign`
 
 ## 6. Latest verified commit
-This checkpoint's commit (`docs: add Fable website visual and copy audit`) supersedes
-`20df3a4` (the S4 commit).
+This checkpoint's own commit (S6 evidence + reports, message `test: complete website phase 13
+acceptance`) will supersede `c3f6b5f` (the in-session footer fix) once committed immediately
+after this file is written. `c3f6b5f` itself supersedes `fb479ff` (the S5 commit).
 
 ## 7. Working tree status
-Clean after this checkpoint's commit: the three F1 audit documents
-(`40-fable-final-visual-audit.md`, `41-sonnet-correction-list.md`,
-`32-fable-approved-copy-ledger.md`), four fresh live-page captures under
-`final-evidence/f1-fable/`, and this state update. No production source touched by F1.
-No merge/rebase in progress.
+Clean after the S6 commit: `18-acceptance-results.md` update, `phase-reports/phase-13-report.md`,
+`final-evidence/phase-13/` (curated screenshots, Lighthouse JSON + summary, contrast/a11y/
+keyboard-focus/console-error/broken-asset data), and this state file. `Footer.astro`,
+`fa/privacy.astro`, `fa/terms.astro` were already committed separately in `c3f6b5f` before this
+checkpoint. No merge/rebase in progress. Nothing pushed.
 
 ## 8. Asset status (15 of 15 integrated; 14 approved by Fable, 1 content blocker)
-All fifteen asset IDs reviewed by Fable at full resolution with fresh 4-background alpha
-contact sheets. Fourteen pass (several with recorded notes; see the audit §1). DV-01's
-*frame* passes; its *screen content* is the sole remaining asset blocker (F1-00): six frame
-instances sitewide show an empty gradient until real Screenshot Orchestrator captures land
-from hamdam-ios. CY-01's one-petal-three-ways substitution and HW-02's derivation from
-HW-01's source are now explicitly accepted differences, no longer open questions.
+Unchanged since S5/F1. DV-01's *frame* passes; its *screen content* is the sole remaining
+asset blocker (F1-00), not S6-actionable. See §21 for the exact hamdam-ios action needed.
 
 ## 9. Copy approval status
-Every row of `30-final-copy-ledger.md` resolved in `32-fable-approved-copy-ledger.md`.
-Replacements ordered (exact text in `41-sonnet-correction-list.md`): Rumi's Farsi name
-رومی → مولانا (poets.ts, verses.ts attribution; app-parity verified directly in hamdam-ios
-source), warm FA mood labels (سنگین/ناآرام/آرام/سبک/روشن) replacing the clinical valence
-strings, Parvin description em-dash removal (EN and FA), MOOD-03 EN line, bilingual 404 with
-Fable-authored FA copy, privacy meta description "no analytics" → "no third-party
-analytics". All previously "Fable F1" rows otherwise approved as written. Verification-
-required rows unchanged and still with Ealia (trademark names, App Store ID, Roots coverage,
-widgets, SIMA review, CONST-03). `verses.ts` translations untouched by ruling: their em-dash
-question is already open app-side and must be settled once for both platforms.
+Unchanged since S5. All seven F1 corrections (F1-01 through F1-07) implemented and verified
+in the S6-rebuilt output. `verses.ts` translations still untouched by design (their em-dash
+question stays open, app-side and web-side together, per prior ruling).
 
 ## 10. Analytics decision status
-Unchanged, still Ealia's call. F1-06 fixes only the meta-description overclaim wording.
+Unchanged, still Ealia's call.
 
 ## 11. Test result
-110/110 as of S4; S5 must re-run after applying corrections.
+110/110, re-run twice this session (after S5's corrections, and again after S6's footer fix).
+Both clean.
 
 ## 12. Build result
-Clean as of S4 (re-verified fresh during F1 for the live captures); S5 must re-run.
+Clean, re-run twice this session for the same two reasons. Zero new dependencies in
+`package.json`/`package-lock.json` (verified via `git status` immediately after every ad hoc
+`npm install --no-save playwright` this session's own evidence tooling needed).
 
 ## 13. English result
-Lighthouse 97/97/100/100 (S4). F1-04's acceptance test requires staying within 1 point.
+Lighthouse: Performance 89-94 (noisy across repeated runs on this machine), Accessibility 97,
+Best Practices 100, SEO 100. CLS 0. LCP 3.2s. Total page transfer 361KB. Full detail and the
+pre-S5 A/B comparison (proving the performance/LCP numbers are unchanged by S5, not a
+regression from F1-04) in `final-evidence/phase-13/lighthouse/lighthouse-summary.md`. This
+supersedes the S4-recorded "97/97/100/100" figure, which this session could not reproduce
+locally and cannot explain (see LCP note below) — flagged for a real-deployment re-measurement,
+not silently trusted either way.
 
 ## 14. Farsi result
-97/97/100/100 (S4), same requirement.
+Lighthouse: Performance 94 (single run), Accessibility 97, Best Practices 100, SEO 100. CLS 0.
+LCP 2.9s. Total page transfer 298KB. Same caveats as §13.
 
 ## 15. Accessibility result
-As S4 recorded. F1 adds: the Lighthouse colour-contrast complaint remains contradicted by
-direct visual inspection at real scale (constellation/journey copper sections carry dark text,
-comfortably legible in fresh live captures); stays on the manual real-device checklist, no
-code change ordered.
+F3 (contrast) is now recorded as **unresolved**, not carried forward as PASS: Lighthouse's
+`color-contrast` audit fails reproducibly on the constellation/journey copper-surface text,
+on every run, both locales, both the pre- and post-S5 builds (so not an S5 regression, but a
+real open gap, unchanged from what F1 already flagged). A same-session attempt to
+independently verify via computed contrast ratios is recorded but explicitly not trusted (the
+script cannot correctly sample a `linear-gradient` background's rendered pixel colour). Needs
+a real tool/device spot check. F1 (keyboard) partially re-verified (12 of ~20 stops, all
+clean). F2 (VoiceOver) still PENDING, unchanged — not producible from this environment.
 
 ## 16. Performance result
-As S4. No F1 correction adds page weight beyond four extra petal `<span>`s (F1-04).
+G2 (CLS=0) and G3 (image transfer budget) freshly PASS against real assets for the first time
+this session (previously only trivially true against placeholder gradients). **G4 (LCP) is
+recorded as FAIL** — 2.9-3.2s against a 2.5s target, locally measured, proven via A/B testing
+not to be caused by S5, but not resolved either. G1 is caveated rather than a clean pass (see
+§13/14). G5 (motion JS budget) carried forward from S4 (9.18KB), unaffected by S5/S6 (no JS
+changed). G6 (build/CSP/deps) freshly PASS.
 
 ## 17. Phase 13 result
-Not started - S6 runs after S5.
+**Complete.** `phase-reports/phase-13-report.md`, `18-acceptance-results.md`'s new "Phase 13
+(S6) update" section, and `final-evidence/phase-13/`. One new regression found and fixed
+in-session (FA footer). Two stale Phase-9 TODOs found and recorded, not fixed (need a live
+scroll-through check or a product decision, not a mechanical fix). Full gate-by-gate delta
+from Phase 12/S4/F1 is in the ledger; not repeated here.
 
 ## 18. Fable audit result
-**Complete.** `40-fable-final-visual-audit.md`. Production visual approval NOT granted this
-round, solely because of F1-00 (DV-01 screen content). Poet series: pass, emphatically
-(Parvin equal dignity confirmed; no stereotype; no generated text in any portrait). Roots:
-pass, with the North Star's illustrated header recorded as an accepted difference. Two
-capture-artefact suspicions (poets band "empty" at desktop widths; countdown values)
-investigated against a fresh live build and cleared as non-defects.
+Unchanged since F1 (`40-fable-final-visual-audit.md`). F2 (this stage's next step) is where
+Fable verifies whether S5's corrections actually close F1's findings against the S6-refreshed
+evidence.
 
 ## 19. Open Blocker findings
-1 - F1-00 DV-01 screen content (six empty device frames sitewide). Not S5-actionable from
-this repo; exact capture action recorded in the correction list and §21.
+Still 1 — F1-00 DV-01 screen content. Unchanged, not S5/S6-actionable from this repo.
 
 ## 20. Open Major findings
-4 - F1-01 Rumi Farsi name; F1-02 mood FA labels; F1-03 Parvin em dashes; F1-04 ceremony
-density. All fully specified for S5 with acceptance tests. Plus 3 Moderates (F1-05 bilingual
-404, F1-06 privacy meta wording, F1-07 MOOD-03 EN line).
+F1's original 4 Majors (F1-01 through F1-04) were all implemented in S5 and verified in the
+S6-rebuilt output; whether Fable considers them **closed** is F2's call, not self-graded here.
+Two new items surfaced this session, neither at F1's original Major/Blocker severity: F3
+contrast (unresolved, pre-existing) and G4 LCP (not verifiably passing locally, proven not to
+be an S5 cause).
 
 ## 21. Manual checks still requiring Ealia
+Unchanged list from F1, plus one addition:
 - Real VoiceOver/Safari pass (F2 checklist)
-- Real Windows High Contrast device capture
+- Real Windows High Contrast device capture (this session's forced-colours emulation is an
+  automated proxy only, explicitly not a substitute)
 - DV-01 real screenshots: run the hamdam-ios Screenshot Orchestrator
   (`Hamdam/Hamdam/DebugTools/ScreenshotOrchestrator/`) for the approved marketing states per
   locale at 1290x2796, hand outputs to the website repo (F1-00)
@@ -113,8 +134,16 @@ density. All fully specified for S5 with acceptance tests. Plus 3 Moderates (F1-
 - ROOTS-02 FA moment sentences: has the app-side SIMA review cleared?
 - CONST-03 wording sign-off against the shipped policy text
 - Em dashes in `verses.ts` translations: rule once for app and web together
-- Real-device colour-contrast spot check (Lighthouse vs direct verification discrepancy)
+- Real-device colour-contrast spot check (Lighthouse vs computed-ratio discrepancy, still
+  unresolved after this session's own inconclusive attempt)
 - Analytics decision (hers per `26-analytics-plan.md`)
+- **New:** a real Cloudflare Pages preview-deploy Lighthouse run for LCP (G4) — this
+  session's local `astro preview` + local Lighthouse measurement cannot be trusted to
+  distinguish a real regression from a local-environment artefact
+- **New:** live scroll-through check of the sticky-CTA pill across the ceremony-to-footer
+  boundary, and a decision on whether `BaseLayout.astro`'s scroll-progress calculation needs
+  re-anchoring to the real ceremony offset (both are stale Phase-9 TODOs found this session,
+  neither fixed)
 
 ## 22. Push status
 Nothing pushed.
@@ -126,13 +155,23 @@ Nothing merged. `main` untouched.
 Nothing deployed.
 
 ## 25. Exact next action
-**SWITCH TO SONNET 5.** Begin S5: apply Fable's corrections. Read
-`41-sonnet-correction-list.md` (implement F1-01 through F1-07 exactly as specified; F1-00 is
-not yours), `32-fable-approved-copy-ledger.md`, and `40-fable-final-visual-audit.md`. Apply
-Persian strings by copy-paste from the correction list, never retyped. Run the full
-validation suite, capture before/after evidence per finding, write
-`phase-reports/fable-correction-implementation-report.md`, commit with
-`fix: apply final Fable website corrections`, update this state file, then proceed to S6.
+**SWITCH TO FABLE 5.** Begin F2: verify S5's corrections against the S6-refreshed evidence.
+Read (in order): the original F1 audit (`40-fable-final-visual-audit.md`), the original
+correction list (`41-sonnet-correction-list.md`), this stage's implementation report
+(`phase-reports/fable-correction-implementation-report.md`), the Phase 13 report
+(`phase-reports/phase-13-report.md`), the updated acceptance ledger (`18-acceptance-results.md`,
+specifically the new "Phase 13 (S6) update" section), and the fresh screenshots under
+`final-evidence/phase-13/screens/` (inspect directly, not just this report's prose). For every
+prior Blocker/Major (F1-00 through F1-04), mark Closed/Partially Closed/Open against the fresh
+evidence — F1-00 should stay Open (not S5/S6-actionable, no new evidence exists for it beyond
+the honest pending state). Also review the two new S6 findings not part of F1's original list:
+the FA-footer regression (found and fixed in-session — verify it, don't just trust the report)
+and the F3/G4 honest non-passes (contrast and LCP — these are open gaps this session
+surfaced, not corrections to verify, so they don't block F2's Blocker/Major closure question,
+but should be acknowledged). If any prior Blocker/Major remains open, per the runner: set next
+stage to S5 with a narrow updated correction list. If all are closed and no new material
+regression exists, set next stage to S7 and record Visual Approval Granted, listing remaining
+manual checks accurately (§21 above, now longer than before this stage).
 
 CLEAR THE CURRENT CLAUDE SESSION, SELECT THE REQUIRED MODEL, THEN PASTE THE SAME MEGA RUNNER
 AGAIN.

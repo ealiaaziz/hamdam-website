@@ -125,3 +125,56 @@ built, tested, and verified against the concrete numbers in this document — no
 "looks right." The redesign is code-complete and regression-clean on
 `feature/hamdam-web-redesign`; what remains is entirely the real-world inputs (imagery,
 cultural sign-off, device testing) that only Ealia can supply.
+
+---
+
+## Phase 13 (S6) update — 2026-07-18
+
+Fresh re-verification against the corrected build (S1/S2 real assets, S3 copy/product-truth
+review, S4 technical pre-acceptance, F1 Fable audit, S5 Fable corrections, and one additional
+S6-discovered fix — see `phase-reports/phase-13-report.md` for the full narrative). This
+section records deltas from the Phase 12 table above; gates not listed here were not
+re-measured this session and should be read as carried forward, not re-confirmed.
+
+| # | Result | Notes |
+|---|---|---|
+| A1 | PENDING (unchanged) | Real PT/CM/HW/FC/CY assets now in place (S1/S2); the device frame itself (DV-01) is real and Fable-approved. Screen *content* inside it remains the pending gradient fill (F1-00) — still not comparable to the North Star Today screen. |
+| A5 | Not measured (unchanged) | Still no concrete scroll-height dark/warm ratio measurement taken. Additionally: `BaseLayout.astro`'s scroll-progress calculation uses total page height rather than a ceremony-anchored offset (stale Phase-9 TODO, found this session, not fixed — see phase-13-report.md). Practical effect on this ratio is unmeasured. |
+| A6 | PASS (freshly re-verified for the ceremony section) | F1-04's mobile fix (min-height 85vh, raised horizon height) directly re-verified: `.ceremony` computed height on a 390x844 viewport is exactly 717px (85vh), confirmed via Playwright `boundingBox()`; screenshot evidence (`final-evidence/phase-13/screens/ceremony-midpass-*.png`) shows no empty-cream run. Other sections carried forward from Phase 12/F1. |
+| B1 | PENDING (unchanged) | DV-01 screen content still the honest pending gradient, not fabricated. Unchanged from F1. |
+| B3, B4, B5 | PASS (freshly re-verified) | Grepped the rebuilt `dist/`: zero reviews/counts/awards, zero Forough/فروغ, zero dollar figures. |
+| C6 | PASS (freshly re-verified, both scripts) | `Ganjoor.net` (EN) and `گنجور` (FA) both present, all six routes checked individually. |
+| C7 | PASS (freshly re-verified on rebuilt output) | Em-dash sweep: only the three pre-existing `verses.ts` translation instances (hafez-016, rumi-011 ×2, parvin-008), zero elsewhere, including the two files S5/S6 touched (`poets.ts`, `Footer.astro`). |
+| D1, D2, D4, D5 | PASS (freshly re-verified) | Still exactly three dimensional moments; zero `<canvas>`/`<audio>`/`<video>`; ceremony petal `IntersectionObserver.disconnect()` logic unchanged by F1-04 (only the array length/CSS changed, not the trigger logic). |
+| E1 | PASS, with one open item | Sticky-CTA state machine unchanged by S5/S6. A stale Phase-9 TODO in `StickyDownloadAction.astro` questions whether the pill correctly hides across the ceremony-to-footer gap specifically — found this session, not re-verified live (would need a scroll-through capture at that exact boundary), not fixed. |
+| E3, E4 | PASS (freshly re-verified) | Zero `apps.apple.com` in built output, `RELEASED: false` confirmed. Ceremony CTA screenshot-verified sitting cleanly on the (now gradient-strengthened) brightest surface with no overlap, both viewports captured. |
+| F1 | PASS (partially re-verified) | A 12-stop keyboard trace (desktop, `final-evidence/phase-13/keyboard-focus-trace-en.json`) confirms visible focus and ≥44px hit targets through skip-link, nav, language toggle, mood slider, MOOD-03's new link text, and into the poets figure — not a full re-trace of all ~20 original stops. |
+| F3 | **Unresolved, recorded honestly (was PASS in Phase 12)** | Lighthouse's `color-contrast` audit fails on the constellation/journey copper-surface text, reproducibly, both locales, both pre- and post-S5 builds — this is the same discrepancy already flagged in `FINAL-COMPLETION-STATE.md` before this stage (not new), but this session's own attempt to independently verify it via computed contrast ratios (`final-evidence/phase-13/contrast-results.json`) is not trustworthy evidence either way: the script samples an ancestor's `background-color`, which cannot correctly represent a `linear-gradient` background's actual rendered pixel colour under the text. Genuinely open, needs a real tool/device spot check, not silently passed. |
+| F7 | PASS (freshly re-verified for the new 404 FA link) | The F1-05 addition reuses the exact same class pattern as the existing EN 404 link (confirmed via built-HTML diff), so the same 44px-effective touch target applies. |
+| G1 | **Caveated (was a clean PASS in Phase 12/S4)** | Performance 89-94 across repeated runs (noisy, see G4 below and the Lighthouse summary); ≥90 in most but not all runs. Accessibility 97, not 100 (see F3) — this has been the case since S4, not new to S6, but Phase 12's "=100" pass predates real assets and does not reflect current reality. |
+| G2, G3 | PASS (freshly re-verified against real assets) | CLS 0 both locales; total page transfer 361KB (EN) / 298KB (FA), both well under the ≤450KB/≤1.2MB budgets — the first time this gate has been checked against real imagery rather than placeholder gradients. |
+| G4 | **FAIL, recorded honestly (was PASS in Phase 12/S4)** | LCP measures 2.9-3.2s locally, both locales, above the 2.5s target. An A/B test against an isolated worktree of the pre-S5 commit produced an identical 3.2s, proving this is not an S5/F1-04 regression. Whether it is a genuine regression from the S1/S2 real-asset integration that S4's "2.3s/2.0s" figure did not catch, or an artefact of measuring a local `astro preview` server rather than a real deployed edge, is undetermined from this session. Needs a real Cloudflare Pages preview-deploy measurement. |
+| G6 | PASS (freshly re-verified) | Build succeeds; `package.json`/`package-lock.json` unchanged (confirmed via `git status` immediately after every `npm install --no-save playwright` used for this session's own evidence tooling); zero inline styles/scripts introduced in the rebuilt output. |
+| H1, H2 | PASS (freshly re-verified) | 110/110 tests (twice — after S5, and again after the S6 footer fix); hreflang/OG/JSON-LD/sitemap all present on the rebuilt output. |
+| H4 | Spot-checked (not a full re-test) | The 404 page's FA language-toggle link correctly resolves to `/fa/404/` in the rebuilt output — one concrete data point, not the full original Phase-12 round-trip test. |
+
+### New, S6-discovered finding: FA legal-page footer was English
+
+Not part of F1's correction list, not caused by S5. `Footer.astro` had no `lang` prop;
+`fa/privacy.astro` and `fa/terms.astro` (which import it directly, unlike `fa/index.astro`
+which has always had its own separate correct inline footer) were rendering English footer
+text on Farsi pages. **Fixed in-session** (commit `c3f6b5f`) using FA copy copied verbatim
+from `fa/index.astro`'s own already-shipped footer — zero new Persian authored, zero design
+judgment required. Full detail and verification in `phase-reports/phase-13-report.md`. This
+is effectively a new C1/C3-adjacent regression-protection finding: found, fixed, and
+re-verified (110/110 tests, build, check:persian, em-dash sweep, CSP sweep all clean
+afterward) within this same stage.
+
+### Net effect on "Blocking before merge to main"
+
+Item 1 (real assets) is now far more complete than the Phase-12 list describes — S1/S2
+landed all fifteen asset IDs; the only remaining piece is DV-01's screen content (F1-00),
+not the whole asset list. Item 6 (G3 re-verification against real imagery) is now done,
+PASS. Item 7 (A5 scroll-height measurement) is still open, plus the newly-found A5-adjacent
+TODO. A new item is added: **G4 (LCP) needs a real deployed-environment measurement** before
+it can be honestly called passing or failing.

@@ -1,0 +1,122 @@
+[
+  {
+    "tag": "A",
+    "text": "Skip to main content",
+    "ariaLabel": null,
+    "visibleOutline": true,
+    "rect": {
+      "w": 181,
+      "h": 44
+    }
+  },
+  {
+    "tag": "A",
+    "text": "Hamdam",
+    "ariaLabel": "Hamdam",
+    "visibleOutline": true,
+    "rect": {
+      "w": 129,
+      "h": 44
+    }
+  },
+  {
+    "tag": "A",
+    "text": "فارسی",
+    "ariaLabel": "Switch to Farsi (فارسی)",
+    "visibleOutline": true,
+    "rect": {
+      "w": 75,
+      "h": 44
+    }
+  },
+  {
+    "tag": "INPUT",
+    "text": "",
+    "ariaLabel": "How your heart feels today",
+    "visibleOutline": true,
+    "rect": {
+      "w": 720,
+      "h": 44
+    }
+  },
+  {
+    "tag": "A",
+    "text": "There is more waiting for you in the app",
+    "ariaLabel": null,
+    "visibleOutline": true,
+    "rect": {
+      "w": 316,
+      "h": 44
+    }
+  },
+  {
+    "tag": "DIV",
+    "text": "حافظHafezThe tavern of the seeker. Where",
+    "ariaLabel": "The five poets",
+    "visibleOutline": true,
+    "rect": {
+      "w": 1440,
+      "h": 511
+    }
+  },
+  {
+    "tag": "A",
+    "text": "See how it stays private",
+    "ariaLabel": null,
+    "visibleOutline": true,
+    "rect": {
+      "w": 189,
+      "h": 44
+    }
+  },
+  {
+    "tag": "BUTTON",
+    "text": "",
+    "ariaLabel": "Hamdam Reflections screen with private journal and favourites (final screenshot pending)",
+    "visibleOutline": true,
+    "rect": {
+      "w": 247,
+      "h": 536
+    }
+  },
+  {
+    "tag": "BUTTON",
+    "text": "",
+    "ariaLabel": "Hamdam Your Journey screen with a mood-trend chart (final screenshot pending)",
+    "visibleOutline": true,
+    "rect": {
+      "w": 240,
+      "h": 520
+    }
+  },
+  {
+    "tag": "A",
+    "text": "Privacy Policy",
+    "ariaLabel": null,
+    "visibleOutline": true,
+    "rect": {
+      "w": 111,
+      "h": 44
+    }
+  },
+  {
+    "tag": "A",
+    "text": "Terms of Use",
+    "ariaLabel": null,
+    "visibleOutline": true,
+    "rect": {
+      "w": 106,
+      "h": 44
+    }
+  },
+  {
+    "tag": "A",
+    "text": "Privacy",
+    "ariaLabel": null,
+    "visibleOutline": true,
+    "rect": {
+      "w": 55,
+      "h": 44
+    }
+  }
+]

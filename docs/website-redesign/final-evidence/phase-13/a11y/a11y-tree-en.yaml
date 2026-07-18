@@ -1,0 +1,153 @@
+- link "Skip to main content":
+  - /url: "#main-content"
+- banner:
+  - link "Hamdam":
+    - /url: /
+  - link "Switch to Farsi (فارسی)":
+    - /url: /fa/
+    - text: فارسی
+- main:
+  - region "Hamdam reflects your heart and your sky.":
+    - heading "Hamdam reflects your heart and your sky." [level=1]
+    - paragraph: A bilingual reflection companion rooted in Persian poetry.
+    - img "Coming soon. to iPhone.": Coming soon to iPhone
+    - img "Hamdam Today screen preview (final screenshot pending)"
+  - region "Tell Hamdam how your heart feels. It answers with a verse.":
+    - heading "Tell Hamdam how your heart feels. It answers with a verse." [level=2]
+    - paragraph: گرچه خزان کرد جفاها بسی بین که بهاران چه وفا می‌کند
+    - paragraph: Though autumn committed many cruelties — see what faithfulness spring brings.
+    - paragraph: Rumi
+    - slider "How your heart feels today": "2"
+    - paragraph: This is how the app works. In Hamdam, your reflection follows.
+    - link "There is more waiting for you in the app":
+      - /url: "#ceremony"
+  - figure "Hafez":
+    - blockquote:
+      - paragraph: غنچه گو تنگ‌دل از کارِ فروبسته مَباش کز دَمِ صبح مدد یابی و انفاسِ نسیم
+    - paragraph: "Tell the bud: do not be small-hearted at what remains closed — for from the morning's breath you will find help, and from the breeze's sigh."
+    - text: Hafez
+  - figure "Rumi":
+    - blockquote:
+      - paragraph: گرچه خزان کرد جفاها بسی بین که بهاران چه وفا می‌کند
+    - paragraph: Though autumn committed many cruelties — see what faithfulness spring brings.
+    - text: Rumi
+  - figure "Parvin":
+    - blockquote:
+      - paragraph: گنجشک خرد گفت سحر با کبوتری کآخر تو هم برون کن ازین آشیان سری آفاق روشن است، چه خسبی به تیرگی روزی بپر، ببین چمن و جوئی و جری
+    - paragraph: "A small sparrow said at dawn to a pigeon: won't you too lift your head from this nest? / The horizons are bright — why do you sleep in darkness? Fly a day, go see the meadow, the stream, the brook."
+    - text: Parvin
+  - paragraph: A verse for every morning. Five poets. Two languages. Centuries of wisdom.
+  - heading "A companion for the daily reflection." [level=2]
+  - paragraph: "Every day, Hamdam meets you at the hour it finds you: a morning that opens gently, an afternoon that steadies, an evening that settles. Tell it how your heart feels with a simple slider, and it offers a verse and a reflection chosen for that feeling."
+  - paragraph: Every verse arrives in its original Persian beside a careful English translation, drawn from Hafez, Rumi, Saadi, Khayyam and Parvin Etesami.
+  - paragraph: A gentle streak keeps count, forgiving a missed day. Every reflection is kept in a private journal, searchable from your Home Screen, with your favourites always at hand.
+  - region "Five poets, five voices.":
+    - heading "Five poets, five voices." [level=2]
+    - region "The five poets":
+      - img "Portrait of Hafez (artistic interpretation)"
+      - heading "حافظ" [level=3]
+      - paragraph: Hafez
+      - paragraph: The tavern of the seeker. Where wine and mirror share the same table.
+      - img "Portrait of Rumi (artistic interpretation)"
+      - heading "مولانا" [level=3]
+      - paragraph: Rumi
+      - paragraph: The reed's song. Longing as its own kind of arrival.
+      - img "Portrait of Saadi (artistic interpretation)"
+      - heading "سعدی" [level=3]
+      - paragraph: Saadi
+      - paragraph: The garden and the road. Wisdom, gently offered.
+      - img "Portrait of Khayyam (artistic interpretation)"
+      - heading "خیام" [level=3]
+      - paragraph: Khayyam
+      - paragraph: The rose and the wine cup. What is here is what there is.
+      - img "Portrait of Parvin (artistic interpretation)"
+      - heading "پروین" [level=3]
+      - paragraph: Parvin
+      - paragraph: "Small things speak. The needle, the ant, the mirror: all with lessons."
+    - paragraph: Verses sourced from Ganjoor.net. Portraits are artistic interpretations.
+  - region "One reflection, shaped by your day.":
+    - heading "One reflection, shaped by your day." [level=2]
+    - img "Hamdam Today screen preview (final screenshot pending)"
+    - list:
+      - listitem: Mood Only if you log it. A nudge in tone, not a score.
+      - listitem: Weather Through Apple's WeatherKit, on your device.
+      - listitem: Season Where you are, time of year.
+      - listitem: Time of day Morning, midday, evening, night.
+      - listitem: Calendar Cultural moments only, never event details.
+      - listitem: Health Only if you choose, only on your device.
+    - link "See how it stays private":
+      - /url: "#privacy"
+  - region "Every reflection is kept for you.":
+    - heading "Every reflection is kept for you." [level=2]
+    - paragraph: "Over the weeks, Hamdam shows you your own weather: your moods, your seasons, your journey. A private journal, your favourites, and a gentle streak that forgives a missed day."
+    - button "Hamdam Reflections screen with private journal and favourites (final screenshot pending)"
+    - button "Hamdam Your Journey screen with a mood-trend chart (final screenshot pending)"
+    - paragraph: Hamdam is waiting to meet you.
+    - img "Coming soon. to iPhone.": Coming soon to iPhone
+  - region "Yalda, Norooz, Chaharshanbe Suri. Hamdam knows when they arrive, and greets them with poetry that belongs to them.":
+    - heading "Yalda, Norooz, Chaharshanbe Suri. Hamdam knows when they arrive, and greets them with poetry that belongs to them." [level=2]
+    - list:
+      - listitem:
+        - img "Pomegranates and candlelight for Yalda night"
+        - text: یلدا
+        - paragraph: Yalda
+        - paragraph: The longest night of the year, when families gather to read Hafez, share pomegranates and watermelon, and welcome the return of the sun.
+        - paragraph: Yalda arrives in 156 days.
+      - listitem:
+        - img "Fire glow at dusk for Chaharshanbe Suri"
+        - text: چهارشنبه‌سوری
+        - paragraph: Chaharshanbe Suri
+        - paragraph: The last Tuesday night before Norooz, when people leap over small fires whispering 'give me your redness, take my paleness.'
+        - paragraph: Chaharshanbe Suri arrives in 241 days.
+      - listitem:
+        - img "Spring blossoms in morning light for Norooz"
+        - text: نوروز
+        - paragraph: Norooz
+        - paragraph: The first day of spring, marking renewal, rebirth, and the balance of light and dark.
+        - paragraph: Norooz arrives in 245 days.
+    - paragraph: Mehregan and Sizdah Bedar are marked too, each with its own quiet arrival.
+    - paragraph: Ask, as generations have.
+    - img "Hamdam Roots screen with Fal-e Hafez and the cultural calendar (final screenshot pending)"
+  - heading "Hamdam meets you wherever you look." [level=2]
+  - paragraph: Ask Siri to start a reflection, hear today's verse, or check your streak. Add a widget to your Home Screen. If you wear an Apple Watch, your verse and streak travel with you. If you choose, each reflection can be saved to Apple Health as a State of Mind entry, with calm music playing alongside through Apple Music.
+  - text: Siri Widgets Watch Health Music
+  - region "Hamdam does not use accounts. It does not collect emails. Your words never leave your device unless you turn on your own iCloud sync. Nobody at Hamdam can read a word you write.":
+    - paragraph: Hamdam does not use accounts. It does not collect emails. Your words never leave your device unless you turn on your own iCloud sync. Nobody at Hamdam can read a word you write.
+    - list:
+      - listitem: No accounts No sign-up, no email at all.
+      - listitem: On your device Signals stay where they were read.
+      - listitem: Your own iCloud only Sync is opt-in, scoped to your Apple ID.
+    - navigation "Privacy Policy":
+      - link "Privacy Policy":
+        - /url: /privacy
+      - link "Terms of Use":
+        - /url: /terms
+    - img "Hamdam Privacy screen (final screenshot pending)"
+  - region "The daily ritual is free, always.":
+    - heading "The daily ritual is free, always." [level=2]
+    - heading "Free" [level=3]
+    - paragraph: The daily ritual is free, always, including fifteen reflections every month.
+    - heading "Hamdam Plus" [level=3]
+    - paragraph: Hamdam Plus opens unlimited reflections, the full wisdom library of all five poets, the reflection archive, and more.
+    - paragraph: Monthly or yearly, with a 7-day free trial for new subscribers.
+    - paragraph: Pricing is shown on the App Store.
+    - heading "Founding Companion" [level=3]
+    - paragraph: A single purchase, yours for life, shareable with your family through Apple Family Sharing.
+    - paragraph: Pricing is shown on the App Store.
+  - region "Sit with a verse. Reflect. Return tomorrow.":
+    - paragraph: Sit with a verse. Reflect. Return tomorrow.
+    - img "Coming soon. to iPhone.": Coming soon to iPhone
+  - text: Hamdam
+  - paragraph: An app by the Hamdam Team
+  - navigation "Footer":
+    - link "Privacy":
+      - /url: /privacy
+    - link "Terms":
+      - /url: /terms
+    - link "Contact":
+      - /url: mailto:developer@hamdam.com.au
+  - paragraph: Made with love in Brisbane.
+  - paragraph: Verses sourced from Ganjoor.net.
+  - paragraph: © 2026 Hamdam. All rights reserved.
+  - paragraph: HAMDAM™ is the subject of Australian trade mark application no. 2674427, filed 11 July 2026.
+  - paragraph: For support, contact developer@hamdam.com.au.
