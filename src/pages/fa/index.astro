@@ -3,6 +3,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import PersianShamseh from '../../components/PersianShamseh.astro';
 import AppStoreBadge from '../../components/AppStoreBadge.astro';
 import HeroCinematic from '../../components/HeroCinematic.astro';
+import MoodDemo from '../../components/MoodDemo.astro';
 import VerseShowcase from '../../components/VerseShowcase.astro';
 import { faCopy } from '../../data/siteCopy';
 import PoetCard from '../../components/PoetCard.astro';
@@ -23,6 +24,8 @@ import dawn from '../../assets/scenes/dawn-section.jpg';
   path="/fa/"
 >
   <HeroCinematic lang="fa" title={faCopy.tagline} subhead={faCopy.subhead} />
+
+  <MoodDemo lang="fa" />
 
   <!-- VERSE SHOWCASE -->
   <VerseShowcase lang="fa" intro={faCopy.verseIntro} sceneImage={dawn} />
@@ -132,7 +135,11 @@ import dawn from '../../assets/scenes/dawn-section.jpg';
   </section>
 
   <!-- FINAL CTA -->
-  <section class="relative flex flex-col items-center overflow-hidden px-6 py-[var(--spacing-section-mobile)] text-center sm:py-[var(--spacing-section-desktop)]">
+  <section
+    id="ceremony"
+    data-store-cta="ceremony"
+    class="relative flex flex-col items-center overflow-hidden px-6 py-[var(--spacing-section-mobile)] text-center sm:py-[var(--spacing-section-desktop)]"
+  >
     <div
       class="pointer-events-none absolute left-1/2 top-1/2 -z-10 h-[420px] w-[420px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-saffron/15 blur-[120px]"
       aria-hidden="true"

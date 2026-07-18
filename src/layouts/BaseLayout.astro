@@ -107,7 +107,15 @@ const ogImage = new URL(
 
     <NavBar lang={lang} overDarkHero={navOverDarkHero} />
 
-    <main id="main-content" data-sky-tone="night">
+    {
+      /* relative + isolate + bg-cream: an explicit opaque background and
+         its own stacking context, so SkySurface (fixed, behind everything)
+         can't bleed through sections that don't paint their own
+         background -- body's canvas-propagated cream doesn't reliably
+         occlude a position: fixed descendant regardless of how negative
+         its z-index is. */
+    }
+    <main id="main-content" data-sky-tone="night" class="relative isolate bg-cream">
       <slot />
     </main>
 

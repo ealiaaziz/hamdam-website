@@ -3,6 +3,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import PersianShamseh from '../components/PersianShamseh.astro';
 import AppStoreBadge from '../components/AppStoreBadge.astro';
 import HeroCinematic from '../components/HeroCinematic.astro';
+import MoodDemo from '../components/MoodDemo.astro';
 import VerseShowcase from '../components/VerseShowcase.astro';
 import PoetCard from '../components/PoetCard.astro';
 import SectionDivider from '../components/SectionDivider.astro';
@@ -59,6 +60,8 @@ const jsonLd = {
     title="Hamdam reflects your heart and your sky."
     subhead="A bilingual reflection companion rooted in Persian poetry."
   />
+
+  <MoodDemo lang="en" />
 
   <!-- VERSE SHOWCASE -->
   <VerseShowcase
@@ -170,8 +173,20 @@ const jsonLd = {
     </div>
   </section>
 
+  {
+    /* Interim ceremony landmark (id + data-store-cta="ceremony"): Phase 9
+       rebuilds this section into the full dawn ceremony per page spec §10,
+       but it's already the page's final/only other App Store action today,
+       so it wires into Phase 2's floating-CTA state machine and Phase 5's
+       "more waiting in the app" anchor now rather than leaving both
+       pointed at nothing until Phase 9 lands. */
+  }
   <!-- FINAL CTA -->
-  <section class="relative flex flex-col items-center overflow-hidden px-6 py-[var(--spacing-section-mobile)] text-center sm:py-[var(--spacing-section-desktop)]">
+  <section
+    id="ceremony"
+    data-store-cta="ceremony"
+    class="relative flex flex-col items-center overflow-hidden px-6 py-[var(--spacing-section-mobile)] text-center sm:py-[var(--spacing-section-desktop)]"
+  >
     <div
       class="pointer-events-none absolute left-1/2 top-1/2 -z-10 h-[420px] w-[420px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-saffron/15 blur-[120px]"
       aria-hidden="true"

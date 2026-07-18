@@ -83,6 +83,13 @@ const deviceAlt =
     instant (non-interpolated) threshold jumps -- see the script below.
   */
   .hero {
+    /* Own stacking context: without this, .hero__sky's z-index: -1 (and
+       its position: absolute, lacking a positioned ancestor otherwise)
+       compares against the ROOT stacking context instead of staying
+       scoped to the hero -- exactly the bug that let the page-level
+       SkySurface (Phase 4) bleed through unpredictably. */
+    position: relative;
+    isolation: isolate;
     height: 200vh;
     --sky-top: #E8B04B;
     --sky-bot: #F5EEE0;

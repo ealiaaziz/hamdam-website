@@ -1,0 +1,229 @@
+---
+import { verses } from '../data/verses';
+import { MOOD_STOPS } from '../lib/moodDemo';
+
+interface Props {
+  lang: 'en' | 'fa';
+}
+
+const { lang } = Astro.props;
+const initialStop = MOOD_STOPS[2]; // "steady" -- panel opens in a neutral state, not a mood.
+const initialVerse = verses.find((v) => v.id === initialStop.verseId)!;
+
+const copy =
+  lang === 'fa'
+    ? {
+        title: 'به همدم بگو دلت چه‌طور است تا با شعری پاسخ دهد.',
+        caption: 'اپلیکیشن همدم همین‌گونه کار می‌کند؛ در همدم، تأمل تو از همان‌جا ادامه پیدا می‌کند.',
+        link: 'چیزهای بیشتری در اپلیکیشن منتظرت است.',
+        sliderLabel: 'دلت امروز چطور است',
+      }
+    : {
+        title: 'Tell Hamdam how your heart feels. It answers with a verse.',
+        caption: 'This is how the app works. In Hamdam, your reflection follows.',
+        link: 'There is more waiting in the app',
+        sliderLabel: 'How your heart feels today',
+      };
+---
+
+<section id="mood-demo" class="mood-demo" aria-labelledby="mood-demo-title">
+  <div class="mood-demo__inner">
+    <h2 id="mood-demo-title" class="mood-demo__title text-balance">{copy.title}</h2>
+
+    <div class="mood-demo__panel" data-mood-sky={initialStop.sky}>
+      <div class="mood-demo__verse" aria-live="polite">
+        <p class="mood-demo__verse-fa" lang="fa" dir="rtl">{initialVerse.persian}</p>
+        <p class="mood-demo__verse-en">{initialVerse.english}</p>
+        <p class="mood-demo__verse-poet">— {lang === 'fa' ? initialVerse.poetFa : initialVerse.poetEn}</p>
+      </div>
+    </div>
+
+    <div class="mood-demo__slider-wrap">
+      <input
+        id="mood-slider"
+        type="range"
+        min="0"
+        max={MOOD_STOPS.length - 1}
+        step="1"
+        value="2"
+        aria-label={copy.sliderLabel}
+        aria-valuetext={lang === 'fa' ? initialStop.labelFa : initialStop.labelEn}
+        class="mood-demo__slider"
+      />
+      <div class="mood-demo__stops" aria-hidden="true">
+        {MOOD_STOPS.map((s) => (
+          <span>{lang === 'fa' ? s.labelFa : s.labelEn}</span>
+        ))}
+      </div>
+    </div>
+
+    <p class="mood-demo__caption">{copy.caption}</p>
+    <a href="#ceremony" class="mood-demo__link">{copy.link}</a>
+  </div>
+</section>
+
+<style>
+  .mood-demo {
+    padding-block: var(--spacing-section-mobile);
+    padding-inline: 1.5rem;
+  }
+  @media (min-width: 640px) {
+    .mood-demo {
+      padding-block: var(--spacing-section-desktop);
+    }
+  }
+
+  .mood-demo__inner {
+    max-width: 720px;
+    margin-inline: auto;
+    text-align: center;
+  }
+
+  .mood-demo__title {
+    font-family: var(--font-serif);
+    font-size: var(--text-h2);
+    font-weight: 600;
+    color: var(--color-indigo);
+  }
+  :global([lang='fa']) .mood-demo__title {
+    font-family: var(--font-farsi);
+    font-size: var(--text-h2);
+    font-weight: 500;
+    line-height: 1.5;
+  }
+
+  .mood-demo__panel {
+    margin-top: 2rem;
+    border-radius: var(--radius-panel);
+    padding: 2rem 1.5rem;
+    min-height: 260px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--mood-sky-color, var(--surface-firstlight));
+    color: var(--mood-text-color, var(--text-on-night));
+    transition: background-color 400ms var(--ease-cross), color 400ms var(--ease-cross);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .mood-demo__panel {
+      transition: none;
+    }
+  }
+
+  /* Discrete per-stop sky states (design-system.md §1's named surfaces --
+     same five tokens Phase 4's page-level ramp uses, reused here as flat
+     fills rather than a continuous arc). */
+  .mood-demo__panel[data-mood-sky='night'] { --mood-sky-color: var(--surface-night); --mood-text-color: var(--text-on-night); }
+  .mood-demo__panel[data-mood-sky='dusk'] { --mood-sky-color: var(--surface-dusk); --mood-text-color: var(--text-on-night); }
+  .mood-demo__panel[data-mood-sky='firstlight'] { --mood-sky-color: var(--surface-firstlight); --mood-text-color: var(--text-on-night); }
+  .mood-demo__panel[data-mood-sky='dawn'] { --mood-sky-color: var(--surface-dawn); --mood-text-color: var(--hamdam-text); }
+  .mood-demo__panel[data-mood-sky='morning'] { --mood-sky-color: var(--surface-morning); --mood-text-color: var(--hamdam-text); }
+
+  .mood-demo__verse {
+    max-width: 44rem;
+  }
+  .mood-demo__verse-fa {
+    font-family: var(--font-farsi);
+    font-size: var(--text-verse-fa);
+    line-height: 1.9;
+  }
+  .mood-demo__verse-en {
+    margin-top: 1rem;
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: var(--text-verse-en);
+    line-height: 1.7;
+    opacity: 0.85;
+  }
+  .mood-demo__verse-poet {
+    margin-top: 0.75rem;
+    font-family: var(--font-sans);
+    font-size: var(--text-meta);
+    opacity: 0.7;
+  }
+
+  .mood-demo__slider-wrap {
+    margin-top: 2rem;
+  }
+
+  .mood-demo__slider {
+    width: 100%;
+    height: 44px;
+    accent-color: var(--color-saffron-ink);
+    cursor: pointer;
+  }
+
+  .mood-demo__stops {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 0.5rem;
+    font-family: var(--font-sans);
+    font-size: var(--text-meta);
+    color: var(--color-indigo);
+    opacity: 0.7;
+  }
+  :global([lang='fa']) .mood-demo__stops {
+    font-family: var(--font-farsi);
+  }
+
+  .mood-demo__caption {
+    margin-top: 2rem;
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: var(--text-body);
+    color: var(--color-indigo);
+    opacity: 0.85;
+  }
+  :global([lang='fa']) .mood-demo__caption {
+    font-family: var(--font-farsi);
+    font-style: normal;
+  }
+
+  .mood-demo__link {
+    display: inline-flex;
+    min-height: 44px;
+    align-items: center;
+    margin-top: 1rem;
+    font-family: var(--font-sans);
+    font-size: var(--text-body);
+    color: var(--color-saffron-ink);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+</style>
+
+<script>
+  import { verses } from '../data/verses';
+  import { MOOD_STOPS, moodStopForIndex, verseForMoodStop, createSettleDebounce } from '../lib/moodDemo';
+  import { prefersReducedMotion } from '../lib/cinematic';
+
+  const slider = document.getElementById('mood-slider') as HTMLInputElement | null;
+  const panel = document.querySelector<HTMLElement>('.mood-demo__panel');
+  const verseFa = document.querySelector<HTMLElement>('.mood-demo__verse-fa');
+  const verseEn = document.querySelector<HTMLElement>('.mood-demo__verse-en');
+  const versePoet = document.querySelector<HTMLElement>('.mood-demo__verse-poet');
+  const lang = document.documentElement.lang === 'fa' ? 'fa' : 'en';
+
+  if (slider && panel && verseFa && verseEn && versePoet) {
+    const reducedMotion = prefersReducedMotion();
+
+    const renderVerse = (stop: (typeof MOOD_STOPS)[number]) => {
+      const verse = verseForMoodStop(stop, verses);
+      if (!verse) return;
+      verseFa.textContent = verse.persian;
+      verseEn.textContent = verse.english;
+      versePoet.textContent = `— ${lang === 'fa' ? verse.poetFa : verse.poetEn}`;
+    };
+
+    // Sky crossfades immediately on input (motion spec §4); the verse
+    // card waits for a 150ms settle so scrubbing doesn't churn it.
+    const settleVerse = createSettleDebounce(renderVerse, 150);
+
+    slider.addEventListener('input', () => {
+      const stop = moodStopForIndex(Number(slider.value));
+      panel.setAttribute('data-mood-sky', stop.sky);
+      slider.setAttribute('aria-valuetext', lang === 'fa' ? stop.labelFa : stop.labelEn);
+      settleVerse(stop, { immediate: reducedMotion });
+    });
+  }
+</script>
