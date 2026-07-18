@@ -36,12 +36,18 @@ contrast) were not covered by the first decision and are newly accepted here.
 
 ## Blocking
 
-- [x] **DV-01 screen content (F1-00).** Owner-accepted for this release (2026-07-18) — ships
-      with the current temporary gradient screen. Recorded as an **open post-launch visual
-      replacement**: run the hamdam-ios Screenshot Orchestrator
-      (`Hamdam/Hamdam/DebugTools/ScreenshotOrchestrator/`) for the approved marketing states,
-      per locale, at 1290×2796, deliver outputs to `hamdam-website` for compositing under the
-      six DV-01 frame cutouts, followed by a short Fable spot check — after launch, not before.
+- [x] **DV-01 screen content (F1-00).** Done 2026-07-19 — real screenshots now composited into
+      all six frame cutouts, replacing the temporary gradient. Ran the hamdam-ios Screenshot
+      Orchestrator; discovered along the way that its existing composed 1290×2796 output
+      (marketing gradient + headline + its own baked-in phone mockup) isn't the right asset for
+      this — nesting it in another frame double-frames — so added an additive raw-screen export
+      (`ScreenshotOrchestrator.swift`, `Documents/HamdamScreenshots/Raw/`) and fixed a
+      transparency bug it surfaced in the Today screen (`ScreenshotViewFactory.swift`). Cutout
+      position was measured from `device-frame-iphone.png`'s own alpha channel, not eyeballed.
+      Verified with local PIL composite renders (no live browser available this session) before
+      and after wiring, across all five distinct screens/both locales — see commits in both
+      repos. **Still owed**: the "short Fable spot check" this line originally called for, and
+      a live check at hamdam.com.au once this deploys.
 
 ## Before any push
 
