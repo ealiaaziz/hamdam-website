@@ -1,0 +1,142 @@
+[
+  {
+    "tag": "A",
+    "text": "Skip to main content",
+    "ariaLabel": null,
+    "href": "#main-content",
+    "visible": true
+  },
+  {
+    "tag": "A",
+    "text": "Hamdam",
+    "ariaLabel": "Hamdam",
+    "href": "/",
+    "visible": true
+  },
+  {
+    "tag": "A",
+    "text": "فارسی",
+    "ariaLabel": "Switch to Farsi (فارسی)",
+    "href": "/fa/",
+    "visible": true
+  },
+  {
+    "tag": "INPUT",
+    "text": "",
+    "ariaLabel": "How your heart feels today",
+    "href": null,
+    "visible": true
+  },
+  {
+    "tag": "A",
+    "text": "There is more waiting in the app",
+    "ariaLabel": null,
+    "href": "#ceremony",
+    "visible": true
+  },
+  {
+    "tag": "DIV",
+    "text": "حافظHafezThe tavern of the seeker. Where wine and mirror sha",
+    "ariaLabel": "The five poets",
+    "href": null,
+    "visible": true
+  },
+  {
+    "tag": "A",
+    "text": "See how it stays private",
+    "ariaLabel": null,
+    "href": "#privacy",
+    "visible": true
+  },
+  {
+    "tag": "BUTTON",
+    "text": "",
+    "ariaLabel": "Hamdam Reflections screen with private journal and favourites (final screenshot pending)",
+    "href": null,
+    "visible": true
+  },
+  {
+    "tag": "BUTTON",
+    "text": "",
+    "ariaLabel": "Hamdam Your Journey screen with a mood-trend chart (final screenshot pending)",
+    "href": null,
+    "visible": true
+  },
+  {
+    "tag": "A",
+    "text": "Privacy Policy",
+    "ariaLabel": null,
+    "href": "/privacy",
+    "visible": true
+  },
+  {
+    "tag": "A",
+    "text": "Terms of Use",
+    "ariaLabel": null,
+    "href": "/terms",
+    "visible": true
+  },
+  {
+    "tag": "A",
+    "text": "Privacy",
+    "ariaLabel": null,
+    "href": "/privacy",
+    "visible": true
+  },
+  {
+    "tag": "A",
+    "text": "Terms",
+    "ariaLabel": null,
+    "href": "/terms",
+    "visible": true
+  },
+  {
+    "tag": "A",
+    "text": "Contact",
+    "ariaLabel": null,
+    "href": "mailto:developer@hamdam.com.au",
+    "visible": true
+  },
+  {
+    "tag": "BODY",
+    "text": "Skip to main contentHamdamفارسیHamdam reflects your heart an",
+    "ariaLabel": null,
+    "href": null,
+    "visible": true
+  },
+  {
+    "tag": "A",
+    "text": "Skip to main content",
+    "ariaLabel": null,
+    "href": "#main-content",
+    "visible": true
+  },
+  {
+    "tag": "A",
+    "text": "Hamdam",
+    "ariaLabel": "Hamdam",
+    "href": "/",
+    "visible": true
+  },
+  {
+    "tag": "A",
+    "text": "فارسی",
+    "ariaLabel": "Switch to Farsi (فارسی)",
+    "href": "/fa/",
+    "visible": true
+  },
+  {
+    "tag": "INPUT",
+    "text": "",
+    "ariaLabel": "How your heart feels today",
+    "href": null,
+    "visible": true
+  },
+  {
+    "tag": "A",
+    "text": "There is more waiting in the app",
+    "ariaLabel": null,
+    "href": "#ceremony",
+    "visible": true
+  }
+]
