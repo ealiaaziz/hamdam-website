@@ -13,6 +13,27 @@ device capture, and Cloudflare preview-dashboard confirmation. These are marked 
 not removed from the list — they remain open post-launch work. No other item on this checklist
 is waived by that decision.
 
+## Final owner release waivers (2026-07-18, second decision)
+
+Ealia explicitly accepted the following as **OPEN, OWNER ACCEPTED FOR PRODUCTION RELEASE** —
+none of these are passed or resolved, all remain open post-launch items:
+
+1. EN LCP 3.2s (target ≤2.5s) — open, accepted.
+2. FA LCP 2.9s (target ≤2.5s) — open, accepted.
+3. Lighthouse `color-contrast` audit score 0 (F3), both locales — open, accepted.
+4. F1-00 / temporary DV-01 gradient screen — open, accepted (unchanged from the first decision).
+5. Real VoiceOver pass — deferred, accepted (unchanged from the first decision).
+6. Real Windows High Contrast pass — deferred, accepted (unchanged from the first decision).
+7. Cloudflare preview-dashboard confirmation — deferred, accepted (unchanged from the first
+   decision).
+8. `RELEASED` remains `false` — "Coming soon" is the intended, correct CTA state, not a bug.
+9. No new analytics added.
+10. No "No analytics" claim made anywhere in shipped copy.
+
+No other Blocker, Major, placeholder, failed test, security failure, or build failure is
+waived by this decision. This is the final release authorisation; items 1-3 above (LCP ×2,
+contrast) were not covered by the first decision and are newly accepted here.
+
 ## Blocking
 
 - [x] **DV-01 screen content (F1-00).** Owner-accepted for this release (2026-07-18) — ships

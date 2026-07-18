@@ -34,6 +34,17 @@ recorded here verbatim per her instruction, ahead of any push/merge:
     recorded FAIL in `18-acceptance-results.md` Phase 13 update) are **not** covered by this
     exception list and remain subject to the normal release-gate pass/fail rule.
 
+## 27. Final owner release waivers (2026-07-18, second decision)
+
+A fresh validation pass reproduced G4 (LCP: EN 3.2s, FA 2.9s, target ≤2.5s) and F3
+(Lighthouse `color-contrast` score 0, both locales) as live failures, matching the repo's
+existing recorded evidence. Ealia explicitly accepted both as **OPEN, OWNER ACCEPTED FOR
+PRODUCTION RELEASE** — not passed, not resolved. This supersedes §26 item 10's "not covered"
+status for these two items specifically. Full final waiver list (§26 items 1-9 plus these
+two) is recorded in `50-release-candidate-report.md` §13b and
+`51-manual-release-checklist.md`. No other gate is waived. This is the final release
+authorisation.
+
 ## 2. Current required model
 **None - the mega runner has reached its final stage.** All stages S0 through S7 are
 complete. `50-release-candidate-report.md` and `51-manual-release-checklist.md` are the

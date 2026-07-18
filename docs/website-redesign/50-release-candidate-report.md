@@ -198,6 +198,16 @@ superseding the "not ready" framing in §12 above for release-gating purposes:
   G4 (LCP, recorded FAIL) remain live release gates, evaluated fresh at final validation, not
   waived by this decision.
 
+## 13b. Final owner release waivers (2026-07-18, second decision)
+
+Following a fresh validation pass that reproduced G4 (LCP: EN 3.2s, FA 2.9s, target ≤2.5s) and
+F3 (Lighthouse `color-contrast` score 0, both locales) as live failures, Ealia explicitly
+accepted both as **OPEN, OWNER ACCEPTED FOR PRODUCTION RELEASE** — recorded as open, not passed,
+not resolved. Combined with the standing §13 waivers (F1-00/DV-01, VoiceOver, Windows High
+Contrast, Cloudflare dashboard confirmation) plus `RELEASED: false` ("Coming soon" is the
+intended CTA state, not a defect), no new analytics, and no "No analytics" claim, this is the
+final release authorisation. No other gate is waived.
+
 ## 14. Exact next action for Ealia
 
 1. Run the hamdam-ios Screenshot Orchestrator
