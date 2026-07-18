@@ -9,11 +9,11 @@ import { faCopy } from '../../data/siteCopy';
 import PoetsBand from '../../components/PoetsBand.astro';
 import ContextConstellation from '../../components/ContextConstellation.astro';
 import JourneyPair from '../../components/JourneyPair.astro';
+import RootsMoments from '../../components/RootsMoments.astro';
 import SectionDivider from '../../components/SectionDivider.astro';
 import FeatureIcon from '../../components/FeatureIcon.astro';
 import HamdamLogotype from '../../components/HamdamLogotype.astro';
 import SceneBackground from '../../components/SceneBackground.astro';
-import norooz from '../../assets/scenes/norooz-morning-section.jpg';
 import quietGarden from '../../assets/scenes/quiet-garden-section.jpg';
 import dawn from '../../assets/scenes/dawn-section.jpg';
 ---
@@ -71,21 +71,8 @@ import dawn from '../../assets/scenes/dawn-section.jpg';
 
   <SectionDivider />
 
-  <!-- IRANIAN CULTURAL DEPTH -->
-  <section class="relative px-6 py-[var(--spacing-section-mobile)] sm:py-[var(--spacing-section-desktop)]">
-    <SceneBackground image={norooz} />
-    <div data-reveal class="relative mx-auto max-w-[var(--container-reading)]">
-      <h2 class="text-balance font-farsi text-3xl font-medium text-indigo sm:text-4xl">
-        تقویم ایرانی در همدم نفس می‌کشد.
-      </h2>
-      <p class="mt-8 font-farsi text-lg leading-[1.9] text-indigo/90">
-        یلدا در دسامبر، بلندترین شب سال که خانواده‌ها حافظ می‌خوانند. نوروز در بهار، سال نویی که
-        جهان را از نو می‌سازد. چهارشنبه‌سوری، مهرگان، سیزده‌به‌در. لحظه‌های فرهنگی مثل حضوری آرام
-        از راه می‌رسند، نه یادآوری تقویمی. از فال حافظ بپرس، همان‌گونه که نسل‌ها پرسیده‌اند، و
-        شعری به‌عنوان پاسخ دریافت کن.
-      </p>
-    </div>
-  </section>
+  <!-- ROOTS AND REGION -->
+  <RootsMoments lang="fa" />
 
   <SectionDivider />
 

@@ -8,11 +8,11 @@ import VerseShowcase from '../components/VerseShowcase.astro';
 import PoetsBand from '../components/PoetsBand.astro';
 import ContextConstellation from '../components/ContextConstellation.astro';
 import JourneyPair from '../components/JourneyPair.astro';
+import RootsMoments from '../components/RootsMoments.astro';
 import SectionDivider from '../components/SectionDivider.astro';
 import FeatureIcon from '../components/FeatureIcon.astro';
 import Footer from '../components/Footer.astro';
 import SceneBackground from '../components/SceneBackground.astro';
-import norooz from '../assets/scenes/norooz-morning-section.jpg';
 import quietGarden from '../assets/scenes/quiet-garden-section.jpg';
 import dawn from '../assets/scenes/dawn-section.jpg';
 
@@ -110,21 +110,8 @@ const jsonLd = {
 
   <SectionDivider />
 
-  <!-- IRANIAN CULTURAL DEPTH -->
-  <section class="relative px-6 py-[var(--spacing-section-mobile)] sm:py-[var(--spacing-section-desktop)]">
-    <SceneBackground image={norooz} />
-    <div data-reveal class="relative mx-auto max-w-[var(--container-reading)]">
-      <h2 class="text-balance font-serif text-4xl font-semibold text-indigo sm:text-5xl">
-        The Iranian calendar breathes through Hamdam.
-      </h2>
-      <p class="mt-8 font-serif text-xl leading-[1.7] text-indigo/90">
-        Yalda in December, the longest night when families read Hafez together. Norooz in spring,
-        the new year that renews the world. Chaharshanbe Suri, Mehregan, Sizdah Bedar. Cultural
-        moments arrive as gentle presences, not calendar reminders. Ask the Fal e Hafez a question
-        the way generations have, and receive a verse in answer.
-      </p>
-    </div>
-  </section>
+  <!-- ROOTS AND REGION -->
+  <RootsMoments lang="en" />
 
   <SectionDivider />
 
