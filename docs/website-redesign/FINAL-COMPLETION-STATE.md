@@ -4,11 +4,11 @@ Reentrant state file for the Final Completion Mega Runner. Read this first on ev
 never repeat a completed stage unless validation proves regression.
 
 ## 1. Current stage
-F2 - Fable correction verification (not started)
+S7 - Release candidate closeout (not started)
 
 ## 2. Current required model
-**Fable 5.** S6 is complete and committed. Clear this session, select Fable 5, paste the same
-mega runner again.
+**Sonnet 5.** F2 is complete and committed. Clear this session, select Sonnet 5, paste the
+same mega runner again.
 
 ## 3. Completed stages
 - S0 - Safety and recovery (2026-07-18)
@@ -24,18 +24,28 @@ mega runner again.
   build; one new regression found and fixed (FA legal-page footer was rendering English,
   commit `c3f6b5f`); two honest non-carry-forward findings recorded (F3 contrast unresolved,
   G4 LCP not verifiably passing locally, proven not to be an S5 regression via A/B testing).
-  Commit `<pending, see §6>`.
+  Commit `e92c145`.
+- F2 - Fable correction verification (2026-07-18, Fable 5) - all S5-actionable Blockers and
+  Majors verified Closed against direct evidence (built HTML plus the S6 screenshot set; the
+  reduced-motion captures defeat the poets-band reveal artefact and show the مولانا plate in
+  both locales); S6 footer fix independently re-verified; no correction-caused regression
+  found; one new Minor recorded (FA-page English translation line renders its terminal full
+  stop at the visual left edge, pre-existing bidi behaviour, not S5-caused). **Visual
+  Approval Granted with one standing exception: F1-00**, which is external-evidence-gated
+  and explicitly not S5-actionable, so the runner's "Blocker remains means return to S5"
+  branch would create an empty correction round; routed to S7 with the exception recorded
+  instead. Full reasoning: `42-fable-correction-verification.md`.
 
 ## 4. Incomplete stages
-F2, S7
+S7
 
 ## 5. Current branch
 `feature/hamdam-web-redesign`
 
 ## 6. Latest verified commit
-This checkpoint's own commit (S6 evidence + reports, message `test: complete website phase 13
-acceptance`) will supersede `c3f6b5f` (the in-session footer fix) once committed immediately
-after this file is written. `c3f6b5f` itself supersedes `fb479ff` (the S5 commit).
+This checkpoint's own commit (F2 verification document plus this state update, message
+`docs: record final Fable website approval`) supersedes `e92c145` (the S6 checkpoint) once
+committed immediately after this file is written.
 
 ## 7. Working tree status
 Clean after the S6 commit: `18-acceptance-results.md` update, `phase-reports/phase-13-report.md`,
@@ -104,19 +114,21 @@ scroll-through check or a product decision, not a mechanical fix). Full gate-by-
 from Phase 12/S4/F1 is in the ledger; not repeated here.
 
 ## 18. Fable audit result
-Unchanged since F1 (`40-fable-final-visual-audit.md`). F2 (this stage's next step) is where
-Fable verifies whether S5's corrections actually close F1's findings against the S6-refreshed
-evidence.
+F2 complete (`42-fable-correction-verification.md`): F1-01 through F1-07 all **Closed** on
+direct evidence, S6 footer fix independently verified, no correction-caused regression.
+**Visual Approval Granted with one standing exception (F1-00).** The site must not be called
+visually accepted for production until real app captures fill the six device frames.
 
 ## 19. Open Blocker findings
-Still 1 — F1-00 DV-01 screen content. Unchanged, not S5/S6-actionable from this repo.
+Still 1 — F1-00 DV-01 screen content. External-evidence-gated (hamdam-ios Screenshot
+Orchestrator run by Ealia), not closable from this repo. S7 must carry it as the explicitly
+recorded exception, not soften it.
 
 ## 20. Open Major findings
-F1's original 4 Majors (F1-01 through F1-04) were all implemented in S5 and verified in the
-S6-rebuilt output; whether Fable considers them **closed** is F2's call, not self-graded here.
-Two new items surfaced this session, neither at F1's original Major/Blocker severity: F3
-contrast (unresolved, pre-existing) and G4 LCP (not verifiably passing locally, proven not to
-be an S5 cause).
+0. F1's four Majors (F1-01 through F1-04) are verified Closed by F2. The two S6-surfaced
+honest non-passes remain open below Major-blocking status for F2's purposes: F3 contrast
+(pre-existing, needs a real-device spot check) and G4 LCP (needs a real deployed-environment
+measurement).
 
 ## 21. Manual checks still requiring Ealia
 Unchanged list from F1, plus one addition:
@@ -144,6 +156,9 @@ Unchanged list from F1, plus one addition:
   boundary, and a decision on whether `BaseLayout.astro`'s scroll-progress calculation needs
   re-anchoring to the real ceremony offset (both are stale Phase-9 TODOs found this session,
   neither fixed)
+- **New (F2, Minor):** on the FA page, verse-card English translation lines render their
+  terminal full stop at the visual left edge (bidi placement inside the RTL container);
+  pre-existing, not S5-caused; candidate one-line LTR-direction fix at Ealia's discretion
 
 ## 22. Push status
 Nothing pushed.
@@ -155,23 +170,19 @@ Nothing merged. `main` untouched.
 Nothing deployed.
 
 ## 25. Exact next action
-**SWITCH TO FABLE 5.** Begin F2: verify S5's corrections against the S6-refreshed evidence.
-Read (in order): the original F1 audit (`40-fable-final-visual-audit.md`), the original
-correction list (`41-sonnet-correction-list.md`), this stage's implementation report
-(`phase-reports/fable-correction-implementation-report.md`), the Phase 13 report
-(`phase-reports/phase-13-report.md`), the updated acceptance ledger (`18-acceptance-results.md`,
-specifically the new "Phase 13 (S6) update" section), and the fresh screenshots under
-`final-evidence/phase-13/screens/` (inspect directly, not just this report's prose). For every
-prior Blocker/Major (F1-00 through F1-04), mark Closed/Partially Closed/Open against the fresh
-evidence — F1-00 should stay Open (not S5/S6-actionable, no new evidence exists for it beyond
-the honest pending state). Also review the two new S6 findings not part of F1's original list:
-the FA-footer regression (found and fixed in-session — verify it, don't just trust the report)
-and the F3/G4 honest non-passes (contrast and LCP — these are open gaps this session
-surfaced, not corrections to verify, so they don't block F2's Blocker/Major closure question,
-but should be acknowledged). If any prior Blocker/Major remains open, per the runner: set next
-stage to S5 with a narrow updated correction list. If all are closed and no new material
-regression exists, set next stage to S7 and record Visual Approval Granted, listing remaining
-manual checks accurately (§21 above, now longer than before this stage).
+**SWITCH TO SONNET 5.** Begin S7 release candidate closeout. Carry F1-00 as the explicitly
+recorded exception in every S7 verification and report line that touches assets or Blockers
+(the S7 format anticipates this: "15 of 15 or exact exception", "Open Blocker count"). Do
+not soften it, do not call the site visually accepted for production, and hand Ealia the one
+exact action: run the hamdam-ios Screenshot Orchestrator
+(`Hamdam/Hamdam/DebugTools/ScreenshotOrchestrator/`) for the approved marketing states per
+locale at 1290x2796, deliver the outputs to this repo for compositing under the frame
+cutouts with `object-fit: contain`, then a short Fable spot check of the six composited
+frames. S7 must also run the final full test and build pass, review the full branch diff,
+produce `50-release-candidate-report.md` and `51-manual-release-checklist.md` (reproducing
+§21 accurately, including the F2 Minor), respect the push policy (preview behaviour is
+dashboard-only and unverified, so do not push), and close with the exact required final
+response format.
 
 CLEAR THE CURRENT CLAUDE SESSION, SELECT THE REQUIRED MODEL, THEN PASTE THE SAME MEGA RUNNER
 AGAIN.
