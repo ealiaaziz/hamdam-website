@@ -23,6 +23,29 @@
   --ease-dawn: cubic-bezier(0.22, 0.61, 0.36, 1);
   --dur-reveal: 900ms;
   --dur-crossfade: 1600ms;
+
+  /* Redesign surface arc (design-system.md §1). Additive only: the current
+     site has one light surface and does not consume these yet. They exist
+     so the night-to-morning sky arc landing in Phase 4/5 has a fixed
+     vocabulary, not a per-section improvisation. */
+  --surface-night: #141430;
+  --surface-dusk: #2A2140;
+  --surface-firstlight: #5A3A4A;
+  --surface-dawn: #C77E4E;
+  --surface-morning: #F4EDD8;
+  --text-on-night: rgb(244 237 216 / 92%);
+  --text-on-night-muted: rgb(244 237 216 / 68%);
+  --glow-warm: rgb(240 200 120 / 24%);
+  /* 0 = night (top of page), 1 = morning (arc resolved). Set by scroll
+     choreography in Phase 4; unconsumed until then. */
+  --sky-progress: 0;
+
+  /* Two-token focus system (design-system.md §18). The existing
+     `:focus-visible` rule in global.css still uses --color-saffron-ink
+     directly; these exist so night/dusk surfaces landing later can opt in
+     without a second focus mechanism. */
+  --focus-color-light: #7F6029; /* matches --color-saffron-ink in global.css @theme */
+  --focus-color-dark: var(--hamdam-night-gold);
 }
 
 @media (prefers-color-scheme: dark) {
