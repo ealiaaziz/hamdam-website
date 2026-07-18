@@ -87,16 +87,43 @@ contrast) were not covered by the first decision and are newly accepted here.
 
 ## Content / product decisions still Ealia's call
 
-- [ ] Analytics decision (`26-analytics-plan.md`) — nothing implemented yet, by design.
-- [ ] Em dashes in `verses.ts` translations — ruled a joint app+web decision, not fixed here.
-- [ ] Mood-label replacement (F1-02) — veto window if app-string continuity is preferred over
-      Fable's replacement wording.
-- [ ] Trademark/IP owner name confirmation (both names intentional?).
-- [ ] App Store ID constant in `src/lib/appStore.js` — confirm before release.
-- [ ] Roots coverage: confirm Mehregan and Sizdah Bedar have shipped in-app before the website
-      references them.
-- [ ] Widgets claim confirmation (QUIET-02/03).
-- [ ] ROOTS-02 FA moment sentences — confirm app-side SIMA review has cleared this copy.
+- [x] **Roots coverage (Mehregan/Sizdah Bedar)** — verified 2026-07-19, resolved, not a question.
+      Checked `hamdam-ios` directly: `RootsContent.swift`'s `curatedMomentIds` includes both
+      `"mehregan"` and `"sizdahBedar"`, and both have real `CulturalMoment` entries with date
+      rules in `CulturalMoment.swift` (mehregan: Mehr 10, sizdahBedar: Farvardin 13). Both are
+      shipped in-app. The website's reference to them is factually supported.
+- [x] **Widgets claim (QUIET-02/03)** — verified 2026-07-19, resolved, not a question. Checked
+      `hamdam-ios` directly, all five QUIET-02/03 platform claims are real and shipped: a
+      `HamdamWidgetsExtension` target exists and links `WidgetKit.framework` (widgets); Siri/App
+      Shortcuts shipped per Phase 18/9A (already known); Watch companion shipped (already
+      known); `HealthKitProvider.swift` constructs a real `HKStateOfMind` and calls
+      `healthStore.save(sample)` (State of Mind write); `MusicService.swift`/
+      `MiniPlayerView.swift` are live and were touched as recently as build 62 (Apple Music
+      continue-button wording fix). No claim in that paragraph is unsupported.
+- [ ] **ROOTS-02 FA moment sentences — SIMA review status checked, still NOT cleared.** Verified
+      2026-07-19: `Localization.swift` still carries the `AUTHORED BY CLAUDE — SIMA REVIEW
+      PENDING` flag on every relevant string (50+ occurrences across the file, unchanged). This
+      is a fact, not a question — the app-side review has not happened. Ealia's call: clear it,
+      or decide how the website should treat this copy while it's still pending.
+- [ ] **Analytics decision** (`26-analytics-plan.md`) — genuinely open, cannot be checked from
+      the repo. The Cloudflare Web Analytics on/off toggle lives at the Cloudflare
+      dashboard/edge level, invisible to source; the CSP permits it (`static.cloudflareinsights.com`)
+      but that doesn't tell us whether it's actually enabled. The site currently claims "No
+      analytics" — that claim is unsubstantiated either way until the dashboard toggle is
+      checked.
+- [ ] **Em dashes in `verses.ts`/`poets.ts` translations** — ruled a joint app+web decision in
+      the prior redesign session, still not settled on either platform.
+- [ ] **Mood-label replacement (F1-02)** — Fable's FA labels (سنگین/ناآرام/آرام/سبک/روشن) replaced
+      the interim Apple-Health-style FA strings for warmer tone; veto window still open if
+      app-string continuity is preferred instead.
+- [ ] **Trademark/IP owner name** — `Footer.astro`/`terms.astro`/`privacy.astro` name the
+      trademark/IP owner as "Seyed Valiallah Azizollahi," while the same pages' Contact
+      sections name "Ealia Azizollahi" as the ABN holder. Structurally consistent across all
+      four legal pages, so plausibly deliberate (family member, tax/IP structuring) — but needs
+      a direct yes/no, not a guess.
+- [ ] **App Store ID** in `src/lib/appStore.js` — already set to a real value (`'6784461990'`,
+      not a placeholder). Just needs confirmation it matches the live App Store Connect record
+      before `RELEASED` flips true.
 - [ ] CONST-03 wording sign-off against the shipped privacy policy text.
 
 ## Minor, non-blocking
