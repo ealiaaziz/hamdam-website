@@ -12,12 +12,12 @@ const { persian, translation, poet, class: className = '' } = Astro.props;
 <figure
   data-reveal
   class:list={[
-    'flex h-full flex-col rounded-[var(--radius-card)] bg-card p-8 shadow-card backdrop-blur-sm',
+    'flex h-full flex-col rounded-[var(--radius-card)] bg-card p-6 sm:p-8 shadow-card backdrop-blur-sm',
     className,
   ]}
 >
   <blockquote lang="fa" dir="rtl" class="grow">
-    <p class="font-farsi text-[1.5rem] font-medium leading-[1.9] text-start text-indigo whitespace-pre-line">
+    <p class="font-farsi text-[length:var(--text-verse-fa)] font-medium leading-[1.9] text-start text-indigo whitespace-pre-line [text-wrap:pretty]">
       {persian}
     </p>
   </blockquote>
