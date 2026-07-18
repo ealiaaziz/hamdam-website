@@ -6,6 +6,8 @@ import momentYalda from '../assets/website-redesign/moment-yalda.png';
 import momentNorooz from '../assets/website-redesign/moment-norooz.png';
 import momentChaharshanbeSuri from '../assets/website-redesign/moment-chaharshanbe-suri.png';
 import deviceFrame from '../assets/website-redesign/device-frame-iphone.png';
+import rootsScreenshotEn from '../assets/website-redesign/screenshots/EN/04-roots-en.png';
+import rootsScreenshotFa from '../assets/website-redesign/screenshots/FA/04-roots-fa.png';
 
 const CARD_IMAGE: Record<string, ImageMetadata> = {
   yalda: momentYalda,
@@ -24,6 +26,7 @@ interface Props {
 }
 
 const { lang } = Astro.props;
+const rootsScreenshot = lang === 'fa' ? rootsScreenshotFa : rootsScreenshotEn;
 
 // Computed at build time (Australia/Brisbane, page spec §7 item 12) --
 // static HTML, no client JS needed for the countdown itself. Rebuilds
@@ -75,13 +78,13 @@ const copy =
         heading: 'یلدا، نوروز، چهارشنبه‌سوری. همدم می‌داند کِی از راه می‌رسند، و آن‌ها را با شعری که به خودشان تعلق دارد خوش‌آمد می‌گوید.',
         closing: 'مهرگان و سیزده بدر هم علامت‌گذاری شده‌اند، هرکدام با آمدنی آرام.',
         falHafez: 'همان‌گونه که نسل‌ها پرسیده‌اند، بپرس.',
-        deviceAlt: 'صفحه ریشه‌های همدم با فال حافظ و تقویم فرهنگی (تصویر نهایی در دست تهیه)',
+        deviceAlt: 'صفحه ریشه‌های همدم با فال حافظ و تقویم فرهنگی',
       }
     : {
         heading: 'Yalda, Norooz, Chaharshanbe Suri. Hamdam knows when they arrive, and greets them with poetry that belongs to them.',
         closing: 'Mehregan and Sizdah Bedar are marked too, each with its own quiet arrival.',
         falHafez: 'Ask, as generations have.',
-        deviceAlt: "Hamdam Roots screen with Fal-e Hafez and the cultural calendar (final screenshot pending)",
+        deviceAlt: "Hamdam Roots screen with Fal-e Hafez and the cultural calendar",
       };
 ---
 
@@ -121,13 +124,20 @@ const copy =
     </div>
 
     {
-      /* DV-01 (device frame) is now real; the orchestrator 04-roots
-         screenshot that belongs inside it is still pending. Same pattern as
-         HeroCinematic.astro's .hero__device: the existing gradient fill
-         shows through the frame's real transparent screen cutout as the
-         honest "screenshot pending" state. */
+      /* Real orchestrator 04-roots screenshot composited 2026-07-19,
+         same cutout-position math as every other DV-01 consumer -- see
+         HeroCinematic.astro's .hero__device-screen comment for the
+         measurement method. */
     }
     <div class="roots__device" role="img" aria-label={copy.deviceAlt}>
+      <Image
+        src={rootsScreenshot}
+        alt=""
+        width={455}
+        height={988}
+        quality={80}
+        class="roots__device-screen"
+      />
       <Image
         src={deviceFrame}
         alt=""
@@ -299,6 +309,18 @@ const copy =
     width: 100%;
     height: 100%;
     object-fit: contain;
+  }
+
+  .roots__device-screen {
+    position: absolute;
+    top: 5.97%;
+    right: 6.07%;
+    bottom: 6.41%;
+    left: 6.43%;
+    width: auto;
+    height: auto;
+    object-fit: cover;
+    border-radius: 8%;
   }
 
   /* Desktop: three cards in a row, equal height, device frame anchors

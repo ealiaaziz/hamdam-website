@@ -1,12 +1,15 @@
 ---
 import { Image } from 'astro:assets';
 import deviceFrame from '../assets/website-redesign/device-frame-iphone.png';
+import privacyScreenshotEn from '../assets/website-redesign/screenshots/EN/06-privacy-en.png';
+import privacyScreenshotFa from '../assets/website-redesign/screenshots/FA/06-privacy-fa.png';
 
 interface Props {
   lang: 'en' | 'fa';
 }
 
 const { lang } = Astro.props;
+const privacyScreenshot = lang === 'fa' ? privacyScreenshotFa : privacyScreenshotEn;
 
 // Every clause here is traceable to the live Privacy Policy (page spec §8
 // item 4): the primary statement mirrors /privacy's own opening
@@ -24,7 +27,7 @@ const copy =
           { title: 'فقط iCloud خودت', body: 'همگام‌سازی اختیاری است، فقط برای Apple ID خودت.' },
         ],
         links: { privacy: 'حریم خصوصی', terms: 'شرایط استفاده' },
-        deviceAlt: 'صفحه حریم خصوصی همدم (تصویر نهایی در دست تهیه)',
+        deviceAlt: 'صفحه حریم خصوصی همدم',
       }
     : {
         statement: 'Hamdam does not use accounts. It does not collect emails. Your words never leave your device unless you turn on your own iCloud sync. Nobody at Hamdam can read a word you write.',
@@ -34,7 +37,7 @@ const copy =
           { title: 'Your own iCloud only', body: 'Sync is opt-in, scoped to your Apple ID.' },
         ],
         links: { privacy: 'Privacy Policy', terms: 'Terms of Use' },
-        deviceAlt: 'Hamdam Privacy screen (final screenshot pending)',
+        deviceAlt: 'Hamdam Privacy screen',
       };
 
 const TRUST_ICONS = [
@@ -71,10 +74,20 @@ const termsHref = lang === 'fa' ? '/fa/terms' : '/terms';
     </div>
 
     {
-      /* DV-01 (device frame) is now real; the orchestrator 06-privacy
-         screenshot that belongs inside it is still pending. */
+      /* Real orchestrator 06-privacy screenshot composited 2026-07-19,
+         same cutout-position math as every other DV-01 consumer -- see
+         HeroCinematic.astro's .hero__device-screen comment for the
+         measurement method. */
     }
     <div class="privacy-trust__device" role="img" aria-label={copy.deviceAlt}>
+      <Image
+        src={privacyScreenshot}
+        alt=""
+        width={420}
+        height={911}
+        quality={80}
+        class="privacy-trust__device-screen"
+      />
       <Image
         src={deviceFrame}
         alt=""
@@ -201,6 +214,18 @@ const termsHref = lang === 'fa' ? '/fa/terms' : '/terms';
     width: 100%;
     height: 100%;
     object-fit: contain;
+  }
+
+  .privacy-trust__device-screen {
+    position: absolute;
+    top: 5.97%;
+    right: 6.07%;
+    bottom: 6.41%;
+    left: 6.43%;
+    width: auto;
+    height: auto;
+    object-fit: cover;
+    border-radius: 8%;
   }
 
   @media (min-width: 1024px) {

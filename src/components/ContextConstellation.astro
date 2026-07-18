@@ -1,6 +1,8 @@
 ---
 import { Image } from 'astro:assets';
 import deviceFrame from '../assets/website-redesign/device-frame-iphone.png';
+import heroScreenshotEn from '../assets/website-redesign/screenshots/EN/01-hero-en.png';
+import heroScreenshotFa from '../assets/website-redesign/screenshots/FA/01-hero-fa.png';
 
 interface Props {
   lang: 'en' | 'fa';
@@ -63,10 +65,11 @@ const NODES = [
 
 const heading = lang === 'fa' ? 'یک تأمل، شکل‌گرفته از روز تو.' : 'One reflection, shaped by your day.';
 const privacyLinkLabel = lang === 'fa' ? 'ببین چطور خصوصی می‌ماند' : 'See how it stays private';
+const heroScreenshot = lang === 'fa' ? heroScreenshotFa : heroScreenshotEn;
 const deviceAlt =
   lang === 'fa'
-    ? 'پیش‌نمایش صفحه اصلی همدم (تصویر نهایی در دست تهیه)'
-    : 'Hamdam Today screen preview (final screenshot pending)';
+    ? 'نمای صفحه اصلی همدم با شعری صبحگاهی از حافظ'
+    : 'Hamdam Today screen showing a morning verse by Hafez';
 
 const NODE_ICONS: Record<(typeof NODES)[number]['id'], string> = {
   mood: 'M12 4a8 8 0 100 16 8 8 0 000-16zM9 10h.01M15 10h.01M8.5 14.5c1 1 2.2 1.5 3.5 1.5s2.5-.5 3.5-1.5',
@@ -84,6 +87,14 @@ const NODE_ICONS: Record<(typeof NODES)[number]['id'], string> = {
 
     <div class="constellation__diagram">
       <div class="constellation__device" role="img" aria-label={deviceAlt}>
+        <Image
+          src={heroScreenshot}
+          alt=""
+          width={455}
+          height={988}
+          quality={80}
+          class="constellation__device-screen"
+        />
         <Image
           src={deviceFrame}
           alt=""
@@ -174,6 +185,17 @@ const NODE_ICONS: Record<(typeof NODES)[number]['id'], string> = {
     width: 100%;
     height: 100%;
     object-fit: contain;
+  }
+  .constellation__device-screen {
+    position: absolute;
+    top: 5.97%;
+    right: 6.07%;
+    bottom: 6.41%;
+    left: 6.43%;
+    width: auto;
+    height: auto;
+    object-fit: cover;
+    border-radius: 8%;
   }
   .constellation__arcs {
     display: none;

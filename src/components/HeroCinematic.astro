@@ -7,6 +7,8 @@ import heroHorizonDesktop from '../assets/website-redesign/hero-horizon-desktop.
 import heroHorizonMobile from '../assets/website-redesign/hero-horizon-mobile.png';
 import heroBlossomForeground from '../assets/website-redesign/hero-blossom-foreground.png';
 import deviceFrame from '../assets/website-redesign/device-frame-iphone.png';
+import heroScreenshotEn from '../assets/website-redesign/screenshots/EN/01-hero-en.png';
+import heroScreenshotFa from '../assets/website-redesign/screenshots/FA/01-hero-fa.png';
 
 interface Props {
   lang: 'en' | 'fa';
@@ -19,15 +21,17 @@ const { lang, title, subhead } = Astro.props;
 // client never computes positions and they can never jitter.
 const stars = starField(40, 42);
 
-// Real device screenshot alt text ("Hamdam Today screen showing a morning
-// verse by [poet]...") is written once the orchestrator asset lands
-// (page spec §2 item 11); this placeholder alt is honest about the
-// current state rather than describing content that isn't there yet --
-// DV-01 (the frame) is now real, the screenshot inside it is still not.
+// Real orchestrator screenshot landed 2026-07-19 (see
+// docs/app-store/phase-3-screenshot-orchestrator.md's "raw, uncomposed"
+// set -- NOT the composed App-Store marketing PNGs, which already have
+// their own baked-in phone mockup and would double-frame here): the Today
+// screen, seeded with the hafez-015 verse (ScreenshotSeedData.swift's
+// heroVerse).
+const heroScreenshot = lang === 'fa' ? heroScreenshotFa : heroScreenshotEn;
 const deviceAlt =
   lang === 'fa'
-    ? 'پیش‌نمایش صفحه اصلی همدم (تصویر نهایی در دست تهیه)'
-    : 'Hamdam Today screen preview (final screenshot pending)';
+    ? 'نمای صفحه اصلی همدم با شعری صبحگاهی از حافظ'
+    : 'Hamdam Today screen showing a morning verse by Hafez';
 ---
 
 <section id="hero" class="hero" aria-labelledby="hero-title">
@@ -107,17 +111,28 @@ const deviceAlt =
       </div>
 
       {
-        /* DV-01 (device frame) is now real; the orchestrator screenshot that
-           belongs inside it is still pending (see
-           docs/website-redesign/22-dependency-decision.md). Per the frame's
-           own brief (14-canva-asset-brief.md), the screen cutout is real
-           transparency -- the existing gradient fill on .hero__device stays
-           as the honest "screenshot pending" fill showing through that
-           cutout, not baked into the frame image itself, so swapping in a
-           real screenshot later only means adding an <Image> behind this
-           one -- no change to the frame. */
+        /* Real orchestrator screenshot composited 2026-07-19 behind the
+           frame, through its transparent screen cutout (per the frame's
+           own brief, 14-canva-asset-brief.md). Cutout position measured
+           directly from device-frame-iphone.png's alpha channel (connected
+           transparent region from centre: left 6.43%, top 5.97%, right
+           6.07%, bottom 6.41% of the frame's own box) -- not eyeballed,
+           and reused identically by every other DV-01 consumer since they
+           all share the same 1290/2796 container aspect-ratio and
+           object-fit: contain frame rendering. Verified by local
+           composite render before wiring (grey-canvas standin, no live
+           browser available this session) -- single clean device mockup,
+           no double-framing, background full-bleed. */
       }
       <div class="hero__device" role="img" aria-label={deviceAlt}>
+        <Image
+          src={heroScreenshot}
+          alt=""
+          width={525}
+          height={1139}
+          quality={80}
+          class="hero__device-screen"
+        />
         {
           /* On-page display never exceeds 360px CSS width (.hero__device's
              own max), so 720px (2x retina headroom) is the real budget-
@@ -342,6 +357,18 @@ const deviceAlt =
     width: 100%;
     height: 100%;
     object-fit: contain;
+  }
+
+  .hero__device-screen {
+    position: absolute;
+    top: 5.97%;
+    right: 6.07%;
+    bottom: 6.41%;
+    left: 6.43%;
+    width: auto;
+    height: auto;
+    object-fit: cover;
+    border-radius: 8%;
   }
 
   @media (min-width: 640px) {
