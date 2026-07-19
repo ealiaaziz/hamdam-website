@@ -141,6 +141,41 @@ const jsonLd = {
 
   <SectionDivider />
 
+  <!--
+    QUIET COMPANIONS
+    DRAFT copy, added 2026-07-20, not yet in docs/website-redesign/32-fable-approved-copy-ledger.md.
+    Grounded in hamdam-ios docs/progress.md Phase 20 (Family Sharing) and Phase 27+28+29
+    (Mental Companion, Fitness Companion, Interactive Calendar) -- all shipped, opt-in,
+    default-off features with no equivalent section anywhere else on this site (checked via
+    repo-wide grep for "companion"/"calendar"/"family" before writing this). Needs the same
+    Ealia sign-off pass as every other section's copy before being considered approved; not
+    self-approving it here.
+  -->
+  <section class="px-6 py-[var(--spacing-section-mobile)] sm:py-[var(--spacing-section-desktop)]">
+    <div data-reveal class="mx-auto max-w-[var(--container-reading)]">
+      <h2 class="text-balance font-serif text-4xl font-semibold text-indigo sm:text-5xl">
+        A few quiet companions, if you want them.
+      </h2>
+      <p class="mt-8 font-serif text-xl leading-[1.7] text-indigo/90">
+        Everything below is optional and off by default. A gentle mental companion notices
+        patterns in how you have been feeling and offers a passing observation, never advice. A
+        separate fitness companion sits alongside your own activity, entirely apart from Apple
+        Fitness, and only ever opens what you ask it to. If you would like reflection to have a
+        place in your day, Hamdam can keep its own calendar, entirely its own, holding
+        reflection moments and the cultural dates you care about without ever touching your
+        existing calendar. And Family Sharing works the way Apple already intends, no extra
+        permissions to grant.
+      </p>
+    </div>
+    <div class="mx-auto mt-14 flex max-w-2xl flex-wrap justify-center gap-x-10 gap-y-8">
+      <FeatureIcon name="companion" label="Companions" />
+      <FeatureIcon name="calendar" label="Calendar" />
+      <FeatureIcon name="family" label="Family Sharing" />
+    </div>
+  </section>
+
+  <SectionDivider />
+
   <!-- PRIVACY -->
   <PrivacyTrust lang="en" />
 

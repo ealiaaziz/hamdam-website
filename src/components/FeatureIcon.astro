@@ -1,6 +1,6 @@
 ---
 interface Props {
-  name: 'siri' | 'widget' | 'watch' | 'health' | 'music';
+  name: 'siri' | 'widget' | 'watch' | 'health' | 'music' | 'companion' | 'calendar' | 'family';
   label: string;
   lang?: 'en' | 'fa';
 }
@@ -55,6 +55,34 @@ const { name, label, lang = 'en' } = Astro.props;
           <circle cx="7" cy="18" r="2.5" />
           <circle cx="16" cy="16" r="2.5" />
           <path d="M9.5 18V6l9-2v12" />
+        </g>
+      </svg>
+    )}
+    {name === 'companion' && (
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <g stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3" />
+          <ellipse cx="12" cy="12" rx="10" ry="4.5" transform="rotate(-20 12 12)" />
+        </g>
+      </svg>
+    )}
+    {name === 'calendar' && (
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <g stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3.5" y="5" width="17" height="16" rx="2" />
+          <line x1="3.5" y1="10" x2="20.5" y2="10" />
+          <line x1="8" y1="3" x2="8" y2="7" />
+          <line x1="16" y1="3" x2="16" y2="7" />
+        </g>
+      </svg>
+    )}
+    {name === 'family' && (
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <g stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="8.5" cy="8" r="3" />
+          <circle cx="16" cy="9" r="2.3" />
+          <path d="M3 20c0-3.3 2.5-5.5 5.5-5.5S14 16.7 14 20" />
+          <path d="M14.5 20c0-2.4 1.7-4.2 4-4.2s3.5 1.6 3.5 4.2" />
         </g>
       </svg>
     )}
