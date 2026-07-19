@@ -26,9 +26,13 @@ none of these are passed or resolved, all remain open post-launch items:
 6. Real Windows High Contrast pass — deferred, accepted (unchanged from the first decision).
 7. Cloudflare preview-dashboard confirmation — deferred, accepted (unchanged from the first
    decision).
-8. `RELEASED` remains `false` — "Coming soon" is the intended, correct CTA state, not a bug.
+8. **Superseded 2026-07-19: the app is now live on the App Store, and `RELEASED` has been
+   flipped to `true` on Ealia's explicit instruction** (`appStore.js`). The real App Store
+   badge/link now renders everywhere it's gated (nav CTA, sticky mobile pill, hero/mid/
+   ceremony/plans CTAs) instead of the "Coming soon" pill.
 9. No new analytics added.
-10. No "No analytics" claim made anywhere in shipped copy.
+10. Superseded 2026-07-19: the "No analytics" claim was already corrected (see the Analytics
+    decision entry below) once Cloudflare Web Analytics was confirmed on.
 
 No other Blocker, Major, placeholder, failed test, security failure, or build failure is
 waived by this decision. This is the final release authorisation; items 1-3 above (LCP ×2,
@@ -135,6 +139,12 @@ contrast) were not covered by the first decision and are newly accepted here.
 - [x] **App Store ID** in `src/lib/appStore.js` — resolved 2026-07-19. Ealia confirmed
       `'6784461990'` is correct: the app is ASC-approved, just not yet released (matches
       `RELEASED: false`). No code change needed.
+      **Superseded same day**: the app went live, and `RELEASED` is now `true`.
+      Optional follow-up, not blocking: `ASC_PROVIDER_TOKEN` in the same file is still the
+      `'[ASC_PROVIDER_TOKEN]'` placeholder — safe to ship as-is (an unresolved `pt` value is
+      just ignored by Apple's attribution system, never a broken link), but if Ealia wants
+      real App Store Connect campaign attribution on outbound clicks, the real provider
+      token from ASC would replace it here.
 - [ ] CONST-03 wording sign-off against the shipped privacy policy text.
 
 ## Minor, non-blocking
@@ -154,8 +164,10 @@ contrast) were not covered by the first decision and are newly accepted here.
       blocked by this session's permission classifier even for a bare screenshot, and
       `APP_STORE.RELEASED` is `false` pre-launch so the pill doesn't render at all to observe
       manually either. Reasoned from DOM structure/geometry instead (Footer directly follows
-      FinalCeremony with no gap in document flow, default IntersectionObserver threshold). A
-      real scroll-through once `RELEASED` flips true on launch day is still owed.
+      FinalCeremony with no gap in document flow, default IntersectionObserver threshold).
+      `RELEASED` is now `true` (2026-07-19, app live) so the pill renders for real — the real
+      scroll-through is now actually possible and is still owed, just no longer blocked by
+      the flag itself. Still can't do it myself: Playwright remained blocked all session.
 - [x] **Scroll-progress anchoring** (`BaseLayout.astro`) — fixed 2026-07-19. Was using
       `document.documentElement.scrollHeight - window.innerHeight` (progress reaches 1 at the
       very bottom of the page, after the footer). Re-anchored to `#ceremony`'s own offset, per

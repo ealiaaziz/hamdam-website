@@ -5,7 +5,7 @@
 
 export const APP_STORE = Object.freeze({
   ID: '6784461990',
-  RELEASED: false,
+  RELEASED: true,
   COUNTRY: 'au',
 });
 
