@@ -54,3 +54,30 @@ Persian aria-label for the download badge (currently English on both locales).
 **Deferred to W2:** verse rotation controls, blog/newsletter, PWA shell,
 `/fa` copy re-authoring by a native speaker (MT text ships undisclosed per
 Ealia's 2026-07-13 call), FA legal-page localisation.
+
+## Hero WebGL depth layer + Quiet Companions section (2026-07-20, not yet reviewed/merged)
+
+Two changes on top of the already-merged redesign (`docs/website-redesign/` — see that
+directory's `FINAL-COMPLETION-STATE.md` for the redesign's own full history):
+
+1. **Real WebGL 3D added to the hero's star field**, at Ealia's explicit instruction,
+   overriding the redesign's original "no WebGL" hero decision. Full reasoning, mitigations,
+   and honest open risk (LCP was already recorded failing its target before this change, and
+   a real deployed-environment Lighthouse re-check is still needed, not yet run) in
+   `docs/website-redesign/22-dependency-decision.md`'s "2026-07-20 override" section. New
+   files: `src/lib/heroScene3d.js`. New dependency: `three@^0.185.1`.
+2. **New "Quiet Companions" section on the homepage** (EN only; FA needs Ealia's own copy per
+   this repo's standing Farsi-authorship rule, not authored here), covering Mental Companion,
+   Fitness Companion, the dedicated Hamdam Calendar, and Family Sharing, none of which had any
+   representation anywhere on the site before (checked via repo-wide grep first). Grounded in
+   `hamdam-ios` `docs/progress.md` Phase 20 and Phase 27+28+29. DRAFT copy, explicitly not yet
+   in `docs/website-redesign/32-fable-approved-copy-ledger.md` or any equivalent approval
+   record, same as every other section's copy needs before this repo treats it as final.
+
+**Verified this session:** `npm test` (112/112 pass), `npm run build` (clean), and the three.js
+chunk is confirmed genuinely code-split (not in `dist/index.html`'s eager script list, 178.3 KB
+gzipped, only fetched for motion-OK visitors after the hero's own LCP content paints). **Not
+verified this session, needs Ealia:** any real-browser visual check of the new star field or
+the new section, a real production Lighthouse run to confirm LCP didn't regress further, and
+the usual FA/RTL/VoiceOver passes this repo already tracks as pending for everything else.
+Nothing pushed or merged; working tree left uncommitted for review.
