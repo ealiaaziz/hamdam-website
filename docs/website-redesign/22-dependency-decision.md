@@ -56,3 +56,52 @@ purpose/impact/alternative documentation as this file, not silently added.
 **Rejected dependencies:** GSAP, Lenis, three.js/WebGL libraries, AOS/ScrollReveal/Framer
 Motion, Swiper/Embla, date-fns/dayjs/luxon, any analytics npm client, ESLint, Prettier,
 Playwright (as an installed package), Lighthouse CI.
+
+## 2026-07-20 override: three.js added for the hero starfield, at Ealia's explicit instruction
+
+Ealia was shown the original rejection reasoning above (no geometry needed, CSP posture, and
+critically that the hero's own LCP was already recorded failing its 2.5s target in
+`FINAL-COMPLETION-STATE.md` §16/§27, an owner-accepted waiver, not a resolved pass) and chose
+explicitly to override it in favour of a real 3D hero layer, understanding the tradeoff. This
+entry records that decision rather than silently amending the table above.
+
+**What was added:** `three@^0.185.1` (production dependency). Used in exactly one place,
+`src/lib/heroScene3d.js`, which replaces the flat SVG star field in `HeroCinematic.astro` with
+a real `THREE.Points` field carrying genuine per-star depth (size-attenuation) and a small,
+damped pointer-parallax on the camera. Nothing else in the redesign's WebGL-free architecture
+changed: the ceremony petals, the sky arc, the reveal system, and every other motion moment
+listed in `13-motion-specification.md` are still pure CSS custom properties, no library.
+
+**How the original risks were mitigated, not eliminated:**
+- **Bundle weight:** `three` is dynamic-imported (`await import('three')`) only inside the
+  same `!prefersReducedMotion()` branch `HeroCinematic.astro`'s script already gates its whole
+  scroll-timeline logic behind, so reduced-motion visitors never fetch it at all, and it never
+  appears in the page's initial script tags (confirmed in the built `dist/index.html`, only
+  `HeroCinematic`'s own tiny script is referenced there, not the three.js chunk). Real cost for
+  motion-OK visitors: 707.5 KB minified / **178.3 KB gzipped**, fetched asynchronously after
+  the hero's own LCP content is already painted (checked directly against `dist/_astro/`
+  output this session, not estimated), and cached immutably afterward per the existing
+  `/_astro/*` cache-control rule in `public/_headers`.
+- **LCP:** the hero's actual LCP candidate (the headline text / hero image) is unaffected;
+  the WebGL canvas paints in on top afterward via a CSS opacity transition once three.js
+  finishes initialising, never blocking. This is a mitigation, not a fix, for the pre-existing
+  G4 LCP failure recorded in `FINAL-COMPLETION-STATE.md`; **a real production Lighthouse run
+  against the deployed URL is still required to confirm LCP did not regress further**, exactly
+  the same "cannot trust local `astro preview` measurements" caveat already on record for G4 in
+  that file's §21. Not yet run this session, no browser available.
+- **CSP:** no `public/_headers` change needed. Three.js ships as a plain ES module with no
+  `eval`, bundled by Vite into a hashed same-origin chunk, so `script-src 'self'` already
+  covers it. No new textures are fetched (vertex colours only), so `img-src`/`connect-src` are
+  untouched too.
+- **Failure mode:** if `WebGLRenderer` construction throws, or the browser has no WebGL context
+  at all, `initHeroScene3d` returns `null` and the caller leaves the original flat SVG star
+  field fully visible, exactly as before this change, no gap and no console error surfaced to
+  the visitor.
+- **What did NOT change:** the "no animation libraries" rule for every other motion moment
+  (ceremony, sky arc, reveals, mood demo) stands untouched; this override is scoped to the
+  hero's star layer only, not a blanket reversal of `13-motion-specification.md` principle 5.
+
+**Still outstanding, not closed by this change:** a real deployed-environment Lighthouse
+run (both locales) to confirm actual LCP/performance impact, and the pre-existing F3
+(contrast) and G4 (LCP) waivers from `FINAL-COMPLETION-STATE.md` remain exactly as owner-
+accepted-open as they were, this change does not resolve either.

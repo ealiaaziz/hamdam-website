@@ -47,6 +47,15 @@ const deviceAlt =
           <circle cx={s.x * 10} cy={s.y * 10} r={s.r * 1.6} fill="#F5EEE0" opacity={s.o} />
         ))}
       </svg>
+      {
+        /* Real WebGL depth layer, added 2026-07-20 (Ealia's explicit override of the
+           redesign's original no-WebGL hero decision, see
+           docs/website-redesign/22-dependency-decision.md). Sits over the SVG field above;
+           once three.js initialises successfully the script below fades the SVG field to 0
+           and drives this canvas instead, so a WebGL failure of any kind just leaves the
+           original flat field visible, never a gap. */
+      }
+      <canvas class="hero__scene3d" aria-hidden="true"></canvas>
       <div class="hero__sun-track" aria-hidden="true">
         <div class="hero__sun"></div>
       </div>
@@ -213,6 +222,23 @@ const deviceAlt =
     width: 100%;
     height: 65%;
     opacity: var(--stars-o);
+  }
+
+  .hero__scene3d {
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline: 0;
+    width: 100%;
+    height: 65%;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 400ms var(--ease-cross, ease);
+  }
+  .hero--scene3d-active .hero__scene3d {
+    opacity: 1;
+  }
+  .hero--scene3d-active .hero__stars {
+    opacity: 0;
   }
 
   .hero__sun-track {
@@ -434,6 +460,7 @@ const deviceAlt =
     scrimOpacityForProgress,
     prefersReducedMotion,
   } from '../lib/cinematic';
+  import { initHeroScene3d } from '../lib/heroScene3d';
 
   const hero = document.getElementById('hero');
 
@@ -450,7 +477,27 @@ const deviceAlt =
     // raw hex string -- this must match that exact format.
     const DARK_TEXT = 'rgb(36 30 21)';
 
+    // WebGL depth layer: dynamic-imported inside initHeroScene3d, so its chunk is
+    // never fetched here for reduced-motion visitors (this whole branch already
+    // excludes them). If it fails for any reason (no WebGL, context creation
+    // failure, blocked GPU), scene3d stays null and the existing flat SVG star
+    // field (already in the markup, already driven by --stars-o below) is simply
+    // never hidden -- no fallback branching needed at the call site.
+    let lastProgress = 0;
+    let scene3d = null;
+    const canvas = hero.querySelector<HTMLCanvasElement>('.hero__scene3d');
+    if (canvas) {
+      initHeroScene3d(canvas).then((controller) => {
+        if (!controller) return;
+        scene3d = controller;
+        hero.classList.add('hero--scene3d-active');
+        scene3d.setProgress(lastProgress);
+      });
+    }
+
     const apply = (p) => {
+      lastProgress = p;
+      scene3d?.setProgress(p);
       const g = gradientForProgress(p);
       style.setProperty('--sky-top', g.top);
       style.setProperty('--sky-bot', g.bot);
