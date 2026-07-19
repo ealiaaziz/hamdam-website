@@ -312,13 +312,15 @@ const copy =
   }
 
   .roots__device-screen {
+    /* Explicit width/height, not auto + all four insets -- see
+       JourneyPair.astro's .journey__frame-screen comment for why (replaced-
+       element over-constraint bug, confirmed live: insets were silently
+       not shrinking the image at all). */
     position: absolute;
     top: 5.97%;
-    right: 6.07%;
-    bottom: 6.41%;
     left: 6.43%;
-    width: auto;
-    height: auto;
+    width: 87.5%;
+    height: 87.62%;
     object-fit: cover;
     border-radius: 8%;
   }

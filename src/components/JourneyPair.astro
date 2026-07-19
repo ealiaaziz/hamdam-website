@@ -190,13 +190,19 @@ const copy =
   }
 
   .journey__frame-screen {
+    /* Explicit width/height, not auto + all four insets: a replaced element
+       (img) absolutely positioned with top/right/bottom/left all set and
+       width/height auto is over-constrained per the CSS spec's replaced-
+       element sizing rules -- browsers resolve it from the image's own
+       intrinsic size instead of solving the inset equations, so the insets
+       were silently not shrinking the image at all (confirmed live:
+       getBoundingClientRect() came back ~equal to the full unshrunk
+       container). Explicit width/height removes the ambiguity entirely. */
     position: absolute;
     top: 5.97%;
-    right: 6.07%;
-    bottom: 6.41%;
     left: 6.43%;
-    width: auto;
-    height: auto;
+    width: 87.5%;
+    height: 87.62%;
     object-fit: cover;
     border-radius: 8%;
   }
