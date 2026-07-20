@@ -20,9 +20,14 @@ interface Props {
   jsonLd?: Record<string, unknown>;
   /** Set on EN pages whose above-the-fold shows Persian (the hero verse). */
   preloadFarsiVerse?: boolean;
+  /** Set on pages that should never be indexed (currently just 404). The
+   * page already 404s at the HTTP layer (wrangler.jsonc's
+   * not_found_handling), so this is defense-in-depth, not the primary
+   * signal. */
+  noindex?: boolean;
 }
 
-const { title, description, lang, path, jsonLd, preloadFarsiVerse = false } = Astro.props;
+const { title, description, lang, path, jsonLd, preloadFarsiVerse = false, noindex = false } = Astro.props;
 const dir = LOCALE_META[lang].dir;
 // Phase 4 restores the night-start scroll arc for motion-OK visitors on
 // the homepage, so the transparent nav is back to needing cream text
@@ -68,6 +73,7 @@ const ogImage = new URL(
     <meta name="description" content={description} />
     <meta name="theme-color" content="#E8B04B" />
     <meta name="apple-itunes-app" content={`app-id=${APP_STORE.ID}`} />
+    {noindex && <meta name="robots" content="noindex" />}
     <link rel="canonical" href={canonicalURL} />
     <link rel="manifest" href="/site.webmanifest" />
     <link rel="alternate" hreflang="en" href={new URL(enPath, Astro.site)} />
