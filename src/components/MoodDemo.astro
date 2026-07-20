@@ -36,6 +36,20 @@ const copy =
         <p class="mood-demo__verse-en">{initialVerse.english}</p>
         <p class="mood-demo__verse-poet">{lang === 'fa' ? initialVerse.poetFa : initialVerse.poetEn}</p>
       </div>
+      {
+        /* Wordless "reading the moment" beat, added 2026-07-20: a brief pause
+           between moving the slider and the verse changing, so the swap
+           reads as considered rather than a mechanical lookup. Deliberately
+           no caption text (a typing-indicator convention needs none), which
+           also means no Farsi copy is required here, consistent with this
+           repo's rule that only Ealia authors Persian marketing text. Purely
+           decorative: the actual update is still announced via the existing
+           aria-live region above once the verse lands, so this is
+           aria-hidden and never itself becomes the accessible content. */
+      }
+      <div class="mood-demo__sensing" aria-hidden="true">
+        <span></span><span></span><span></span>
+      </div>
     </div>
 
     <div class="mood-demo__slider-wrap">
@@ -93,6 +107,7 @@ const copy =
   }
 
   .mood-demo__panel {
+    position: relative;
     margin-top: 2rem;
     border-radius: var(--radius-panel);
     padding: 2rem 1.5rem;
@@ -121,6 +136,55 @@ const copy =
 
   .mood-demo__verse {
     max-width: 44rem;
+    opacity: 1;
+    transition: opacity 200ms var(--ease-cross);
+  }
+
+  .mood-demo__sensing {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 200ms var(--ease-cross);
+  }
+  .mood-demo__sensing span {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: currentColor;
+    opacity: 0.35;
+  }
+  .mood-demo__panel--sensing .mood-demo__verse {
+    opacity: 0;
+  }
+  .mood-demo__panel--sensing .mood-demo__sensing {
+    opacity: 1;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .mood-demo__panel--sensing .mood-demo__sensing span {
+      animation: mood-sensing-pulse 900ms var(--ease-cross) infinite;
+    }
+    .mood-demo__sensing span:nth-child(2) { animation-delay: 150ms; }
+    .mood-demo__sensing span:nth-child(3) { animation-delay: 300ms; }
+  }
+  @keyframes mood-sensing-pulse {
+    0%, 100% { opacity: 0.3; transform: scale(1); }
+    50% { opacity: 0.9; transform: scale(1.25); }
+  }
+  /* Reduced motion never shows this state at all -- see the script below,
+     which skips straight to renderVerse without ever toggling the
+     --sensing class, so these rules simply never apply. Kept here only so
+     the dots don't render as a hard-edged flash if some future caller adds
+     the class directly. */
+  @media (prefers-reduced-motion: reduce) {
+    .mood-demo__verse,
+    .mood-demo__sensing {
+      transition: none;
+    }
   }
   .mood-demo__verse-fa {
     font-family: var(--font-farsi-verse);
@@ -218,8 +282,24 @@ const copy =
     };
 
     // Sky crossfades immediately on input (motion spec §4); the verse
-    // card waits for a 150ms settle so scrubbing doesn't churn it.
-    const settleVerse = createSettleDebounce(renderVerse, 150);
+    // card waits for a 150ms settle so scrubbing doesn't churn it. Once
+    // settled, motion-OK visitors get one extra short "reading" beat
+    // (2026-07-20 addition) before the new verse lands, purely cosmetic
+    // pacing -- reduced motion skips straight to renderVerse, unchanged
+    // from the original behaviour.
+    const SENSING_MS = 420;
+    const onSettled = (stop) => {
+      if (reducedMotion) {
+        renderVerse(stop);
+        return;
+      }
+      panel.classList.add('mood-demo__panel--sensing');
+      window.setTimeout(() => {
+        renderVerse(stop);
+        panel.classList.remove('mood-demo__panel--sensing');
+      }, SENSING_MS);
+    };
+    const settleVerse = createSettleDebounce(onSettled, 150);
 
     slider.addEventListener('input', () => {
       const stop = moodStopForIndex(Number(slider.value));
