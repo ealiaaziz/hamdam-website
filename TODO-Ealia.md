@@ -8,12 +8,6 @@ noted below, not repeated as open items.
 
 ## Open
 
-- [ ] **`www` vs apex canonical redirect.** Both `www.hamdam.com.au` and
-      `hamdam.com.au` serve independent 200 OK responses — no redirect
-      either direction. Pick one as canonical (apex is already what's in
-      `astro.config.mjs`'s `site` and every canonical URL, so apex is the
-      natural choice) and add a Cloudflare Redirect Rule sending the other
-      to it.
 - [ ] **SPF record incomplete.** Current TXT record is
       `v=spf1 include:secureserver.net -all` — only authorizes GoDaddy.
       Mail actually flows through Microsoft 365 (MX confirmed:
@@ -38,6 +32,14 @@ noted below, not repeated as open items.
 - [x] ~~"Always Use HTTPS"~~ — confirmed live 2026-07-13:
       `http://hamdam.com.au` now 301-redirects to `https://`. Was flagged as
       a blocker on 2026-07-11; resolved since.
+- [x] ~~`www` vs apex canonical redirect~~ — fixed in-repo, not a dashboard
+      task: `public/_redirects` now sends `www.hamdam.com.au/*` to the apex
+      with a 301 (commit `ad60379`, 2026-07-21). **Confirmed still live and
+      unfixed in production as of this note** — `www.hamdam.com.au` was
+      still serving an independent 200 with no redirect when checked
+      2026-07-21, meaning this commit has not been deployed yet. Deploying
+      the current `main` closes this; no further Cloudflare dashboard work
+      needed for this specific item.
 
 ## Reference
 

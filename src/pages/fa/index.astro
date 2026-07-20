@@ -17,13 +17,51 @@ import HamdamLogotype from '../../components/HamdamLogotype.astro';
 import SceneBackground from '../../components/SceneBackground.astro';
 import quietGarden from '../../assets/scenes/quiet-garden-section.jpg';
 import dawn from '../../assets/scenes/dawn-section.jpg';
+
+const description =
+  'همدم، آینه‌ی قلب و آسمان توست. همراهی روزانه برای تأمل، ریشه‌دار در خرد شعر فارسی. اکنون برای آیفون در دسترس است.';
+
+// Mirrors the EN homepage's SoftwareApplication entity (index.astro) -- the FA
+// homepage was previously missing structured data entirely (SEO red-team
+// finding, 2026-07-21). name/description reuse copy already shipped and
+// Ealia-approved elsewhere on this page (nav aria-label, meta description);
+// offers.description is left in English deliberately -- not user-visible
+// marketing copy, and this repo's rule bars Claude from authoring or
+// translating new Persian copy without Ealia's sign-off.
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareApplication',
+  name: 'همدم',
+  alternateName: 'Hamdam: Poetry and Reflections',
+  description,
+  operatingSystem: 'iOS 26+',
+  applicationCategory: 'LifestyleApplication',
+  url: 'https://hamdam.com.au/fa/',
+  inLanguage: ['fa', 'en'],
+  publisher: {
+    '@type': 'Organization',
+    name: 'Hamdam',
+  },
+  offers: {
+    '@type': 'Offer',
+    price: '0',
+    priceCurrency: 'AUD',
+    description: 'Free with in-app purchases',
+  },
+  contactPoint: {
+    '@type': 'ContactPoint',
+    email: 'developer@hamdam.com.au',
+    contactType: 'customer support',
+  },
+};
 ---
 
 <BaseLayout
   title="همدم: همراهی برای تأمل روزانه، ریشه‌دار در خرد شعر فارسی"
-  description="همدم، آینه‌ی قلب و آسمان توست. همراهی روزانه برای تأمل، ریشه‌دار در خرد شعر فارسی. اکنون برای آیفون در دسترس است."
+  description={description}
   lang="fa"
   path="/fa/"
+  jsonLd={jsonLd}
 >
   <HeroCinematic lang="fa" title={faCopy.tagline} subhead={faCopy.subhead} />
 
