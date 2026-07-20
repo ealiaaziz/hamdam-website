@@ -58,10 +58,23 @@
   --focus-color-dark: var(--hamdam-night-gold);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --hamdam-text: #F5EEE0;
-    --hamdam-text-soft: #C9B99C;
-    --hamdam-bg: var(--hamdam-night-deep);
-  }
-}
+/* No OS-dark-mode variant: removed 2026-07-20, a real bug, not a stale no-op.
+   This block predates the current warm-dawn redesign (traced to the original
+   brand-tokens commit, before the Phase 1/4 surface-token system existed)
+   and flipped --hamdam-text to light cream under prefers-color-scheme: dark,
+   but no component in the current design system has a matching dark-mode
+   background swap -- every surface colour (--surface-morning,
+   --surface-dawn, and the many components that pair --hamdam-text directly
+   against one of them) stays fixed-light regardless of OS theme. The result
+   was light text on a light background for any visitor with system dark
+   mode on, first caught live in MoodDemo's Bright/Light stops ("the slide
+   on bright is invisible content"), but the same root cause reaches
+   ContextConstellation, FinalCeremony, HeroCinematic, JourneyPair,
+   PlansAndFoundingCompanion, PrivacyTrust, and VerseCard too, everywhere
+   --hamdam-text is used. --hamdam-bg (the other variable this block set)
+   had no consumer anywhere in the codebase. The whole warm-dawn system is
+   deliberately a single fixed light palette with a scroll-driven sky arc,
+   never an OS-theme-driven one (nothing in the 27-doc redesign spec
+   describes an OS dark mode variant) -- so removing this instead of trying
+   to give every component a real dark-mode pass is the correct fix, not a
+   partial one. */
