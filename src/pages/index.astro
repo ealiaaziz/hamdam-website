@@ -151,8 +151,8 @@ const jsonLd = {
     Ealia sign-off pass as every other section's copy before being considered approved; not
     self-approving it here.
   -->
-  <section class="px-6 py-[var(--spacing-section-mobile)] sm:py-[var(--spacing-section-desktop)]">
-    <div data-reveal class="mx-auto max-w-[var(--container-reading)]">
+  <section class="relative bg-gradient-to-b from-indigo/10 via-indigo/5 to-transparent px-6 py-[var(--spacing-section-mobile)] sm:py-[var(--spacing-section-desktop)]">
+    <div data-reveal class="relative mx-auto max-w-[var(--container-reading)]">
       <h2 class="text-balance font-serif text-4xl font-semibold text-indigo sm:text-5xl">
         A few quiet companions, if you want them.
       </h2>
@@ -171,6 +171,27 @@ const jsonLd = {
       <FeatureIcon name="companion" label="Companions" />
       <FeatureIcon name="calendar" label="Calendar" />
       <FeatureIcon name="family" label="Family Sharing" />
+    </div>
+  </section>
+
+  <!--
+    MORE TO COME
+    DRAFT copy, added 2026-07-20. Deliberately makes no specific feature claim, so it needs
+    no product-truth verification and no re-check as the roadmap changes -- see
+    docs/website-redesign/22-dependency-decision.md's sibling caution about not marketing
+    anything unshipped (Apple Intelligence is the concrete example on file). This is scoped
+    to stay true indefinitely rather than naming anything that could go stale or leak an
+    unannounced feature. Still draft copy, same sign-off expectation as the rest of this page.
+  -->
+  <section class="px-6 py-16 text-center sm:py-20">
+    <div data-reveal class="mx-auto max-w-[var(--container-reading)]">
+      <p class="font-serif text-2xl italic text-indigo/80 sm:text-3xl">
+        Hamdam is still becoming.
+      </p>
+      <p class="mt-4 font-serif text-lg leading-[1.7] text-indigo/60">
+        This is where it stands today. There is more still arriving, quietly, the way mornings
+        do.
+      </p>
     </div>
   </section>
 
