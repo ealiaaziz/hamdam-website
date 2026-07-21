@@ -8,24 +8,6 @@ noted below, not repeated as open items.
 
 ## Open
 
-- [ ] **`www` vs apex canonical redirect.** Both `www.hamdam.com.au` and
-      `hamdam.com.au` still serve independent 200 OK responses — no redirect
-      either direction. Commit `ad60379` (2026-07-21) tried to fix this with
-      a `public/_redirects` file, but that's the wrong mechanism for this
-      project: it's deployed as a Cloudflare Worker with Static Assets (not
-      Pages, despite what the README used to say), and Workers Static Assets
-      rejects cross-host absolute URLs in `_redirects` outright (`wrangler
-      deploy` failed with "Invalid _redirects configuration: Line 1: Only
-      relative URLs are allowed", confirmed 2026-07-21). Even fixed
-      syntactically, it structurally can't work here: both hostnames route
-      to the same Worker and serve identical asset paths, so a path-based
-      redirect file has no way to see which hostname a request came in on.
-      `public/_redirects` has been removed (it was blocking every deploy,
-      not just this fix). Real fix needs a **Cloudflare Redirect Rule**
-      (dashboard: Rules → Redirect Rules, match hostname = www, redirect to
-      apex, 301) or a small Worker script that reads the `Host` header —
-      the former is the original recommendation from this file and is the
-      smaller change.
 - [ ] **SPF record incomplete.** Current TXT record is
       `v=spf1 include:secureserver.net -all` — only authorizes GoDaddy.
       Mail actually flows through Microsoft 365 (MX confirmed:
@@ -50,6 +32,15 @@ noted below, not repeated as open items.
 - [x] ~~"Always Use HTTPS"~~ — confirmed live 2026-07-13:
       `http://hamdam.com.au` now 301-redirects to `https://`. Was flagged as
       a blocker on 2026-07-11; resolved since.
+- [x] ~~`www` vs apex canonical redirect~~ — confirmed live 2026-07-21 via a
+      Cloudflare Redirect Rule (zone Rulesets, phase
+      `http_request_dynamic_redirect`, rule id `48c94ca320414fc29ad0ada77e863dbe`):
+      `www.hamdam.com.au/*` now 301s to `https://hamdam.com.au` with path and
+      query string preserved, verified against the live zone. This is the
+      mechanism this file originally recommended -- `public/_redirects`
+      (commit `ad60379`) tried a repo-level fix first, but that turned out
+      not to work at all on this project's actual deploy target (Workers
+      Static Assets) and was removed (commit `b6accc3`).
 
 ## Reference
 
