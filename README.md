@@ -31,9 +31,14 @@ npm run preview   # preview the production build
 
 ## Deploy target
 
-Cloudflare Pages, connected to this repo's `main` branch.
+Cloudflare Workers with Static Assets (not Pages -- corrected 2026-07-21, the
+prior "Pages, connected to `main`" claim here was stale and wrong: there is
+no Git-triggered build, every deploy so far has been a manual `wrangler
+deploy` run). Pushing to `main` does not deploy anything by itself.
 
-- Framework preset: Astro
 - Build command: `npm run build`
-- Build output directory: `dist`
-- Custom domain: hamdam.com.au
+- Assets directory: `dist` (see `wrangler.jsonc`)
+- Deploy: `npm run build && npx wrangler deploy`
+- Custom domains: hamdam.com.au, www.hamdam.com.au (both route to the same
+  Worker -- see `TODO-Ealia.md` for the open www-&gt;apex redirect issue this
+  causes)
