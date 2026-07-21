@@ -1,8 +1,11 @@
 ## Current state (Phase W1, shipped 2026-07-13)
 
 Cinematic warm-dawn bilingual landing site for the 2 August 2026 app launch.
-Astro 7 + Tailwind v4, deployed to hamdam.com.au via Cloudflare on push to
-`main`. EN at `/`, Farsi (RTL, Vazirmatn) at `/fa/`. Scroll-driven sunrise
+Astro 7 + Tailwind v4, deployed to hamdam.com.au as a **Cloudflare Worker with
+Static Assets** (corrected 2026-07-21 -- this line previously said "Pages" and
+"on push to main"; both were wrong. There is no CI/CD: every deploy is a
+manual `npm run build && wrangler deploy`, and pushing to `main` alone
+deploys nothing). EN at `/`, Farsi (RTL, Vazirmatn) at `/fa/`. Scroll-driven sunrise
 hero: pure timeline logic in `src/lib/cinematic.js`, night → morning over the
 first 100vh, reduced-motion renders static morning; pin with `?dawn=N` for
 review. Locale logic in `src/lib/locale.js`; store link state in
