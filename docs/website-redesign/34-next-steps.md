@@ -7,44 +7,66 @@ live on hamdam.com.au. Ealia signed off on the English copy and the structure
 the same day, and ruled "Farsi is ok for now", so the Farsi gaps below are
 deferred rather than owed.
 
-Three items remain. None blocks the site; all three were found while doing the
-work above.
+Three items remained. None blocked the site; all three were found while doing the
+work above. **Item 4 was fixed and deployed later the same day** — its section is
+kept in full below, because the write-up it replaces contained a wrong
+measurement that sent the investigation the wrong way, and that is worth
+recording. **Items 5 and 6 are still open**, and 6 is Ealia's to do.
 
 ---
 
-## 4. The transparent band at the top of every app screenshot
+## 4. The transparent band at the top of every app screenshot — FIXED 2026-07-25
 
-**Where:** `src/assets/website-redesign/screenshots/{EN,FA}/*.png`, produced by
-the orchestrator in the `hamdam-ios` repo.
+**Where it was:** `src/assets/website-redesign/screenshots/{EN,FA}/*.png`,
+produced by the orchestrator in the `hamdam-ios` repo.
 
-**What:** each capture has a fully transparent band across the top: 31pt (93
-pixels at 3x) on five of the six screens, 62pt (186 pixels) on `05-journey`.
-Confirmed by decoding the PNGs and reading the alpha channel, not by eye. On the
-site it sits under the device frame's bezel against a dark backing, so it reads
-as chrome rather than a gap, which is why it shipped.
+**First, a correction to the note this section used to carry:** the band was a
+uniform 31pt (93 pixels at 3x) on **all twelve** captures. It was not 62pt on
+`05-journey`. That claim was wrong, and since it was described here as "the
+strongest clue available" it was actively misleading. Re-measured by decoding
+the alpha channel of every shipped PNG.
 
-**What is already known:**
+The advice to measure rather than reason was right, and measuring settled it in
+one export run. There were **two** causes stacked on each other, which is why
+each earlier single-cause attempt failed:
 
-- It is not the safe-area inset. The raw pass was changed to render with no
-  `additionalSafeAreaInsets` and the band did not move.
-- It is not fixed by `.ignoresSafeArea()` on the phone frame. That was tried,
-  built, re-exported and measured: identical 93-row band.
-- Rendering the canvas one status bar taller and cropping the difference back
-  off also did not clear it (the residual just changed size).
-- The band is a constant 31pt across five screens, which points at a layout
-  constant rather than per-screen content. `05-journey` being exactly double is
-  the strongest clue available.
+1. **The offscreen host window's inherited safe area.** That window is a real
+   window on a real screen, so it inherits that device's insets (top 62pt on the
+   402x874 screen). The host view inherited them too, and SwiftUI centres the
+   phone frame's fixed 852pt height inside the resulting 790pt safe region:
+   y = 62 + (790 - 852) / 2 = **31**. Exactly the band.
+2. **"Your Journey"'s own top padding**, which only became visible once the
+   first cause was fixed. It pads its content down by a status bar height so its
+   title clears the synthetic "9:41", and that moved its background down with
+   it, leaving 60pt unpainted.
 
-**Suggested next step:** stop guessing at the cause and measure it. Log
-`hostingController.view.safeAreaInsets` and the resolved frame of
-`ScreenshotPhoneFrame` inside a real export run, rather than reasoning about
-what UIKit should be doing to a hosting controller that is the root view of an
-offscreen window sized 1290x2796 on a 402x874 device screen.
+**Why the earlier attempts could not have worked**, now that the mechanism is
+known: `.ignoresSafeArea()` inside the phone frame acts below the level where
+the offset is applied, and clearing `additionalSafeAreaInsets` does nothing to
+an inset that is *inherited* rather than additional.
+
+**One trap worth recording.** Cancelling the safe area outright fixes the band
+but sends Reflections' and Roots' navigation titles straight through the
+synthetic status bar, because NavigationStack reads `additionalSafeAreaInsets`
+and nothing else. A SwiftUI `.safeAreaInset` and a `.safeAreaPadding` were both
+tried from outside it and both rendered the collision unchanged. The shipped fix
+therefore keeps a one-status-bar safe area and cancels the placement offset it
+causes, rather than zeroing the safe area.
+
+**Verified:** all twelve re-exported PNGs decode to zero transparent rows and a
+uniform alpha of 255, at the unchanged 1179x2556. Both switches default to off
+and are set only by the raw call site, so the composed App Store set (item 5)
+renders exactly as it did when it was shipped.
 
 **Files:** `Hamdam/Hamdam/DebugTools/ScreenshotOrchestrator/` in `hamdam-ios`
 (`ScreenshotOrchestrator.swift`, `ScreenshotViewFactory.swift`). Runbook:
-`docs/app-store/phase-3-screenshot-orchestrator.md`, which documents the fix
-that landed and this residual.
+`docs/app-store/phase-3-screenshot-orchestrator.md`.
+
+**Note for whoever re-exports next:** the export renders whatever is on the
+`hamdam-ios` working branch, so a re-export also picks up unrelated app changes.
+This set was captured off `feature/phase31-roots-global` at commit `a25457a8`,
+which had just removed the unattributed Wikipedia imagery from the Roots cards,
+so `04-roots` differs from the previous set for that reason as well.
 
 ---
 
