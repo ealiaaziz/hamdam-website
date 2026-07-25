@@ -11,6 +11,8 @@
     "preview": "astro preview",
     "astro": "astro",
     "test": "vitest run",
+    "predeploy:check": "node scripts/predeploy-check.mjs",
+    "deploy": "node scripts/predeploy-check.mjs && npm run build && wrangler deploy",
     "check:persian": "node scripts/check-persian.mjs",
     "prepare": "git config core.hooksPath scripts/git-hooks"
   },
