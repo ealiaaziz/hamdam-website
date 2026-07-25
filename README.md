@@ -40,7 +40,11 @@ deploy` run). Pushing to `main` does not deploy anything by itself.
 
 - Build command: `npm run build`
 - Assets directory: `dist` (see `wrangler.jsonc`)
-- Deploy: `npm run build && npx wrangler deploy`
+- Deploy: `npm run deploy` (never a bare `wrangler deploy`: the npm script runs
+  `scripts/predeploy-check.mjs` first, which refuses to ship a dirty tree, an
+  unpushed branch, or a branch that is behind origin. Without CI, that check is
+  the only thing keeping production and GitHub in step. Override, loudly and
+  only when you mean it: `npm run deploy -- --force`.)
 - Custom domains: hamdam.com.au, www.hamdam.com.au (both route to the same
   Worker -- see `TODO-Ealia.md` for the open www-&gt;apex redirect issue this
   causes)

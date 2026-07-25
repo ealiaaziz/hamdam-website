@@ -20,6 +20,7 @@
 import { execFileSync } from 'node:child_process';
 
 const force = process.argv.includes('--force');
+let overrodeSomething = false;
 
 function git(...args) {
   return execFileSync('git', args, { encoding: 'utf8' }).trim();
@@ -30,6 +31,7 @@ function fail(problem, fix) {
   console.error(`  ${fix}\n`);
   if (force) {
     console.error('  --force was passed, so continuing anyway. Production will not match the remote.\n');
+    overrodeSomething = true;
     return;
   }
   console.error('  If this is genuinely intended, re-run with: npm run deploy -- --force\n');
@@ -50,21 +52,25 @@ if (dirty) {
 }
 
 // Compare against the remote's actual current state, not a stale local ref.
+// Fetch everything rather than one branch: fetching a branch that does not
+// exist on the remote fails the same way an unreachable network does, and
+// those two need different advice.
 try {
-  execFileSync('git', ['fetch', '--quiet', 'origin', branch], { stdio: 'ignore' });
+  execFileSync('git', ['fetch', '--quiet', 'origin'], { stdio: 'ignore' });
 } catch {
   fail(
-    `could not reach origin to check whether ${branch} is pushed.`,
+    'could not reach origin to check whether this branch is pushed.',
     'A deploy needs the network anyway, so fix the connection and try again.',
   );
 }
 
-let counts;
+let counts = '0\t0';
 try {
+  git('rev-parse', '--verify', '--quiet', `refs/remotes/origin/${branch}`);
   counts = git('rev-list', '--left-right', '--count', `origin/${branch}...HEAD`);
 } catch {
   fail(
-    `${branch} has no counterpart on origin.`,
+    `${branch} does not exist on origin at all, so nothing about this deploy is recorded there.`,
     `Push it first: git push -u origin ${branch}`,
   );
 }
@@ -85,4 +91,10 @@ if (behind > 0) {
   );
 }
 
-console.log(`  Pre-deploy check passed: ${branch} is clean and matches origin.`);
+// Never claim the check passed when it was overridden: a forced deploy is
+// exactly the case where the log has to say what really happened.
+if (overrodeSomething) {
+  console.error(`  Pre-deploy check FORCED on ${branch}. What is being served will not match origin.`);
+} else {
+  console.log(`  Pre-deploy check passed: ${branch} is clean and matches origin.`);
+}
