@@ -4,7 +4,6 @@ import HeroCinematic from '../components/HeroCinematic.astro';
 import MoodDemo from '../components/MoodDemo.astro';
 import VerseShowcase from '../components/VerseShowcase.astro';
 import PoetsBand from '../components/PoetsBand.astro';
-import ContextConstellation from '../components/ContextConstellation.astro';
 import JourneyPair from '../components/JourneyPair.astro';
 import RootsMoments from '../components/RootsMoments.astro';
 import PrivacyTrust from '../components/PrivacyTrust.astro';
@@ -17,6 +16,16 @@ import SceneBackground from '../components/SceneBackground.astro';
 import quietGarden from '../assets/scenes/quiet-garden-section.jpg';
 import dawn from '../assets/scenes/dawn-section.jpg';
 
+// Restructured 2026-07-25 from thirteen stacked sections to seven. Two things
+// were wrong with the old page: it was too long, and it took several screens to
+// say what the app does. The seven are Hero, How it works, Five poets, Roots,
+// In your day, Privacy, Plans and close. ContextConstellation is folded into
+// Privacy (its six signals are privacy claims), "quiet companions" into In your
+// day, and "Hamdam is still becoming" is retired outright. All three were DRAFT
+// copy per their own comments, so no approved copy is lost. None of the
+// component files are deleted, so this is revertible per
+// docs/website-redesign/27-release-and-rollback-plan.md.
+//
 // DRAFT copy, 2026-07-25: the previous description ("grounded in Persian
 // poetic wisdom") read as diaspora-only, while the app itself resolves content
 // per user and Roots now carries the days that matter wherever you are from.
@@ -62,25 +71,29 @@ const jsonLd = {
   preloadFarsiVerse={true}
   jsonLd={jsonLd}
 >
+  {
+    /* 1. HERO
+       Leads with what the app does, not the brand line. The tagline is still
+       here, demoted to the subhead, which keeps the approved sentence on the
+       page while the first thing a visitor reads is the function. DRAFT copy,
+       pending Ealia's sign-off. */
+  }
   <HeroCinematic
     lang="en"
-    title="Hamdam reflects your heart and your sky."
-    subhead="A bilingual reflection companion rooted in Persian poetry."
+    title="A verse and a reflection, chosen for how your day feels."
+    subhead="Hamdam reflects your heart and your sky."
   />
 
+  {
+    /* 2. HOW IT WORKS
+       MoodDemo shows the mechanism, the prose names it, JourneyPair shows what
+       it accumulates into. No divider between the three: they are one argument.
+       The old third paragraph here ("A gentle streak keeps count...") is gone,
+       not lost: JourneyPair now sits directly below and says the same thing. */
+  }
   <MoodDemo lang="en" />
 
-  <!-- VERSE SHOWCASE -->
-  <VerseShowcase
-    lang="en"
-    intro="A verse for every morning. Five poets. Two languages. Centuries of wisdom."
-    sceneImage={dawn}
-  />
-
-  <SectionDivider />
-
-  <!-- WHAT HAMDAM IS -->
-  <section class="px-6 py-[var(--spacing-section-mobile)] sm:py-[var(--spacing-section-desktop)]">
+  <section class="px-6 pb-4 pt-8 sm:pb-8 sm:pt-12">
     <div data-reveal class="mx-auto max-w-[var(--container-reading)]">
       <h2 class="text-balance font-serif text-4xl font-semibold text-indigo sm:text-5xl">
         A companion for the daily reflection.
@@ -95,33 +108,44 @@ const jsonLd = {
           Every verse arrives in its original Persian beside a careful English translation, drawn
           from Hafez, Rumi, Saadi, Khayyam and Parvin Etesami.
         </p>
-        <p>
-          A gentle streak keeps count, forgiving a missed day. Every reflection is kept in a
-          private journal, searchable from your Home Screen, with your favourites always at hand.
-        </p>
       </div>
     </div>
   </section>
 
-  <SectionDivider />
-
-  <!-- FIVE POETS -->
-  <PoetsBand lang="en" />
-
-  <!-- CONTEXT CONSTELLATION -->
-  <ContextConstellation lang="en" />
-
-  <!-- YOUR JOURNEY -->
   <JourneyPair lang="en" />
 
   <SectionDivider />
 
-  <!-- ROOTS AND REGION -->
+  {
+    /* 3. FIVE POETS
+       VerseShowcase is in neither the target structure nor the retire list in
+       the handoff, and it carries approved verse content, so it joins the poets
+       rather than being dropped: the verse and the five voices behind it are
+       one section. Flagged as a judgement call. */
+  }
+  <VerseShowcase
+    lang="en"
+    intro="A verse for every morning. Five poets. Two languages. Centuries of wisdom."
+    sceneImage={dawn}
+  />
+
+  <PoetsBand lang="en" />
+
+  <SectionDivider />
+
+  {/* 4. ROOTS */}
   <RootsMoments lang="en" />
 
   <SectionDivider />
 
-  <!-- QUIET INTELLIGENCE -->
+  {
+    /* 5. IN YOUR DAY
+       The old "meets you wherever you look" section and the "quiet companions"
+       section were the same section: everything Hamdam touches outside its own
+       screens. One heading, one grid of eight. The companions prose is retired
+       (DRAFT), but its one load-bearing claim, that all of this is optional and
+       off until asked for, is kept below in a single sentence. DRAFT copy. */
+  }
   <section class="relative bg-gradient-to-b from-peach/15 via-peach/5 to-transparent px-6 py-[var(--spacing-section-mobile)] sm:py-[var(--spacing-section-desktop)]">
     <SceneBackground image={quietGarden} />
     <div data-reveal class="relative mx-auto max-w-[var(--container-reading)]">
@@ -134,6 +158,10 @@ const jsonLd = {
         you choose, each reflection can be saved to Apple Health as a State of Mind entry, with
         calm music playing alongside through Apple Music.
       </p>
+      <p class="mt-6 font-serif text-lg leading-[1.7] text-indigo/70">
+        The companions, the calendar and Family Sharing are all optional, and each stays off
+        until you ask for it.
+      </p>
     </div>
     <div class="mx-auto mt-14 flex max-w-2xl flex-wrap justify-center gap-x-10 gap-y-8">
       <FeatureIcon name="siri" label="Siri" />
@@ -141,74 +169,19 @@ const jsonLd = {
       <FeatureIcon name="watch" label="Watch" />
       <FeatureIcon name="health" label="Health" />
       <FeatureIcon name="music" label="Music" />
-    </div>
-  </section>
-
-  <SectionDivider />
-
-  <!--
-    QUIET COMPANIONS
-    DRAFT copy, added 2026-07-20, not yet in docs/website-redesign/32-fable-approved-copy-ledger.md.
-    Grounded in hamdam-ios docs/progress.md Phase 20 (Family Sharing) and Phase 27+28+29
-    (Mental Companion, Fitness Companion, Interactive Calendar) -- all shipped, opt-in,
-    default-off features with no equivalent section anywhere else on this site (checked via
-    repo-wide grep for "companion"/"calendar"/"family" before writing this). Needs the same
-    Ealia sign-off pass as every other section's copy before being considered approved; not
-    self-approving it here.
-  -->
-  <section class="relative bg-gradient-to-b from-indigo/10 via-indigo/5 to-transparent px-6 py-[var(--spacing-section-mobile)] sm:py-[var(--spacing-section-desktop)]">
-    <div data-reveal class="relative mx-auto max-w-[var(--container-reading)]">
-      <h2 class="text-balance font-serif text-4xl font-semibold text-indigo sm:text-5xl">
-        A few quiet companions, if you want them.
-      </h2>
-      <p class="mt-8 font-serif text-xl leading-[1.7] text-indigo/90">
-        Everything below is optional and off by default. A gentle mental companion notices
-        patterns in how you have been feeling and offers a passing observation, never advice. A
-        separate fitness companion sits alongside your own activity, entirely apart from Apple
-        Fitness, and only ever opens what you ask it to. If you would like reflection to have a
-        place in your day, Hamdam can keep its own calendar, entirely its own, holding
-        reflection moments and the cultural dates you care about without ever touching your
-        existing calendar. And Family Sharing works the way Apple already intends, no extra
-        permissions to grant.
-      </p>
-    </div>
-    <div class="mx-auto mt-14 flex max-w-2xl flex-wrap justify-center gap-x-10 gap-y-8">
       <FeatureIcon name="companion" label="Companions" />
       <FeatureIcon name="calendar" label="Calendar" />
       <FeatureIcon name="family" label="Family Sharing" />
     </div>
   </section>
 
-  <!--
-    MORE TO COME
-    DRAFT copy, added 2026-07-20. Deliberately makes no specific feature claim, so it needs
-    no product-truth verification and no re-check as the roadmap changes -- see
-    docs/website-redesign/22-dependency-decision.md's sibling caution about not marketing
-    anything unshipped (Apple Intelligence is the concrete example on file). This is scoped
-    to stay true indefinitely rather than naming anything that could go stale or leak an
-    unannounced feature. Still draft copy, same sign-off expectation as the rest of this page.
-  -->
-  <section class="px-6 py-16 text-center sm:py-20">
-    <div data-reveal class="mx-auto max-w-[var(--container-reading)]">
-      <p class="font-serif text-2xl italic text-indigo/80 sm:text-3xl">
-        Hamdam is still becoming.
-      </p>
-      <p class="mt-4 font-serif text-lg leading-[1.7] text-indigo/60">
-        This is where it stands today. There is more still arriving, quietly, the way mornings
-        do.
-      </p>
-    </div>
-  </section>
-
   <SectionDivider />
 
-  <!-- PRIVACY -->
+  {/* 6. PRIVACY, now carrying the six signals the constellation used to show */}
   <PrivacyTrust lang="en" />
 
-  <!-- PLANS AND FOUNDING COMPANION -->
+  {/* 7. PLANS AND CLOSE: one continuous ending, no divider between them */}
   <PlansAndFoundingCompanion lang="en" />
-
-  <!-- FINAL CEREMONY -->
   <FinalCeremony lang="en" />
 
   <Footer />

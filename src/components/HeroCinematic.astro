@@ -112,11 +112,13 @@ const deviceAlt =
     </div>
 
     <div class="hero__content">
-      <PersianShamseh size={64} color="currentColor" class="hero__mark" />
-      <h1 id="hero-title" class="hero__title text-balance">{title}</h1>
-      <p class="hero__sub text-balance">{subhead}</p>
-      <div class="hero__cta" data-store-cta="hero">
-        <AppStoreBadge lang={lang} />
+      <div class="hero__copy">
+        <PersianShamseh size={64} color="currentColor" class="hero__mark" />
+        <h1 id="hero-title" class="hero__title text-balance">{title}</h1>
+        <p class="hero__sub text-balance">{subhead}</p>
+        <div class="hero__cta" data-store-cta="hero">
+          <AppStoreBadge lang={lang} />
+        </div>
       </div>
 
       {
@@ -181,7 +183,14 @@ const deviceAlt =
        SkySurface (Phase 4) bleed through unpredictably. */
     position: relative;
     isolation: isolate;
-    height: 200vh;
+    /* 150vh, not 200vh (2026-07-25): the hero used to hold the page for a full
+       viewport of scroll before any content, which is most of why the page did
+       not say what the app does fast enough. Half a viewport of sticky travel
+       is enough for the sunrise to read, and the script below now derives its
+       progress from this element's own travel rather than assuming one
+       viewport, so changing this number retimes the arc instead of truncating
+       it. A literal 100vh would delete the sunrise, which the brief keeps. */
+    height: 150vh;
     --sky-top: #E8B04B;
     --sky-bot: #F5EEE0;
     --sun-y: -10%;
@@ -330,6 +339,39 @@ const deviceAlt =
     color: var(--hero-text);
   }
 
+  .hero__copy {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* Desktop: copy and device side by side, so the sentence saying what the app
+     does, the badge and the phone are all above the fold together rather than
+     the device sitting a scroll below the CTA. */
+  @media (min-width: 900px) {
+    .hero__content {
+      flex-direction: row;
+      align-items: center;
+      justify-content: center;
+      gap: 4rem;
+      max-width: 1100px;
+      text-align: start;
+    }
+    .hero__copy {
+      align-items: flex-start;
+      flex: 1 1 0;
+      max-width: 34rem;
+    }
+    /* One notch down from --text-display: at this column width the full-size
+       display type ran to five lines and pushed the badge toward the fold. */
+    .hero__title {
+      font-size: clamp(2.75rem, 3.4vw, 3.75rem);
+    }
+    :global([dir='rtl']) .hero__copy {
+      align-items: flex-end;
+    }
+  }
+
   .hero__title {
     margin-top: 2.5rem;
     font-family: var(--font-serif);
@@ -402,6 +444,16 @@ const deviceAlt =
   @media (min-width: 640px) {
     .hero__device {
       width: min(360px, 32vw);
+    }
+  }
+  @media (min-width: 900px) {
+    .hero__device {
+      margin-top: 0;
+      flex: 0 0 auto;
+      /* Sized to clear the viewport's own padding at the shortest laptop height
+         we support, so the phone is never cropped by the fold it is meant to
+         sit above. */
+      width: min(300px, 26vw);
     }
   }
 
@@ -534,7 +586,14 @@ const deviceAlt =
         if (ticking) return;
         ticking = true;
         requestAnimationFrame(() => {
-          apply(Math.max(0, Math.min(1, window.scrollY / window.innerHeight)));
+          // The hero's own scroll travel, not one viewport: .hero is taller than
+          // its sticky viewport by exactly the distance it stays pinned, and that
+          // distance is the whole arc. Deriving it here means the CSS height above
+          // is the single place the pacing is set. Guarded against a zero divisor
+          // for the degenerate case of a viewport taller than the hero.
+          const travel = hero.offsetHeight - window.innerHeight;
+          const progress = travel > 0 ? window.scrollY / travel : 1;
+          apply(Math.max(0, Math.min(1, progress)));
           ticking = false;
         });
       };

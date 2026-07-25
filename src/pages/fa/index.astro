@@ -5,7 +5,6 @@ import MoodDemo from '../../components/MoodDemo.astro';
 import VerseShowcase from '../../components/VerseShowcase.astro';
 import { faCopy } from '../../data/siteCopy';
 import PoetsBand from '../../components/PoetsBand.astro';
-import ContextConstellation from '../../components/ContextConstellation.astro';
 import JourneyPair from '../../components/JourneyPair.astro';
 import RootsMoments from '../../components/RootsMoments.astro';
 import PrivacyTrust from '../../components/PrivacyTrust.astro';
@@ -18,6 +17,16 @@ import SceneBackground from '../../components/SceneBackground.astro';
 import quietGarden from '../../assets/scenes/quiet-garden-section.jpg';
 import dawn from '../../assets/scenes/dawn-section.jpg';
 
+// Mirrors index.astro's 2026-07-25 restructure to seven sections. Structure
+// only: not one Farsi string is authored, rewritten or translated here.
+// Two places where this page deliberately does NOT match the English one, both
+// for the same reason (no approved Farsi exists, and inventing it is Ealia's
+// call, not this session's):
+//   1. The hero still leads with the tagline. The English hero now leads with a
+//      sentence about what the app does; there is no approved Farsi equivalent.
+//   2. The "In your day" grid keeps its five icons. English gained three more
+//      (Companions, Calendar, Family Sharing) from the retired companions
+//      section, which never existed on this page and has no Farsi labels.
 const description =
   'همدم، آینه‌ی قلب و آسمان توست. همراهی روزانه برای تأمل، ریشه‌دار در خرد شعر فارسی. اکنون برای آیفون در دسترس است.';
 
@@ -63,17 +72,20 @@ const jsonLd = {
   path="/fa/"
   jsonLd={jsonLd}
 >
+  {/* 1. HERO */}
   <HeroCinematic lang="fa" title={faCopy.tagline} subhead={faCopy.subhead} />
 
+  {
+    /* 2. HOW IT WORKS: demo, then the prose that names it, then what it
+       accumulates into. The third paragraph that used to close this block is
+       dropped, matching the English page: JourneyPair directly below already
+       carries the journal, the favourites and the forgiving streak. Nothing is
+       rewritten, only that one approved paragraph is no longer shown twice
+       over. */
+  }
   <MoodDemo lang="fa" />
 
-  <!-- VERSE SHOWCASE -->
-  <VerseShowcase lang="fa" intro={faCopy.verseIntro} sceneImage={dawn} />
-
-  <SectionDivider />
-
-  <!-- WHAT HAMDAM IS -->
-  <section class="px-6 py-[var(--spacing-section-mobile)] sm:py-[var(--spacing-section-desktop)]">
+  <section class="px-6 pb-4 pt-8 sm:pb-8 sm:pt-12">
     <div data-reveal class="mx-auto max-w-[var(--container-reading)]">
       <h2 class="text-balance font-farsi text-3xl font-medium text-indigo sm:text-4xl">
         همدمی برای تأمل روزانه.
@@ -88,34 +100,27 @@ const jsonLd = {
           هر شعر با متن اصلی پارسی در کنار برگردان انگلیسی می‌آید، از حافظ، مولانا، سعدی، خیام و
           پروین اعتصامی.
         </p>
-        <p>
-          روزشماری آرام همراهی می‌کند که یک روز از قلم‌افتاده را می‌بخشد. هر تأمل در یادداشتی
-          خصوصی نگه داشته می‌شود که از صفحه‌ی اصلی گوشی قابل جست‌وجوست، و شعرهای محبوبت همیشه در
-          دسترس‌اند.
-        </p>
       </div>
     </div>
   </section>
 
-  <SectionDivider />
-
-  <!-- FIVE POETS -->
-  <PoetsBand lang="fa" />
-
-  <!-- CONTEXT CONSTELLATION -->
-  <ContextConstellation lang="fa" />
-
-  <!-- YOUR JOURNEY -->
   <JourneyPair lang="fa" />
 
   <SectionDivider />
 
-  <!-- ROOTS AND REGION -->
+  {/* 3. FIVE POETS */}
+  <VerseShowcase lang="fa" intro={faCopy.verseIntro} sceneImage={dawn} />
+
+  <PoetsBand lang="fa" />
+
+  <SectionDivider />
+
+  {/* 4. ROOTS */}
   <RootsMoments lang="fa" />
 
   <SectionDivider />
 
-  <!-- QUIET INTELLIGENCE -->
+  {/* 5. IN YOUR DAY */}
   <section class="relative bg-gradient-to-b from-peach/15 via-peach/5 to-transparent px-6 py-[var(--spacing-section-mobile)] sm:py-[var(--spacing-section-desktop)]">
     <SceneBackground image={quietGarden} />
     <div data-reveal class="relative mx-auto max-w-[var(--container-reading)]">
@@ -140,13 +145,11 @@ const jsonLd = {
 
   <SectionDivider />
 
-  <!-- PRIVACY -->
+  {/* 6. PRIVACY, now carrying the six signals the constellation used to show */}
   <PrivacyTrust lang="fa" />
 
-  <!-- PLANS AND FOUNDING COMPANION -->
+  {/* 7. PLANS AND CLOSE */}
   <PlansAndFoundingCompanion lang="fa" />
-
-  <!-- FINAL CEREMONY -->
   <FinalCeremony lang="fa" />
 
   <!-- FOOTER -->
