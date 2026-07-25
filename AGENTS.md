@@ -22,6 +22,11 @@ CSP is enforcing (`public/_headers`): no inline styles or scripts, so keep
 `inlineStylesheets: 'never'` and `assetsInlineLimit: 0` in astro.config.
 History and verification matrix: `docs/progress.md`.
 
+**Continuing the redesign:** everything in `docs/website-redesign/33-universal-roots-and-homepage-handoff.md`
+shipped 2026-07-25 and is live. What remains is in
+`docs/website-redesign/34-next-steps.md` — read that first. Deploy with
+`npm run deploy`, never a bare wrangler call; see `.claude/hooks/README.md`.
+
 ## Development
 
 When starting the dev server, use background mode:

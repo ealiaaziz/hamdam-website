@@ -133,11 +133,11 @@ const label = (key: keyof typeof ROOTS_LABELS) => ROOTS_LABELS[key][lang];
 const placeName = (place: { nameEn: string; nameFa?: string }) =>
   (lang === 'fa' && place.nameFa) || place.nameEn;
 
-// EN copy below is DRAFT and needs Ealia's sign-off, same as every other
-// section (docs/website-redesign/32-fable-approved-copy-ledger.md). The FA
-// heading and closing line are the previously approved strings, kept
-// byte-exact: they still read true on a Farsi page, but they frame Roots as
-// Persian-only and want Ealia's own universal rewrite, which is hers to author.
+// EN copy below approved by Ealia 2026-07-25 (ledger:
+// docs/website-redesign/32-fable-approved-copy-ledger.md). The FA heading and
+// closing line are the previously approved strings, kept byte-exact: they still
+// read true on a Farsi page, but they frame Roots as Persian-only. Ealia's call
+// 2026-07-25 was "Farsi is ok for now", so that rewrite is deferred, not owed.
 const copy =
   lang === 'fa'
     ? {
