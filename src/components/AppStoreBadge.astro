@@ -8,6 +8,11 @@ interface Props {
 }
 
 const { lang = 'en', class: className = '' } = Astro.props;
+// Kept, not dead code: `APP_STORE.RELEASED` is a switch, not a one-way launch-day
+// flip. Flipping it back is the only way to take the store CTAs down if the listing
+// is ever pulled or a release is held, and Apple's badge guidelines only permit the
+// official badge for an app that is actually available. Deleting this branch would
+// mean re-authoring the pre-release pill, including its Farsi, under time pressure.
 const eyebrow = lang === 'fa' ? 'به‌زودی' : 'Coming soon';
 const headline = lang === 'fa' ? 'برای آیفون' : 'to iPhone';
 ---

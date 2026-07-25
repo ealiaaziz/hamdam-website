@@ -161,59 +161,34 @@ const copy =
     <div class="roots__content">
       <h2 id="roots-title" class="roots__heading text-balance">{copy.heading}</h2>
 
-      <form class="roots__switcher" data-roots-switcher>
-        <fieldset class="roots__group">
-          <legend class="roots__legend">{label('heritage')}</legend>
-          <div class="roots__chips">
-            {HERITAGE_COUNTRIES.map((country) => (
-              <label class="roots__chip">
-                <input
-                  type="radio"
-                  name="roots-heritage"
-                  value={country.code}
-                  checked={country.code === DEFAULT_HERITAGE}
-                />
-                <span>{placeName(country)}</span>
-              </label>
-            ))}
-            <label class="roots__chip">
-              <input type="radio" name="roots-heritage" value="" />
-              <span>{label('notSet')}</span>
-            </label>
-          </div>
-        </fieldset>
-
-        <fieldset class="roots__group">
-          <legend class="roots__legend">{label('region')}</legend>
-          <div class="roots__chips">
-            {AU_REGIONS.map((region) => (
-              <label class="roots__chip">
-                <input
-                  type="radio"
-                  name="roots-region"
-                  value={region.code}
-                  checked={region.code === DEFAULT_REGION}
-                />
-                <span>{region.nameEn}</span>
-              </label>
-            ))}
-            <label class="roots__chip">
-              <input type="radio" name="roots-region" value="" />
-              <span>{label('notSet')}</span>
-            </label>
-          </div>
-          <p class="roots__roadmap">
-            <span class="roots__roadmap-label">{label('comingSoon')}</span>
-            {ROADMAP_COUNTRIES.map((country) => (
-              <span class="roots__roadmap-country">{placeName(country)}</span>
-            ))}
-          </p>
-        </fieldset>
-      </form>
-
-      <div class="roots__columns" data-reveal-group>
+      {
+        /* Each section owns its own chip group, directly above the list it filters.
+           Two reasons, not one: the control belongs next to what it changes, and
+           the app has exactly one approved Farsi string per section label, so a
+           separate switcher block would have had to print each of them twice. */
+      }
+      <form class="roots__columns" data-roots-switcher data-reveal-group>
         <div class="roots__column" data-roots-column="heritage" data-reveal>
-          <h3 class="roots__column-title">{label('heritage')}</h3>
+          <fieldset class="roots__group">
+            <legend class="roots__column-title">{label('heritage')}</legend>
+            <div class="roots__chips">
+              {HERITAGE_COUNTRIES.map((country) => (
+                <label class="roots__chip">
+                  <input
+                    type="radio"
+                    name="roots-heritage"
+                    value={country.code}
+                    checked={country.code === DEFAULT_HERITAGE}
+                  />
+                  <span>{placeName(country)}</span>
+                </label>
+              ))}
+              <label class="roots__chip">
+                <input type="radio" name="roots-heritage" value="" />
+                <span>{label('notSet')}</span>
+              </label>
+            </div>
+          </fieldset>
           <ul class="roots__list">
             {heritageRows.map((row) => (
               <li
@@ -249,7 +224,32 @@ const copy =
         </div>
 
         <div class="roots__column" data-roots-column="region" data-reveal>
-          <h3 class="roots__column-title">{label('region')}</h3>
+          <fieldset class="roots__group">
+            <legend class="roots__column-title">{label('region')}</legend>
+            <div class="roots__chips">
+              {AU_REGIONS.map((region) => (
+                <label class="roots__chip">
+                  <input
+                    type="radio"
+                    name="roots-region"
+                    value={region.code}
+                    checked={region.code === DEFAULT_REGION}
+                  />
+                  <span>{region.nameEn}</span>
+                </label>
+              ))}
+              <label class="roots__chip">
+                <input type="radio" name="roots-region" value="" />
+                <span>{label('notSet')}</span>
+              </label>
+            </div>
+            <p class="roots__roadmap">
+              <span class="roots__roadmap-label">{label('comingSoon')}</span>
+              {ROADMAP_COUNTRIES.map((country) => (
+                <span class="roots__roadmap-country">{placeName(country)}</span>
+              ))}
+            </p>
+          </fieldset>
           <ul class="roots__list">
             {regionRows.map((row) => (
               <li
@@ -271,7 +271,7 @@ const copy =
           </ul>
           <p class="roots__empty">{label('regionEmpty')}</p>
         </div>
-      </div>
+      </form>
 
       <p class="roots__closing">{copy.closing}</p>
       {copy.note && <p class="roots__note">{copy.note}</p>}
@@ -339,32 +339,10 @@ const copy =
 
   /* --- Switcher --------------------------------------------------------- */
 
-  .roots__switcher {
-    margin-top: 2.5rem;
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-  }
-
   .roots__group {
     border: 0;
     padding: 0;
     margin: 0;
-  }
-
-  .roots__legend {
-    padding: 0;
-    font-family: var(--font-sans);
-    font-size: var(--text-meta);
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--hamdam-night-gold);
-  }
-  :global([lang='fa']) .roots__legend {
-    font-family: var(--font-farsi);
-    text-transform: none;
-    letter-spacing: normal;
   }
 
   .roots__chips {
@@ -453,7 +431,9 @@ const copy =
     flex: 1;
   }
 
+  /* A <legend>, so it needs the padding reset browsers apply by default. */
   .roots__column-title {
+    padding: 0;
     font-family: var(--font-serif);
     font-size: var(--text-h3);
     font-weight: 600;

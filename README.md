@@ -1,7 +1,9 @@
 # Hamdam Website
 
-Marketing site for Hamdam — a reflection companion grounded in Persian poetic
-wisdom, launching on iPhone August 2026.
+Marketing site for Hamdam, a daily reflection companion rooted in Persian
+poetry and open to wherever you come from. Live on the App Store: the store
+state is `APP_STORE.RELEASED` in `src/lib/appStore.js`, which is what the CTAs
+read, so change it there rather than here.
 
 ## Stack
 
@@ -14,11 +16,11 @@ wisdom, launching on iPhone August 2026.
 ## Routes
 
 - `/` — English landing page
-- `/privacy` — English Privacy Policy (placeholder content)
-- `/terms` — English Terms of Service (placeholder content)
-- `/fa` — Persian landing page (RTL shell, English placeholder body pending native-speaker review)
-- `/fa/privacy` — Persian Privacy Policy (placeholder)
-- `/fa/terms` — Persian Terms of Service (placeholder)
+- `/privacy` — English Privacy Policy
+- `/terms` — English Terms of Service
+- `/fa` — Persian landing page (RTL, Vazirmatn)
+- `/fa/privacy` — Persian Privacy Policy
+- `/fa/terms` — Persian Terms of Service
 
 ## Development
 
