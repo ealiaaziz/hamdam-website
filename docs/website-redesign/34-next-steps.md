@@ -8,10 +8,12 @@ the same day, and ruled "Farsi is ok for now", so the Farsi gaps below are
 deferred rather than owed.
 
 Three items remained. None blocked the site; all three were found while doing the
-work above. **Item 4 was fixed and deployed later the same day** — its section is
-kept in full below, because the write-up it replaces contained a wrong
-measurement that sent the investigation the wrong way, and that is worth
-recording. **Items 5 and 6 are still open**, and 6 is Ealia's to do.
+work above. **Items 4 and 5 were both fixed later the same day** — item 4 is
+deployed and live, item 5 is built and verified but its output still has to be
+uploaded to App Store Connect by hand. Their sections are kept in full below,
+because item 4's original write-up contained a wrong measurement that sent the
+investigation the wrong way, and that is worth recording. **Only item 6 remains,
+and it is Ealia's to do.**
 
 ---
 
@@ -70,7 +72,7 @@ so `04-roots` differs from the previous set for that reason as well.
 
 ---
 
-## 5. The composed App Store screenshot set has the same undersized-content bug
+## 5. The composed App Store screenshot set had the same undersized-content bug — FIXED 2026-07-25
 
 **Where:** `hamdam-ios`, the composed pass in `ScreenshotOrchestrator.exportAll`.
 
@@ -86,13 +88,35 @@ carries the same tiny content.
 that set is already shipped to App Store Connect. Changing the screen image's
 scale changes its point size and therefore the composer's layout.
 
-**Impact:** the live App Store listing, not this website. Worth doing before the
-next listing refresh.
+**Impact:** the live App Store listing, not this website.
 
-**Suggested next step:** feed the composer the new phone-sized render and retune
-the mockup frame against it, then re-run the visual QA checklist already in the
-runbook. Do not change `ScreenshotMetrics.composedWidth/Height` — the output
-must stay exactly 1290x2796.
+**What was done**, following the suggested next step above: the composed pass now
+renders at the same real device points as the raw one, and the composer was
+retuned against it. The retuning turned out to be one substantive change plus
+three consequential ones:
+
+- The mockup is **fitted inside a box** rather than sized by width alone. A screen
+  that fills the device is 0.46 wide-to-tall, so the old `width * 0.77` rule gave
+  a mockup around 2150pt tall that overflowed the subheadline above it and the
+  App Store grid-crop safe zone below. It now fits within 0.77 of the width and
+  0.70 of the height, preserving aspect; width still governs the short screens.
+- `minCroppedHeight` 900 -> 300 and `rowCropSafetyMargin` 130 -> 44, each a third
+  of its old value, because the crop they bound is now measured in device points.
+- The content measurement replaces the inherited safe area instead of adding to
+  it, so it measures against the same insets the render uses.
+- The composed screen render gets the same safe-area treatment as the raw pass,
+  so the mockup is an opaque phone screen rather than one with a transparent
+  strip showing the marketing gradient through it.
+
+`ScreenshotMetrics.composedWidth/composedHeight` were not touched: **verified all
+twelve are still exactly 1290x2796.** The raw website set was re-exported from the
+same build and compared against what is live: mean absolute pixel difference
+0.002, i.e. unchanged, so this work did not disturb the site.
+
+**Still owed:** the new set has NOT been uploaded to App Store Connect. That is
+Ealia's to do, at the next listing refresh. The twelve PNGs are in the
+`hamdam-ios` repo at `marketing/app-store-screenshots-2026-07-25/{EN,FA}/`
+(untracked, so they will not bloat the repo unless she adds them).
 
 ---
 
