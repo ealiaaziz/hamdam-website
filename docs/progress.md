@@ -81,3 +81,39 @@ verified this session, needs Ealia:** any real-browser visual check of the new s
 the new section, a real production Lighthouse run to confirm LCP didn't regress further, and
 the usual FA/RTL/VoiceOver passes this repo already tracks as pending for everything else.
 Nothing pushed or merged; working tree left uncommitted for review.
+
+## Australian calendar corrected in Roots (2026-07-26)
+
+Reported as duplicate rows on the Roots section — Labour Day four times on
+5 October, King's Birthday four times on 14 June, ANZAC Day three times across
+two dates. Those are per-state rows in the un-filtered DOM, which this page
+ships in full and hides by CSS class so the region switcher needs no re-render
+(a deliberate CSP decision). No visitor sees more than one at a time.
+
+The real defect was the data behind them. `src/data/rootsMoments.ts` is
+generated from `hamdam-ios`'s `CulturalMoment.swift`, which is that app's
+OFFLINE FALLBACK — deliberately incomplete, because a live holiday feed fills
+its gaps there. This site has no live feed, so the gaps rendered as missing and
+wrong holidays: Victoria resolved to national holidays only (10 → 13 after the
+fix), NSW and VIC had no King's Birthday, SA/TAS/NT had no ANZAC Day, the ACT
+had ANZAC Day on 27 April 2026 with the day of commemoration missing, and
+Boxing Day appeared nowhere at all. Fixed in the app catalogue (branch
+`claude/australian-calendar-duplicates-4hk9f6`, reversing two earlier rulings —
+see that repo's `docs/decisions.md`) and regenerated here. 48 → 51 moments.
+
+**Verified this session:** `npm test` (170/170 pass, up from 143 — the new cases
+sweep all eight jurisdictions, including one asserting no region ever sees the
+same holiday name on two different dates), `npm run build` clean, and the
+rendered per-region output checked directly out of `dist/index.html`.
+`npm run check:persian` now passes — it had been crashing with ENOENT on any
+fresh clone, since `public/scripts` is one of its roots and holds no committed
+files, which meant the pre-commit hook failed rather than ran.
+
+**Not verified, needs Ealia:** the holiday dates are search-corroborated from
+nsw.gov.au, cmtedd.act.gov.au, wa.gov.au and business.vic.gov.au rather than
+directly fetched — this environment's network policy blocks `.gov.au`. Each
+catalogue entry's comment says so. Re-verify before launch. The app-side fix is
+also uncompiled (no Swift toolchain here) and needs an Xcode run before its
+branch merges; if the catalogue moves there, regenerate here again. Remaining
+open item — whether to stop shipping the 33 hidden rows — is written up in
+`docs/website-redesign/34-next-steps.md` §7.

@@ -138,6 +138,63 @@ which will fail with an auth error until a new token is supplied.
 
 ---
 
+## 7. The Australian calendar was wrong, and the DOM still ships every row — CATALOGUE FIXED 2026-07-26
+
+**Reported:** Labour Day rendering four times on 5 October, King's Birthday four
+times on 14 June, ANZAC Day three times across two dates.
+
+**What that actually was:** the un-filtered DOM. `RootsMoments.astro` renders the
+whole catalogue once, date-sorted, and hides the rows the selected region
+doesn't match — a deliberate choice so the region switcher can be a CSS class
+toggle and stay inside CSP with no re-render. Every row is therefore present in
+view-source, and the per-state duplicates are visible there. No visitor with CSS
+ever sees more than one at a time, and the app cannot produce them either
+(`LocationManager` yields exactly one region). Not a rendering bug.
+
+**What it uncovered, which was real.** `src/data/rootsMoments.ts` is generated
+from the app's `CulturalMoment.swift` — which is the app's OFFLINE FALLBACK,
+deliberately incomplete because a live nager.at feed fills its gaps at runtime.
+This site has no live feed and treats it as complete truth, so every gap showed
+as a missing or wrong holiday:
+
+| | before | after |
+|---|---|---|
+| Victoria | 10 resolvable holidays, none of them Victorian | 13 |
+| NSW | 11, no King's Birthday | 14 |
+| ACT | 14, ANZAC Day on the wrong date | 16 |
+| SA / TAS / NT | no ANZAC Day at all | present |
+| everyone | no Boxing Day anywhere | 26 December |
+
+Fixed in `hamdam-ios` on branch `claude/australian-calendar-duplicates-4hk9f6`
+(see that repo's `docs/decisions.md` — two earlier rulings were reversed) and
+regenerated here with `node scripts/generate-roots-data.mjs --ios ../hamdam-ios`.
+48 → 51 moments. `src/lib/__tests__/rootsMoments.test.js` gained per-region
+sweeps over all eight jurisdictions, including one asserting no region ever sees
+the same holiday name on two different dates — the shape of the original report.
+
+**Still open, deliberately not done here:**
+
+1. **The 33 hidden rows still ship on every page.** They are `display:none`, so
+   they are invisible and out of the accessibility tree, but they are in the HTML
+   of both locales and they are what prompted this report. Removing them means
+   giving up the CSS-only switcher, which was a considered CSP decision — worth a
+   look, not obviously worth reversing. Whoever picks this up should read the
+   comment at the top of `RootsMoments.astro` first.
+2. **The regenerated data is only as good as its sources.** Dates came from
+   nsw.gov.au, cmtedd.act.gov.au, wa.gov.au and business.vic.gov.au via search
+   summaries; direct `.gov.au` fetches were blocked by the working environment.
+   Each catalogue entry's comment records that. Re-verify before launch.
+3. **The app fix is not compiled.** No Swift toolchain was available. It needs an
+   Xcode run before that branch merges — and if the catalogue changes there,
+   regenerate here again.
+
+**Also fixed in passing:** `scripts/check-persian.mjs` crashed with ENOENT on any
+fresh clone, because `public/scripts` is one of its roots and holds no committed
+files. The pre-commit hook was failing rather than running. It skips a missing
+root now.
+
+---
+
 ## Not on this list, on purpose
 
 - **Farsi.** The Roots heading still frames that section as Persian-only, the FA
