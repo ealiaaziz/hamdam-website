@@ -180,11 +180,15 @@ describe('upcomingRootsMoments (against the generated catalogue)', () => {
   const upcoming = upcomingRootsMoments(ROOTS_MOMENTS, today);
 
   it('resolves a date for every moment with a banked rule', () => {
-    // auNAIDOCWeek has only 2026 banked and it has passed by 25 July 2026;
-    // auBoxingDay is deliberately banked empty. Both correctly drop out.
-    const dropped = ROOTS_MOMENTS.length - upcoming.length;
-    expect(dropped).toBe(2);
-    expect(upcoming.map((e) => e.moment.id)).not.toContain('auBoxingDay');
+    // Only auNAIDOCWeek drops out: it has just 2026 banked and that date has
+    // passed by 25 July 2026. auBoxingDay used to drop out too — it was banked
+    // with an empty date map in the app, so Boxing Day appeared nowhere on this
+    // site at all. It is now banked as Dec 26 every year (hamdam-ios,
+    // 2026-07-26), so it must resolve.
+    const ids = upcoming.map((e) => e.moment.id);
+    expect(ROOTS_MOMENTS.length - upcoming.length).toBe(1);
+    expect(ids).not.toContain('auNAIDOCWeek');
+    expect(ids).toContain('auBoxingDay');
   });
 
   it('is sorted closest-first with no past dates', () => {
@@ -253,5 +257,67 @@ describe('resolveRootsSections (what a visitor would actually see)', () => {
     // From 25 July 2026: Mehregan (2 Oct) before Yalda (21 Dec) before
     // Sepandarmazgan (18 Feb 2027) before Chaharshanbe Suri (16 Mar 2027).
     expect(heritage.slice(0, 3).map((e) => e.moment.id)).toEqual(['mehregan', 'yalda', 'sepandarmazgan']);
+  });
+});
+
+// The reported bug, guarded from the site's own side. What a visitor actually
+// saw was the un-filtered catalogue: Labour Day four times on 5 October, King's
+// Birthday four times on 14 June, ANZAC Day three times across two dates. Each
+// row was for a different state and no single selection ever showed more than
+// one of them — but the catalogue behind them was also genuinely wrong, and
+// these are the assertions that would have caught that.
+describe('per-region calendars (the reported duplicate report)', () => {
+  const today = { year: 2026, month: 7, day: 25 };
+  const AU_REGION_CODES = [
+    'AU-ACT', 'AU-NSW', 'AU-NT', 'AU-QLD', 'AU-SA', 'AU-TAS', 'AU-VIC', 'AU-WA',
+  ];
+  const holidaysFor = (homeRegion) =>
+    resolveRootsSections(ROOTS_MOMENTS, today, { homeRegion }).region;
+
+  it.each(AU_REGION_CODES)('shows no holiday name twice on different dates in %s', (code) => {
+    const datesByName = new Map();
+    for (const entry of holidaysFor(code)) {
+      const name = entry.moment.nameEn;
+      const iso = `${entry.date.year}-${entry.date.month}-${entry.date.day}`;
+      datesByName.set(name, (datesByName.get(name) ?? new Set()).add(iso));
+    }
+    const repeated = [...datesByName].filter(([, dates]) => dates.size > 1);
+    expect(repeated.map(([name, dates]) => `${name}: ${[...dates].join(', ')}`)).toEqual([]);
+  });
+
+  it.each(AU_REGION_CODES)('resolves ANZAC Day for %s', (code) => {
+    // Was missing outright for SA, TAS and NT, and shown on the wrong date
+    // (27 April 2026, the additional Monday) for the ACT.
+    expect(holidaysFor(code).map((e) => e.moment.id)).toContain('auAnzacDay');
+  });
+
+  it.each(AU_REGION_CODES)("resolves a King's Birthday for %s", (code) => {
+    // NSW and VIC both had no entry at all, on any date.
+    const names = holidaysFor(code).map((e) => e.moment.nameEn);
+    expect(names).toContain("King's Birthday");
+  });
+
+  it('gives Victoria its own state holidays, not just the national ones', () => {
+    // VIC had no state entry in the catalogue whatsoever: its only appearance
+    // was inside the old shared NSW/VIC ANZAC Day entry.
+    const ids = holidaysFor('AU-VIC').map((e) => e.moment.id);
+    expect(ids).toContain('auVicLabourDay');
+    expect(ids).toContain('auVicKingsBirthday');
+  });
+
+  it('shows Boxing Day itself, not only the additional day', () => {
+    // auBoxingDay was banked with an empty date map in the app, which is
+    // survivable there (a live holiday feed fills the gap) but not here.
+    const nsw = holidaysFor('AU-NSW');
+    const boxingDay = nsw.find((e) => e.moment.id === 'auBoxingDay');
+    expect(boxingDay).toBeDefined();
+    expect(boxingDay.date).toEqual({ year: 2026, month: 12, day: 26 });
+  });
+
+  it('does not offer Easter Saturday in Tasmania or Western Australia', () => {
+    for (const code of ['AU-TAS', 'AU-WA']) {
+      expect(holidaysFor(code).map((e) => e.moment.id)).not.toContain('auEasterSaturday');
+    }
+    expect(holidaysFor('AU-NSW').map((e) => e.moment.id)).toContain('auEasterSaturday');
   });
 });

@@ -17,7 +17,7 @@
 // false-positives. Regexes are assembled from escaped strings on purpose:
 // this file must never itself contain non-ASCII or invisible characters.
 
-import { readdirSync, readFileSync, statSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 
 const ROOTS = ['src', 'public/scripts'];
@@ -50,6 +50,11 @@ const codepoints = (s) =>
   [...s].map((ch) => 'U+' + ch.codePointAt(0).toString(16).toUpperCase().padStart(4, '0'));
 
 for (const root of ROOTS) {
+  // public/scripts holds no committed files today, so it is absent in a fresh
+  // clone and readdirSync threw ENOENT before this guard — which meant the
+  // pre-commit hook crashed rather than ran, on any checkout that hadn't
+  // created it locally. A root with nothing in it has nothing to check.
+  if (!existsSync(root)) continue;
   for (const file of walk(root)) {
     const rel = relative(process.cwd(), file);
     readFileSync(file, 'utf8')

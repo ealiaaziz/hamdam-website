@@ -5,7 +5,7 @@
 //   Hamdam/Hamdam/Calendar/CulturalMoment.swift  (catalogue)
 //   Hamdam/Hamdam/Core/Localization.swift        (display names, section labels)
 // Every Farsi string here was copied byte-exact by that script, never retyped.
-// Generated 2026-07-25 from 48 banked moments.
+// Generated 2026-07-26 from 51 banked moments.
 
 export type MomentRule =
   | { kind: 'persianFixed'; month: number; day: number }
@@ -44,20 +44,23 @@ export const ROOTS_MOMENTS: readonly RootsMoment[] = [
   { id: "auNewYear", nameEn: "New Year's Day", heritages: ["AU"], regions: null, source: "governmentPublic", rule: {"kind":"gregorianFixed","month":1,"day":1} },
   { id: "auAustraliaDay", nameEn: "Australia Day", heritages: ["AU"], regions: null, source: "governmentPublic", rule: {"kind":"gregorianFixed","month":1,"day":26} },
   { id: "auGoodFriday", nameEn: "Good Friday", heritages: ["AU"], regions: null, source: "governmentPublic", rule: {"kind":"explicitYearlyDates","dates":{"2026":{"month":4,"day":3},"2027":{"month":3,"day":26}}} },
-  { id: "auEasterSaturday", nameEn: "Easter Saturday", heritages: ["AU"], regions: null, source: "governmentPublic", rule: {"kind":"explicitYearlyDates","dates":{"2026":{"month":4,"day":4},"2027":{"month":3,"day":27}}} },
-  { id: "auEasterSunday", nameEn: "Easter Sunday", heritages: ["AU"], regions: null, source: "governmentPublic", rule: {"kind":"explicitYearlyDates","dates":{"2026":{"month":4,"day":5},"2027":{"month":3,"day":28}}} },
+  { id: "auEasterSaturday", nameEn: "Easter Saturday", heritages: ["AU"], regions: ["AU-ACT","AU-NSW","AU-NT","AU-QLD","AU-SA","AU-VIC"], source: "governmentPublic", rule: {"kind":"explicitYearlyDates","dates":{"2026":{"month":4,"day":4},"2027":{"month":3,"day":27}}} },
+  { id: "auEasterSunday", nameEn: "Easter Sunday", heritages: ["AU"], regions: ["AU-ACT","AU-NSW","AU-NT","AU-QLD","AU-SA","AU-VIC","AU-WA"], source: "governmentPublic", rule: {"kind":"explicitYearlyDates","dates":{"2026":{"month":4,"day":5},"2027":{"month":3,"day":28}}} },
   { id: "auEasterMonday", nameEn: "Easter Monday", heritages: ["AU"], regions: null, source: "governmentPublic", rule: {"kind":"explicitYearlyDates","dates":{"2026":{"month":4,"day":6},"2027":{"month":3,"day":29}}} },
-  { id: "auAnzacDayQldWa", nameEn: "ANZAC Day", heritages: ["AU"], regions: ["AU-QLD","AU-WA"], source: "governmentPublic", rule: {"kind":"explicitYearlyDates","dates":{"2026":{"month":4,"day":25},"2027":{"month":4,"day":26}}} },
-  { id: "auAnzacDayNswVic", nameEn: "ANZAC Day", heritages: ["AU"], regions: ["AU-NSW","AU-VIC"], source: "governmentPublic", rule: {"kind":"explicitYearlyDates","dates":{"2026":{"month":4,"day":25},"2027":{"month":4,"day":25}}} },
-  { id: "auActAnzacDay", nameEn: "ANZAC Day", heritages: ["AU"], regions: ["AU-ACT"], source: "governmentPublic", rule: {"kind":"explicitYearlyDates","dates":{"2026":{"month":4,"day":27},"2027":{"month":4,"day":26}}} },
+  { id: "auAnzacDay", nameEn: "ANZAC Day", heritages: ["AU"], regions: null, source: "governmentPublic", rule: {"kind":"explicitYearlyDates","dates":{"2026":{"month":4,"day":25},"2027":{"month":4,"day":25}}} },
+  { id: "auAnzacDayAdditional", nameEn: "ANZAC Day (additional public holiday)", heritages: ["AU"], regions: ["AU-ACT","AU-NSW","AU-WA"], source: "governmentPublic", rule: {"kind":"explicitYearlyDates","dates":{"2026":{"month":4,"day":27},"2027":{"month":4,"day":26}}} },
+  { id: "auAnzacDayAdditionalQldNt", nameEn: "ANZAC Day (additional public holiday)", heritages: ["AU"], regions: ["AU-NT","AU-QLD"], source: "governmentPublic", rule: {"kind":"explicitYearlyDates","dates":{"2027":{"month":4,"day":26}}} },
   { id: "auChristmasDay", nameEn: "Christmas Day", heritages: ["AU"], regions: null, source: "governmentPublic", rule: {"kind":"gregorianFixed","month":12,"day":25} },
   { id: "auChristmasDaySubstitute", nameEn: "Christmas Day (substitute holiday)", heritages: ["AU"], regions: null, source: "governmentPublic", rule: {"kind":"explicitYearlyDates","dates":{"2027":{"month":12,"day":27}}} },
-  { id: "auBoxingDay", nameEn: "Boxing Day", heritages: ["AU"], regions: null, source: "governmentPublic", rule: {"kind":"explicitYearlyDates","dates":{}} },
-  { id: "auBoxingDaySubstitute", nameEn: "Boxing Day (substitute holiday)", heritages: ["AU"], regions: null, source: "governmentPublic", rule: {"kind":"explicitYearlyDates","dates":{"2026":{"month":12,"day":28},"2027":{"month":12,"day":28}}} },
+  { id: "auBoxingDay", nameEn: "Boxing Day", heritages: ["AU"], regions: ["AU-ACT","AU-NSW","AU-NT","AU-QLD","AU-TAS","AU-VIC","AU-WA"], source: "governmentPublic", rule: {"kind":"gregorianFixed","month":12,"day":26} },
+  { id: "auBoxingDaySubstitute", nameEn: "Boxing Day (additional public holiday)", heritages: ["AU"], regions: ["AU-ACT","AU-NSW","AU-NT","AU-QLD","AU-TAS","AU-VIC","AU-WA"], source: "governmentPublic", rule: {"kind":"explicitYearlyDates","dates":{"2026":{"month":12,"day":28},"2027":{"month":12,"day":28}}} },
   { id: "auQldLabourDay", nameEn: "Labour Day", heritages: ["AU"], regions: ["AU-QLD"], source: "governmentPublic", rule: {"kind":"explicitYearlyDates","dates":{"2026":{"month":5,"day":4},"2027":{"month":5,"day":3}}} },
   { id: "auQldEkka", nameEn: "Ekka (Royal Queensland Show)", heritages: ["AU"], regions: ["AU-QLD"], source: "governmentPublic", rule: {"kind":"explicitYearlyDates","dates":{"2026":{"month":8,"day":12}}} },
   { id: "auQldKingsBirthday", nameEn: "King's Birthday", heritages: ["AU"], regions: ["AU-QLD"], source: "governmentPublic", rule: {"kind":"explicitYearlyDates","dates":{"2026":{"month":10,"day":5},"2027":{"month":10,"day":4}}} },
   { id: "auNswLabourDay", nameEn: "Labour Day", heritages: ["AU"], regions: ["AU-NSW"], source: "governmentPublic", rule: {"kind":"explicitYearlyDates","dates":{"2026":{"month":10,"day":5},"2027":{"month":10,"day":4}}} },
+  { id: "auNswKingsBirthday", nameEn: "King's Birthday", heritages: ["AU"], regions: ["AU-NSW"], source: "governmentPublic", rule: {"kind":"explicitYearlyDates","dates":{"2026":{"month":6,"day":8},"2027":{"month":6,"day":14}}} },
+  { id: "auVicLabourDay", nameEn: "Labour Day", heritages: ["AU"], regions: ["AU-VIC"], source: "governmentPublic", rule: {"kind":"explicitYearlyDates","dates":{"2026":{"month":3,"day":9},"2027":{"month":3,"day":8}}} },
+  { id: "auVicKingsBirthday", nameEn: "King's Birthday", heritages: ["AU"], regions: ["AU-VIC"], source: "governmentPublic", rule: {"kind":"explicitYearlyDates","dates":{"2026":{"month":6,"day":8},"2027":{"month":6,"day":14}}} },
   { id: "auWaLabourDay", nameEn: "Labour Day", heritages: ["AU"], regions: ["AU-WA"], source: "governmentPublic", rule: {"kind":"explicitYearlyDates","dates":{"2026":{"month":3,"day":2},"2027":{"month":3,"day":1}}} },
   { id: "auWaDay", nameEn: "Western Australia Day", heritages: ["AU"], regions: ["AU-WA"], source: "governmentPublic", rule: {"kind":"explicitYearlyDates","dates":{"2026":{"month":6,"day":1},"2027":{"month":6,"day":7}}} },
   { id: "auWaKingsBirthday", nameEn: "King's Birthday", heritages: ["AU"], regions: ["AU-WA"], source: "governmentPublic", rule: {"kind":"explicitYearlyDates","dates":{"2026":{"month":9,"day":28},"2027":{"month":9,"day":27}}} },
