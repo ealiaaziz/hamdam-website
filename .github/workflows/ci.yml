@@ -1,0 +1,43 @@
+# Runs on every push and pull request.
+#
+# This exists because there is no deploy automation on this project and never
+# will be by default: production is a manual `npm run deploy`, so nothing was
+# ever going to catch a broken build except a person remembering to look. CI
+# does not deploy and must never deploy. It only answers "would this build, and
+# is the content still valid" before a human runs the deploy themselves.
+#
+# The dash check (no U+2014 / U+2013 in content) is added here in the S1 commit,
+# once the existing dashes have actually been removed. Adding it before then
+# would land a permanently red pipeline, which teaches everyone to ignore it.
+
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      # `npm ci` runs the "prepare" script, which points core.hooksPath at the
+      # repo's git hooks. Harmless on a runner, but it is why this is `ci` and
+      # not `ci --ignore-scripts`.
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Persian byte check
+        run: npm run check:persian
