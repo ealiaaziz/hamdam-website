@@ -168,18 +168,26 @@ const jsonLd = {
       <p class="font-farsi text-xs text-indigo/70">شعرها از گنجور گردآوری شده‌اند.</p>
     </div>
     <div class="mx-auto mt-10 flex max-w-xl flex-col items-center gap-2 border-t border-saffron/20 pt-8 text-center">
-      <p class="text-xs text-indigo/70" lang="en" dir="ltr">&copy; {new Date().getFullYear()} Hamdam. All rights reserved.</p>
-      <p class="text-xs text-indigo/70" lang="en" dir="ltr">
-        HAMDAM&trade; is the subject of Australian trade mark application no. 2674427, filed 11
-        July 2026.
+      {
+        /* S2/S4: matches the shared Footer component exactly. Farsi prose,
+           with the legal name, trade mark, application number and support
+           address kept Latin-script and LTR in their own spans. */
+      }
+      <p class="font-farsi text-xs text-indigo/70">
+        &copy; {new Date().getFullYear()}{' '}
+        <span lang="en" dir="ltr">Seyed Valiallah Azizollahi</span>. همه‌ی حقوق محفوظ است.
+      </p>
+      <p class="font-farsi text-xs text-indigo/70">
+        <span lang="en" dir="ltr">HAMDAM&trade;</span> موضوع درخواست ثبت علامت تجاری در استرالیا
+        به شماره‌ی <span lang="en" dir="ltr">2674427</span>، ثبت‌شده در ۱۱ ژوئیه ۲۰۲۶ است.
       </p>
       {
         /* Plain text, not a second small link: تماس با ما above already
            points at this same address with a properly-sized 44px target
            (F7). */
       }
-      <p class="text-xs text-indigo/70" lang="en" dir="ltr">
-        For support, contact developer@hamdam.com.au.
+      <p class="font-farsi text-xs text-indigo/70">
+        برای پشتیبانی، با <span lang="en" dir="ltr">developer@hamdam.com.au</span> تماس بگیر.
       </p>
     </div>
   </footer>

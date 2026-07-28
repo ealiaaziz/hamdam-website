@@ -33,6 +33,12 @@ const { lang = 'en' } = Astro.props;
     ) : (
       <div class="mx-auto flex max-w-xl flex-col items-center gap-4 text-center">
         <HamdamLogotype size={24} />
+        {
+          /* TODO(owner) S3: "the Hamdam Team" is a sole trader with an ABN, and
+             now also has a second contributor on marketing and brand. Options
+             are to leave it, change it to "Made by Ealia Azizollahi", or drop
+             the line. Deliberately not changed unilaterally. */
+        }
         <p class="text-sm text-indigo/70">An app by the Hamdam Team</p>
         <nav aria-label="Footer" class="flex items-center gap-3 text-sm text-indigo/70">
           <a href="/privacy/" class="inline-flex min-h-[44px] items-center px-1 hover:text-indigo">Privacy</a>
@@ -48,14 +54,41 @@ const { lang = 'en' } = Astro.props;
   }
   <div class="mx-auto mt-10 flex max-w-xl flex-col items-center gap-2 border-t border-saffron/20 pt-8 text-center">
     {
-      /* Always English/LTR, both locales: legal/trademark boilerplate,
-         matching the precedent already established in fa/index.astro's
-         own inline footer (same three lines, same lang="en" dir="ltr"). */
+      /* S4: these three lines used to render in English on Farsi pages, on the
+         precedent that legal boilerplate stays English/LTR. That precedent was
+         wrong for a site whose whole claim is that the two languages are equal
+         in quality. The surrounding prose is now Farsi on Farsi pages, while
+         the parts that must not be translated stay Latin-script and LTR: the
+         legal name, the HAMDAM trade mark, the application number and the
+         support address. Those are wrapped in their own lang="en" dir="ltr"
+         spans so a screen reader announces them in the right language and
+         bidi never reorders the digits. */
     }
-    <p class="text-xs text-indigo/70" lang="en" dir="ltr">&copy; {new Date().getFullYear()} Hamdam. All rights reserved.</p>
-    <p class="text-xs text-indigo/70" lang="en" dir="ltr">
-      HAMDAM&trade; is the subject of Australian trade mark application no. 2674427, filed 11
-      July 2026.
+    <p class="text-xs text-indigo/70">
+      &copy; {new Date().getFullYear()}{' '}
+      <span lang="en" dir="ltr">Seyed Valiallah Azizollahi</span>.{' '}
+      {lang === 'fa' ? 'همه‌ی حقوق محفوظ است.' : 'All rights reserved.'}
+    </p>
+    {
+      /* HAMDAM(TM) stays exactly as-is. The trade mark is a pending
+         application, not a registration, so the symbol is correct and must
+         never become (R), which would be a false claim. */
+    }
+    <p class="text-xs text-indigo/70">
+      {
+        lang === 'fa' ? (
+          <>
+            <span lang="en" dir="ltr">HAMDAM&trade;</span> موضوع درخواست ثبت علامت تجاری در
+            استرالیا به شماره‌ی <span lang="en" dir="ltr">2674427</span>، ثبت‌شده در ۱۱ ژوئیه
+            ۲۰۲۶ است.
+          </>
+        ) : (
+          <span lang="en" dir="ltr">
+            HAMDAM&trade; is the subject of Australian trade mark application no. 2674427, filed
+            11 July 2026.
+          </span>
+        )
+      }
     </p>
     {
       /* Plain text, not a second small link: the properly-sized Contact
@@ -63,8 +96,17 @@ const { lang = 'en' } = Astro.props;
          targets) -- a second tappable instance this small would just be
          a hard-to-hit duplicate of it. */
     }
-    <p class="text-xs text-indigo/70" lang="en" dir="ltr">
-      For support, contact developer@hamdam.com.au.
+    <p class="text-xs text-indigo/70">
+      {
+        lang === 'fa' ? (
+          <>
+            برای پشتیبانی، با <span lang="en" dir="ltr">developer@hamdam.com.au</span> تماس
+            بگیر.
+          </>
+        ) : (
+          <span lang="en" dir="ltr">For support, contact developer@hamdam.com.au.</span>
+        )
+      }
     </p>
   </div>
 </footer>
