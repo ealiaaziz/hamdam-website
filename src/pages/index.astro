@@ -32,8 +32,13 @@ import dawn from '../assets/scenes/dawn-section.jpg';
 // while the app itself resolves content per user and Roots now carries the days
 // that matter wherever you are from. The FA page's description is unchanged:
 // rewriting it would mean authoring new Persian.
+// E1, 2026-07-28: the title carries the SEO weight and previously held no
+// poet names, which are the higher-volume search terms. Hafez and Rumi are now
+// in the description, and the title matches the new App Store name. The h1 is
+// deliberately untouched: it carries no keywords and it is the best sentence
+// on the site.
 const description =
-  "Hamdam reflects your heart and your sky. A daily reflection companion, rooted in Persian poetry and open to wherever you come from. Available now on iPhone.";
+  "Hamdam reflects your heart and your sky. A daily verse from Hafez, Rumi, Saadi, Khayyam or Parvin Etesami, with a reflection chosen for how your day feels. Available now on iPhone.";
 
 const jsonLd = {
   '@context': 'https://schema.org',
@@ -65,7 +70,7 @@ const jsonLd = {
 ---
 
 <BaseLayout
-  title="Hamdam: A reflection companion grounded in Persian poetic wisdom"
+  title="Hamdam: Daily Persian Poetry, Reflection and Journal"
   description={description}
   lang="en"
   path="/"
