@@ -1,12 +1,12 @@
-// Pure cinematic timeline helpers for the warm-dawn hero — no DOM access
+// Pure cinematic timeline helpers for the warm-dawn hero, with no DOM access
 // except the feature-detect in prefersReducedMotion. Everything that maps
 // scroll progress to a visual value lives here so it can be unit-tested.
 
 export const HERO_PHASE = Object.freeze({
-  NIGHT: 'night', // 0.00 – 0.15
-  FIRST_LIGHT: 'first', // 0.15 – 0.40
-  DAWN: 'dawn', // 0.40 – 0.75
-  MORNING: 'morning', // 0.75 – 1.00
+  NIGHT: 'night', // 0.00 to 0.15
+  FIRST_LIGHT: 'first', // 0.15 to 0.40
+  DAWN: 'dawn', // 0.40 to 0.75
+  MORNING: 'morning', // 0.75 to 1.00
 });
 
 // progress: 0..1 (scroll or time driven)
@@ -108,7 +108,7 @@ export function titleShadowOpacityForProgress(p) {
   return Math.round(0.28 * (1 - (c - 0.55) / 0.30) * 1000) / 1000;
 }
 
-// Deterministic star field — mulberry32 PRNG so positions never jitter
+// Deterministic star field: mulberry32 PRNG so positions never jitter
 // between builds or renders. Seed is fixed at 42 by spec.
 export function starField(count = 40, seed = 42) {
   let s = seed >>> 0;
@@ -124,7 +124,7 @@ export function starField(count = 40, seed = 42) {
     stars.push({
       x: Math.round(rand() * 1000) / 10, // percent, 1dp
       y: Math.round(rand() * 650) / 10, // upper 65% of the sky
-      r: Math.round((0.6 + rand() * 1.0) * 10) / 10, // 0.6–1.6 px radius
+      r: Math.round((0.6 + rand() * 1.0) * 10) / 10, // 0.6 to 1.6 px radius
       o: Math.round((0.35 + rand() * 0.65) * 100) / 100, // varied base opacity
     });
   }

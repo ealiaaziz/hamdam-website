@@ -6,9 +6,9 @@
 # does not deploy and must never deploy. It only answers "would this build, and
 # is the content still valid" before a human runs the deploy themselves.
 #
-# The dash check (no U+2014 / U+2013 in content) is added here in the S1 commit,
-# once the existing dashes have actually been removed. Adding it before then
-# would land a permanently red pipeline, which teaches everyone to ignore it.
+# The dash check enforces project hard rule 3 (no U+2014 / U+2013). It was added
+# alongside the S1 sweep that removed the 36 existing violations, so it has been
+# green from its first run.
 
 name: CI
 
@@ -41,3 +41,6 @@ jobs:
 
       - name: Persian byte check
         run: npm run check:persian
+
+      - name: Dash check
+        run: npm run check:dashes

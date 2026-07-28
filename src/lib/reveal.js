@@ -1,4 +1,4 @@
-// Pure reveal helpers — DOM wiring lives in BaseLayout's script.
+// Pure reveal helpers. DOM wiring lives in BaseLayout's script.
 
 import { prefersReducedMotion } from './cinematic.js';
 

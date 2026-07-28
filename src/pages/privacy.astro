@@ -38,7 +38,7 @@ const jsonLd = {
     <div class="mt-10 space-y-4 font-serif text-lg leading-[1.7] text-indigo/90">
       <p>
         Hamdam does not collect your data. It observes a small set of signals, on your own
-        device, to shape today's reflection &mdash; and those signals stay there. There is no
+        device, to shape today's reflection, and those signals stay there. There is no
         Hamdam server watching what you do, no profile built up behind the scenes, and nothing
         collected to sell or trade.
       </p>
@@ -65,19 +65,19 @@ const jsonLd = {
         <li>Sleep analysis</li>
         <li>Blood oxygen saturation</li>
         <li>Step count, exercise minutes, and active energy burned</li>
-        <li>Menstrual flow &mdash; only if you separately enable cycle awareness</li>
+        <li>Menstrual flow, only if you separately enable cycle awareness</li>
       </ul>
       <p>
         With permission, Hamdam writes State of Mind entries to Apple Health when you enable mood
-        logging. These signals shape today's reflection qualitatively &mdash; a gentle nudge in
-        tone, not a score or a chart &mdash; and stay on your device. Cycle awareness is a
+        logging. These signals shape today's reflection qualitatively: a gentle nudge in
+        tone, not a score or a chart. They stay on your device. Cycle awareness is a
         separate opt-in from the other health signals, and is never displayed anywhere in the
         Hamdam interface.
       </p>
 
       <h3 class="font-serif text-xl font-semibold text-indigo">1.2 Calendar data (EventKit)</h3>
       <p>
-        With permission, Hamdam reads free/busy time only &mdash; never event titles,
+        With permission, Hamdam reads free/busy time only, never event titles,
         descriptions, attendees, or locations. Separately, with its own permission, Hamdam can
         write optional reflection blocks and cultural moment reminders to your calendar. Every
         event Hamdam creates is written to a dedicated &ldquo;Hamdam&rdquo; calendar and
@@ -85,7 +85,7 @@ const jsonLd = {
         own events by that calendar's identifier rather than by matching the title text, so
         renaming an event never puts it out of Hamdam's reach, and never brings one of your own
         events within it. Hamdam never modifies any event it didn't create. Reading and writing
-        calendar data are separate opt-ins &mdash; enabling one does not enable the other.
+        calendar data are separate opt-ins. Enabling one does not enable the other.
       </p>
 
       <h3 class="font-serif text-xl font-semibold text-indigo">1.3 Location and weather</h3>
@@ -107,7 +107,7 @@ const jsonLd = {
 
       <h3 class="font-serif text-xl font-semibold text-indigo">1.5 Persian poetry content</h3>
       <p>
-        The verses in Hamdam &mdash; from Hafez, Rumi, Saadi, Khayyam, and Parvin Etesami &mdash;
+        The verses in Hamdam, from Hafez, Rumi, Saadi, Khayyam, and Parvin Etesami,
         are curated by Hamdam and sourced from the public domain via Ganjoor.net with
         attribution. The core library of 235 verses is built into the app itself and needs no
         network connection to read. Separately, Hamdam Plus subscribers receive a pool of
@@ -119,8 +119,8 @@ const jsonLd = {
       <h3 class="font-serif text-xl font-semibold text-indigo">1.6 Discover recommendations (iTunes Search API)</h3>
       <p>
         Hamdam's Discover tab refreshes once a day with books and podcasts from Apple's public
-        catalogue. These requests go from your device directly to Apple &mdash; never through a
-        Hamdam server &mdash; and no identifier tied to you is sent with them.
+        catalogue. These requests go from your device directly to Apple, never through a
+        Hamdam server, and no identifier tied to you is sent with them.
       </p>
 
       <h3 class="font-serif text-xl font-semibold text-indigo">1.7 AI-generated reflections (Apple Intelligence)</h3>
@@ -137,18 +137,18 @@ const jsonLd = {
     <LegalSection heading="2. What Hamdam Does Not Collect">
       <ul class="list-disc space-y-1 pl-6">
         <li>No user accounts, and no email collection at signup</li>
-        <li>No dedicated crash-reporting or analytics SDK &mdash; the only crash data collected is
+        <li>No dedicated crash-reporting or analytics SDK. The only crash data collected is
         Apple's own built-in iOS crash reporting via App Store Connect, aggregated and
         anonymised</li>
-        <li>No advertising SDKs &mdash; no AdMob, Meta Pixel, or tracking pixels</li>
+        <li>No advertising SDKs: no AdMob, Meta Pixel, or tracking pixels</li>
         <li>No behavioural tracking and no user profiling</li>
         <li>No selling of data, ever</li>
         <li>No Hamdam-owned backend servers receiving user data</li>
         <li>No newsletter and no marketing automation</li>
         <li>No cross-app tracking</li>
         <li>No SDK collecting personal data on Hamdam's behalf</li>
-        <li>No cookies &mdash; this website is fully static</li>
-        <li>No third-party font loading &mdash; fonts are hosted locally, with no requests to
+        <li>No cookies, because this website is fully static</li>
+        <li>No third-party font loading: fonts are hosted locally, with no requests to
         Google Fonts or any other font CDN</li>
       </ul>
 
@@ -192,7 +192,7 @@ const jsonLd = {
         Hamdam is built on Apple's frameworks: iCloud, HealthKit, EventKit, WeatherKit,
         StoreKit, MusicKit (Apple Music), and Foundation Models. Apple's own privacy policies
         govern how these frameworks handle data on Apple's side. Ganjoor.net is credited as the
-        public-domain source of Persian poetry text &mdash; no data is exchanged with
+        public-domain source of Persian poetry text. No data is exchanged with
         Ganjoor.net at runtime. The iTunes Search API is an Apple public API, called directly
         from your device.
       </p>
@@ -216,10 +216,10 @@ const jsonLd = {
     <div class="mt-14 rounded-[var(--radius-card)] bg-peach/20 p-6 shadow-card sm:p-8">
       <LegalSection heading="6. Your Rights (Australian Privacy Principles)">
         <ul class="list-disc space-y-1 pl-6">
-          <li><strong>Access</strong> &mdash; your data lives on your own device (and your own iCloud, if sync is on)</li>
-          <li><strong>Correction</strong> &mdash; edit or delete any entry in the app, any time</li>
-          <li><strong>Complaint</strong> &mdash; contact Hamdam first (Section 11); if unresolved, the OAIC (Section 12)</li>
-          <li><strong>Opt out</strong> &mdash; turn off any feature in Settings, at any time</li>
+          <li><strong>Access</strong>: your data lives on your own device (and your own iCloud, if sync is on)</li>
+          <li><strong>Correction</strong>: edit or delete any entry in the app, any time</li>
+          <li><strong>Complaint</strong>: contact Hamdam first (Section 11); if unresolved, the OAIC (Section 12)</li>
+          <li><strong>Opt out</strong>: turn off any feature in Settings, at any time</li>
         </ul>
       </LegalSection>
     </div>

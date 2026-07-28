@@ -1,4 +1,4 @@
-// Pure locale logic — no DOM, no Astro imports, unit-tested in isolation.
+// Pure locale logic, with no DOM, no Astro imports, unit-tested in isolation.
 
 export const LOCALES = Object.freeze({ EN: 'en', FA: 'fa' });
 
