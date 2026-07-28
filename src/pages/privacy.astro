@@ -75,9 +75,12 @@ const jsonLd = {
         With permission, Hamdam reads free/busy time only &mdash; never event titles,
         descriptions, attendees, or locations. Separately, with its own permission, Hamdam can
         write optional reflection blocks and cultural moment reminders to your calendar. Every
-        event Hamdam creates is prefixed &ldquo;Hamdam:&rdquo; so you can always tell it apart,
-        and Hamdam never modifies any event it didn't create. Reading and writing calendar data
-        are separate opt-ins &mdash; enabling one does not enable the other.
+        event Hamdam creates is written to a dedicated &ldquo;Hamdam&rdquo; calendar and
+        prefixed &ldquo;Hamdam:&rdquo; so you can always tell it apart. Hamdam recognises its
+        own events by that calendar's identifier rather than by matching the title text, so
+        renaming an event never puts it out of Hamdam's reach, and never brings one of your own
+        events within it. Hamdam never modifies any event it didn't create. Reading and writing
+        calendar data are separate opt-ins &mdash; enabling one does not enable the other.
       </p>
 
       <h3 class="font-serif text-xl font-semibold text-indigo">1.3 Location and weather</h3>
@@ -89,23 +92,28 @@ const jsonLd = {
 
       <h3 class="font-serif text-xl font-semibold text-indigo">1.4 iCloud synchronisation</h3>
       <p>
-        If you enable sync, your journal entries, streak counter, and settings sync between your
-        own devices through Apple's CloudKit Private Database, scoped to your Apple ID. Hamdam
-        does not run servers that receive this data. If you delete your iCloud data or sign out,
-        the synced Hamdam data goes with it.
+        iCloud synchronisation requires a Hamdam Plus subscription. On the free tier your data
+        stays on your device and is never written to iCloud. If you have Plus and enable sync,
+        your journal entries, streak counter, and settings sync between your own devices through
+        Apple's CloudKit Private Database, scoped to your Apple ID. Hamdam does not run servers
+        that receive this data. If you delete your iCloud data or sign out, the synced Hamdam
+        data goes with it.
       </p>
 
       <h3 class="font-serif text-xl font-semibold text-indigo">1.5 Persian poetry content</h3>
       <p>
         The verses in Hamdam &mdash; from Hafez, Rumi, Saadi, Khayyam, and Parvin Etesami &mdash;
-        are curated by Hamdam and stored in a CloudKit Public Database, sourced from the public
-        domain via Ganjoor.net with attribution. This content is read-only for users and contains
-        no data about you.
+        are curated by Hamdam and sourced from the public domain via Ganjoor.net with
+        attribution. The core library of 235 verses is built into the app itself and needs no
+        network connection to read. Separately, Hamdam Plus subscribers receive a pool of
+        additional verses that is stored in a CloudKit Public Database and fetched as it grows.
+        Free users never fetch that pool. All of this content is read-only for users and
+        contains no data about you.
       </p>
 
       <h3 class="font-serif text-xl font-semibold text-indigo">1.6 Discover recommendations (iTunes Search API)</h3>
       <p>
-        Hamdam's Discover tab refreshes weekly with books and podcasts from Apple's public
+        Hamdam's Discover tab refreshes once a day with books and podcasts from Apple's public
         catalogue. These requests go from your device directly to Apple &mdash; never through a
         Hamdam server &mdash; and no identifier tied to you is sent with them.
       </p>
@@ -204,8 +212,12 @@ const jsonLd = {
 
     <LegalSection heading="7. Account Deletion">
       <p>
-        Go to Settings &rarr; Delete My Data in the app. This clears local SwiftData storage and
-        your CloudKit Private Database records. Signing out of iCloud on a device also removes
+        Go to Settings &rarr; Content &rarr; Delete all my data in the app. This clears your
+        reflections, favourites, and streak and lifetime statistics, both in local SwiftData
+        storage and in their CloudKit Private Database copies. Three records are deliberately
+        kept: your language preference, your weather settings, and your subscription status, so
+        that your purchase and your usage limits survive reinstalling the app. None of the three
+        contains anything you have written. Signing out of iCloud on a device also removes
         Hamdam's synced data from that device. There is no account to delete, because Hamdam
         doesn't have accounts.
       </p>
