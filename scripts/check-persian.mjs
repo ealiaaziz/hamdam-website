@@ -17,7 +17,7 @@
 // false-positives. Regexes are assembled from escaped strings on purpose:
 // this file must never itself contain non-ASCII or invisible characters.
 
-import { readdirSync, readFileSync, statSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 
 const ROOTS = ['src', 'public/scripts'];
@@ -50,6 +50,10 @@ const codepoints = (s) =>
   [...s].map((ch) => 'U+' + ch.codePointAt(0).toString(16).toUpperCase().padStart(4, '0'));
 
 for (const root of ROOTS) {
+  // public/scripts is optional -- it holds no files today. A root that isn't
+  // there is nothing to scan, not a crash (the bare walk threw ENOENT and took
+  // the whole check down with it, including the pre-commit hook).
+  if (!existsSync(root)) continue;
   for (const file of walk(root)) {
     const rel = relative(process.cwd(), file);
     readFileSync(file, 'utf8')
