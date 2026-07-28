@@ -35,6 +35,7 @@ In the Cloudflare dashboard:
    | Branch | `main` |
    | Build command | `npm run build` |
    | Deploy command | `npx wrangler deploy` |
+   | | *(resolves to the `wrangler` pinned in devDependencies, so Cloudflare and your laptop deploy with the same version rather than whatever each happens to have)* |
    | Root directory | `/` |
    | Build variables | none needed |
 
