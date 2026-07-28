@@ -4,7 +4,7 @@ import LegalSection from '../components/LegalSection.astro';
 import SectionDivider from '../components/SectionDivider.astro';
 import Footer from '../components/Footer.astro';
 
-const effectiveDate = 'Effective 3 July 2026';
+const effectiveDate = 'Effective 28 July 2026';
 
 const description =
   'How Hamdam handles data: what it accesses, what it never collects, and how iCloud sync works. No accounts, no data selling, no tracking cookies.';
@@ -16,6 +16,7 @@ const jsonLd = {
   description,
   url: 'https://hamdam.com.au/privacy/',
   datePublished: '2026-07-03',
+  dateModified: '2026-07-28',
   publisher: {
     '@type': 'Person',
     name: 'Seyed Valiallah Azizollahi',
@@ -44,6 +45,10 @@ const jsonLd = {
       <p>
         This policy explains, plainly, what Hamdam looks at, why, and what it never touches. It
         covers the Hamdam app for iPhone and Apple Watch, and this website.
+      </p>
+      <p>
+        Hamdam is made by Seyed Valiallah Azizollahi, also known as Ealia Azizollahi. Both names
+        refer to the same person, and both appear in this policy and in the Terms of Service.
       </p>
     </div>
 
@@ -132,8 +137,6 @@ const jsonLd = {
     <LegalSection heading="2. What Hamdam Does Not Collect">
       <ul class="list-disc space-y-1 pl-6">
         <li>No user accounts, and no email collection at signup</li>
-        <li>Cloudflare Web Analytics only, for aggregate and cookieless page counts, with no
-        cross-site tracking and none of Firebase, Mixpanel, Amplitude, or Google Analytics</li>
         <li>No dedicated crash-reporting or analytics SDK &mdash; the only crash data collected is
         Apple's own built-in iOS crash reporting via App Store Connect, aggregated and
         anonymised</li>
@@ -148,6 +151,17 @@ const jsonLd = {
         <li>No third-party font loading &mdash; fonts are hosted locally, with no requests to
         Google Fonts or any other font CDN</li>
       </ul>
+
+      <h3 class="font-serif text-xl font-semibold text-indigo">2.1 What this website does collect</h3>
+      <p>
+        This website uses Cloudflare Web Analytics to count page views. It records aggregate,
+        cookieless page counts only. It sets no cookie, it does not track you across sites, and
+        it cannot identify you. Hamdam uses none of Firebase, Mixpanel, Amplitude, or Google
+        Analytics.
+      </p>
+      <p>
+        This applies to the website alone. The Hamdam app carries no analytics of any kind.
+      </p>
     </LegalSection>
 
     <LegalSection heading="3. How Your Data Is Used">

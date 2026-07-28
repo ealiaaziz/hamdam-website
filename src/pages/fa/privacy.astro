@@ -4,7 +4,7 @@ import LegalSection from '../../components/LegalSection.astro';
 import SectionDivider from '../../components/SectionDivider.astro';
 import Footer from '../../components/Footer.astro';
 
-const effectiveDate = 'تاریخ اجرا: 3 ژوئیه 2026';
+const effectiveDate = 'تاریخ اجرا: 28 ژوئیه 2026';
 
 const description =
   'همدم چگونه با اطلاعات رفتار می‌کند: به چه چیزی دسترسی دارد، چه چیزی را هرگز جمع‌آوری نمی‌کند، و همگام‌سازی iCloud چگونه کار می‌کند. بدون حساب کاربری، بدون فروش اطلاعات، بدون کوکی‌های ردیابی.';
@@ -16,6 +16,7 @@ const jsonLd = {
   description,
   url: 'https://hamdam.com.au/fa/privacy/',
   datePublished: '2026-07-03',
+  dateModified: '2026-07-28',
   publisher: {
     '@type': 'Person',
     name: 'Seyed Valiallah Azizollahi',
@@ -45,6 +46,10 @@ const jsonLd = {
         این سیاست به‌روشنی توضیح می‌دهد که همدم به چه چیزهایی نگاه می‌کند، چرا، و به چه چیزهایی
         هرگز دست نمی‌زند. این سیاست، اپلیکیشن همدم برای آیفون و اپل واچ، و همچنین این وب‌سایت را
         دربرمی‌گیرد.
+      </p>
+      <p>
+        سازنده‌ی همدم، Seyed Valiallah Azizollahi است که با نام Ealia Azizollahi نیز شناخته
+        می‌شود. هر دو نام به یک شخص اشاره دارند و هر دو در این سیاست و در شرایط استفاده می‌آیند.
       </p>
     </div>
 
@@ -134,8 +139,6 @@ const jsonLd = {
     <LegalSection heading="2. آنچه همدم جمع‌آوری نمی‌کند" lang="fa">
       <ul class="list-disc space-y-1 pr-6">
         <li>بدون حساب کاربری، و بدون جمع‌آوری ایمیل هنگام ثبت‌نام</li>
-        <li>فقط Cloudflare Web Analytics برای شمارش کلی و بدون کوکی بازدید صفحه، بدون ردیابی
-        بین‌سایتی و بدون Firebase، Mixpanel، Amplitude یا Google Analytics</li>
         <li>بدون SDK اختصاصی گزارش خرابی یا آمارگیری &mdash; تنها اطلاعات خرابی جمع‌آوری‌شده،
         گزارش خرابی داخلی خود iOS از طریق App Store Connect است که به‌صورت تجمیعی و ناشناس
         است</li>
@@ -150,6 +153,17 @@ const jsonLd = {
         <li>بدون بارگذاری فونت از منابع شخص ثالث &mdash; فونت‌ها به‌صورت محلی میزبانی می‌شوند و
         هیچ درخواستی به Google Fonts یا هر CDN فونت دیگری ارسال نمی‌شود</li>
       </ul>
+
+      <h3 class="font-farsi text-xl font-semibold text-indigo">2.1 آنچه این وب‌سایت جمع‌آوری می‌کند</h3>
+      <p>
+        این وب‌سایت از Cloudflare Web Analytics برای شمارش بازدید صفحه‌ها استفاده می‌کند. تنها
+        شمارش کلی و بدون کوکی ثبت می‌شود. هیچ کوکی‌ای گذاشته نمی‌شود، تو را میان سایت‌های مختلف
+        ردیابی نمی‌کند، و نمی‌تواند هویت تو را تشخیص دهد. همدم از هیچ‌کدام از Firebase، Mixpanel،
+        Amplitude یا Google Analytics استفاده نمی‌کند.
+      </p>
+      <p>
+        این تنها درباره‌ی وب‌سایت است. خودِ اپلیکیشن همدم هیچ‌گونه آمارگیری ندارد.
+      </p>
     </LegalSection>
 
     <LegalSection heading="3. چگونگی استفاده از اطلاعات تو" lang="fa">
