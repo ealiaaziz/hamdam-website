@@ -53,8 +53,8 @@ export const CONTEXT_SIGNALS = [
     id: 'health',
     labelEn: 'Health',
     labelFa: 'سلامت',
-    clauseEn: 'Only if you choose, only on your device.',
-    clauseFa: 'فقط اگر خودت بخواهی، فقط روی همان دستگاه.',
+    clauseEn: 'Only if you choose, only on your device. Requires Hamdam Plus.',
+    clauseFa: 'فقط اگر خودت بخواهی، فقط روی همان دستگاه. به همدم پلاس نیاز دارد.',
   },
 ] as const;
 
