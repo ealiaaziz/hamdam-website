@@ -90,24 +90,43 @@ rather than reaching for `--force`.
 
 ---
 
-## Part 3: the gate
+## Part 3: the gate. Not optional.
 
 CI (`.github/workflows/ci.yml`) runs on every push and pull request: build, unit
 tests, the Persian byte check, and the dash check. It holds no deploy credentials
 and must never be given any.
 
-Cloudflare's build and GitHub's CI run independently, so a red CI does not by itself
-stop a deploy. Two ways to close that, in order of preference:
+**Cloudflare's build and GitHub's CI are independent systems. Neither waits for the
+other.** Turning on Workers Builds without the step below produces a pipeline that
+looks like a gate and is not one: CI goes red, Cloudflare deploys anyway, and the
+red tick sits next to a commit that is already serving in production. That is worse
+than having no CI at all, because it manufactures confidence rather than merely
+lacking it.
 
-1. **Require the CI check on `main`.** GitHub → Settings → Branches → add a branch
-   protection rule for `main` → *Require status checks to pass before merging* →
-   select `verify`. Nothing reaches `main` red, so nothing red reaches Cloudflare.
-   This is the one to do.
-2. Alternatively, prefix Cloudflare's build command with the checks
-   (`npm run check:dashes && npm run check:persian && npm run build`). Slower, and it
-   duplicates what CI already did.
+### Required step, do this in the same sitting as Part 1
 
-Option 1, plus merging via pull request rather than a direct push to `main`.
+1. GitHub → the repository → **Settings** → **Branches** → **Add branch ruleset**
+   (or classic branch protection rule) targeting **`main`**.
+2. Enable **Require status checks to pass before merging**.
+3. Add the check named **`verify`** (the job id in `ci.yml`).
+4. Enable **Require a pull request before merging**. Without it, a direct push to
+   `main` bypasses the status check entirely and deploys.
+5. Enable **Do not allow bypassing the above settings**, or accept that admin pushes
+   skip the gate. Since the account that would bypass it is the same one that would
+   be deploying in a hurry, prefer enabling it.
+
+**Verify the rule actually works before trusting it.** Open a pull request that
+deliberately fails one check (add an em dash to a legal page, which the dash check
+will catch), and confirm GitHub blocks the merge. A protection rule that was
+configured but never exercised is an assumption, not a gate.
+
+### Why not gate inside Cloudflare instead
+
+You could prefix Cloudflare's build command with the checks
+(`npm run check:dashes && npm run check:persian && npm run build`). It works, but it
+runs the checks twice, reports failures in a dashboard nobody is watching rather than
+on the pull request, and leaves `main` accepting broken commits. Use branch
+protection.
 
 ---
 
