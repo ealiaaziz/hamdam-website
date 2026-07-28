@@ -104,7 +104,7 @@ const copy =
       /* Pre-release: no store link anywhere (Apple's badge/link rule,
          conversion spec §1, already governs AppStoreBadge the same way). */
       APP_STORE.RELEASED && (
-        <a href={appStoreUrl(lang)} class="plans__start-link">
+        <a href={appStoreUrl(lang, null, 'pricing')} class="plans__start-link">
           {copy.startLink}
         </a>
       )

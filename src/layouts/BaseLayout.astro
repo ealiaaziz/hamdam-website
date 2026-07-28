@@ -144,13 +144,21 @@ const ogImage = new URL(
           langToggle.href = langToggle.getAttribute('href') + window.location.search;
         }
       }
-      const campaignParams = campaignParamsFromSearch(inboundSearch);
-      document.querySelectorAll<HTMLAnchorElement>('a[href^="https://apps.apple.com/"]').forEach((a) => {
-        const url = new URL(a.href);
-        url.searchParams.set('ct', campaignParams.ct);
-        url.searchParams.set('pt', campaignParams.pt);
-        a.href = url.toString();
-      });
+      // E2: every store link now ships a per-placement `ct` baked in at build
+      // time, so this only overrides when the visitor actually arrived on a
+      // tagged campaign link. Overriding unconditionally, as it used to, would
+      // flatten web-hero / web-nav / web-pricing back into one bucket and undo
+      // the whole point of the placement tokens. An inbound utm_campaign is a
+      // real attributed visit and legitimately outranks the placement default.
+      if (inboundSearch.get('utm_campaign')) {
+        const campaignParams = campaignParamsFromSearch(inboundSearch);
+        document.querySelectorAll<HTMLAnchorElement>('a[href^="https://apps.apple.com/"]').forEach((a) => {
+          const url = new URL(a.href);
+          url.searchParams.set('ct', campaignParams.ct);
+          url.searchParams.set('pt', campaignParams.pt);
+          a.href = url.toString();
+        });
+      }
 
       // Single shared rAF scroll loop for everything scroll-position-driven
       // page-wide (motion-specification.md §8: "one scroll listener... no

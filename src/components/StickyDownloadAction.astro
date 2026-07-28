@@ -16,7 +16,7 @@ const ariaLabel = lang === 'fa' ? 'دانلود همدم از اپ‌استور'
   APP_STORE.RELEASED && (
     <a
       data-sticky-cta
-      href={appStoreUrl(lang)}
+      href={appStoreUrl(lang, null, 'sticky')}
       aria-label={ariaLabel}
       class="sticky-cta fixed inset-x-0 bottom-[max(1rem,env(safe-area-inset-bottom))] z-30 mx-auto flex min-h-[44px] w-fit items-center rounded-[var(--radius-pill)] bg-[var(--hamdam-night-gold)] px-6 text-sm font-semibold text-indigo shadow-[var(--shadow-lift)] md:hidden"
     >

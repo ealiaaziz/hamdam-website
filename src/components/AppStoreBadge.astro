@@ -5,9 +5,11 @@ import { APP_STORE, appStoreUrl } from '../lib/appStore';
 interface Props {
   lang?: 'en' | 'fa';
   class?: string;
+  /** Placement token for the App Store `ct` campaign parameter (E2). */
+  placement?: string;
 }
 
-const { lang = 'en', class: className = '' } = Astro.props;
+const { lang = 'en', class: className = '', placement = 'badge' } = Astro.props;
 // Kept, not dead code: `APP_STORE.RELEASED` is a switch, not a one-way launch-day
 // flip. Flipping it back is the only way to take the store CTAs down if the listing
 // is ever pulled or a release is held, and Apple's badge guidelines only permit the
@@ -20,7 +22,7 @@ const headline = lang === 'fa' ? 'برای آیفون' : 'to iPhone';
 {
   APP_STORE.RELEASED ? (
     <a
-      href={appStoreUrl(lang)}
+      href={appStoreUrl(lang, null, placement)}
       class:list={['inline-flex min-h-[44px] min-w-[44px] items-center', className]}
       aria-label="Download Hamdam on the App Store"
     >
