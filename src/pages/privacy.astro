@@ -56,9 +56,8 @@ const jsonLd = {
       <h3 class="font-serif text-xl font-semibold text-indigo">1.1 Health data (HealthKit)</h3>
       <p>With permission, Hamdam reads:</p>
       <ul class="list-disc space-y-1 pl-6">
-        <li>Heart rate, resting heart rate, and heart rate variability (HRV SDNN)</li>
+        <li>Resting heart rate and heart rate variability (HRV SDNN)</li>
         <li>Sleep analysis</li>
-        <li>Wrist temperature (when an Apple Watch is available)</li>
         <li>Blood oxygen saturation</li>
         <li>Step count, exercise minutes, and active energy burned</li>
         <li>Menstrual flow &mdash; only if you separately enable cycle awareness</li>
@@ -169,10 +168,26 @@ const jsonLd = {
     <LegalSection heading="5. Third-Party Services">
       <p>
         Hamdam is built on Apple's frameworks: iCloud, HealthKit, EventKit, WeatherKit,
-        StoreKit, and Foundation Models. Apple's own privacy policies govern how these
-        frameworks handle data on Apple's side. Ganjoor.net is credited as the public-domain
-        source of Persian poetry text &mdash; no data is exchanged with Ganjoor.net at runtime.
-        The iTunes Search API is an Apple public API, called directly from your device.
+        StoreKit, MusicKit (Apple Music), and Foundation Models. Apple's own privacy policies
+        govern how these frameworks handle data on Apple's side. Ganjoor.net is credited as the
+        public-domain source of Persian poetry text &mdash; no data is exchanged with
+        Ganjoor.net at runtime. The iTunes Search API is an Apple public API, called directly
+        from your device.
+      </p>
+      <p>
+        Hamdam reads poet biographies and cultural symbol descriptions from the Wikipedia REST
+        API (en.wikipedia.org), and the accompanying portrait images from upload.wikimedia.org.
+        Your device sends only the title of the page being looked up. Nothing about you, your
+        reflections, or your health is included in those requests.
+      </p>
+      <p>
+        <strong>Nager.Date (date.nager.at)</strong> is the only service Hamdam contacts that is
+        not operated by Apple. It supplies public holiday dates so the Roots calendar can show
+        the days that matter where you live. Your device sends a country code and a calendar
+        year, and nothing else. The country code is derived on your device from the same
+        location permission already used for weather; your coordinates are never sent to
+        Nager.Date. The request carries no account, no device identifier, and no personal
+        information, and Hamdam refreshes it at most once per calendar year.
       </p>
     </LegalSection>
 

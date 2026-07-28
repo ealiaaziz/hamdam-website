@@ -20,6 +20,15 @@ generated `src/data/siteCopy.ts`. Never hand-type Persian — regenerate.
 hook) must pass. OG images/icons regenerate via `node scripts/generate-og.mjs`.
 CSP is enforcing (`public/_headers`): no inline styles or scripts, so keep
 `inlineStylesheets: 'never'` and `assetsInlineLimit: 0` in astro.config.
+
+**Outbound-host rule (added 2026-07-28):** the privacy policy's third-party
+services section (`/privacy/` §5, mirrored in `/terms/` §12) is an exhaustive
+list of every host the iOS app contacts. Any new outbound host in the app
+updates both sections in the same commit that introduces it. As of 2026-07-28
+the set is: `en.wikipedia.org`, `upload.wikimedia.org`, `itunes.apple.com`,
+`music.apple.com`, `date.nager.at`, plus Apple framework traffic (iCloud,
+HealthKit, EventKit, WeatherKit, StoreKit, MusicKit, Foundation Models).
+`date.nager.at` is the only non-Apple service.
 History and verification matrix: `docs/progress.md`.
 
 **Continuing the redesign:** everything in `docs/website-redesign/33-universal-roots-and-homepage-handoff.md`
