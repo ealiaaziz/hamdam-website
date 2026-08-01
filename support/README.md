@@ -52,22 +52,24 @@ account, so the runbook below reads as history rather than pending work:
 | D1 database | `hamdam-support-db` / `0d2a8372-cf55-47d1-8491-e9398cfc0d14` |
 | Custom domain | `support.hamdam.com.au` |
 | Zone TLS | Always Use HTTPS **on**, min TLS **1.2**, SSL mode `full` |
+| Access app | `Hamdam Support Admin` on `support.hamdam.com.au/admin`, 24h sessions |
+| Access policy | Allow: `azizollahi@live.com`, `developer@hamdam.com.au` |
+| Team domain | `wispy-art-3af8.cloudflareaccess.com` |
 
 Verified against production: HTTPS 200, HSTS/CSP/XFO/nosniff all present,
 a submitted ticket classified P1 from high impact + high urgency, a wrong
-tracking token 404s, and `/admin` returns 503 both unauthenticated and with
-a forged `Cf-Access-Authenticated-User-Email` header.
+tracking token 404s, the public portal reachable, and `/admin` 302s to the
+Access login for anonymous visitors, for a forged
+`Cf-Access-Authenticated-User-Email` header, and for a forged
+`Cf-Access-Jwt-Assertion` alike -- none of which reach the Worker at all,
+since Access rejects them at the edge before the Worker's own JWT check
+gets a turn.
 
-**Still outstanding**, both needing something this repo can't grant itself:
-
-1. **`/admin` is unusable** (503 by design) until a Cloudflare Access
-   application exists and `ACCESS_TEAM_DOMAIN`/`ACCESS_AUD` are filled into
-   `wrangler.jsonc`. Needs an API token with
-   `Account → Access: Apps and Policies → Edit`, or the dashboard steps in
-   the runbook below.
-2. **No email flows yet.** Acknowledgements queue in `outbound_emails` with
-   `status='pending'` and stay there until the Routine runs. See
-   `docs/email-routine.md`, including the connector-grant gap.
+**Still outstanding:** no email flows yet. Acknowledgements queue in
+`outbound_emails` with `status='pending'` and stay there until the Routine
+runs; ticket HAM-1 already has one waiting, which makes it a ready-made
+first test. See `docs/email-routine.md`, including the connector-grant gap
+that is the last genuinely manual step in this whole build.
 
 SSL mode is `full` rather than `full (strict)`. For this zone the
 distinction is academic: every hostname is Worker-backed, so requests
