@@ -254,3 +254,79 @@ export async function setSyncState(db: D1Database, key: string, value: string): 
     .bind(key, value)
     .run();
 }
+
+// ---- assistant drafts -----------------------------------------------------
+//
+// A draft is an outbound_emails row that has not been released. Approving it
+// moves it to 'pending', after which the routine's existing drain sends it
+// like anything else -- the approved path and the automatic path are the
+// same code from that point on.
+
+export interface DraftRow extends OutboundEmailRow {
+  assistant_reason: string | null;
+  assistant_article_id: string | null;
+  approved_by: string | null;
+  approved_at: string | null;
+}
+
+export async function listDrafts(db: D1Database, ticketId: number): Promise<DraftRow[]> {
+  const result = await db
+    .prepare(`SELECT * FROM outbound_emails WHERE ticket_id = ?1 AND status = 'draft' ORDER BY created_at ASC`)
+    .bind(ticketId)
+    .all<DraftRow>();
+  return result.results;
+}
+
+export async function countDrafts(db: D1Database): Promise<number> {
+  const row = await db.prepare(`SELECT COUNT(*) AS n FROM outbound_emails WHERE status = 'draft'`).first<{ n: number }>();
+  return row?.n ?? 0;
+}
+
+export async function queueAssistantDraft(
+  db: D1Database,
+  e: NewOutboundEmail & { assistantReason: string; assistantArticleId: string },
+): Promise<void> {
+  await db
+    .prepare(
+      `INSERT INTO outbound_emails
+         (ticket_id, comment_id, kind, to_email, subject, body_html, in_reply_to_message_id,
+          status, assistant_reason, assistant_article_id)
+       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 'draft', ?8, ?9)`,
+    )
+    .bind(
+      e.ticketId, e.commentId, e.kind, e.toEmail, e.subject, e.bodyHtml,
+      e.inReplyToMessageId, e.assistantReason, e.assistantArticleId,
+    )
+    .run();
+}
+
+/**
+ * Release a draft for sending. Scoped to status='draft' so approving twice
+ * is harmless: the second UPDATE matches nothing rather than resurrecting a
+ * row the routine has already sent.
+ */
+export async function approveDraft(db: D1Database, draftId: number, ticketId: number, approvedBy: string): Promise<DraftRow | null> {
+  const draft = await db
+    .prepare(`SELECT * FROM outbound_emails WHERE id = ?1 AND ticket_id = ?2 AND status = 'draft'`)
+    .bind(draftId, ticketId)
+    .first<DraftRow>();
+  if (!draft) return null;
+
+  await db
+    .prepare(
+      `UPDATE outbound_emails
+       SET status = 'pending', approved_by = ?2, approved_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+       WHERE id = ?1 AND status = 'draft'`,
+    )
+    .bind(draftId, approvedBy)
+    .run();
+  return draft;
+}
+
+export async function discardDraft(db: D1Database, draftId: number, ticketId: number): Promise<boolean> {
+  const result = await db
+    .prepare(`UPDATE outbound_emails SET status = 'discarded' WHERE id = ?1 AND ticket_id = ?2 AND status = 'draft'`)
+    .bind(draftId, ticketId)
+    .run();
+  return (result.meta.changes ?? 0) > 0;
+}

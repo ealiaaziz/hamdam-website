@@ -2,6 +2,7 @@ import { page, priorityBadge, statusBadge, formatDateTime, isOverdue } from './l
 import { escapeHtml, textToSafeHtml, ticketPublicId } from '../ids.js';
 import { PRIORITY_LABEL, SLA_POLICY, type Priority } from '../itil.js';
 import type { CommentRow, TicketStatus, TicketWithRequester } from '../types.js';
+import type { DraftRow } from '../db.js';
 
 const ADMIN_NAV = [
   { href: '/admin', label: 'Queue' },
@@ -60,7 +61,33 @@ export function adminQueuePage(opts: {
   return page({ title: 'Queue', wide: true, nav: ADMIN_NAV }, body);
 }
 
-export function adminTicketPage(opts: { ticket: TicketWithRequester; comments: CommentRow[]; agentEmail: string }): string {
+function draftsBlock(drafts: DraftRow[], ticketId: number): string {
+  if (drafts.length === 0) return '';
+  return drafts
+    .map(
+      (d) => `
+<div class="draft">
+  <div class="draft-head">
+    <span class="badge badge--draft">Suggested reply</span>
+    <span class="draft-why">${escapeHtml(d.assistant_reason ?? '')}</span>
+  </div>
+  <p class="draft-meta">To ${escapeHtml(d.to_email)} &middot; subject ${escapeHtml(d.subject)}
+  &middot; from article <code>${escapeHtml(d.assistant_article_id ?? '')}</code></p>
+  <div class="draft-body">${d.body_html}</div>
+  <form method="post" action="/admin/tickets/${ticketId}/drafts/${d.id}/approve" style="display:inline">
+    <button class="btn" type="submit">Approve and send</button>
+  </form>
+  <form method="post" action="/admin/tickets/${ticketId}/drafts/${d.id}/discard" style="display:inline">
+    <button class="btn btn--ghost" type="submit">Discard</button>
+  </form>
+  <p class="hint">Nothing has been sent. Approving queues it for the next
+  delivery run; discarding leaves no trace with the requester.</p>
+</div>`,
+    )
+    .join('\n');
+}
+
+export function adminTicketPage(opts: { ticket: TicketWithRequester; comments: CommentRow[]; agentEmail: string; drafts?: DraftRow[] }): string {
   const { ticket, comments } = opts;
   const publicId = ticketPublicId(ticket.id);
   const policy = SLA_POLICY[ticket.priority];
@@ -98,6 +125,7 @@ export function adminTicketPage(opts: { ticket: TicketWithRequester; comments: C
       <span>Resolution target: <strong>${escapeHtml(policy.resolveLabel)}</strong></span>
     </div>
     <div class="thread">${thread}</div>
+    ${draftsBlock(opts.drafts ?? [], ticket.id)}
     <form method="post" action="/admin/tickets/${ticket.id}/reply">
       <div class="field">
         <label for="body">Reply to requester</label>

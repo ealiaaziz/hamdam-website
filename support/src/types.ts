@@ -18,8 +18,8 @@ export function parseTicketStatus(value: string | undefined | null): TicketStatu
 }
 export type Channel = 'portal' | 'email';
 export type CommentAuthorType = 'requester' | 'agent' | 'system';
-export type OutboundKind = 'ack' | 'agent_reply' | 'status_change' | 'requester_reply';
-export type OutboundStatus = 'pending' | 'sent' | 'failed';
+export type OutboundKind = 'ack' | 'agent_reply' | 'status_change' | 'requester_reply' | 'assistant_draft';
+export type OutboundStatus = 'draft' | 'pending' | 'sent' | 'failed' | 'discarded';
 
 export interface RequesterRow {
   id: number;

@@ -6,14 +6,19 @@ import { ticketStatusPage } from './render/status.js';
 import { adminQueuePage, adminTicketPage } from './render/admin.js';
 import { classifyFromMatrix, parsePriority, slaDueDates, type Impact, type Urgency } from './itil.js';
 import { ackEmail, agentReplyEmail, requesterReplyNotification, resolvedEmail } from './render/email.js';
-import { generateTrackingToken, parseTicketPublicId, ticketPublicId } from './ids.js';
+import { generateTrackingToken, parseTicketPublicId, stripHtml, ticketPublicId } from './ids.js';
 import { httpsRedirectTarget, isCrossSiteRequest, isLocalHost, trackingUrl } from './urls.js';
 import { extractAccessToken, fetchAccessKeys, verifyAccessJwt } from './access.js';
 import { matchArticles } from './kb.js';
 import { decideAgentAction } from './agentPolicy.js';
 import { suggestionBlock } from './render/agentSuggestion.js';
+import { proposeDraft } from './agentDraft.js';
 import {
   addComment,
+  approveDraft,
+  discardDraft,
+  listDrafts,
+  queueAssistantDraft,
   createTicket,
   getTicketById,
   listComments,
@@ -245,6 +250,34 @@ app.post('/tickets/:id/reply', async (c) => {
       bodyHtml: rendered.html,
       inReplyToMessageId: null,
     });
+
+    // Have a reply ready for whoever picks this up. The requester sees the
+    // suggestion on the page immediately either way; this is the emailed
+    // version, and it waits for a person because sending it does not.
+    const allComments = await listComments(c.env.DB, id);
+    const proposal = proposeDraft({
+      ticketId: id,
+      ticketSubject: ticket.subject,
+      requesterName: ticket.requester_name,
+      trackingUrl: trackingUrl(c.req.url, id, token),
+      priority: ticket.priority,
+      conversationText: [ticket.subject, ...allComments.filter((m) => m.author_type === 'requester').map((m) => m.body)].join('\n'),
+      assistantTurns: 0,
+      askedQuestions: [],
+    });
+    if (proposal) {
+      await queueAssistantDraft(c.env.DB, {
+        ticketId: id,
+        commentId,
+        kind: 'assistant_draft',
+        toEmail: ticket.requester_email,
+        subject: proposal.subject,
+        bodyHtml: proposal.bodyHtml,
+        inReplyToMessageId: ticket.last_inbound_message_id,
+        assistantReason: proposal.reason,
+        assistantArticleId: proposal.articleId,
+      });
+    }
   }
   return c.redirect(`/tickets/${id}?token=${encodeURIComponent(token)}`, 303);
 });
@@ -318,7 +351,8 @@ app.get('/admin/tickets/:id', async (c) => {
   const ticket = await getTicketById(c.env.DB, id);
   if (!ticket) return c.notFound();
   const comments = await listComments(c.env.DB, id);
-  return c.html(adminTicketPage({ ticket, comments, agentEmail }));
+  const drafts = await listDrafts(c.env.DB, id);
+  return c.html(adminTicketPage({ ticket, comments, agentEmail, drafts }));
 });
 
 app.post('/admin/tickets/:id/reply', async (c) => {
@@ -378,6 +412,43 @@ app.post('/admin/tickets/:id/status', async (c) => {
         inReplyToMessageId: ticket.last_inbound_message_id,
       });
     }
+  }
+  return c.redirect(`/admin/tickets/${id}`, 303);
+});
+
+app.post('/admin/tickets/:id/drafts/:draftId/approve', async (c) => {
+  const agentEmail = c.get('agentEmail');
+  const id = Number(c.req.param('id'));
+  const draftId = Number(c.req.param('draftId'));
+  if (!Number.isInteger(id) || !Number.isInteger(draftId)) return c.notFound();
+
+  const ticket = await getTicketById(c.env.DB, id);
+  if (!ticket) return c.notFound();
+
+  const draft = await approveDraft(c.env.DB, draftId, id, agentEmail);
+  if (draft) {
+    // The approver owns the words from here. Recording the reply under their
+    // name, not the assistant's, is the honest account: they read it and
+    // chose to send it, which is the whole point of drafting first.
+    await addComment(c.env.DB, id, 'agent', agentEmail, stripHtml(draft.body_html));
+    await markFirstResponse(c.env.DB, id);
+    if (ticket.status === 'new') await updateTicketStatus(c.env.DB, id, 'open');
+  }
+  return c.redirect(`/admin/tickets/${id}`, 303);
+});
+
+app.post('/admin/tickets/:id/drafts/:draftId/discard', async (c) => {
+  const agentEmail = c.get('agentEmail');
+  const id = Number(c.req.param('id'));
+  const draftId = Number(c.req.param('draftId'));
+  if (!Number.isInteger(id) || !Number.isInteger(draftId)) return c.notFound();
+
+  const discarded = await discardDraft(c.env.DB, draftId, id);
+  if (discarded) {
+    // Worth a system note: a discarded draft is the signal that an article
+    // was wrong for this ticket, and that is what improves the knowledge
+    // base. Silently dropping it loses the only record that it happened.
+    await addComment(c.env.DB, id, 'system', null, `${agentEmail} discarded a suggested reply.`);
   }
   return c.redirect(`/admin/tickets/${id}`, 303);
 });

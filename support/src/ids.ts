@@ -32,3 +32,23 @@ export function textToSafeHtml(input: string): string {
 export function generateTrackingToken(): string {
   return crypto.randomUUID().replaceAll('-', '');
 }
+
+/**
+ * Very rough HTML-to-text, used only to record what an approved draft said
+ * in the ticket thread. The thread renders with textToSafeHtml, so storing
+ * raw HTML there would show the requester a page of tags.
+ */
+export function stripHtml(html: string): string {
+  return html
+    .replace(/<\/(p|div|li|h\d)>/gi, '\n')
+    .replace(/<li>/gi, '- ')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&middot;/g, '.')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}

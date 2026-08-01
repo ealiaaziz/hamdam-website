@@ -206,6 +206,14 @@ footer.meta {
 .suggest-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.5rem; }
 .suggest .hint { font-size: 0.78rem; color: var(--text-soft); margin: 0; }
 
+.draft { border: 1px solid rgb(232 176 75 / 55%); background: #FEFBF5; border-radius: 0.6rem; padding: 1rem 1.1rem; margin-bottom: 1.25rem; }
+.draft-head { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 0.5rem; }
+.badge--draft { background: var(--p3-bg); color: var(--p3); }
+.draft-why { font-size: 0.78rem; color: var(--text-soft); }
+.draft-meta { font-size: 0.78rem; color: var(--text-soft); margin: 0 0 0.75rem; }
+.draft-body { background: #fff; border: 1px solid var(--line); border-radius: 0.5rem; padding: 0.75rem 1rem; margin-bottom: 0.85rem; font-size: 0.9rem; }
+.draft .hint { font-size: 0.78rem; color: var(--text-soft); margin: 0.5rem 0 0; }
+
 .sla-line { font-size: 0.85rem; color: var(--text-soft); display: flex; gap: 1.25rem; flex-wrap: wrap; }
 .sla-line strong { color: var(--text); }
 `;
