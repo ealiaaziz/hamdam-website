@@ -75,10 +75,21 @@ export function slaDueDates(priority: Priority, createdAt: Date) {
   };
 }
 
+// Security wording is deliberately broad here. The list originally held
+// 'security breach' and 'breach' but not 'security incident', so a real
+// email subject -- "Checking Tim's support for security incidents" -- fell
+// through every rule and was classified P3. Under-calling a security report
+// is the worst mistake this function can make: a P1 wrongly raised costs an
+// agent a minute to re-price, while a genuine incident sitting in a P3
+// queue costs considerably more. False positives are the acceptable
+// direction of error, so phrases like "no security incidents to report"
+// will also land as P1 and be corrected by hand.
 const P1_KEYWORDS = [
   'down', 'outage', 'all users', 'everyone', 'entire team', 'production down',
-  "can't access anything", 'cannot access anything', 'security breach',
-  'breach', 'data loss', 'ransomware', 'compromised', 'lost data',
+  "can't access anything", 'cannot access anything',
+  'security breach', 'security incident', 'breach', 'compromised', 'hacked',
+  'phishing', 'malware', 'ransomware', 'unauthorised access', 'unauthorized access',
+  'data loss', 'data leak', 'lost data',
 ];
 
 const P2_KEYWORDS = [

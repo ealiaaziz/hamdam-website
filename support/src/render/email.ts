@@ -54,6 +54,38 @@ ${WRAP_CLOSE}`;
   return { subject: `[${publicId}] ${opts.subject}`, html };
 }
 
+/**
+ * Sent to the desk, not to a requester, when someone replies through the
+ * portal's tracking page.
+ *
+ * Without this the reply lands silently: a comment row appears and nothing
+ * tells an agent it happened, so the only way to notice is to open the
+ * ticket on the off chance. The requester meanwhile has every reason to
+ * think they have been heard.
+ */
+export function requesterReplyNotification(opts: {
+  ticketId: number;
+  subject: string;
+  requesterName: string | null;
+  requesterEmail: string;
+  message: string;
+  adminUrl: string;
+}): { subject: string; html: string } {
+  const publicId = ticketPublicId(opts.ticketId);
+  const who = opts.requesterName ? `${opts.requesterName} (${opts.requesterEmail})` : opts.requesterEmail;
+  const html = `${WRAP_OPEN}
+<p><strong>${escapeHtml(who)}</strong> replied on the portal to
+<strong>${escapeHtml(publicId)}</strong> &middot; ${escapeHtml(opts.subject)}</p>
+<blockquote style="margin:1rem 0;padding-left:1rem;border-left:3px solid #E8B04B;color:#574A38">
+${textToSafeHtml(opts.message)}
+</blockquote>
+<p><a href="${opts.adminUrl}" style="color:#D07B3F">Open ${escapeHtml(publicId)} in the console</a></p>
+${RULE}
+${FOOTER}
+${WRAP_CLOSE}`;
+  return { subject: `[${publicId}] Requester replied: ${opts.subject}`, html };
+}
+
 export function resolvedEmail(opts: { ticketId: number; subject: string; trackingUrl: string }): { subject: string; html: string } {
   const publicId = ticketPublicId(opts.ticketId);
   const html = `${WRAP_OPEN}

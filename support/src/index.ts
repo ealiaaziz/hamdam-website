@@ -5,9 +5,9 @@ import { submitFormPage, trackLookupPage } from './render/portal.js';
 import { ticketStatusPage } from './render/status.js';
 import { adminQueuePage, adminTicketPage } from './render/admin.js';
 import { classifyFromMatrix, parsePriority, slaDueDates, type Impact, type Urgency } from './itil.js';
-import { ackEmail, agentReplyEmail, resolvedEmail } from './render/email.js';
+import { ackEmail, agentReplyEmail, requesterReplyNotification, resolvedEmail } from './render/email.js';
 import { generateTrackingToken, parseTicketPublicId, ticketPublicId } from './ids.js';
-import { httpsRedirectTarget, isCrossSiteRequest, trackingUrl } from './urls.js';
+import { httpsRedirectTarget, isCrossSiteRequest, isLocalHost, trackingUrl } from './urls.js';
 import { extractAccessToken, fetchAccessKeys, verifyAccessJwt } from './access.js';
 import {
   addComment,
@@ -22,6 +22,11 @@ import {
   upsertRequester,
 } from './db.js';
 import { parseTicketStatus } from './types.js';
+
+// The desk's own mailbox. Notifications about ticket activity go here, and
+// the routine must ignore inbound mail from this address so the desk does
+// not ingest its own outgoing email as requester replies.
+const SUPPORT_INBOX = 'developer@hamdam.com.au';
 
 const app = new Hono<{ Bindings: Env; Variables: { agentEmail: string } }>();
 
@@ -159,10 +164,34 @@ app.post('/tickets/:id/reply', async (c) => {
   const form = await c.req.formData();
   const body = String(form.get('body') ?? '').trim();
   if (body) {
-    await addComment(c.env.DB, id, 'requester', ticket.requester_name, body);
+    const commentId = await addComment(c.env.DB, id, 'requester', ticket.requester_name, body);
     if (ticket.status === 'pending' || ticket.status === 'resolved') {
       await updateTicketStatus(c.env.DB, id, 'open');
     }
+
+    // Tell the desk. A portal reply used to land silently: the comment was
+    // stored and nothing surfaced it, so an agent found out only by opening
+    // the ticket speculatively, while the requester reasonably assumed
+    // someone had been told.
+    const url = new URL(c.req.url);
+    const adminUrl = `${isLocalHost(url.hostname) ? url.protocol : 'https:'}//${url.host}/admin/tickets/${id}`;
+    const rendered = requesterReplyNotification({
+      ticketId: id,
+      subject: ticket.subject,
+      requesterName: ticket.requester_name,
+      requesterEmail: ticket.requester_email,
+      message: body,
+      adminUrl,
+    });
+    await queueOutboundEmail(c.env.DB, {
+      ticketId: id,
+      commentId,
+      kind: 'requester_reply',
+      toEmail: SUPPORT_INBOX,
+      subject: rendered.subject,
+      bodyHtml: rendered.html,
+      inReplyToMessageId: null,
+    });
   }
   return c.redirect(`/tickets/${id}?token=${encodeURIComponent(token)}`, 303);
 });

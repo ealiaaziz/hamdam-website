@@ -18,7 +18,7 @@ export function parseTicketStatus(value: string | undefined | null): TicketStatu
 }
 export type Channel = 'portal' | 'email';
 export type CommentAuthorType = 'requester' | 'agent' | 'system';
-export type OutboundKind = 'ack' | 'agent_reply' | 'status_change';
+export type OutboundKind = 'ack' | 'agent_reply' | 'status_change' | 'requester_reply';
 export type OutboundStatus = 'pending' | 'sent' | 'failed';
 
 export interface RequesterRow {

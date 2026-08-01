@@ -222,6 +222,11 @@ as an ordinary ticket and note it in your final summary.
    Only mail to developer@hamdam.com.au matters for this desk.
 
 5. For each message, oldest first:
+   a0. SKIP ENTIRELY if the sender is developer@hamdam.com.au. That is this
+      desk's own address, so such a message is our own outgoing mail landing
+      back in the inbox, not a requester writing in. Ingesting it files the
+      desk's own acknowledgements into ticket threads as if a requester had
+      said them. Record nothing and move to the next message.
    a. Skip if already processed:
       node scripts/db-query.mjs "SELECT 1 FROM inbound_emails WHERE internet_message_id = ?1" '["<internetMessageId>"]'
    b. Look for an existing ticket, in order:
