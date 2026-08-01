@@ -1,0 +1,21 @@
+{
+  "name": "hamdam-support",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-07-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": false,
+  "routes": [
+    { "pattern": "support.hamdam.com.au", "custom_domain": true }
+  ],
+  // Created by `wrangler d1 create hamdam-support-db` — see support/README.md.
+  // database_id is a placeholder until that command has been run once; wrangler
+  // will refuse to deploy with the placeholder still in place.
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "hamdam-support-db",
+      "database_id": "REPLACE_WITH_D1_DATABASE_ID",
+      "migrations_dir": "migrations"
+    }
+  ]
+}
