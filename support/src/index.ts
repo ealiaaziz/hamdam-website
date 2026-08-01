@@ -9,13 +9,17 @@ import { ackEmail, agentReplyEmail, requesterReplyNotification, resolvedEmail } 
 import { generateTrackingToken, parseTicketPublicId, stripHtml, ticketPublicId } from './ids.js';
 import { httpsRedirectTarget, isCrossSiteRequest, isLocalHost, trackingUrl } from './urls.js';
 import { extractAccessToken, fetchAccessKeys, verifyAccessJwt } from './access.js';
-import { matchArticles } from './kb.js';
+import { matchArticles, KB_ARTICLES } from './kb.js';
 import { decideAgentAction } from './agentPolicy.js';
 import { suggestionBlock } from './render/agentSuggestion.js';
 import { proposeDraft } from './agentDraft.js';
+import { composeAssistantReply, ASSISTANT_NAME } from './assistantReply.js';
 import {
   addComment,
   approveDraft,
+  getAgentState,
+  recordAssistantTurn,
+  recordRejectedArticle,
   discardDraft,
   listDrafts,
   queueAssistantDraft,
@@ -165,13 +169,21 @@ app.get('/tickets/:id', async (c) => {
   // be, and a requester who is already here should not be told to check
   // their inbox in an hour.
   const conversationText = [ticket.subject, ...comments.filter((m) => m.author_type === 'requester').map((m) => m.body)].join('\n');
-  const decision = decideAgentAction({
-    priority: ticket.priority,
-    conversationText,
-    assistantTurns: 0,
-    askedQuestions: [],
-  });
-  const match = matchArticles(conversationText);
+  const state = await getAgentState(c.env.DB, id);
+  // An article the requester has rejected is out of the running entirely.
+  // Re-offering one is how HAM-3 ended up showing the same answer three
+  // times after being told three times that it did not help.
+  const available = KB_ARTICLES.filter((a) => !state.rejectedArticles.includes(a.id));
+  const decision = decideAgentAction(
+    {
+      priority: ticket.priority,
+      conversationText,
+      assistantTurns: state.assistantTurns,
+      askedQuestions: state.askedQuestions,
+    },
+    matchArticles(conversationText, available),
+  );
+  const match = matchArticles(conversationText, available);
   const suggestion =
     (decision.action === 'send_solution' || decision.action === 'ask_clarifying') && match.best
       ? suggestionBlock({
@@ -205,6 +217,8 @@ app.post('/tickets/:id/feedback', async (c) => {
     await updateTicketStatus(c.env.DB, id, 'resolved');
   } else if (outcome === 'unresolved') {
     await addComment(c.env.DB, id, 'system', null, `Requester reported that the suggested article "${articleId}" did not help. Needs a person.`);
+    // Remember it, so nothing offers this article again on this ticket.
+    if (articleId) await recordRejectedArticle(c.env.DB, id, articleId);
     if (ticket.status === 'new') await updateTicketStatus(c.env.DB, id, 'open');
   }
 
@@ -251,11 +265,35 @@ app.post('/tickets/:id/reply', async (c) => {
       inReplyToMessageId: null,
     });
 
-    // Have a reply ready for whoever picks this up. The requester sees the
-    // suggestion on the page immediately either way; this is the emailed
-    // version, and it waits for a person because sending it does not.
+    // Answer them now, in the thread. This is what was missing: the engine
+    // was matching, drafting and notifying, but every output went somewhere
+    // the requester could not see, so from their side the desk was silent.
     const allComments = await listComments(c.env.DB, id);
-    const proposal = proposeDraft({
+    const conversationText = [ticket.subject, ...allComments.filter((m) => m.author_type === 'requester').map((m) => m.body)].join('\n');
+    const state = await getAgentState(c.env.DB, id);
+    const reply = composeAssistantReply({
+      priority: ticket.priority,
+      conversationText,
+      assistantTurns: state.assistantTurns,
+      askedQuestions: state.askedQuestions,
+      rejectedArticles: state.rejectedArticles,
+    });
+    await addComment(c.env.DB, id, 'agent', ASSISTANT_NAME, reply.body);
+    await recordAssistantTurn(c.env.DB, id, {
+      question: reply.question,
+      action: reply.action,
+      articleId: reply.articleId,
+      reason: reply.reason,
+      escalated: reply.escalated,
+    });
+    if (reply.escalated && ticket.status === 'new') {
+      await updateTicketStatus(c.env.DB, id, 'open');
+    }
+
+    // And keep a draft ready for whoever picks it up, unless the assistant
+    // has already handed over -- drafting a reply for a ticket it just
+    // escalated would put the words back in the queue it stepped out of.
+    const proposal = reply.escalated ? null : proposeDraft({
       ticketId: id,
       ticketSubject: ticket.subject,
       requesterName: ticket.requester_name,

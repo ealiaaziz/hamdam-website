@@ -330,3 +330,91 @@ export async function discardDraft(db: D1Database, draftId: number, ticketId: nu
     .run();
   return (result.meta.changes ?? 0) > 0;
 }
+
+// ---- assistant conversation state ----------------------------------------
+
+export interface AgentStateRow {
+  ticket_id: number;
+  assistant_turns: number;
+  asked_questions: string;
+  rejected_articles: string;
+  escalated_at: string | null;
+}
+
+function parseJsonArray(value: string | null | undefined): string[] {
+  if (!value) return [];
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed.filter((v): v is string => typeof v === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
+export interface AgentState {
+  assistantTurns: number;
+  askedQuestions: string[];
+  rejectedArticles: string[];
+  escalated: boolean;
+}
+
+export async function getAgentState(db: D1Database, ticketId: number): Promise<AgentState> {
+  const row = await db.prepare('SELECT * FROM ticket_agent_state WHERE ticket_id = ?1').bind(ticketId).first<AgentStateRow>();
+  return {
+    assistantTurns: row?.assistant_turns ?? 0,
+    askedQuestions: parseJsonArray(row?.asked_questions),
+    rejectedArticles: parseJsonArray(row?.rejected_articles),
+    escalated: Boolean(row?.escalated_at),
+  };
+}
+
+/** Upsert helper: the row is created lazily on the assistant's first involvement. */
+async function ensureAgentState(db: D1Database, ticketId: number): Promise<void> {
+  await db
+    .prepare(`INSERT INTO ticket_agent_state (ticket_id) VALUES (?1) ON CONFLICT(ticket_id) DO NOTHING`)
+    .bind(ticketId)
+    .run();
+}
+
+export async function recordRejectedArticle(db: D1Database, ticketId: number, articleId: string): Promise<void> {
+  await ensureAgentState(db, ticketId);
+  const state = await getAgentState(db, ticketId);
+  if (state.rejectedArticles.includes(articleId)) return;
+  const next = [...state.rejectedArticles, articleId];
+  await db
+    .prepare(`UPDATE ticket_agent_state SET rejected_articles = ?2, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE ticket_id = ?1`)
+    .bind(ticketId, JSON.stringify(next))
+    .run();
+}
+
+export async function recordAssistantTurn(
+  db: D1Database,
+  ticketId: number,
+  opts: { question?: string; action: string; articleId?: string; reason: string; escalated?: boolean },
+): Promise<void> {
+  await ensureAgentState(db, ticketId);
+  const state = await getAgentState(db, ticketId);
+  const askedQuestions = opts.question && !state.askedQuestions.includes(opts.question)
+    ? [...state.askedQuestions, opts.question]
+    : state.askedQuestions;
+  await db
+    .prepare(
+      `UPDATE ticket_agent_state
+       SET assistant_turns = ?2, asked_questions = ?3, last_action = ?4,
+           last_article_id = ?5, last_reason = ?6,
+           escalated_at = CASE WHEN ?7 = 1 AND escalated_at IS NULL
+                               THEN strftime('%Y-%m-%dT%H:%M:%fZ','now') ELSE escalated_at END,
+           updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')
+       WHERE ticket_id = ?1`,
+    )
+    .bind(
+      ticketId,
+      state.assistantTurns + 1,
+      JSON.stringify(askedQuestions),
+      opts.action,
+      opts.articleId ?? null,
+      opts.reason,
+      opts.escalated ? 1 : 0,
+    )
+    .run();
+}
