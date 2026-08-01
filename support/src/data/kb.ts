@@ -30,7 +30,7 @@ export const KB_ARTICLES: readonly KbArticle[] = [
       "Which sign-in method are you using -- Apple, email, or something else?",
       "Does the app show an error message, and if so what does it say exactly?"
     ],
-    "steps": "1. Close the app fully and reopen it. On iPhone, swipe up from the bottom\n   and flick the Hamdam card away, then tap the icon again.\n2. Check the device has a working connection by loading any web page.\n3. If you sign in with Apple, open Settings, tap your name, then Sign-In and\n   Security, and confirm Hamdam is still listed under apps using Apple.\n4. If the error mentions a network or server problem, wait a few minutes and\n   try once more; it is usually temporary.\n\nIf none of that helps, reply to this email and a person will pick it up."
+    "steps": "1. Close the app fully and reopen it. On iPhone, swipe up from the bottom\n   and flick the Hamdam card away, then tap the icon again.\n2. Check the device has a working connection by loading any web page.\n3. If you sign in with Apple, open Settings, tap your name, then Sign-In and\n   Security, and confirm Hamdam is still listed under apps using Apple.\n4. If the error mentions a network or server problem, wait a few minutes and\n   try once more; it is usually temporary.\n\nIf none of that helps, reply here and a person will pick it up."
   },
   {
     "id": "change-notification-time",

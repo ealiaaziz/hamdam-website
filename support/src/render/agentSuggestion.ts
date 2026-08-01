@@ -13,19 +13,39 @@ import type { KbArticle } from '../kb.js';
 // a wrong article and offered only a cheerful dismissal will click it and
 // leave, and the desk will record a resolution that never happened.
 
-/** Markdown-ish article body to HTML: numbered steps and paragraphs only. */
-function renderSteps(steps: string): string {
-  const blocks = steps.split(/\n\s*\n/);
-  return blocks
+const NUMBERED = /^\d+\.\s/;
+
+/**
+ * Markdown-ish article body to HTML: numbered steps and paragraphs only.
+ *
+ * A list item may wrap onto continuation lines, which is how the articles
+ * are actually written -- an earlier version tested that *every* line in a
+ * block began with a number, so any wrapped step collapsed the whole list
+ * into a single run-on paragraph. Live, that turned a four-step fix into a
+ * wall of text with "2." and "3." buried mid-sentence. A block is a list if
+ * its *first* line is numbered; unnumbered lines after that belong to the
+ * item above.
+ */
+export function renderSteps(steps: string): string {
+  return steps
+    .split(/\n\s*\n/)
     .map((block) => {
       const lines = block.split('\n').map((l) => l.trim()).filter(Boolean);
-      const numbered = lines.every((l) => /^\d+\.\s/.test(l));
-      if (numbered && lines.length > 0) {
-        const items = lines.map((l) => `<li>${escapeHtml(l.replace(/^\d+\.\s*/, ''))}</li>`).join('');
-        return `<ol>${items}</ol>`;
+      if (lines.length === 0) return '';
+
+      if (!NUMBERED.test(lines[0])) {
+        return `<p>${escapeHtml(lines.join(' '))}</p>`;
       }
-      return `<p>${escapeHtml(lines.join(' '))}</p>`;
+
+      const items: string[] = [];
+      for (const line of lines) {
+        if (NUMBERED.test(line)) items.push(line.replace(NUMBERED, ''));
+        else if (items.length > 0) items[items.length - 1] += ` ${line}`;
+        else items.push(line);
+      }
+      return `<ol>${items.map((i) => `<li>${escapeHtml(i)}</li>`).join('')}</ol>`;
     })
+    .filter(Boolean)
     .join('\n');
 }
 

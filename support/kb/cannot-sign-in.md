@@ -23,4 +23,4 @@ clarifying:
 4. If the error mentions a network or server problem, wait a few minutes and
    try once more; it is usually temporary.
 
-If none of that helps, reply to this email and a person will pick it up.
+If none of that helps, reply here and a person will pick it up.
