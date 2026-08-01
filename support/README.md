@@ -41,6 +41,39 @@ Agent ──(dashboard reply)──► Worker ──► D1 ──► queued outb
   file's "Why a Routine, not a webhook" section before assuming this is a
   real-time pipeline -- it isn't, by construction.**
 
+## Deployed state (2026-08-01)
+
+Live at **https://support.hamdam.com.au**. What exists on the Cloudflare
+account, so the runbook below reads as history rather than pending work:
+
+| Thing | Value |
+|---|---|
+| Worker | `hamdam-support` (separate from `hamdam-website`) |
+| D1 database | `hamdam-support-db` / `0d2a8372-cf55-47d1-8491-e9398cfc0d14` |
+| Custom domain | `support.hamdam.com.au` |
+| Zone TLS | Always Use HTTPS **on**, min TLS **1.2**, SSL mode `full` |
+
+Verified against production: HTTPS 200, HSTS/CSP/XFO/nosniff all present,
+a submitted ticket classified P1 from high impact + high urgency, a wrong
+tracking token 404s, and `/admin` returns 503 both unauthenticated and with
+a forged `Cf-Access-Authenticated-User-Email` header.
+
+**Still outstanding**, both needing something this repo can't grant itself:
+
+1. **`/admin` is unusable** (503 by design) until a Cloudflare Access
+   application exists and `ACCESS_TEAM_DOMAIN`/`ACCESS_AUD` are filled into
+   `wrangler.jsonc`. Needs an API token with
+   `Account → Access: Apps and Policies → Edit`, or the dashboard steps in
+   the runbook below.
+2. **No email flows yet.** Acknowledgements queue in `outbound_emails` with
+   `status='pending'` and stay there until the Routine runs. See
+   `docs/email-routine.md`, including the connector-grant gap.
+
+SSL mode is `full` rather than `full (strict)`. For this zone the
+distinction is academic: every hostname is Worker-backed, so requests
+terminate at the edge and no origin certificate is ever validated. Worth
+flipping only if a real origin server is ever added to the zone.
+
 ## HTTPS
 
 Enforced in two independent places, because the tracking token in
