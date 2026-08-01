@@ -176,7 +176,18 @@ as an ordinary ticket and note it in your final summary.
    not the placeholder. If either is missing, stop and report it -- do not
    proceed.
 
-2. Record RUN_STARTED_AT = the current UTC time in ISO-8601.
+2. Record RUN_STARTED_AT = the current UTC time in ISO-8601, then
+   immediately leave a heartbeat in the database so a run that dies later
+   is still visible:
+   node scripts/db-query.mjs "INSERT INTO sync_state (key, value, updated_at) VALUES ('last_run_started', ?1, ?1) ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.value" '["<RUN_STARTED_AT>"]'
+   If that command fails, the token or database is misconfigured: stop and
+   report it.
+
+2b. STOPPING RULE, applying to every step below: if you stop early for any
+   reason, first write why, so the failure is visible to anyone reading the
+   database rather than only in this transcript:
+   node scripts/db-query.mjs "INSERT INTO sync_state (key, value, updated_at) VALUES ('last_run_status', ?1, ?2) ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.value" '["<short reason, e.g. composio-tools-unavailable>","<current UTC time>"]'
+   On a fully successful run, write 'ok' to that same key instead.
 
 3. Read the checkpoint:
    node scripts/db-query.mjs "SELECT value FROM sync_state WHERE key = ?1" '["last_checked_utc"]'
