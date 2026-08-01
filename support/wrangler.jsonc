@@ -16,14 +16,14 @@
     "ACCESS_TEAM_DOMAIN": "",
     "ACCESS_AUD": ""
   },
-  // Created by `wrangler d1 create hamdam-support-db`; see support/README.md.
-  // database_id is a placeholder until that command has been run once; wrangler
-  // will refuse to deploy with the placeholder still in place.
+  // Created by `wrangler d1 create hamdam-support-db` on 2026-08-01; see
+  // support/README.md. Not a secret: a database_id only identifies the
+  // database, and reaching it still requires an authorised API token.
   "d1_databases": [
     {
       "binding": "DB",
       "database_name": "hamdam-support-db",
-      "database_id": "REPLACE_WITH_D1_DATABASE_ID",
+      "database_id": "0d2a8372-cf55-47d1-8491-e9398cfc0d14",
       "migrations_dir": "migrations"
     }
   ]
