@@ -103,6 +103,31 @@ beyond Composio, and firing into a fresh session each time. Once that
 Routine exists and works, delete the placeholder one
 (`trig_01NfRL7j2y8h7LeYz6AuVBBc`) so there's only one.
 
+## The first run has been defused
+
+`sync_state.last_checked_utc` was seeded to `2026-08-01T21:48:35.000Z` at
+setup, deliberately, and it is not stray data.
+
+Step 3 falls back to **24 hours before the run** when no checkpoint exists.
+On a desk that has just been switched on, that window is not empty: it is
+whatever happened to land in `developer@hamdam.com.au` that day. Newsletters,
+Apple developer notices, personal mail -- the routine would have opened a
+ticket for each and auto-replied "Thanks for reaching out. We've opened a
+support ticket for you" to every one of those senders. A support desk whose
+first act is to cold-reply to a mailing list is worse than one that starts
+quiet.
+
+With the checkpoint seeded, the first run considers only mail that arrives
+after setup. It still drains `outbound_emails` (that step doesn't consult
+the checkpoint), so ticket HAM-1's queued acknowledgement is sent on the
+first successful run and remains a complete end-to-end test.
+
+To deliberately reprocess older mail, move the checkpoint back:
+
+```
+node scripts/db-query.mjs "UPDATE sync_state SET value = ?1 WHERE key = 'last_checked_utc'" '["2026-08-01T00:00:00.000Z"]'
+```
+
 ## Prerequisites
 
 * `wrangler.jsonc`'s `database_id` is a real D1 database (not the
