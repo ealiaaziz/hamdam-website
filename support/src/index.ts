@@ -277,6 +277,7 @@ app.post('/tickets/:id/reply', async (c) => {
       assistantTurns: state.assistantTurns,
       askedQuestions: state.askedQuestions,
       rejectedArticles: state.rejectedArticles,
+      alreadyEscalated: state.escalated,
     });
     await addComment(c.env.DB, id, 'agent', ASSISTANT_NAME, reply.body);
     await recordAssistantTurn(c.env.DB, id, {

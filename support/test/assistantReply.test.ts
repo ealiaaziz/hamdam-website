@@ -54,8 +54,41 @@ describe('composeAssistantReply', () => {
   it('says it does not know, rather than nothing, when no article matches', () => {
     const r = composeAssistantReply({ ...base, conversationText: 'my cat sat on the keyboard' });
     expect(r.action).toBe('escalate');
-    expect(r.body).toContain('do not have a written answer');
+    expect(r.body).toContain('outside what I have written down');
     expect(r.body).toContain('passing it to a person');
+  });
+
+  it('does not repeat the handover once it has already handed over', () => {
+    // Seen live: the identical "handing it to a person" paragraph came back
+    // twice in a row, which reads as a stuck machine rather than an honest
+    // one.
+    const first = composeAssistantReply({ ...base, conversationText: 'unknown topic' });
+    const second = composeAssistantReply({ ...base, conversationText: 'another unknown topic', alreadyEscalated: true });
+    expect(second.body).not.toBe(first.body);
+    expect(second.body).toContain('already with a person');
+  });
+
+  it('does not claim to be out of ideas about a topic it never had ideas for', () => {
+    // Live failure: a rejection on the sign-in thread made a brand new
+    // question -- Windows 11 password reset -- come back as "I have run out
+    // of things I know to try", which was true of neither the question nor
+    // the assistant.
+    const r = composeAssistantReply({
+      ...base,
+      conversationText: 'do you know how windows 11 password reset works?',
+      rejectedArticles: ['cannot-sign-in'],
+    });
+    expect(r.body).not.toContain('run out of things');
+    expect(r.body).toContain('outside what I have written down');
+  });
+
+  it('still says it is out of ideas when the topic did match and was rejected', () => {
+    const r = composeAssistantReply({
+      ...base,
+      conversationText: 'cannot sign in, password not working',
+      rejectedArticles: ['cannot-sign-in'],
+    });
+    expect(r.body).toContain('run out of things');
   });
 
   it('escalates visibly on P1 rather than going quiet', () => {

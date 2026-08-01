@@ -31,6 +31,8 @@ export interface AssistantReply {
 export interface AssistantReplyInput extends AgentContext {
   /** Articles the requester has already said did not help. */
   rejectedArticles: readonly string[];
+  /** True once this ticket has already been handed to a person. */
+  alreadyEscalated?: boolean;
 }
 
 function stepsAsText(article: KbArticle): string {
@@ -73,14 +75,34 @@ export function composeAssistantReply(
     };
   }
 
-  // Everything else is an escalation, and each variety gets its own wording.
-  // A requester told "a person will pick this up" after asking for a person
-  // has been heard; one told the same after a failed suggestion has not,
-  // unless we say plainly that we do not know the answer.
-  const exhausted = input.rejectedArticles.length > 0;
+  // Everything else is an escalation. Which words depend on why, because a
+  // single canned paragraph repeated at every turn is what makes an
+  // assistant read as broken rather than honest.
+
+  // Already handed over: acknowledge and stop re-announcing it. Seen live --
+  // the same "handing it to a person" paragraph came back twice in a row,
+  // which tells the requester nothing they did not already know and makes
+  // the desk look stuck.
+  if (input.alreadyEscalated) {
+    return {
+      body: 'Thanks, I have added that to the ticket. It is already with a person on the team and they will see it, so there is nothing you need to do.',
+      action: 'escalate',
+      reason: 'already escalated; acknowledged without repeating the handover',
+      escalated: true,
+    };
+  }
+
+  // "Run out of things to try" is only true if we actually had something to
+  // try for *this* question. Basing it on whether any article was ever
+  // rejected meant a brand new topic -- "how does Windows 11 password reset
+  // work?" -- was answered as though it were a continuation of a thread it
+  // had nothing to do with.
+  const hadCandidates = matchArticles(input.conversationText, articles).best !== null;
+  const exhausted = hadCandidates && available.length < articles.length;
+
   const body = exhausted
-    ? "I have run out of things I know to try for this one, so I am handing it to a person on the team. They can see everything you have written here, so you will not need to repeat yourself."
-    : "I do not have a written answer for this one, so I am passing it to a person on the team rather than guessing. They can see this whole conversation.";
+    ? 'I have run out of things I know to try for this one, so I am handing it to a person on the team. They can see everything you have written here, so you will not need to repeat yourself.'
+    : 'That is outside what I have written down, so I am passing it to a person rather than guessing at an answer. They can see this whole conversation.';
 
   return { body, action: 'escalate', reason: decision.reason, escalated: true };
 }
