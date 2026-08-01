@@ -7,6 +7,7 @@ import { adminQueuePage, adminTicketPage } from './render/admin.js';
 import { classifyFromMatrix, slaDueDates, type Impact, type Priority, type Urgency } from './itil.js';
 import { ackEmail, agentReplyEmail, resolvedEmail } from './render/email.js';
 import { generateTrackingToken, parseTicketPublicId, ticketPublicId } from './ids.js';
+import { httpsRedirectTarget, trackingUrl } from './urls.js';
 import {
   addComment,
   createTicket,
@@ -23,16 +24,28 @@ import type { TicketStatus } from './types.js';
 
 const app = new Hono<{ Bindings: Env }>();
 
-function trackingUrl(req: Request, id: number, token: string): string {
-  const url = new URL(req.url);
-  return `${url.protocol}//${url.host}/tickets/${id}?token=${token}`;
-}
-
-// Same CSP discipline as the main site (see public/_headers there): no
-// inline scripts or styles anywhere in this codebase, so a strict policy
-// with no 'unsafe-inline' costs nothing and closes off XSS from any
-// requester-authored text that slips past escaping.
+// Redirect http to https before anything else runs, and never serve a
+// ticket over plaintext.
+//
+// Cloudflare's "Always Use HTTPS" zone setting should catch this at the
+// edge (README covers turning it on) and Universal SSL provisions the
+// certificate automatically, but a zone setting is one dashboard toggle
+// away from being off. This Worker is the last thing that can still
+// refuse, and the stakes here are higher than on the marketing site: the
+// tracking token in /tickets/:id?token=... is the only credential guarding
+// a ticket, so one plaintext request leaks a working credential.
+//
+// HSTS below is not a substitute. Browsers ignore a Strict-Transport-Security
+// header delivered over plaintext http, and it does nothing on a first-ever
+// visit -- the redirect is what makes that first request safe.
+//
+// CF-Ray, not the hostname, is what tells us this is a real edge request:
+// `wrangler dev` reports the custom domain as the Host, so a hostname check
+// would 301 local development to production. See httpsRedirectTarget.
 app.use('*', async (c, next) => {
+  const target = httpsRedirectTarget(c.req.url, c.req.header('cf-ray') !== undefined);
+  if (target) return c.redirect(target, 301);
+
   await next();
   c.header('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'");
   c.header('X-Frame-Options', 'DENY');
@@ -97,7 +110,7 @@ app.post('/tickets', async (c) => {
     ticketId,
     subject,
     priority,
-    trackingUrl: trackingUrl(c.req.raw, ticketId, trackingToken),
+    trackingUrl: trackingUrl(c.req.url, ticketId, trackingToken),
     requesterName: name,
   });
   await queueOutboundEmail(c.env.DB, {
@@ -233,7 +246,7 @@ app.post('/admin/tickets/:id/status', async (c) => {
   if (status !== ticket.status) {
     await updateTicketStatus(c.env.DB, id, status);
     if (status === 'resolved') {
-      const trackingUrlStr = trackingUrl(c.req.raw, id, ticket.tracking_token);
+      const trackingUrlStr = trackingUrl(c.req.url, id, ticket.tracking_token);
       const rendered = resolvedEmail({ ticketId: id, subject: ticket.subject, trackingUrl: trackingUrlStr });
       await queueOutboundEmail(c.env.DB, {
         ticketId: id,

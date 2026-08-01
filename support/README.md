@@ -41,6 +41,36 @@ Agent ──(dashboard reply)──► Worker ──► D1 ──► queued outb
   file's "Why a Routine, not a webhook" section before assuming this is a
   real-time pipeline -- it isn't, by construction.**
 
+## HTTPS
+
+Enforced in two independent places, because the tracking token in
+`/tickets/:id?token=...` is the only credential guarding a ticket and it
+travels in the query string. One plaintext request leaks a working
+credential, so this is worth more than the usual belt-and-braces.
+
+* **At the edge**: Cloudflare's "Always Use HTTPS" plus Universal SSL,
+  configured once in the dashboard (step 5 of the deploy runbook).
+* **In the Worker**: `src/index.ts` 301s any plaintext request before a
+  handler runs, and `src/urls.ts` forces `https://` into every emailed
+  tracking link regardless of the scheme of the request that generated it.
+  A downgraded request is a reason to hand back a secure link, not to
+  propagate the downgrade.
+
+HSTS is sent on every response but is not load-bearing on its own: browsers
+ignore `Strict-Transport-Security` when it arrives over plaintext, and it
+does nothing on a first-ever visit. The redirect is what makes that first
+request safe. (The main site sets HSTS with `includeSubDomains` on the
+apex, so once that's preloaded, browsers force https here too -- a third
+layer, but only for visitors whose browser already knows the apex.)
+
+One trap worth knowing before changing any of this: **`wrangler dev`
+reports the custom domain from `wrangler.jsonc` as the request Host**, so
+`http://localhost:8787/` arrives at the Worker looking like
+`http://support.hamdam.com.au/`. Detecting local dev by hostname therefore
+silently never fires and 301s your dev server to production. The redirect
+keys off the presence of Cloudflare's `CF-Ray` header instead, which the
+edge always sets and overwrites, and which wrangler dev never sends.
+
 ## Local development
 
 ```
@@ -83,11 +113,35 @@ CLI wrappers are covered).
 4. **Point DNS at this Worker.** `wrangler.jsonc` already declares the
    `support.hamdam.com.au` custom domain route; if `hamdam.com.au`'s zone is
    on this Cloudflare account (it is, per the main site's setup), deploying
-   (step 6) will provision the DNS record automatically. If it errors
+   (step 7) will provision the DNS record automatically. If it errors
    asking you to add the domain to the zone first, do that in the
    Cloudflare dashboard, then redeploy.
 
-5. **Protect `/admin/*` with Cloudflare Access**, in the Cloudflare
+5. **Confirm HTTPS is on at the edge.** The Worker already refuses to serve
+   plaintext (see "HTTPS" below), but these zone settings are what stop an
+   http request from ever reaching it, and they're one dashboard toggle
+   away from being off. In the Cloudflare dashboard for the `hamdam.com.au`
+   zone:
+   * **SSL/TLS -> Overview**: encryption mode **Full (strict)**. The
+     certificate itself needs no work: Universal SSL covers one level of
+     subdomain, so `support.hamdam.com.au` is issued automatically when the
+     custom domain is created in step 4.
+   * **SSL/TLS -> Edge Certificates -> Always Use HTTPS**: **on**. This is
+     the edge-level http-to-https redirect.
+   * **SSL/TLS -> Edge Certificates -> Minimum TLS Version**: **1.2**.
+
+   The settings can be applied now, but **verification has to wait until
+   after the deploy in step 7**, and the real deploy is the only place it
+   can happen: `wrangler dev` rewrites both the Host and the `Location`
+   header, so a local check proves nothing. Once step 7 is done:
+   ```
+   curl -sI http://support.hamdam.com.au/ | grep -i "^HTTP/\|^location"
+   curl -sI https://support.hamdam.com.au/ | grep -i "strict-transport-security"
+   ```
+   Expect a 301 to the `https://` URL, and an HSTS header on the https
+   response.
+
+6. **Protect `/admin/*` with Cloudflare Access**, in the Cloudflare
    dashboard (Zero Trust -> Access -> Applications -> Add an application ->
    Self-hosted):
    * Application domain: `support.hamdam.com.au`, path `/admin*`
@@ -100,12 +154,12 @@ CLI wrappers are covered).
    this repo, because it's a one-time policy decision, not something that
    should change on every deploy.
 
-6. **Deploy:**
+7. **Deploy:**
    ```
    npm run deploy
    ```
 
-7. **Create a D1-scoped API token** for the email Routine (dashboard ->
+8. **Create a D1-scoped API token** for the email Routine (dashboard ->
    My Profile -> API Tokens -> Create Token -> Custom token):
    * Permissions: Account -> D1 -> Edit
    * Account Resources: restrict to this one account
@@ -117,7 +171,7 @@ CLI wrappers are covered).
    as environment variables on whichever Claude Code Remote environment the
    email Routine fires into. `scripts/db-query.mjs` reads both.
 
-8. **Fix the Routine's connector access, then enable it.** A placeholder
+9. **Fix the Routine's connector access, then enable it.** A placeholder
    Routine (`trig_01NfRL7j2y8h7LeYz6AuVBBc`) exists but currently has **no
    Composio connector grant** -- a platform limitation hit while building
    this, not a step you skipped. Read "Known gap" in
