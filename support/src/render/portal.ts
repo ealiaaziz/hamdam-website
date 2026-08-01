@@ -7,7 +7,7 @@ export function submitFormPage(opts: { error?: string; values?: Record<string, s
   const body = `
 <h1>How can we help?</h1>
 <p class="lede">Tell us what's going on and we'll open a ticket right away. You'll get an email confirmation
-with a link to track it, and everything after this happens by email too &mdash; just reply, or come back here.</p>
+with a link to track it, and everything after this happens by email too. Just reply, or come back here.</p>
 ${opts.error ? `<div class="notice notice--error">${escapeHtml(opts.error)}</div>` : ''}
 <form class="card" method="post" action="/tickets">
   <div class="grid-2">

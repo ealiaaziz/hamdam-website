@@ -44,3 +44,30 @@ jobs:
 
       - name: Dash check
         run: npm run check:dashes
+
+  # The support desk is a separate package with its own dependencies, its own
+  # wrangler config, and its own manual deploy. It deliberately does not ride
+  # along on the site's build or test run (see vitest.config.js for why), so
+  # it gets its own job. Same rule as above: this verifies, it never deploys.
+  support:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: support
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: support/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Unit tests
+        run: npm test

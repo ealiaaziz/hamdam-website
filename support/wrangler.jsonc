@@ -7,7 +7,7 @@
   "routes": [
     { "pattern": "support.hamdam.com.au", "custom_domain": true }
   ],
-  // Created by `wrangler d1 create hamdam-support-db` — see support/README.md.
+  // Created by `wrangler d1 create hamdam-support-db`; see support/README.md.
   // database_id is a placeholder until that command has been run once; wrangler
   // will refuse to deploy with the placeholder still in place.
   "d1_databases": [

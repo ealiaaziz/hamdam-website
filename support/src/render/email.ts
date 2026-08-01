@@ -31,7 +31,7 @@ within ${escapeHtml(policy.firstResponseLabel)} and to resolve within ${escapeHt
 ${opts.priority === 'P1' || opts.priority === 'P2' ? "Because you've flagged this as urgent, it's now at the top of our queue." : ''}</p>
 <p>You can track progress and reply any time here:<br>
 <a href="${opts.trackingUrl}" style="color:#D07B3F">${escapeHtml(opts.trackingUrl)}</a></p>
-<p>Or just reply to this email &mdash; either way, it lands in the same place.</p>
+<p>Or just reply to this email. Either way, it lands in the same place.</p>
 ${RULE}
 ${FOOTER}
 ${WRAP_CLOSE}`;
@@ -48,7 +48,7 @@ export function agentReplyEmail(opts: {
   const html = `${WRAP_OPEN}
 <p>${textToSafeHtml(opts.message)}</p>
 ${RULE}
-<p style="font-size:0.85rem;color:#574A38">&mdash; ${escapeHtml(opts.agentName)}, Hamdam Support (${escapeHtml(publicId)})</p>
+<p style="font-size:0.85rem;color:#574A38">${escapeHtml(opts.agentName)}, Hamdam Support (${escapeHtml(publicId)})</p>
 ${FOOTER}
 ${WRAP_CLOSE}`;
   return { subject: `[${publicId}] ${opts.subject}`, html };
