@@ -1,0 +1,30 @@
+{
+  "name": "hamdam-support",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-07-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": false,
+  "routes": [
+    { "pattern": "support.hamdam.com.au", "custom_domain": true }
+  ],
+  // Cloudflare Access identity for /admin. Both come from the Access
+  // application you create in Zero Trust (README step 5): the team domain
+  // from Zero Trust -> Settings, the AUD tag from the application's own
+  // page. Neither is a secret. The console returns 503 until they are set,
+  // so filling these in and redeploying is what switches it on.
+  "vars": {
+    "ACCESS_TEAM_DOMAIN": "wispy-art-3af8.cloudflareaccess.com",
+    "ACCESS_AUD": "f9fd91afd878949abf0009cd76f5ce70f690eedaf521b9d6052dd81341975286"
+  },
+  // Created by `wrangler d1 create hamdam-support-db` on 2026-08-01; see
+  // support/README.md. Not a secret: a database_id only identifies the
+  // database, and reaching it still requires an authorised API token.
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "hamdam-support-db",
+      "database_id": "0d2a8372-cf55-47d1-8491-e9398cfc0d14",
+      "migrations_dir": "migrations"
+    }
+  ]
+}

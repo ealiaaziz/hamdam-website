@@ -17,7 +17,12 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 
-const ROOTS = ['src', 'public'];
+// `support` added 2026-08-01 alongside the support desk landing in this repo.
+// Without it, hard rule 3 was enforced by directory placement rather than by
+// the rule: the desk ships user-facing copy (ack emails, portal pages) in
+// support/src, and four em dashes went in there unnoticed because this walk
+// never reached them.
+const ROOTS = ['src', 'public', 'support'];
 const EXTENSIONS = /\.(astro|ts|js|mjs|css|html|json|md)$/;
 
 // src/data/verses.ts is extracted byte-exact from the iOS app's bundled verse

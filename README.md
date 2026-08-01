@@ -48,3 +48,11 @@ deploy` run). Pushing to `main` does not deploy anything by itself.
 - Custom domains: hamdam.com.au, www.hamdam.com.au (both route to the same
   Worker -- see `TODO-Ealia.md` for the open www-&gt;apex redirect issue this
   causes)
+
+## Support desk
+
+`support/` is a separate, independently-deployed Cloudflare Worker -- the
+Hamdam Support ticketing platform (public portal, email-in/out via
+developer@hamdam.com.au, ITIL P1-P4 priority + SLA tracking, agent
+dashboard). It does not share a build or deploy with this site. See
+`support/README.md`.

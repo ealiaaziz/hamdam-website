@@ -1,0 +1,4 @@
+# Local development only. Wrangler loads this automatically for `wrangler dev`
+# and never uploads it. Honoured only for requests with no CF-Ray header, so
+# it cannot open the console on the deployed site.
+DEV_ADMIN_EMAIL=you@hamdam.com.au
