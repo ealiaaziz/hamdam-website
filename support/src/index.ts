@@ -4,10 +4,10 @@ import { APP_CSS } from './render/styles.js';
 import { submitFormPage, trackLookupPage } from './render/portal.js';
 import { ticketStatusPage } from './render/status.js';
 import { adminQueuePage, adminTicketPage } from './render/admin.js';
-import { classifyFromMatrix, slaDueDates, type Impact, type Priority, type Urgency } from './itil.js';
+import { classifyFromMatrix, parsePriority, slaDueDates, type Impact, type Urgency } from './itil.js';
 import { ackEmail, agentReplyEmail, resolvedEmail } from './render/email.js';
 import { generateTrackingToken, parseTicketPublicId, ticketPublicId } from './ids.js';
-import { httpsRedirectTarget, trackingUrl } from './urls.js';
+import { httpsRedirectTarget, isCrossSiteRequest, trackingUrl } from './urls.js';
 import { extractAccessToken, fetchAccessKeys, verifyAccessJwt } from './access.js';
 import {
   addComment,
@@ -21,7 +21,7 @@ import {
   updateTicketStatus,
   upsertRequester,
 } from './db.js';
-import type { TicketStatus } from './types.js';
+import { parseTicketStatus } from './types.js';
 
 const app = new Hono<{ Bindings: Env; Variables: { agentEmail: string } }>();
 
@@ -181,6 +181,16 @@ app.post('/tickets/:id/reply', async (c) => {
 // attacker would want to induce.
 
 app.use('/admin/*', async (c, next) => {
+  // CSRF: the Access assertion travels in a cookie, which a cross-site form
+  // POST would send for free. See isCrossSiteRequest.
+  if (
+    c.req.method !== 'GET' &&
+    c.req.method !== 'HEAD' &&
+    isCrossSiteRequest(c.req.url, c.req.header('origin'), c.req.header('cf-ray') !== undefined)
+  ) {
+    return c.text('Forbidden: cross-site request rejected.', 403);
+  }
+
   const teamDomain = c.env.ACCESS_TEAM_DOMAIN;
   const aud = c.env.ACCESS_AUD;
 
@@ -213,8 +223,8 @@ app.use('/admin/*', async (c, next) => {
 
 app.get('/admin', async (c) => {
   const agentEmail = c.get('agentEmail');
-  const statusParam = c.req.query('status') as TicketStatus | undefined;
-  const priorityParam = c.req.query('priority') as Priority | undefined;
+  const statusParam = parseTicketStatus(c.req.query('status'));
+  const priorityParam = parsePriority(c.req.query('priority'));
   const tickets = await listQueue(c.env.DB, { status: statusParam, priority: priorityParam });
   return c.html(adminQueuePage({ tickets, filterStatus: statusParam, filterPriority: priorityParam, agentEmail }));
 });
@@ -264,8 +274,8 @@ app.post('/admin/tickets/:id/status', async (c) => {
   if (!ticket) return c.notFound();
 
   const form = await c.req.formData();
-  const status = String(form.get('status') ?? ticket.status) as TicketStatus;
-  const priority = String(form.get('priority') ?? ticket.priority) as Priority;
+  const status = parseTicketStatus(String(form.get('status') ?? '')) ?? ticket.status;
+  const priority = parsePriority(String(form.get('priority') ?? '')) ?? ticket.priority;
 
   if (priority !== ticket.priority) {
     const { firstResponseDue, resolveDue } = slaDueDates(priority, new Date(ticket.created_at));

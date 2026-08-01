@@ -16,7 +16,11 @@ export function adminQueuePage(opts: {
   agentEmail: string;
 }): string {
   const priorities: Priority[] = ['P1', 'P2', 'P3', 'P4'];
-  const statusQuery = opts.filterStatus ? `status=${opts.filterStatus}` : '';
+  // Encoded even though index.ts now validates this against a fixed set:
+  // the raw interpolation here is what turned an unvalidated `?status=`
+  // into HTML injection, and a renderer should not depend on every caller
+  // upstream having got its parsing right.
+  const statusQuery = opts.filterStatus ? `status=${encodeURIComponent(opts.filterStatus)}` : '';
 
   const rows = opts.tickets
     .map((t) => {

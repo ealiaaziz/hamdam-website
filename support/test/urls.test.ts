@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { httpsRedirectTarget, isLocalHost, trackingUrl } from '../src/urls.js';
+import { httpsRedirectTarget, isCrossSiteRequest, isLocalHost, trackingUrl } from '../src/urls.js';
 
 describe('trackingUrl', () => {
   it('emits https for a production request', () => {
@@ -64,5 +64,37 @@ describe('isLocalHost', () => {
   it('does not treat a lookalike production host as local', () => {
     expect(isLocalHost('localhost.hamdam.com.au')).toBe(false);
     expect(isLocalHost('support.hamdam.com.au')).toBe(false);
+  });
+});
+
+describe('isCrossSiteRequest', () => {
+  const EDGE = true;
+  const LOCAL = false;
+  const URL_ = 'https://support.hamdam.com.au/admin/tickets/1/status';
+
+  it('allows a same-origin form post', () => {
+    expect(isCrossSiteRequest(URL_, 'https://support.hamdam.com.au', EDGE)).toBe(false);
+  });
+
+  it('rejects a post originating from another site', () => {
+    // The CSRF case: the Access cookie would ride along automatically.
+    expect(isCrossSiteRequest(URL_, 'https://evil.example', EDGE)).toBe(true);
+  });
+
+  it('rejects a post with no Origin at all', () => {
+    expect(isCrossSiteRequest(URL_, undefined, EDGE)).toBe(true);
+  });
+
+  it('rejects a malformed Origin rather than failing open', () => {
+    expect(isCrossSiteRequest(URL_, 'not a url', EDGE)).toBe(true);
+  });
+
+  it('is not enforced off-edge, so local dev forms still submit', () => {
+    expect(isCrossSiteRequest(URL_, 'http://localhost:8787', LOCAL)).toBe(false);
+    expect(isCrossSiteRequest(URL_, undefined, LOCAL)).toBe(false);
+  });
+
+  it('treats a lookalike host as cross-site', () => {
+    expect(isCrossSiteRequest(URL_, 'https://support.hamdam.com.au.evil.example', EDGE)).toBe(true);
   });
 });

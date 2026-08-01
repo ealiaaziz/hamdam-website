@@ -1,6 +1,21 @@
 import type { Impact, Priority, Urgency } from './itil.js';
 
 export type TicketStatus = 'new' | 'open' | 'pending' | 'resolved' | 'closed';
+
+export const TICKET_STATUSES: readonly TicketStatus[] = ['new', 'open', 'pending', 'resolved', 'closed'];
+
+/**
+ * Validate a status coming from a query string or form body.
+ *
+ * `as TicketStatus` on untrusted input is a lie to the type checker, not a
+ * check: it let `?status=<anything>` reach the page renderer, which
+ * interpolated it into an href and gave us HTML injection. Returns
+ * undefined for anything not in the set, so callers fall back to their
+ * default rather than echoing attacker input.
+ */
+export function parseTicketStatus(value: string | undefined | null): TicketStatus | undefined {
+  return value && (TICKET_STATUSES as readonly string[]).includes(value) ? (value as TicketStatus) : undefined;
+}
 export type Channel = 'portal' | 'email';
 export type CommentAuthorType = 'requester' | 'agent' | 'system';
 export type OutboundKind = 'ack' | 'agent_reply' | 'status_change';

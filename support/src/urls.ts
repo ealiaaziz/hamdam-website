@@ -29,6 +29,36 @@ export function trackingUrl(requestUrl: string, ticketId: number, token: string)
 }
 
 /**
+ * Whether a state-changing request looks cross-site, for CSRF rejection.
+ *
+ * The console authenticates from Cloudflare Access, and Access presents its
+ * assertion in the CF_Authorization cookie as well as a header. A cookie
+ * rides along on a cross-site form POST automatically, so without this
+ * check any page on the internet could submit a form to
+ * /admin/tickets/1/status and have it execute with an agent's identity.
+ * Access's own cookie carries SameSite, but that is a dashboard-configurable
+ * attribute, and "a setting is currently correct" is the assumption this
+ * codebase already got burned by once.
+ *
+ * Browsers have sent Origin on POST (including same-origin) for years, so a
+ * missing Origin on a real edge request is treated as untrusted rather than
+ * waved through.
+ *
+ * Enforced only for edge requests: `wrangler dev` rewrites Host to the
+ * custom domain while the browser still sends its localhost Origin, so
+ * comparing them locally would reject every local form submission.
+ */
+export function isCrossSiteRequest(requestUrl: string, origin: string | undefined, viaCloudflareEdge: boolean): boolean {
+  if (!viaCloudflareEdge) return false;
+  if (!origin) return true;
+  try {
+    return new URL(origin).host !== new URL(requestUrl).host;
+  } catch {
+    return true;
+  }
+}
+
+/**
  * The https equivalent of an incoming http request, for the redirect in
  * index.ts. Returns null when the request needs no redirect: already
  * https, or not served through Cloudflare's edge at all.

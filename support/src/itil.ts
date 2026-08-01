@@ -23,6 +23,18 @@ export type Impact = 'high' | 'medium' | 'low';
 export type Urgency = 'high' | 'medium' | 'low';
 export type Priority = 'P1' | 'P2' | 'P3' | 'P4';
 
+export const PRIORITIES: readonly Priority[] = ['P1', 'P2', 'P3', 'P4'];
+
+/**
+ * Validate a priority from a query string or form body. See
+ * parseTicketStatus in types.ts for why casting untrusted input is not a
+ * substitute: an unvalidated priority also reaches SLA_POLICY[priority],
+ * where a bogus key would throw on property access.
+ */
+export function parsePriority(value: string | undefined | null): Priority | undefined {
+  return value && (PRIORITIES as readonly string[]).includes(value) ? (value as Priority) : undefined;
+}
+
 export const PRIORITY_LABEL: Record<Priority, string> = {
   P1: 'P1 -- Critical',
   P2: 'P2 -- High',

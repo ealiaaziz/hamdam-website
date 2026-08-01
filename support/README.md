@@ -100,6 +100,33 @@ Two consequences worth knowing:
   `CF-Ray` header, which every real edge request carries, so it cannot open
   the console on the deployed site. `.dev.vars` is gitignored.
 
+## Known residual risks
+
+Fixed and covered by tests: Access identity forgery, plaintext tracking
+links, reflected HTML injection in the queue filters, and CSRF on the
+console's state-changing posts. What is *not* addressed in v1:
+
+* **The public ticket form is unauthenticated and unthrottled.** Anyone can
+  submit unlimited tickets, and each one queues an outbound email, so it
+  doubles as a way to flood the desk or bounce mail at a forged address.
+  There is no in-Worker rate limiting (that needs KV or a Durable Object).
+  The cheap fix is a Cloudflare **Rate Limiting rule** on `POST /tickets` in
+  the dashboard -- worth adding before publicising the URL.
+* **The routine reads attacker-authored text with tools attached.** Inbound
+  email is fed to a Claude session holding database and send-mail tools, so
+  a crafted message is a prompt-injection attempt by construction. The
+  prompt now opens with a standing rule that mail is data and never
+  instructions, and the SQL it may run is enumerated. That reduces the risk;
+  it does not eliminate it. Keep the D1 token scoped to D1 alone, and read
+  the routine's run summaries rather than assuming they are boring.
+* **Tracking tokens are compared with `!==`.** Not constant-time. With 122
+  bits of entropy from `crypto.randomUUID()` and network jitter swamping the
+  timing signal, this is theoretical, but it is a real difference from a
+  constant-time compare if the threat model ever changes.
+* **No audit log of agent actions.** Replies are attributed to the verified
+  Access email, but status and priority changes are not recorded anywhere
+  with an actor. Fine at one agent; add an audit table before adding a team.
+
 ## Local development
 
 ```
