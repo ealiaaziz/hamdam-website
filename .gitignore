@@ -24,3 +24,6 @@ pnpm-debug.log*
 
 # jetbrains setting folder
 .idea/
+
+# wrangler local dev vars (may hold secrets; .example is the committed template)
+.dev.vars

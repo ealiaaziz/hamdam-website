@@ -8,6 +8,7 @@ import { classifyFromMatrix, slaDueDates, type Impact, type Priority, type Urgen
 import { ackEmail, agentReplyEmail, resolvedEmail } from './render/email.js';
 import { generateTrackingToken, parseTicketPublicId, ticketPublicId } from './ids.js';
 import { httpsRedirectTarget, trackingUrl } from './urls.js';
+import { extractAccessToken, fetchAccessKeys, verifyAccessJwt } from './access.js';
 import {
   addComment,
   createTicket,
@@ -22,7 +23,7 @@ import {
 } from './db.js';
 import type { TicketStatus } from './types.js';
 
-const app = new Hono<{ Bindings: Env }>();
+const app = new Hono<{ Bindings: Env; Variables: { agentEmail: string } }>();
 
 // Redirect http to https before anything else runs, and never serve a
 // ticket over plaintext.
@@ -168,23 +169,50 @@ app.post('/tickets/:id/reply', async (c) => {
 
 // ---- admin console --------------------------------------------------------
 //
-// Authentication is Cloudflare Access at the edge (see support/README.md):
-// the route is bound to a Cloudflare Access application, so an
-// unauthenticated request never reaches this Worker at all. The header
-// check below is defence-in-depth, not the primary control -- if this
-// header is ever missing in production it means Access is misconfigured,
-// and refusing is the only safe response.
+// Authentication is Cloudflare Access, verified here rather than assumed.
+// The console proves identity from the signed Cf-Access-Jwt-Assertion, not
+// from Cf-Access-Authenticated-User-Email: that header is only meaningful
+// while an Access policy actually fronts this path, and is otherwise
+// client-settable. See src/access.ts for the full reasoning.
+//
+// Unconfigured means closed. If ACCESS_TEAM_DOMAIN/ACCESS_AUD are unset
+// there is no way to verify anything, so the console refuses rather than
+// falling back to a weaker check -- the fallback is exactly the state an
+// attacker would want to induce.
 
 app.use('/admin/*', async (c, next) => {
-  const agentEmail = c.req.header('Cf-Access-Authenticated-User-Email');
-  if (!agentEmail) {
-    return c.text('Forbidden: this route must be served behind Cloudflare Access.', 403);
+  const teamDomain = c.env.ACCESS_TEAM_DOMAIN;
+  const aud = c.env.ACCESS_AUD;
+
+  // Local development: `wrangler dev` never carries CF-Ray (only Cloudflare's
+  // edge sets it, and it overwrites any client value), so this cannot be
+  // reached in production no matter what a client sends. Still opt-in via a
+  // .dev.vars value that is never deployed.
+  if (!c.req.header('cf-ray') && c.env.DEV_ADMIN_EMAIL) {
+    c.set('agentEmail', c.env.DEV_ADMIN_EMAIL);
+    await next();
+    return;
   }
+
+  if (!teamDomain || !aud) {
+    return c.text(
+      'The agent console is not configured yet: set ACCESS_TEAM_DOMAIN and ACCESS_AUD, then redeploy. See support/README.md.',
+      503,
+    );
+  }
+
+  const token = extractAccessToken(c.req.header('cf-access-jwt-assertion'), c.req.header('cookie'));
+  if (!token) return c.text('Forbidden: no Cloudflare Access assertion on this request.', 403);
+
+  const identity = await verifyAccessJwt(token, { teamDomain, aud }, fetchAccessKeys);
+  if (!identity) return c.text('Forbidden: Cloudflare Access assertion failed verification.', 403);
+
+  c.set('agentEmail', identity.email);
   await next();
 });
 
 app.get('/admin', async (c) => {
-  const agentEmail = c.req.header('Cf-Access-Authenticated-User-Email') ?? 'unknown';
+  const agentEmail = c.get('agentEmail');
   const statusParam = c.req.query('status') as TicketStatus | undefined;
   const priorityParam = c.req.query('priority') as Priority | undefined;
   const tickets = await listQueue(c.env.DB, { status: statusParam, priority: priorityParam });
@@ -192,7 +220,7 @@ app.get('/admin', async (c) => {
 });
 
 app.get('/admin/tickets/:id', async (c) => {
-  const agentEmail = c.req.header('Cf-Access-Authenticated-User-Email') ?? 'unknown';
+  const agentEmail = c.get('agentEmail');
   const id = Number(c.req.param('id'));
   if (!Number.isInteger(id)) return c.notFound();
   const ticket = await getTicketById(c.env.DB, id);
@@ -202,7 +230,7 @@ app.get('/admin/tickets/:id', async (c) => {
 });
 
 app.post('/admin/tickets/:id/reply', async (c) => {
-  const agentEmail = c.req.header('Cf-Access-Authenticated-User-Email') ?? 'unknown';
+  const agentEmail = c.get('agentEmail');
   const id = Number(c.req.param('id'));
   if (!Number.isInteger(id)) return c.notFound();
   const ticket = await getTicketById(c.env.DB, id);

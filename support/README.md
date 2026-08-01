@@ -71,24 +71,53 @@ silently never fires and 301s your dev server to production. The redirect
 keys off the presence of Cloudflare's `CF-Ray` header instead, which the
 edge always sets and overwrites, and which wrangler dev never sends.
 
+## Agent console authentication
+
+`/admin/*` verifies the **signed** Cloudflare Access assertion
+(`Cf-Access-Jwt-Assertion`): RS256 signature checked against the team's
+published keys, plus `aud`, `iss` and expiry. It does not trust
+`Cf-Access-Authenticated-User-Email`.
+
+That distinction is the whole point. Cloudflare sets and overwrites the
+email header for paths an Access policy actually protects, but for any path
+it does not protect, a client-supplied
+`Cf-Access-Authenticated-User-Email: anyone@example.com` passes straight
+through to the Worker. Trusting it would leave the console open in exactly
+the situations you least want: between deploying and configuring Access,
+and any time the policy is later removed, renamed, or scoped to the wrong
+path. The queue holds requesters' names, addresses, and whatever they
+pasted into a ticket, so it should not be one dashboard mistake away from
+public.
+
+Two consequences worth knowing:
+
+* **Unconfigured means closed.** With `ACCESS_TEAM_DOMAIN`/`ACCESS_AUD`
+  unset the console returns 503, not a weaker check. A fallback is exactly
+  the state an attacker would try to induce.
+* **Local development needs an escape hatch**, since there's no Access in
+  front of `wrangler dev`. Copy `.dev.vars.example` to `.dev.vars` and set
+  `DEV_ADMIN_EMAIL`. That bypass is honoured only for requests with no
+  `CF-Ray` header, which every real edge request carries, so it cannot open
+  the console on the deployed site. `.dev.vars` is gitignored.
+
 ## Local development
 
 ```
+cp .dev.vars.example .dev.vars   # gives /admin a local identity
 npm install
 npm run db:migrate:local
 npx wrangler dev --local
 ```
 
-Then visit `http://localhost:8787/` for the portal, or hit `/admin` with a
-`Cf-Access-Authenticated-User-Email` header set (curl or a browser extension
--- there's no real Access locally, so this header is how you simulate it):
+Then visit `http://localhost:8787/` for the portal and `/admin` for the
+console, which uses the `DEV_ADMIN_EMAIL` identity from `.dev.vars`. Without
+that file `/admin` returns 503, which is the same fail-closed behaviour the
+deployed Worker has before Access is configured.
 
-```
-curl -H "Cf-Access-Authenticated-User-Email: you@hamdam.com.au" http://localhost:8787/admin
-```
-
-Run tests with `npm test` (vitest; `src/itil.ts` and the `scripts/*.mjs`
-CLI wrappers are covered).
+Run tests with `npm test` (vitest). Covered: the ITIL matrix and SLA policy,
+the URL/HTTPS rules, Access JWT verification (against a generated keypair,
+so the signature path is exercised for real rather than mocked), and the
+`scripts/*.mjs` CLI wrappers.
 
 ## First deploy, step by step
 
@@ -150,9 +179,24 @@ CLI wrappers are covered).
    * Identity provider: whatever you already use for Cloudflare Access
      (Google/GitHub/one-time PIN all work)
 
-   This is a dashboard-only step -- there's no Terraform/API call for it in
-   this repo, because it's a one-time policy decision, not something that
-   should change on every deploy.
+   Then tell the Worker which application to trust, or it will keep
+   returning 503 (by design -- see "Agent console authentication" above).
+   From the application's page copy its **AUD tag**, and from Zero Trust ->
+   Settings copy your **team domain**, then fill both into
+   `wrangler.jsonc`'s `vars`:
+   ```jsonc
+   "vars": {
+     "ACCESS_TEAM_DOMAIN": "yourteam.cloudflareaccess.com",
+     "ACCESS_AUD": "<the application's AUD tag>"
+   }
+   ```
+   Commit and push that (the pre-deploy check requires it), then deploy in
+   step 7. Neither value is a secret: the AUD identifies the application, it
+   does not authorise anything by itself.
+
+   The policy itself is a dashboard-only step -- there's no Terraform/API
+   call for it in this repo, because it's a one-time decision, not something
+   that should change on every deploy.
 
 7. **Deploy:**
    ```
@@ -208,6 +252,7 @@ CLI wrappers are covered).
   recorded (`outbound_emails.status = 'failed'`, with a reason), but nothing
   currently alerts on them -- check that table's contents periodically until
   this gets a dashboard view.
-* **No per-agent accounts beyond Cloudflare Access identity.** Whoever
-  Access lets in can act on any ticket; there's no role/permission system.
+* **No per-agent roles.** Identity is real (the Access JWT is verified, and
+  the verified email is what gets attributed on replies), but there are no
+  permissions on top of it: whoever Access lets in can act on any ticket.
   Fine for a small IT desk, worth revisiting if the team grows.

@@ -67,4 +67,19 @@ export interface OutboundEmailRow {
 
 export interface Env {
   DB: D1Database;
+  /**
+   * Cloudflare Access team domain, e.g. "hamdam.cloudflareaccess.com", and
+   * the Access application's AUD tag. Both are plain config, not secrets
+   * (the AUD identifies the app; it does not authorise anything on its
+   * own), so they live in wrangler.jsonc rather than in `wrangler secret`.
+   * The agent console refuses to serve while either is unset.
+   */
+  ACCESS_TEAM_DOMAIN?: string;
+  ACCESS_AUD?: string;
+  /**
+   * Local-development-only escape hatch, set in .dev.vars (never deployed).
+   * Only honoured for requests with no CF-Ray header, which production
+   * requests always carry, so this cannot open the console on the live site.
+   */
+  DEV_ADMIN_EMAIL?: string;
 }

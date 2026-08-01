@@ -7,6 +7,15 @@
   "routes": [
     { "pattern": "support.hamdam.com.au", "custom_domain": true }
   ],
+  // Cloudflare Access identity for /admin. Both come from the Access
+  // application you create in Zero Trust (README step 5): the team domain
+  // from Zero Trust -> Settings, the AUD tag from the application's own
+  // page. Neither is a secret. The console returns 503 until they are set,
+  // so filling these in and redeploying is what switches it on.
+  "vars": {
+    "ACCESS_TEAM_DOMAIN": "",
+    "ACCESS_AUD": ""
+  },
   // Created by `wrangler d1 create hamdam-support-db`; see support/README.md.
   // database_id is a placeholder until that command has been run once; wrangler
   // will refuse to deploy with the placeholder still in place.
