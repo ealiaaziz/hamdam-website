@@ -4,10 +4,9 @@ An assistant that reads a ticket, finds a known answer, and talks the
 requester through it -- asking for more detail when the picture is
 incomplete, and handing over to a person when it should.
 
-Status: **design + foundations built, sending not enabled.** The parts that
-decide things exist and are tested. The part that emails a stranger is
-deliberately not wired up until the question in "The decision you have to
-make" is answered.
+Status: **live on the portal, draft-first for email.** The portal answers
+requesters immediately. Email replies are drafted for a person to approve
+before they go out.
 
 ## What it is for
 
@@ -118,18 +117,45 @@ Enforced in the composer's instructions and reviewable in the draft:
 * quote another ticket
 * claim a human has looked at it when none has
 
-## Interaction is slow, and that shapes it
+## Two speeds, and the portal is the fast one
 
-The routine polls hourly. So one exchange -- assistant asks, requester
-answers, assistant responds -- takes **at least two hours**, and the turn
-limit means a conversation can run most of a day.
+The engine's matching and policy are pure bundled code with no model in
+them, so a portal request can be answered **inside the same HTTP response**.
+A requester on the tracking page sees a candidate answer immediately, while
+they are still looking at the screen.
 
-That is tolerable for "how do I change my display name" and useless for
-anything urgent, which is a second reason severity gates this. If genuinely
-interactive turnaround matters later, the fix is the same one already
-written up in `README.md`: move inbound mail off hourly polling. Worth
-knowing before expectations are set, not after a requester waits four hours
-for a second question.
+Only email is slow. The routine polls hourly, so an emailed exchange -- ask,
+answer, respond -- takes at least two hours, and the turn limit means a
+conversation can run most of a day. That is tolerable for "how do I change
+my reminder time" and useless for anything pressing.
+
+So the two channels get different treatment, for reasons that follow from
+the mechanism rather than from taste:
+
+| | Portal | Email |
+|---|---|---|
+| Speed | immediate | next hourly poll |
+| Suggestion shown | on the page | as a drafted reply |
+| Approval needed | no | yes, a person presses send |
+| Requester can object | one click, right there | only by replying |
+
+The portal needs no approval gate because nothing is sent. The requester
+asked, is present, sees the suggestion framed as a suggestion, and has a
+"this did not help" control with the same visual weight as the one that
+accepts it. A wrong article costs them ten seconds. A wrong *email* costs
+an apology, which is why that path keeps the human in it.
+
+The acknowledgement email now says this plainly -- that the tracking page
+answers straight away -- so requesters who want speed know where to get it.
+That is the honest way to sell it: not "our AI replies instantly", but
+"the page can answer now, the mailbox takes an hour".
+
+### Recording that it did not help
+
+The "this did not help" click is the most valuable signal the engine
+produces, and it is stored as a system comment on the ticket. Resolutions
+tell you the desk is working; rejections tell you which article is wrong or
+missing, which is what turns into the next pull request.
 
 ## GitHub, concretely
 
@@ -174,7 +200,10 @@ deploy and can be flipped back as fast.
 | Generator into `src/data/kb.ts` | built |
 | Matcher with confidence scoring | built, tested |
 | Policy engine | built, tested |
-| Conversation state schema | built (migration 0003) |
-| Composer prompt | designed, not written |
-| Routine wiring | not started -- gated on the decision above |
-| Console draft review UI | not started |
+| Conversation state schema (0003) | built |
+| Draft status on outbound email (0004) | built |
+| **Portal suggestions, answered live** | **built, deployed** |
+| "This did not help" feedback capture | built |
+| Email drafting into the queue | not started |
+| Console draft review and approval | not started |
+| GitHub issue creation from a ticket | not started |

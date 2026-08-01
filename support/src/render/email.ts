@@ -32,6 +32,9 @@ ${opts.priority === 'P1' || opts.priority === 'P2' ? "Because you've flagged thi
 <p>You can track progress and reply any time here:<br>
 <a href="${opts.trackingUrl}" style="color:#D07B3F">${escapeHtml(opts.trackingUrl)}</a></p>
 <p>Or just reply to this email. Either way, it lands in the same place.</p>
+<p>One thing worth knowing: the tracking page answers straight away, so if
+we already have a fix written up for what you are seeing, you will get it
+there in seconds rather than waiting on this mailbox.</p>
 ${RULE}
 ${FOOTER}
 ${WRAP_CLOSE}`;

@@ -197,6 +197,15 @@ footer.meta {
   .grid-2 { grid-template-columns: 1fr; }
 }
 
+.suggest { border-left: 3px solid var(--saffron); background: #FEFBF5; margin-bottom: 1.25rem; }
+.suggest-lead { font-size: 0.85rem; color: var(--text-soft); margin: 0 0 0.35rem; }
+.suggest-title { font-family: ui-serif, Georgia, serif; font-size: 1.1rem; margin: 0 0 0.75rem; }
+.suggest-body ol { margin: 0 0 0.75rem; padding-left: 1.25rem; }
+.suggest-body li { margin-bottom: 0.4rem; }
+.suggest-body p { margin: 0 0 0.75rem; }
+.suggest-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.5rem; }
+.suggest .hint { font-size: 0.78rem; color: var(--text-soft); margin: 0; }
+
 .sla-line { font-size: 0.85rem; color: var(--text-soft); display: flex; gap: 1.25rem; flex-wrap: wrap; }
 .sla-line strong { color: var(--text); }
 `;

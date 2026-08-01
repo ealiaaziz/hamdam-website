@@ -9,6 +9,9 @@ import { ackEmail, agentReplyEmail, requesterReplyNotification, resolvedEmail } 
 import { generateTrackingToken, parseTicketPublicId, ticketPublicId } from './ids.js';
 import { httpsRedirectTarget, isCrossSiteRequest, isLocalHost, trackingUrl } from './urls.js';
 import { extractAccessToken, fetchAccessKeys, verifyAccessJwt } from './access.js';
+import { matchArticles } from './kb.js';
+import { decideAgentAction } from './agentPolicy.js';
+import { suggestionBlock } from './render/agentSuggestion.js';
 import {
   addComment,
   createTicket,
@@ -150,7 +153,57 @@ app.get('/tickets/:id', async (c) => {
   if (!ticket || ticket.tracking_token !== token) return c.notFound();
 
   const comments = await listComments(c.env.DB, id);
-  return c.html(ticketStatusPage({ ticket, comments, justSubmitted: c.req.query('submitted') === '1' }));
+
+  // The fast path. Matching and policy are pure bundled code, so the answer
+  // is computed inside this request rather than waiting for the hourly
+  // routine. Only the email half of this desk is slow; the portal need not
+  // be, and a requester who is already here should not be told to check
+  // their inbox in an hour.
+  const conversationText = [ticket.subject, ...comments.filter((m) => m.author_type === 'requester').map((m) => m.body)].join('\n');
+  const decision = decideAgentAction({
+    priority: ticket.priority,
+    conversationText,
+    assistantTurns: 0,
+    askedQuestions: [],
+  });
+  const match = matchArticles(conversationText);
+  const suggestion =
+    (decision.action === 'send_solution' || decision.action === 'ask_clarifying') && match.best
+      ? suggestionBlock({
+          article: match.best.article,
+          ticketId: id,
+          token,
+          confidence: match.confidence === 'confident' ? 'confident' : 'partial',
+        })
+      : undefined;
+
+  return c.html(ticketStatusPage({ ticket, comments, justSubmitted: c.req.query('submitted') === '1', suggestion }));
+});
+
+// Feedback on a suggestion. Recorded either way: "this did not help" is the
+// signal that tells the desk an article is wrong or missing, and it is worth
+// more than the resolutions.
+app.post('/tickets/:id/feedback', async (c) => {
+  const id = Number(c.req.param('id'));
+  const token = String(c.req.query('token') ?? '');
+  if (!Number.isInteger(id) || !token) return c.notFound();
+
+  const ticket = await getTicketById(c.env.DB, id);
+  if (!ticket || ticket.tracking_token !== token) return c.notFound();
+
+  const form = await c.req.formData();
+  const outcome = String(form.get('outcome') ?? '');
+  const articleId = String(form.get('article') ?? '');
+
+  if (outcome === 'solved') {
+    await addComment(c.env.DB, id, 'system', null, `Requester reported that the suggested article "${articleId}" resolved this.`);
+    await updateTicketStatus(c.env.DB, id, 'resolved');
+  } else if (outcome === 'unresolved') {
+    await addComment(c.env.DB, id, 'system', null, `Requester reported that the suggested article "${articleId}" did not help. Needs a person.`);
+    if (ticket.status === 'new') await updateTicketStatus(c.env.DB, id, 'open');
+  }
+
+  return c.redirect(`/tickets/${id}?token=${encodeURIComponent(token)}`, 303);
 });
 
 app.post('/tickets/:id/reply', async (c) => {

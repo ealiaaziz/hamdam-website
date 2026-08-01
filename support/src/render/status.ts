@@ -3,7 +3,13 @@ import { escapeHtml, textToSafeHtml, ticketPublicId } from '../ids.js';
 import { SLA_POLICY } from '../itil.js';
 import type { CommentRow, TicketWithRequester } from '../types.js';
 
-export function ticketStatusPage(opts: { ticket: TicketWithRequester; comments: CommentRow[]; justSubmitted?: boolean }): string {
+export function ticketStatusPage(opts: {
+  ticket: TicketWithRequester;
+  comments: CommentRow[];
+  justSubmitted?: boolean;
+  /** Pre-rendered suggestion block, or empty when nothing matched. */
+  suggestion?: string;
+}): string {
   const { ticket, comments } = opts;
   const publicId = ticketPublicId(ticket.id);
   const policy = SLA_POLICY[ticket.priority];
@@ -24,6 +30,7 @@ export function ticketStatusPage(opts: { ticket: TicketWithRequester; comments: 
 ${opts.justSubmitted ? `<div class="notice notice--ok">Ticket created. A confirmation email is on its way to ${escapeHtml(ticket.requester_email)}.</div>` : ''}
 <h1>${escapeHtml(ticket.subject)}</h1>
 <p class="lede">${escapeHtml(publicId)} &middot; opened ${formatDateTime(ticket.created_at)}</p>
+${opts.suggestion ?? ''}
 <div class="card">
   <div style="display:flex;gap:0.5rem;align-items:center;margin-bottom:1rem">
     ${priorityBadge(ticket.priority)}
