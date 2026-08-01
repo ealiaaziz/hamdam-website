@@ -129,7 +129,10 @@ what's missing rather than guessing.
 0. Ensure the hamdam-website repo (ealiaaziz/hamdam-website) is available
    and up to date. If you don't already have it, use add_repo to attach it,
    then clone it; if you have a clone, `git pull` on its default branch.
-   cd into the `support/` directory for every command below.
+   cd into the `support/` directory for every command below, then run
+   `npm ci` there. That install is not optional: three of the scripts
+   below run under `npx tsx`, and without a local install npx refetches
+   tsx from the network on every run.
 
 1. Confirm CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID are set in your
    environment, and that wrangler.jsonc's d1_databases[0].database_id is
@@ -160,17 +163,17 @@ what's missing rather than guessing.
          it to 'open' if it was 'pending' or 'resolved', record the
          inbound_emails row. Do not send an auto-reply for this case.
       d. If not found (new ticket):
-         - Classify: node scripts/classify.mjs --subject "<subject>" --body "<plain-text body>"
+         - Classify: npx tsx scripts/classify.mjs --subject "<subject>" --body "<plain-text body>"
          - Upsert the requester by email (INSERT ... ON CONFLICT(email) DO
            UPDATE SET name = COALESCE(excluded.name, requesters.name),
            then SELECT it back for the id).
-         - Compute SLA dates: node scripts/sla-due.mjs --priority <P1..P4> --created-at <message receivedDateTime>
+         - Compute SLA dates: npx tsx scripts/sla-due.mjs --priority <P1..P4> --created-at <message receivedDateTime>
          - Generate a tracking token: node -e "console.log(crypto.randomUUID().replaceAll('-',''))"
          - Insert the ticket (channel 'email', source_conversation_id =
            conversationId, last_inbound_message_id = internetMessageId) and
            its first comment (author_type 'requester', body = the email's
            plain-text content).
-         - Render the ack: node scripts/render-email.mjs --kind ack
+         - Render the ack: npx tsx scripts/render-email.mjs --kind ack
            --ticket-id <id> --subject "<subject>" --priority <P1..P4>
            --tracking-url "https://support.hamdam.com.au/tickets/<id>?token=<token>"
            --requester-name "<sender display name>"
