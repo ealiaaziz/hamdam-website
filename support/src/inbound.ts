@@ -187,6 +187,15 @@ export function planInbound(
     taggedTicket: KnownThread | null;
     /** The ticket this Exchange conversation already belongs to, if any. */
     conversationTicket: KnownThread | null;
+    /**
+     * Whether Exchange authenticated the From address, per authResults.ts.
+     *
+     * Only consulted on the paths that would write to an existing ticket. It
+     * is deliberately not optional: a caller that has not established this
+     * has not established that the sender is who the address says, and the
+     * type is what stops that being an easy thing to forget.
+     */
+    senderAuthenticated: boolean;
   },
 ): InboundPlan {
   // The desk's own outgoing mail, and its own notifications to itself. Left
@@ -227,9 +236,25 @@ export function planInbound(
   // forwarded a thread than an attacker. It just does not get to append: the
   // message becomes its own ticket, which loses nothing and lands it in front
   // of a human.
+  //
+  // And the address has to have been authenticated, which is the half that
+  // was missing. Matching the sender against the requester reads as an
+  // identity check and is not one on its own: `From:` is a line of text the
+  // sending client writes. It is proof for a requester whose domain publishes
+  // an enforcing DMARC policy, because Exchange refuses the forgery before
+  // this code runs, and it is a bare claim for a requester whose domain does
+  // not. This file's own comments said inbound email is not an identity and
+  // then used it as one.
+  //
+  // So both, and in this order: Exchange must have authenticated the address,
+  // and the authenticated address must be the requester's. Failing either is
+  // not an error and loses nothing, for the same reason as below: the message
+  // becomes its own ticket, in front of a person.
+  const mayWriteAs = (owner: string): boolean => known.senderAuthenticated && sameAddress(owner, message.fromEmail);
+
   const tagged = ticketIdFromSubject(message.subject);
   if (tagged !== null && known.taggedTicket && known.taggedTicket.id === tagged) {
-    if (sameAddress(known.taggedTicket.requesterEmail, message.fromEmail)) {
+    if (mayWriteAs(known.taggedTicket.requesterEmail)) {
       return { action: 'append', ticketId: tagged, body };
     }
     return { action: 'create', body };
@@ -240,7 +265,7 @@ export function planInbound(
   // against the requester, because "harder to guess" is not the same as
   // "proves who you are", and there is no case where the right answer is to
   // write a stranger's words onto someone else's ticket.
-  if (known.conversationTicket && sameAddress(known.conversationTicket.requesterEmail, message.fromEmail)) {
+  if (known.conversationTicket && mayWriteAs(known.conversationTicket.requesterEmail)) {
     return { action: 'append', ticketId: known.conversationTicket.id, body };
   }
 

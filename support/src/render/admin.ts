@@ -10,11 +10,33 @@ const ADMIN_NAV = [
   { href: '/admin?status=closed', label: 'Closed' },
 ];
 
+/**
+ * Says out loud when the console's second lock is not configured.
+ *
+ * `ADMIN_EMAILS` unset means the Worker admits anyone Cloudflare Access
+ * admits, which is how this shipped and is not by itself a hole. It is a
+ * single point of control for the surface holding every requester's data,
+ * and the failure mode of a single point of control is that nobody notices
+ * it is the only one.
+ *
+ * On the page rather than only in a log, because the log needs a websocket to
+ * tail and nobody tails it. Whoever opens the console is exactly the person
+ * who can fix this, and they are looking right at it.
+ */
+function allowlistNotice(configured: boolean): string {
+  if (configured) return '';
+  return `<div class="notice notice--error">This console is protected by Cloudflare Access alone:
+  <code>ADMIN_EMAILS</code> is not set, so the Worker admits any account Access lets through.
+  Set it with <code>npx wrangler secret put ADMIN_EMAILS</code> and redeploy.</div>`;
+}
+
 export function adminQueuePage(opts: {
   tickets: TicketWithRequester[];
   filterStatus?: TicketStatus;
   filterPriority?: Priority;
   agentEmail: string;
+  /** Whether ADMIN_EMAILS is set. False means the console's second lock is off. */
+  allowlistConfigured: boolean;
 }): string {
   const priorities: Priority[] = ['P1', 'P2', 'P3', 'P4'];
   // Encoded even though index.ts now validates this against a fixed set:
@@ -38,6 +60,7 @@ export function adminQueuePage(opts: {
     .join('\n');
 
   const body = `
+${allowlistNotice(opts.allowlistConfigured)}
 <div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:0.5rem">
   <h1>Support queue</h1>
   <p class="lede" style="margin:0">Signed in as ${escapeHtml(opts.agentEmail)}</p>
@@ -99,7 +122,13 @@ function draftsBlock(drafts: DraftRow[], ticketId: number): string {
     .join('\n');
 }
 
-export function adminTicketPage(opts: { ticket: TicketWithRequester; comments: CommentRow[]; agentEmail: string; drafts?: DraftRow[] }): string {
+export function adminTicketPage(opts: {
+  ticket: TicketWithRequester;
+  comments: CommentRow[];
+  agentEmail: string;
+  drafts?: DraftRow[];
+  allowlistConfigured: boolean;
+}): string {
   const { ticket, comments } = opts;
   const publicId = ticketPublicId(ticket.id);
   const policy = SLA_POLICY[ticket.priority];
@@ -120,6 +149,7 @@ export function adminTicketPage(opts: { ticket: TicketWithRequester; comments: C
   const priorityOptions: Priority[] = ['P1', 'P2', 'P3', 'P4'];
 
   const body = `
+${allowlistNotice(opts.allowlistConfigured)}
 <p class="lede"><a href="/admin">&larr; Queue</a></p>
 <h1>${escapeHtml(ticket.subject)}</h1>
 <p class="lede">${publicId} &middot; ${escapeHtml(ticket.requester_name ?? ticket.requester_email)} &lt;${escapeHtml(ticket.requester_email)}&gt;

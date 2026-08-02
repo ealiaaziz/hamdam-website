@@ -1,9 +1,11 @@
 import type { Env } from './types.js';
 import { classifyTicket, slaDueDates } from './itil.js';
 import { generateTrackingToken } from './ids.js';
-import { fetchInbox, markRead, sendMail, canSendDirectly, SENDER, type InboundMessage } from './mailer.js';
-import { cleanSubject, planInbound, ticketIdFromSubject, type KnownThread } from './inbound.js';
-import { consumeRateLimit } from './rateLimit.js';
+import { fetchInbox, fetchMessageHeaders, markRead, sendMail, canSendDirectly, SENDER, type InboundMessage } from './mailer.js';
+import { cleanSubject, planInbound, sameAddress, ticketIdFromSubject, type KnownThread } from './inbound.js';
+import { consumeRateLimit, mayEmailRecipient, meteringSubject } from './rateLimit.js';
+import { senderIsAuthenticated } from './authResults.js';
+import { escalationRecipients } from './escalation.js';
 import { detectLocale, strings } from './i18n.js';
 import { composeAssistantReplyLive, ASSISTANT_NAME } from './assistantReply.js';
 import { requestedClosure } from './agentPolicy.js';
@@ -68,6 +70,17 @@ function dailyCallLimit(env: Env): number {
 /** Queue a row, then try to deliver it now. Same contract as the portal's. */
 async function queueAndSend(env: Env, email: NewOutboundEmail): Promise<void> {
   const id = await queueOutboundEmail(env.DB, email);
+
+  // How much mail one address may receive from this desk, counted here
+  // because here is the one place every path passes through. The row is
+  // still written and still visible in the console: what stops is delivery,
+  // and it stops with a reason attached rather than disappearing.
+  const allowance = await mayEmailRecipient(env.DB, email.toEmail, escalationRecipients(env));
+  if (!allowance.allowed) {
+    await markOutboundFailed(env.DB, id, `recipient hourly limit reached (${allowance.count})`);
+    return;
+  }
+
   const result = await sendMail(env, { toEmail: email.toEmail, subject: email.subject, bodyHtml: email.bodyHtml });
   if (result.sent) await markOutboundSent(env.DB, id);
   else await markOutboundFailed(env.DB, id, result.reason);
@@ -172,10 +185,30 @@ async function handleMessage(env: Env, message: InboundMessage): Promise<'create
     knownThread(env, await ticketIdForConversation(env.DB, message.conversationId)),
   ]);
 
+  // Authentication costs a Graph call, so it is only paid where it changes
+  // the answer: when some existing thread would otherwise accept this
+  // message. Everything else opens a new ticket, where the From address is
+  // recorded rather than believed and proving it establishes nothing.
+  const claimsAThread = [taggedTicket, conversationTicket].some(
+    (thread) => thread && sameAddress(thread.requesterEmail, message.fromEmail),
+  );
+  let senderAuthenticated = false;
+  if (claimsAThread) {
+    const verdict = senderIsAuthenticated(await fetchMessageHeaders(env, message.id), message.fromEmail);
+    senderAuthenticated = verdict.authenticated;
+    if (!verdict.authenticated) {
+      console.warn(`inbound ${message.internetMessageId}: not appending, sender unauthenticated (${verdict.reason})`);
+    }
+  }
+
   const plan = planInbound(message, {
-    alreadyProcessed: await wasProcessed(env.DB, message.internetMessageId),
+    // Scoped to this sender. The id is the sender's own Message-ID, so an
+    // unscoped ledger lets anyone insert a row under an id somebody else
+    // will later use and have that message silently skipped.
+    alreadyProcessed: await wasProcessed(env.DB, message.internetMessageId, message.fromEmail),
     taggedTicket,
     conversationTicket,
+    senderAuthenticated,
   });
 
   if (plan.action === 'skip') {
@@ -232,7 +265,7 @@ async function handleMessage(env: Env, message: InboundMessage): Promise<'create
  * sender can turn into volume.
  */
 async function automatedRepliesAllowed(env: Env, fromEmail: string): Promise<boolean> {
-  const outcome = await consumeRateLimit(env.DB, 'inbound_sender', fromEmail.trim().toLowerCase());
+  const outcome = await consumeRateLimit(env.DB, 'inbound_sender', meteringSubject(fromEmail));
   return outcome.allowed;
 }
 

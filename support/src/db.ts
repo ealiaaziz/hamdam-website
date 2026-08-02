@@ -460,10 +460,26 @@ export async function claimModelCall(db: D1Database, limit = DEFAULT_DAILY_CALL_
 
 // ---- inbound ledger and checkpoint ---------------------------------------
 
-export async function wasProcessed(db: D1Database, internetMessageId: string): Promise<boolean> {
+/**
+ * Whether this exact message, from this sender, has already been handled.
+ *
+ * Scoped to the sender, which the first version was not. The key is
+ * `internetMessageId`, and that is the sender's own `Message-ID` header: a
+ * value the sender chooses. An unscoped ledger therefore lets anyone write a
+ * row under an id and have a later message carrying that id skipped without
+ * a trace, which turns a dedupe table into a suppression primitive.
+ *
+ * Exchange's ids are not predictable enough to make that a practical attack
+ * today. It is still an attacker-controlled primary key doing an integrity
+ * job, and pairing it with the address is free.
+ *
+ * The dedupe this exists for is unaffected: a retried run re-reads the same
+ * message from the same sender and still matches.
+ */
+export async function wasProcessed(db: D1Database, internetMessageId: string, fromEmail: string): Promise<boolean> {
   const row = await db
-    .prepare('SELECT 1 AS hit FROM inbound_emails WHERE internet_message_id = ?1')
-    .bind(internetMessageId)
+    .prepare('SELECT 1 AS hit FROM inbound_emails WHERE internet_message_id = ?1 AND lower(trim(coalesce(raw_from, ""))) = ?2')
+    .bind(internetMessageId, fromEmail.trim().toLowerCase())
     .first<{ hit: number }>();
   return Boolean(row);
 }

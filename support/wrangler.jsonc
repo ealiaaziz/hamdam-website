@@ -4,6 +4,25 @@
   "compatibility_date": "2026-07-01",
   "compatibility_flags": ["nodejs_compat"],
   "workers_dev": false,
+  // No workers.dev hostname, and no version preview URLs either.
+  //
+  // Both were already off on the deployed Worker and both are pinned here so
+  // that stays true by configuration rather than by nobody having flipped
+  // them. Either one would publish this desk on a *.workers.dev address,
+  // where the WAF rule does not match, because it is scoped to
+  // support.hamdam.com.au, and where the Cloudflare Access application does
+  // not apply, because it is scoped to that hostname's /admin. The Worker's
+  // own country check and JWT verification would still hold, which is the
+  // entire reason they exist in code, and defence in depth quietly reduced
+  // to defence is not a state to leave configurable by accident.
+  "preview_urls": false,
+  // Logs, because the audit's lowest score was for not being able to tell.
+  // Every finding so far was found by somebody deliberately looking; nothing
+  // in the system would have raised its hand. Sampling stays at 1: this is a
+  // desk that handles a few hundred requests a day, and the cheap thing to
+  // get wrong is discovering a sampled-out log line was the one that
+  // mattered.
+  "observability": { "enabled": true, "head_sampling_rate": 1 },
   "routes": [
     { "pattern": "support.hamdam.com.au", "custom_domain": true },
     // The MTA-STS policy host. RFC 8461 fixes the name as mta-sts.<domain>

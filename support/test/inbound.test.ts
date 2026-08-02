@@ -22,10 +22,14 @@ const message = (over: Partial<InboundMessage> = {}): InboundMessage => ({
 // replying on their own ticket rather than a stranger reaching into one.
 const OWNER = 'someone@example.com';
 
+// Authenticated by default, so that every pre-existing test still asks the
+// question it was written to ask. The tests that care about authentication
+// say so explicitly, below.
 const known = (over: Partial<Parameters<typeof planInbound>[1]> = {}) => ({
   alreadyProcessed: false,
   taggedTicket: null,
   conversationTicket: null,
+  senderAuthenticated: true,
   ...over,
 });
 
@@ -342,5 +346,53 @@ describe('automated senders that are not at the start of the address', () => {
   it('only reads the local part, so a domain cannot make a person a robot', async () => {
     const { isAutomatedMail } = await import('../src/inbound.js');
     expect(isAutomatedMail('sima@noreply-hosting.com', 'Help please')).toBe(false);
+  });
+});
+
+// The other half of the ownership rule, added after an audit pointed out that
+// the first half was resting on nothing.
+//
+// Matching the sender against the requester reads as an identity check. It is
+// one only when something has authenticated the address, and until now nothing
+// had: `From:` is a line of text the sending client writes. For a requester
+// whose domain publishes an enforcing DMARC policy, Exchange refuses the
+// forgery before this code runs and the match is proof. For a requester whose
+// domain does not, it was a claim being treated as proof.
+describe('planInbound and an unauthenticated sender', () => {
+  it('will not write onto a ticket on the strength of an unverified From', () => {
+    const plan = planInbound(
+      message({ subject: 'RE: [HAM-9] Verse will not load' }),
+      known({ taggedTicket: { id: 9, requesterEmail: OWNER }, senderAuthenticated: false }),
+    );
+    // Not an error and nothing lost: it becomes its own ticket, in front of a
+    // person, exactly as a tag from a non-owner already did.
+    expect(plan).toMatchObject({ action: 'create' });
+  });
+
+  it('applies the same rule to the conversation id path', () => {
+    // The conversation id is harder to guess than a ticket tag and is still
+    // not proof of who is sending.
+    const plan = planInbound(
+      message(),
+      known({ conversationTicket: { id: 4, requesterEmail: OWNER }, senderAuthenticated: false }),
+    );
+    expect(plan).toMatchObject({ action: 'create' });
+  });
+
+  it('still appends when the address was authenticated and matches', () => {
+    const plan = planInbound(
+      message({ subject: 'RE: [HAM-9] thing' }),
+      known({ taggedTicket: { id: 9, requesterEmail: OWNER }, senderAuthenticated: true }),
+    );
+    expect(plan).toMatchObject({ action: 'append', ticketId: 9 });
+  });
+
+  it('needs both, not either', () => {
+    // An authenticated sender who is not the requester still may not write.
+    const plan = planInbound(
+      message({ subject: 'RE: [HAM-9] thing', fromEmail: 'stranger@elsewhere.example' }),
+      known({ taggedTicket: { id: 9, requesterEmail: OWNER }, senderAuthenticated: true }),
+    );
+    expect(plan).toMatchObject({ action: 'create' });
   });
 });

@@ -126,6 +126,13 @@ export interface Env {
    */
   ESCALATION_RECIPIENTS?: string;
   /**
+   * Comma-separated addresses allowed into the console, checked in the Worker
+   * as well as by Cloudflare Access. A secret, not a var: wrangler.jsonc is
+   * public and this is a list of accounts worth phishing. Unset means the
+   * second lock is off and the console says so. See adminAccess.ts.
+   */
+  ADMIN_EMAILS?: string;
+  /**
    * Microsoft Graph app-only credentials, so the Worker can send mail as
    * developer@hamdam.com.au the moment there is something to send, instead
    * of leaving it for the hourly Routine.

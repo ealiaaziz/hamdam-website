@@ -58,10 +58,44 @@ export function isValidEmail(value: string): boolean {
  */
 const CONTROL_CHARS = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g;
 
-/** Trim, strip control characters, and cap. Used for multi-line fields. */
+/**
+ * The invisible characters, which on this desk are not a theoretical problem.
+ *
+ * U+202E RIGHT-TO-LEFT OVERRIDE and its relatives reorder the text after them
+ * without appearing themselves. A subject line can therefore be stored as one
+ * string and displayed as a different one, and the display is what a person
+ * reads when deciding what a ticket is. The console shows it, the escalation
+ * email shows it, and the escalation email is specifically the message that
+ * reaches whoever is about to act on it.
+ *
+ * Escaping does not help. These are not markup, they are text, and
+ * `escapeHtml` correctly passes them through untouched. The only fix is to
+ * not store them.
+ *
+ * That this desk renders right-to-left for half its users is the reason to be
+ * careful here, not a reason to allow them. Persian, Arabic and Hebrew
+ * letters carry their own direction: `dir="rtl"` on the page plus the Unicode
+ * bidirectional algorithm lay real Persian out correctly with no explicit
+ * override anywhere in the text. The characters removed here are the ones
+ * whose whole function is to *contradict* what the letters say, which is
+ * something prose never needs and a spoof always does.
+ *
+ * The zero-width set goes for a related reason: they make two strings that
+ * render identically compare differently, which is how one ticket reference
+ * or address passes for another.
+ *
+ * U+200C, the zero-width non-joiner, is deliberately kept. In Persian it is
+ * not decoration, it is orthography, and words are misspelled without it.
+ * Removing it would corrupt ordinary Persian text to defend against a spoof
+ * it cannot perform.
+ */
+const INVISIBLE_CHARS = /[\u200B\u200D\u200E\u200F\u202A-\u202E\u2066-\u2069\u2060\uFEFF]/g;
+
+/** Trim, strip control and invisible characters, and cap. Multi-line fields. */
 export function cleanText(value: unknown, max: number): string {
   return String(value ?? '')
     .replace(CONTROL_CHARS, '')
+    .replace(INVISIBLE_CHARS, '')
     .trim()
     .slice(0, max);
 }
@@ -78,6 +112,7 @@ export function cleanText(value: unknown, max: number): string {
 export function cleanLine(value: unknown, max: number): string {
   return String(value ?? '')
     .replace(CONTROL_CHARS, '')
+    .replace(INVISIBLE_CHARS, '')
     .replace(/[\r\n]+/g, ' ')
     .replace(/\s{2,}/g, ' ')
     .trim()

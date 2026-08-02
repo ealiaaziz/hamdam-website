@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { callerKey, consumeRateLimit, RATE_LIMITS } from '../src/rateLimit.js';
+import { RATE_LIMITS, callerKey, consumeRateLimit, meteringSubject, networkKey } from '../src/rateLimit.js';
 
 // The counter, against a stand-in for D1 that implements exactly the one
 // statement it runs. Not a mock that agrees with whatever was asked: it keeps
@@ -109,5 +109,78 @@ describe('callerKey', () => {
   it('does not limit under wrangler dev, which supplies a loopback address but no CF-Ray', () => {
     expect(callerKey(new Headers({ 'cf-connecting-ip': '127.0.0.1' }))).toBeNull();
     expect(callerKey(new Headers())).toBeNull();
+  });
+});
+
+// ---- key normalisation ---------------------------------------------------
+//
+// The audit's finding: the counters were correct and the keys were literal,
+// so both ceilings could be walked past by anyone who knew how their own email
+// provider or their own ISP works. A limit that is trivial to sidestep is
+// worse than no limit, because it appears on a diagram as a control.
+
+describe('meteringSubject', () => {
+  it('folds plus-tagging, which is how one inbox became unlimited buckets', () => {
+    // victim+1@, victim+2@, victim+3@ all arrive in one inbox. Counted
+    // literally, the per-recipient ceiling was per *spelling*, and there is
+    // an unlimited supply of spellings.
+    expect(meteringSubject('victim+1@example.com')).toBe('victim@example.com');
+    expect(meteringSubject('victim+anything.at.all@example.com')).toBe('victim@example.com');
+    expect(meteringSubject('victim@example.com')).toBe('victim@example.com');
+  });
+
+  it('folds dots only where the provider actually ignores them', () => {
+    // Google treats them as noise. Nobody else is guaranteed to, and folding
+    // dots elsewhere would merge two people who are genuinely different.
+    expect(meteringSubject('first.last@gmail.com')).toBe('firstlast@gmail.com');
+    expect(meteringSubject('first.last@googlemail.com')).toBe('firstlast@googlemail.com');
+    expect(meteringSubject('first.last@example.com')).toBe('first.last@example.com');
+  });
+
+  it('is case and whitespace insensitive', () => {
+    expect(meteringSubject('  Victim+Tag@Example.COM ')).toBe('victim@example.com');
+  });
+
+  it('leaves a leading plus alone rather than producing an empty bucket', () => {
+    // '+tag@host' has no local part before the plus. Folding it to '@host'
+    // would put every such address into one shared bucket.
+    expect(meteringSubject('+tag@example.com')).toBe('+tag@example.com');
+  });
+
+  it('does not throw on something that is not an address', () => {
+    expect(meteringSubject('nonsense')).toBe('nonsense');
+    expect(meteringSubject('')).toBe('');
+  });
+});
+
+describe('networkKey', () => {
+  it('counts an IPv4 address whole', () => {
+    expect(networkKey('203.0.113.7')).toBe('203.0.113.7');
+  });
+
+  it('folds IPv6 to the /64 its owner was delegated', () => {
+    // The finding. A residential IPv6 connection is handed a /64, which is
+    // eighteen quintillion source addresses one person can pick from at will.
+    // Counting the full address there counted nothing at all.
+    const first = networkKey('2001:db8:abcd:1234:1:2:3:4');
+    const second = networkKey('2001:db8:abcd:1234:ffff:ffff:ffff:ffff');
+    expect(first).toBe(second);
+    expect(first).toBe('2001:db8:abcd:1234::/64');
+  });
+
+  it('keeps genuinely different networks apart', () => {
+    expect(networkKey('2001:db8:abcd:1234::1')).not.toBe(networkKey('2001:db8:abcd:1235::1'));
+  });
+
+  it('handles compressed and zero-padded forms as the same network', () => {
+    expect(networkKey('2001:0db8:0000:0001::5')).toBe(networkKey('2001:db8:0:1:aaaa::9'));
+  });
+
+  it('folds a leading :: without inventing groups', () => {
+    expect(networkKey('::1')).toBe('0:0:0:0::/64');
+  });
+
+  it('ignores a zone index', () => {
+    expect(networkKey('fe80::1%eth0')).toBe(networkKey('fe80::2'));
   });
 });

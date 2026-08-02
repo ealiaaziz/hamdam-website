@@ -9,7 +9,7 @@ import { ackEmail, agentReplyEmail, conversationSummaryEmail, requesterReplyNoti
 import { assistantWrittenEmail } from './render/agentEmail.js';
 import { generateTrackingToken, parseTicketPublicId, stripHtml, ticketPublicId, tokensMatch } from './ids.js';
 import { cleanLine, cleanText, isOversizedBody, isValidEmail, MAX_BODY_CHARS, MAX_NAME_CHARS, MAX_SUBJECT_CHARS } from './validation.js';
-import { callerKey, consumeRateLimit, purgeRateLimits, type RateLimitBucket } from './rateLimit.js';
+import { callerKey, consumeRateLimit, mayEmailRecipient, purgeRateLimits, type RateLimitBucket } from './rateLimit.js';
 import { httpsRedirectTarget, isCrossSiteRequest, isLocalHost, localePrefixTarget, trackingUrl } from './urls.js';
 import { extractAccessToken, fetchAccessKeys, verifyAccessJwt } from './access.js';
 import { KB_ARTICLES } from './kb.js';
@@ -17,9 +17,11 @@ import { suggestionBlock } from './render/agentSuggestion.js';
 import { canSendDirectly, sendMail } from './mailer.js';
 import { isAllowedCountry, parseAllowedCountries } from './geo.js';
 import { mtaStsResponseFor } from './mtaSts.js';
+import { viaCloudflareEdge } from './edge.js';
+import { adminAllowlist, isAllowedAgent } from './adminAccess.js';
 import { detectLocale, localePath, parseLocale, type Locale } from './i18n.js';
 import { ingestInbox } from './ingest.js';
-import { notifyEscalation } from './escalation.js';
+import { escalationRecipients, notifyEscalation } from './escalation.js';
 import { requestedClosure } from './agentPolicy.js';
 
 import { composeAssistantReplyLive, ASSISTANT_NAME } from './assistantReply.js';
@@ -143,6 +145,16 @@ async function queueAndSend(c: DeskContext, email: NewOutboundEmail): Promise<nu
   if (!canSendDirectly(c.env)) return id;
 
   const deliver = async () => {
+    // The ceiling on how much mail one address can be made to receive,
+    // checked at the act of sending because that is the single point every
+    // path crosses. The portal metered its own submissions and the mailbox
+    // metered its own senders, and neither of them was counting the thing
+    // that matters to a stranger, which is their own inbox.
+    const allowance = await mayEmailRecipient(c.env.DB, email.toEmail, escalationRecipients(c.env));
+    if (!allowance.allowed) {
+      await markOutboundFailed(c.env.DB, id, `recipient hourly limit reached (${allowance.count})`);
+      return;
+    }
     const result = await sendMail(c.env, { toEmail: email.toEmail, subject: email.subject, bodyHtml: email.bodyHtml });
     if (result.sent) await markOutboundSent(c.env.DB, id);
     else await markOutboundFailed(c.env.DB, id, result.reason);
@@ -209,7 +221,7 @@ const app = new Hono<DeskEnv>();
 // `wrangler dev` reports the custom domain as the Host, so a hostname check
 // would 301 local development to production. See httpsRedirectTarget.
 app.use('*', async (c, next) => {
-  const target = httpsRedirectTarget(c.req.url, c.req.header('cf-ray') !== undefined);
+  const target = httpsRedirectTarget(c.req.url, viaCloudflareEdge(c.req.raw.headers));
   if (target) return c.redirect(target, 301);
 
   await next();
@@ -280,7 +292,7 @@ app.use('*', async (c, next) => {
 // the same signal the HTTPS redirect uses, and it cannot be forged in
 // production because Cloudflare overwrites CF-Ray at the edge.
 app.use('*', async (c, next) => {
-  if (!c.req.header('cf-ray')) return next();
+  if (!viaCloudflareEdge(c.req.raw.headers)) return next();
 
   // `request.cf.country` only. The CF-IPCountry header used to be a fallback
   // here, and it is the wrong shape for one: Cloudflare adds it only when the
@@ -681,7 +693,7 @@ app.use('/admin/*', async (c, next) => {
   if (
     c.req.method !== 'GET' &&
     c.req.method !== 'HEAD' &&
-    isCrossSiteRequest(c.req.url, c.req.header('origin'), c.req.header('cf-ray') !== undefined)
+    isCrossSiteRequest(c.req.url, c.req.header('origin'), viaCloudflareEdge(c.req.raw.headers))
   ) {
     return c.text('Forbidden: cross-site request rejected.', 403);
   }
@@ -693,7 +705,7 @@ app.use('/admin/*', async (c, next) => {
   // edge sets it, and it overwrites any client value), so this cannot be
   // reached in production no matter what a client sends. Still opt-in via a
   // .dev.vars value that is never deployed.
-  if (!c.req.header('cf-ray') && c.env.DEV_ADMIN_EMAIL) {
+  if (!viaCloudflareEdge(c.req.raw.headers) && c.env.DEV_ADMIN_EMAIL) {
     c.set('agentEmail', c.env.DEV_ADMIN_EMAIL);
     await next();
     return;
@@ -712,6 +724,29 @@ app.use('/admin/*', async (c, next) => {
   const identity = await verifyAccessJwt(token, { teamDomain, aud }, fetchAccessKeys);
   if (!identity) return c.text('Forbidden: Cloudflare Access assertion failed verification.', 403);
 
+  // The second lock, and the one that was missing.
+  //
+  // Everything above proves the assertion is genuine and was issued for this
+  // application. It says nothing about whether the person it names should be
+  // reading a support queue: that lived entirely in one Cloudflare Access
+  // policy, so widening that policy widened this console silently and from
+  // somewhere else.
+  //
+  // Which is the pattern this codebase argues for everywhere else and had not
+  // applied here. The country check is a WAF rule *and* geo.ts. The console
+  // is the Access proxy *and* the JWT verification above. Both exist because
+  // a control configured in a dashboard is one click from being different and
+  // the change leaves no trace in the repository.
+  //
+  // Unset means no second lock, which is the state this shipped in, so it
+  // cannot be a hard failure without locking the only two people out of their
+  // own console on deploy. It is a refusal to be silent instead: the console
+  // says so on every page and the reason is recorded.
+  if (!isAllowedAgent(identity.email, c.env)) {
+    console.warn(`admin refused: ${identity.email} is not in ADMIN_EMAILS`);
+    return c.text('Forbidden: this account is not on the console allowlist.', 403);
+  }
+
   c.set('agentEmail', identity.email);
   await next();
 });
@@ -721,7 +756,15 @@ app.get('/admin', async (c) => {
   const statusParam = parseTicketStatus(c.req.query('status'));
   const priorityParam = parsePriority(c.req.query('priority'));
   const tickets = await listQueue(c.env.DB, { status: statusParam, priority: priorityParam });
-  return c.html(adminQueuePage({ tickets, filterStatus: statusParam, filterPriority: priorityParam, agentEmail }));
+  return c.html(
+    adminQueuePage({
+      tickets,
+      filterStatus: statusParam,
+      filterPriority: priorityParam,
+      agentEmail,
+      allowlistConfigured: adminAllowlist(c.env).length > 0,
+    }),
+  );
 });
 
 app.get('/admin/tickets/:id', async (c) => {
@@ -732,7 +775,9 @@ app.get('/admin/tickets/:id', async (c) => {
   if (!ticket) return c.notFound();
   const comments = await listComments(c.env.DB, id);
   const drafts = await listDrafts(c.env.DB, id);
-  return c.html(adminTicketPage({ ticket, comments, agentEmail, drafts }));
+  return c.html(
+    adminTicketPage({ ticket, comments, agentEmail, drafts, allowlistConfigured: adminAllowlist(c.env).length > 0 }),
+  );
 });
 
 app.post('/admin/tickets/:id/reply', async (c) => {
