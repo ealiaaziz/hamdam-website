@@ -76,6 +76,7 @@ export interface Strings {
   urgencyHigh: string;
   submitButton: string;
   errorAllFields: string;
+  errorEmail: string;
   trackLink: string;
 
   trackTitle: string;
@@ -154,6 +155,7 @@ const EN: Strings = {
   urgencyHigh: 'I am stuck, I cannot work',
   submitButton: 'Submit ticket',
   errorAllFields: 'Please fill in every field.',
+  errorEmail: 'That email address does not look right. We send your ticket and every reply to it, so it has to be one that works.',
   trackLink: 'Already have a ticket?',
 
   trackTitle: 'Find your ticket',
@@ -237,6 +239,7 @@ const FA: Strings = {
   urgencyHigh: 'کارم کاملاً متوقف شده است',
   submitButton: 'ثبت درخواست',
   errorAllFields: 'لطفاً همه‌ی بخش‌ها را پر کنید.',
+  errorEmail: 'نشانی ایمیل درست به نظر نمی‌رسد. درخواست و همه‌ی پاسخ‌ها به همین نشانی فرستاده می‌شود.',
   trackLink: 'از قبل درخواستی دارید؟',
 
   trackTitle: 'پیگیری درخواست',

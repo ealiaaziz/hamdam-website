@@ -7,7 +7,9 @@ import { adminQueuePage, adminTicketPage } from './render/admin.js';
 import { classifyTicket, parsePriority, slaDueDates, type Impact, type Urgency } from './itil.js';
 import { ackEmail, agentReplyEmail, conversationSummaryEmail, requesterReplyNotification, resolvedEmail } from './render/email.js';
 import { assistantWrittenEmail } from './render/agentEmail.js';
-import { generateTrackingToken, parseTicketPublicId, stripHtml, ticketPublicId } from './ids.js';
+import { generateTrackingToken, parseTicketPublicId, stripHtml, ticketPublicId, tokensMatch } from './ids.js';
+import { cleanLine, cleanText, isOversizedBody, isValidEmail, MAX_BODY_CHARS, MAX_NAME_CHARS, MAX_SUBJECT_CHARS } from './validation.js';
+import { callerKey, consumeRateLimit, purgeRateLimits, type RateLimitBucket } from './rateLimit.js';
 import { httpsRedirectTarget, isCrossSiteRequest, isLocalHost, trackingUrl } from './urls.js';
 import { extractAccessToken, fetchAccessKeys, verifyAccessJwt } from './access.js';
 import { KB_ARTICLES } from './kb.js';
@@ -152,6 +154,39 @@ async function queueAndSend(c: DeskContext, email: NewOutboundEmail): Promise<nu
   return id;
 }
 
+/**
+ * Counts this request against a bucket and, when it is over, renders the
+ * refusal. Returns null when the caller may proceed.
+ *
+ * Keyed on CF-Connecting-IP, which Cloudflare overwrites at the edge, so it
+ * cannot be spoofed the way an X-Forwarded-For could. Absent means local
+ * development and is not limited: the same signal already decides the HTTPS
+ * redirect and the country check, and there is no edge in front of
+ * `wrangler dev` to supply one.
+ */
+async function overRateLimit(c: DeskContext, bucket: RateLimitBucket, subject?: string): Promise<Response | null> {
+  // callerKey answers both questions at once: whether this is an edge request
+  // worth counting, and who to count it against. A null means local
+  // development, and that holds for the recipient buckets too, which is why
+  // it is consulted even when the subject is supplied.
+  const caller = callerKey(c.req.raw.headers);
+  if (!caller) return null;
+
+  const outcome = await consumeRateLimit(c.env.DB, bucket, subject ?? caller);
+  if (outcome.allowed) return null;
+
+  // Plain text and a Retry-After, not a styled page. The audience for this
+  // response is a script, and the one person who ever sees it by accident is
+  // better served by the email route than by a prettier wall. 429 rather than
+  // 403 because it is a "not now", and the difference matters to anyone
+  // debugging it later.
+  return c.text(
+    'Too many requests. The desk limits how often one caller can submit, to keep its mail deliverable. Email developer@hamdam.com.au and a ticket opens straight away.',
+    429,
+    { 'retry-after': String(outcome.retryAfterSeconds) },
+  );
+}
+
 const app = new Hono<DeskEnv>();
 
 // Redirect http to https before anything else runs, and never serve a
@@ -183,6 +218,22 @@ app.use('*', async (c, next) => {
   c.header('Referrer-Policy', 'strict-origin-when-cross-origin');
   c.header('Permissions-Policy', 'geolocation=(), camera=(), microphone=(), payment=()');
   c.header('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
+
+  // Nothing generated here is cacheable by anything in the middle.
+  //
+  // A ticket page carries a person's name, their email address and whatever
+  // they pasted into a description, and it is reached by a URL that has the
+  // only credential guarding it in the query string. Both halves of that make
+  // a stored copy dangerous: a shared cache keyed on the URL is keyed on the
+  // credential, and browser back-button restores put the thread on screen
+  // after the tab was handed to someone else.
+  //
+  // Set only where nothing has spoken already, so /static/app.css keeps the
+  // long cache lifetime it asks for. Defaulting the other way round would
+  // mean every new route was cacheable until someone remembered.
+  if (!c.res.headers.has('cache-control')) {
+    c.header('Cache-Control', 'private, no-store, max-age=0');
+  }
 });
 
 // Serve only where Hamdam is sold.
@@ -217,24 +268,42 @@ app.get('/static/app.css', (c) => c.text(APP_CSS, 200, { 'content-type': 'text/c
 app.get('/', (c) => c.html(submitFormPage({ locale: requestLocale(c) })));
 
 app.post('/tickets', async (c) => {
+  // Refused before the body is read, because the body is the cost.
+  if (isOversizedBody(c.req.header('content-length'))) return c.text('Request too large.', 413);
+
+  const limited = await overRateLimit(c, 'ticket_create_ip');
+  if (limited) return limited;
+
   const form = await c.req.formData();
-  const name = String(form.get('name') ?? '').trim();
-  const email = String(form.get('email') ?? '').trim();
-  const subject = String(form.get('subject') ?? '').trim();
-  const description = String(form.get('description') ?? '').trim();
+  // Trimmed, stripped of control characters and capped here rather than
+  // trusted from the form. `maxlength` is a courtesy to a browser and nothing
+  // at all to a script, and every one of these fields goes on to be stored,
+  // rendered, put in front of the model, and mailed.
+  const name = cleanLine(form.get('name'), MAX_NAME_CHARS);
+  const email = cleanLine(form.get('email'), 254);
+  const subject = cleanLine(form.get('subject'), MAX_SUBJECT_CHARS);
+  const description = cleanText(form.get('description'), MAX_BODY_CHARS);
   const impact = (String(form.get('impact') ?? 'medium') as Impact) || 'medium';
   const urgency = (String(form.get('urgency') ?? 'medium') as Urgency) || 'medium';
 
-  if (!name || !email || !subject || !description) {
-    return c.html(
-      submitFormPage({
-        error: strings(requestLocale(c)).errorAllFields,
-        values: { name, email, subject, description },
-        locale: requestLocale(c),
-      }),
+  const invalid = (error: string) =>
+    c.html(
+      submitFormPage({ error, values: { name, email, subject, description }, locale: requestLocale(c) }),
       400,
     );
-  }
+
+  if (!name || !email || !subject || !description) return invalid(strings(requestLocale(c)).errorAllFields);
+
+  // The address is where an email goes, not a label on a record. An
+  // unchecked one makes this form a way of having the desk's own mailbox
+  // deliver a stranger's subject line to a stranger's inbox.
+  if (!isValidEmail(email)) return invalid(strings(requestLocale(c)).errorEmail);
+
+  // Counted per recipient as well as per caller. A caller with a pool of
+  // addresses can defeat the IP limit; they cannot defeat both, and what
+  // needs bounding is how much mail one person can be sent.
+  const emailLimited = await overRateLimit(c, 'ticket_create_email', email.toLowerCase());
+  if (emailLimited) return emailLimited;
 
   const requester = await upsertRequester(c.env.DB, email, name);
   // The form's impact and urgency set the base rating; what the ticket is
@@ -342,7 +411,7 @@ app.get('/tickets/:id', async (c) => {
   if (!Number.isInteger(id) || !token) return c.notFound();
 
   const ticket = await getTicketById(c.env.DB, id);
-  if (!ticket || ticket.tracking_token !== token) return c.notFound();
+  if (!ticket || !tokensMatch(ticket.tracking_token, token)) return c.notFound();
 
   const comments = await listComments(c.env.DB, id);
 
@@ -376,11 +445,15 @@ app.post('/tickets/:id/feedback', async (c) => {
   if (!Number.isInteger(id) || !token) return c.notFound();
 
   const ticket = await getTicketById(c.env.DB, id);
-  if (!ticket || ticket.tracking_token !== token) return c.notFound();
+  if (!ticket || !tokensMatch(ticket.tracking_token, token)) return c.notFound();
 
   const form = await c.req.formData();
   const outcome = String(form.get('outcome') ?? '');
-  const articleId = String(form.get('article') ?? '');
+  // Only an article the desk actually publishes. Anything else was not on
+  // the page it came from, and taking it at face value writes attacker text
+  // into a system comment and grows the ticket's rejected list without bound.
+  const submitted = String(form.get('article') ?? '').trim();
+  const articleId = KB_ARTICLES.some((a) => a.id === submitted) ? submitted : '';
 
   if (outcome === 'solved') {
     await addComment(c.env.DB, id, 'system', null, `Requester reported that the suggested article "${articleId}" resolved this.`);
@@ -410,7 +483,13 @@ app.post('/tickets/:id/summary', async (c) => {
   if (!Number.isInteger(id) || !token) return c.notFound();
 
   const ticket = await getTicketById(c.env.DB, id);
-  if (!ticket || ticket.tracking_token !== token) return c.notFound();
+  if (!ticket || !tokensMatch(ticket.tracking_token, token)) return c.notFound();
+
+  // Rate limited after the token check, not before, so a caller cannot spend
+  // somebody else's allowance by guessing ticket numbers. This one sends an
+  // email on every press, which is why it is metered at all.
+  const limited = await overRateLimit(c, 'ticket_summary');
+  if (limited) return limited;
 
   const comments = await listComments(c.env.DB, id);
   const state = await getAgentState(c.env.DB, id);
@@ -425,12 +504,20 @@ app.post('/tickets/:id/reply', async (c) => {
   const id = Number(c.req.param('id'));
   const token = String(c.req.query('token') ?? '');
   if (!Number.isInteger(id) || !token) return c.notFound();
+  if (isOversizedBody(c.req.header('content-length'))) return c.text('Request too large.', 413);
 
   const ticket = await getTicketById(c.env.DB, id);
-  if (!ticket || ticket.tracking_token !== token) return c.notFound();
+  if (!ticket || !tokensMatch(ticket.tracking_token, token)) return c.notFound();
+
+  // After the token check, so guessing ticket numbers cannot burn a real
+  // requester's allowance. Loose, because the fast back-and-forth in the
+  // portal is the feature; it is here because every reply also mails the desk
+  // and spends a model call.
+  const limited = await overRateLimit(c, 'ticket_reply');
+  if (limited) return limited;
 
   const form = await c.req.formData();
-  const body = String(form.get('body') ?? '').trim();
+  const body = cleanText(form.get('body'), MAX_BODY_CHARS);
   if (body) {
     const commentId = await addComment(c.env.DB, id, 'requester', ticket.requester_name, body);
     if (ticket.status === 'pending' || ticket.status === 'resolved') {
@@ -619,7 +706,9 @@ app.post('/admin/tickets/:id/reply', async (c) => {
   if (!ticket) return c.notFound();
 
   const form = await c.req.formData();
-  const body = String(form.get('body') ?? '').trim();
+  // Capped like the requester's, though this side is authenticated: the cap
+  // is about what the email and the stored row can hold, not about trust.
+  const body = cleanText(form.get('body'), MAX_BODY_CHARS);
   if (body) {
     const commentId = await addComment(c.env.DB, id, 'agent', agentEmail, body);
     await markFirstResponse(c.env.DB, id);
@@ -814,7 +903,25 @@ const LOCALE_HEADER = 'x-hamdam-locale';
  */
 function withLocalePrefix(request: Request): Request {
   const url = new URL(request.url);
-  if (url.pathname !== '/fa' && !url.pathname.startsWith('/fa/')) return request;
+
+  // The path decides, and only the path. This header is an internal channel
+  // between this function and the handlers, so a client sending one of its
+  // own has to be cleared rather than merged with: otherwise
+  // `X-Hamdam-Locale: fa` on an English URL renders a Persian page, and the
+  // locale it sets is the locale the resulting ticket and every email on it
+  // are conducted in. Cosmetic today, and a header nobody can reach is one
+  // less thing to reason about tomorrow.
+  if (url.pathname !== '/fa' && !url.pathname.startsWith('/fa/')) {
+    if (!request.headers.has(LOCALE_HEADER)) return request;
+    const stripped = new Headers(request.headers);
+    stripped.delete(LOCALE_HEADER);
+    return new Request(url, {
+      method: request.method,
+      headers: stripped,
+      body: request.method === 'GET' || request.method === 'HEAD' ? undefined : request.body,
+      redirect: 'manual',
+    });
+  }
 
   url.pathname = url.pathname.slice(3) || '/';
   const headers = new Headers(request.headers);
@@ -832,6 +939,11 @@ export default {
     return app.fetch(withLocalePrefix(request), env, ctx);
   },
   async scheduled(_event: ScheduledController, env: Env, ctx: ExecutionContext): Promise<void> {
+    // Housekeeping, on the pass that already runs every minute. Rate limit
+    // rows accumulate one per distinct caller and are dead the moment their
+    // window rolls; sweeping them here keeps that off the request path, where
+    // somebody is waiting.
+    ctx.waitUntil(purgeRateLimits(env.DB));
     ctx.waitUntil(
       ingestInbox(env)
         .then((summary) => {

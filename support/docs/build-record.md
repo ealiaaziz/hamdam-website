@@ -202,8 +202,8 @@ for history only.
 
 | | |
 |---|---|
-| Tests | 236 (Vitest) |
-| Migrations | 8 |
+| Tests | 269 (Vitest) |
+| Migrations | 9 |
 | Knowledge base | 3 articles, 16 reference files |
 | Languages | English, Persian |
 | Assistant | `@cf/meta/llama-3.3-70b-instruct-fp8-fast` on Workers AI |
@@ -215,15 +215,12 @@ for history only.
 
 ## Known and deliberate
 
-* **`POST /tickets` is unauthenticated and unthrottled.** Someone who needs
-  help should not need an account first. The daily model-call cap bounds the
-  spend; a Cloudflare Rate Limiting rule is still the right fix for the mail.
+* **`POST /tickets` is unauthenticated.** Someone who needs help should not
+  need an account first. It is no longer unthrottled: see the security review
+  below.
 * **The console is English only.** An internal tool with two users who both
   read English. A half-translated admin surface is worse than an untranslated
   one.
-* **Tracking tokens are compared with `!==`, not constant-time.** 122 bits of
-  entropy and network jitter make this theoretical, but it is a real
-  difference if the threat model changes.
 * **No audit log of agent actions.** Replies carry the verified Access email;
   status and priority changes do not. Fine at one agent, not at three.
 * **The Farsi was authored by a session, not translated from an approved
@@ -273,3 +270,79 @@ they were not done, and a record that says otherwise is worse than no record.
 Nothing here blocks anything. It is written down so that whoever reads this
 in six months knows which of these were done and which were weighed and set
 aside, rather than having to guess.
+
+---
+
+## Security review, 2026-08-02
+
+A review of both `hamdam.com.au` and this desk, code and deployed behaviour.
+What it confirmed is worth recording as plainly as what it changed: D1 access
+is parameterised throughout, the Access JWT path pins RS256 and verifies
+issuer, audience and expiry rather than trusting
+`Cf-Access-Authenticated-User-Email`, the console's CSRF check holds, and
+every stored string reaching a page goes through `escapeHtml` or
+`textToSafeHtml`. Probing the live console with a forged identity header, a
+forged `CF_Authorization` cookie and a forged `CF-Ray` was refused in all
+three cases.
+
+Six things changed.
+
+1. **The portal would send mail anywhere, as often as asked.** This was the
+   one finding that mattered. `POST /tickets` checked its fields for
+   emptiness and nothing else, then handed the address to Graph and asked
+   `developer@hamdam.com.au` to deliver a message carrying the submitter's
+   subject line. No format check, no length cap, no rate. The daily model
+   budget bounded the inference spend and nothing bounded the mail, so the
+   asset at risk was never the database: it was the deliverability of every
+   real reply the desk sends. `src/validation.ts` now checks the address
+   shape and caps every field; `src/rateLimit.ts` counts submissions per
+   caller *and per recipient*, because a caller with a pool of addresses
+   defeats the first limit and cannot defeat both.
+
+2. **The rate limiter's first draft throttled local development.** Keyed on
+   `CF-Connecting-IP`, which reads correctly in production and which
+   `wrangler dev` also supplies, as `127.0.0.1`, for every local request. The
+   sixth ticket of a dev session was refused. The gate is now `CF-Ray`, which
+   is what the HTTPS redirect and the country check already use to mean "this
+   came through the edge". Caught by running it, not by reading it.
+
+3. **Tracking tokens were compared with `!==`.** Now `tokensMatch`, which
+   compares every character. 122 bits of entropy makes the timing attack
+   theoretical; the fix is two lines and the token is the only credential
+   guarding a ticket.
+
+4. **Ticket and console pages were cacheable.** No `Cache-Control` at all, on
+   pages carrying a requester's name, address and description, reached by a
+   URL with the credential in its query string. A shared cache keyed on that
+   URL is keyed on the credential. Now `private, no-store`, set only where a
+   route has not spoken, so `/static/app.css` keeps its lifetime.
+
+5. **The console wrote a stored column into the page as markup.**
+   `${d.body_html}`, the one unescaped interpolation left. Safe today, because
+   the only thing writing that column assembles it from escaped pieces, but
+   that is a property of the current callers rather than of the renderer. Now
+   rendered as text. The CSP would have stopped a script; it would not have
+   stopped a convincing fake button on the approve-and-send page.
+
+6. **`stripHtml` removed tags but kept what they contained.** A marketing
+   email's `<style>` block became four hundred lines of CSS in a ticket
+   comment and in the model's context. Script and comment contents went the
+   same way. Now dropped whole.
+
+Two smaller things went with them: the feedback endpoint accepted any string
+as an article id and wrote it into a system comment, so it is now checked
+against the published set, and `X-Hamdam-Locale` is stripped from inbound
+requests so the path is the only thing that decides a locale.
+
+Dependencies: `npm audit` reported three advisories on the marketing site
+(astro, postcss, svgo), all build-time for a fully static site. Upgraded
+anyway, site rebuilt clean. The desk reported none.
+
+**What was deliberately not changed.** The tracking token still travels in a
+query string. Moving it to a cookie would improve the referrer and history
+story and would break the thing the desk is built around, which is that the
+link in the acknowledgement email opens the ticket. `Referrer-Policy:
+strict-origin-when-cross-origin` covers the leak that matters. And the portal
+still emails an address the submitter typed without proving they own it,
+which is inherent to a support desk that does not want an account first; the
+rate limits bound the damage rather than removing it.

@@ -85,12 +85,24 @@ there are worth repeating here because breaking them is expensive:
    acknowledgements for tickets that no longer existed. Deleting the row does
    not recall the mail.
 
-`npm test` (236 cases), `npm run check:persian` and `node
+`npm test` (269 cases), `npm run check:persian` and `node
 scripts/check-dashes.mjs` all cover `support/` and must pass.
+
+**Anything a stranger types is validated and metered (added 2026-08-02).**
+The portal is the only surface anyone on the internet can reach, and every
+submission makes developer@hamdam.com.au deliver mail to an address the
+submitter chose. So: `src/validation.ts` checks the address shape and caps
+every field, and `src/rateLimit.ts` counts submissions per caller *and per
+recipient* against the `rate_limits` table. A new public route that stores
+text, spends a model call or sends an email goes through both. The limiter
+keys on `CF-Ray`, not on `CF-Connecting-IP`, because `wrangler dev` supplies
+the latter as 127.0.0.1 and keying on it throttles local development.
 
 Four follow-ups were raised at handover and all four were reviewed and closed
 without action on 2026-08-02. Two matter before you touch the mail path: the
 Graph client secret has not been rotated since setup, and `Mail.Send` is
 unscoped, so it grants send-as for every mailbox in the tenant. Both are
 deliberate and recorded in the closing section of
-`support/docs/build-record.md`. Do not reopen them as bugs.
+`support/docs/build-record.md`. A security review the same day is recorded in
+the section below it: read that before deciding a control is missing, because
+some of them are there now and some were weighed and left alone.
