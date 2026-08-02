@@ -167,7 +167,14 @@ export async function composeAssistantReplyLive(
   opts: LiveReplyOptions,
   articles: readonly KbArticle[] = KB_ARTICLES,
 ): Promise<AssistantReply> {
-  const deterministic = () => composeAssistantReply(input, articles);
+  // The fallback, with a note about why it fired. The note is written to the
+  // ticket's agent state and shows in the console, because "the assistant
+  // answered from keywords" and "the assistant tried and could not" look
+  // identical to a requester and should not look identical to an agent.
+  const deterministic = (note?: string): AssistantReply => {
+    const reply = composeAssistantReply(input, articles);
+    return note ? { ...reply, reason: `${reply.reason} (${note})` } : reply;
+  };
 
   // Non-negotiable, and checked here rather than asked of the model. A
   // prompt can be talked out of a rule; an if statement cannot.
@@ -180,9 +187,9 @@ export async function composeAssistantReplyLive(
   // module, because running out of money is a policy outcome, not an API
   // error. Anything that throws here spends nothing and answers anyway.
   try {
-    if (opts.claim && !(await opts.claim())) return deterministic();
+    if (opts.claim && !(await opts.claim())) return deterministic("today's model budget is spent");
   } catch {
-    return deterministic();
+    return deterministic('budget check failed');
   }
 
   const available = articles.filter((a) => !input.rejectedArticles.includes(a.id));
@@ -205,11 +212,12 @@ export async function composeAssistantReplyLive(
     // a plainer one. Logged because a silently degraded desk looks exactly
     // like a working one, and the day the allocation runs out should not be
     // something anyone has to infer from the tone of the replies.
-    console.warn('assistant: model call failed', error instanceof Error ? error.message : String(error));
-    return deterministic();
+    const message = error instanceof Error ? error.message : String(error);
+    console.warn('assistant: model call failed', message);
+    return deterministic(`model call failed: ${message.slice(0, 160)}`);
   }
 
-  if (!reply) return deterministic();
+  if (!reply) return deterministic('model returned nothing usable');
 
   if (reply.action === 'escalate') {
     return {
