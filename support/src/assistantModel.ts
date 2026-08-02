@@ -69,32 +69,41 @@ export interface ModelReplyInput {
   alreadyEscalated?: boolean;
 }
 
-// The response shape. Structured output rather than "reply in JSON please",
-// because a malformed reply here is a requester staring at a blank thread.
+// The response shape.
+//
+// Deliberately the dullest schema that can express the answer: four plain
+// strings, no unions, no enum, no additionalProperties. Workers AI compiles
+// this into a decoding grammar, and the richer version of this schema was
+// rejected outright with "4009: an internal server error occurred", which is
+// what a grammar that will not compile looks like from the outside.
+//
+// So "no article" is the empty string rather than null, and the three legal
+// actions are described rather than enumerated. Nothing is lost: the values
+// are checked in sanitiseModelReply either way, which is where they have to
+// be checked regardless, because a schema constrains what the model emits
+// and not whether it means anything.
 const REPLY_SCHEMA = {
   type: 'object',
   properties: {
     action: {
       type: 'string',
-      enum: ['answer', 'ask', 'escalate'],
       description:
-        'answer = you are giving them something to try. ask = you need one more detail first. escalate = a person should take this.',
+        'Exactly one of: answer (you are giving them something to try), ask (you need one more detail first), escalate (a person should take this).',
     },
     body: {
       type: 'string',
       description: 'The message the requester reads, in plain text. No greeting line, no sign-off.',
     },
     article_id: {
-      type: ['string', 'null'],
-      description: 'The id of the reviewed article this answer came from, or null if it came from general knowledge.',
+      type: 'string',
+      description: 'The id of the reviewed article this answer came from. Empty string if it came from general knowledge.',
     },
     question: {
-      type: ['string', 'null'],
-      description: 'When action is ask, the single question you need answered. Otherwise null.',
+      type: 'string',
+      description: 'When action is ask, the single question you need answered. Empty string otherwise.',
     },
   },
   required: ['action', 'body', 'article_id', 'question'],
-  additionalProperties: false,
 } as const;
 
 /**
@@ -258,9 +267,14 @@ export function sanitiseModelReply(
   // reaches for them constantly, so normalise rather than reject.
   body = body.replace(/\s*[\u2014\u2013]\s*/g, ', ').replace(/\*\*/g, '');
 
-  const articleId = typeof r.article_id === 'string' && input.articles.some((a) => a.id === r.article_id) ? r.article_id : null;
+  // The schema cannot express "or null", so absence arrives as an empty
+  // string, and a model asked for a string field it has nothing to put in
+  // will also reach for the word "null" or "none".
+  const blank = (v: unknown) => typeof v !== 'string' || ['', 'null', 'none', 'n/a'].includes(v.trim().toLowerCase());
+  const rawArticle = blank(r.article_id) ? '' : String(r.article_id).trim();
+  const articleId = rawArticle && input.articles.some((a) => a.id === rawArticle) ? rawArticle : null;
 
-  let question = typeof r.question === 'string' && r.question.trim() ? r.question.trim() : null;
+  let question = blank(r.question) ? null : String(r.question).trim();
   if (action !== 'ask') question = null;
   // A question already asked is not a question, it is a loop.
   if (question && input.askedQuestions.includes(question)) return null;
