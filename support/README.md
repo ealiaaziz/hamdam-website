@@ -205,6 +205,54 @@ can therefore send as any mailbox in the tenant, from a Worker reachable on
 the public internet. That is a known and accepted position, not an oversight;
 see the closing section of `docs/build-record.md`.
 
+### The domain's mail security, and the one bit of it this Worker serves
+
+The `hamdam.com.au` zone was hardened on 2026-08-02: SPF `-all`, Exchange
+DKIM, DMARC `p=reject` with reports to `dmarc@hamdam.com.au`, CAA, TLS-RPT.
+All of that is DNS and none of it is in this repository. The record of what
+was applied and why is in `docs/build-record.md`.
+
+One piece is not DNS and therefore lives here. **MTA-STS** tells sending mail
+servers to require validated TLS to this domain, and RFC 8461 deliberately
+does not let a domain say that in DNS alone, because DNS without DNSSEC is
+forgeable by the same attacker the policy is defending against. The DNS
+record carries only a version and an id; the policy itself is fetched over
+HTTPS from a fixed hostname, and the certificate is what proves it is
+genuine.
+
+So this Worker answers on a second custom domain:
+
+```
+https://mta-sts.hamdam.com.au/.well-known/mta-sts.txt
+```
+
+and nothing else on that hostname: every other path is a 404, so the portal
+never appears at a second address. The handler is mounted **above the country
+check**, because the servers that read this file are wherever the sender's
+mail happens to be hosted, and refusing them the policy would refuse the
+mail. See `src/mtaSts.ts`.
+
+The DNS half, which `wrangler deploy` does not manage:
+
+```
+_mta-sts.hamdam.com.au   TXT   "v=STSv1; id=20260802a;"
+```
+
+**The id is a cache key, and it is the thing that gets forgotten.** A sender
+re-reads the cheap TXT record often and refetches the policy only when the id
+changes. Edit the policy without changing the id and the edit reaches nobody
+until every cached copy expires, up to `max_age` away. Changing the policy is
+always three edits together: `src/mtaSts.ts`, `MTA_STS_POLICY_ID`, and the
+TXT record.
+
+**The policy is in `testing` mode.** A sender that cannot make a validated
+TLS connection still delivers, and files a TLS-RPT report about it. `enforce`
+is the destination and the reports are already coming to
+`dmarc@hamdam.com.au`; promoting is `MTA_STS_MODE`, a new id, the TXT record,
+and a deploy. Do not promote without reading the reports first: an MTA-STS
+policy in enforce mode with a wrong MX pattern stops inbound mail reaching
+the desk, and nothing arriving looks exactly like a quiet day.
+
 ### Smoke-testing against production
 
 Use `@example.com` for the requester address. Never a real mailbox, and

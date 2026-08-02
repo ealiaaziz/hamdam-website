@@ -5,7 +5,18 @@
   "compatibility_flags": ["nodejs_compat"],
   "workers_dev": false,
   "routes": [
-    { "pattern": "support.hamdam.com.au", "custom_domain": true }
+    { "pattern": "support.hamdam.com.au", "custom_domain": true },
+    // The MTA-STS policy host. RFC 8461 fixes the name as mta-sts.<domain>
+    // and requires the policy be fetched over HTTPS with a valid certificate
+    // for it, which is the entire security property: the DNS record carries
+    // only a version and an id, and the certificate is what proves the policy
+    // came from the domain's owner.
+    //
+    // Answered by this Worker rather than a third one because this is the
+    // codebase that owns the mail path. See src/mtaSts.ts, which serves the
+    // one file and 404s everything else on that hostname so the portal never
+    // appears at a second address.
+    { "pattern": "mta-sts.hamdam.com.au", "custom_domain": true }
   ],
   // Cloudflare Access identity for /admin. Both come from the Access
   // application you create in Zero Trust (README step 5): the team domain

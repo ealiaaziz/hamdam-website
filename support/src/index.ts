@@ -16,6 +16,7 @@ import { KB_ARTICLES } from './kb.js';
 import { suggestionBlock } from './render/agentSuggestion.js';
 import { canSendDirectly, sendMail } from './mailer.js';
 import { isAllowedCountry, parseAllowedCountries } from './geo.js';
+import { mtaStsResponseFor } from './mtaSts.js';
 import { detectLocale, localePath, parseLocale, type Locale } from './i18n.js';
 import { ingestInbox } from './ingest.js';
 import { notifyEscalation } from './escalation.js';
@@ -234,6 +235,34 @@ app.use('*', async (c, next) => {
   if (!c.res.headers.has('cache-control')) {
     c.header('Cache-Control', 'private, no-store, max-age=0');
   }
+});
+
+// The MTA-STS policy, served before anything else looks at the request.
+//
+// Deliberately above the country check. Everything below this line is the
+// support portal, which is served only where Hamdam is sold; this is not the
+// portal. It is a file read by other people's mail servers, and those sit
+// wherever the person emailing the desk happens to have their mail hosted.
+// Refusing it by country would mean a sender in a country we do not serve
+// cannot read the policy -- and the desk's own documentation says email is
+// the one channel that is never geo-restricted, precisely so that someone
+// outside the list can still reach a person.
+//
+// Below the header middleware, so the policy still comes back with HSTS on
+// it, and below the HTTPS redirect, because a policy fetched over plaintext
+// proves nothing and RFC 8461 requires the certificate check that only https
+// performs.
+app.use('*', async (c, next) => {
+  const policy = mtaStsResponseFor(c.req.url);
+  if (!policy) return next();
+  if (policy.status === 404) return c.text('Not found\n', 404);
+  return c.text(policy.body, 200, {
+    'content-type': 'text/plain; charset=utf-8',
+    // Cacheable, unlike everything else here. It is a public constant, it
+    // contains nothing about anybody, and it is fetched by machines that
+    // will otherwise ask for it on every delivery.
+    'cache-control': 'public, max-age=3600',
+  });
 });
 
 // Serve only where Hamdam is sold.
