@@ -7,6 +7,8 @@ export function ticketStatusPage(opts: {
   ticket: TicketWithRequester;
   comments: CommentRow[];
   justSubmitted?: boolean;
+  /** True right after the requester asked for the conversation by email. */
+  justEmailed?: boolean;
   /** Pre-rendered suggestion block, or empty when nothing matched. */
   suggestion?: string;
 }): string {
@@ -28,6 +30,7 @@ export function ticketStatusPage(opts: {
 
   const body = `
 ${opts.justSubmitted ? `<div class="notice notice--ok">Ticket created. A confirmation email is on its way to ${escapeHtml(ticket.requester_email)}.</div>` : ''}
+${opts.justEmailed ? `<div class="notice notice--ok">On its way to ${escapeHtml(ticket.requester_email)}. It carries this conversation exactly as it stands now.</div>` : ''}
 <h1>${escapeHtml(ticket.subject)}</h1>
 <p class="lede">${escapeHtml(publicId)} &middot; opened ${formatDateTime(ticket.created_at)}</p>
 ${opts.suggestion ?? ''}
@@ -50,6 +53,12 @@ ${opts.suggestion ?? ''}
       <textarea id="body" name="body" required></textarea>
     </div>
     <button class="btn" type="submit">Send</button>
+  </form>
+  <form method="post" action="/tickets/${ticket.id}/summary?token=${encodeURIComponent(ticket.tracking_token)}">
+    <button class="btn btn--ghost" type="submit">Email me this conversation</button>
+    <p class="hint">Sends everything above to ${escapeHtml(ticket.requester_email)} as it stands
+    right now. Keep going here as long as you like; ask again whenever you want
+    the latest version.</p>
   </form>`
       : '<p class="lede">This ticket is closed. Email developer@hamdam.com.au to reopen it.</p>'
   }

@@ -126,3 +126,71 @@ export function classifyFromText(subject: string, body: string): { priority: Pri
   }
   return { priority: 'P3', impact: 'medium', urgency: 'medium' };
 }
+
+// ---- what the ticket is about ---------------------------------------------
+//
+// A support desk that serves one product and also answers general computing
+// questions has two queues wearing one uniform. Both get answered; they do
+// not get answered with the same urgency. A Hamdam problem is a problem with
+// the thing the company sells, and someone hitting it may be about to give up
+// on the app. "How do I reset a Windows password" is a favour, gladly done.
+//
+// So topic is detected here rather than left to the model, for the same
+// reason priority always has been: it decides an SLA clock, and an SLA that
+// depends on how a model felt about a sentence is not a commitment.
+
+export type Topic = 'hamdam' | 'general_it';
+
+/**
+ * Words that only appear when someone is talking about the app.
+ *
+ * Kept narrow on purpose. A false "hamdam" reading only costs a faster clock
+ * on a general question, which is survivable; the list avoids bare words like
+ * "verse" or "journal" only where they would drag in unrelated tickets, and
+ * accepts them where the desk's own vocabulary makes them unambiguous.
+ */
+const HAMDAM_TERMS = [
+  'hamdam', 'hamdan',
+  'daily verse', 'the verse', 'verses', 'poem of the day',
+  'reflection', 'reflections',
+  'hafez', 'rumi', 'saadi', 'khayyam', 'parvin', 'ganjoor',
+  'discover tab', 'roots calendar', 'cultural moment',
+  'streak', 'journal entry', 'journal entries',
+  'hamdam plus', 'lifetime plan', 'founding companion',
+  'daily reminder', 'state of mind',
+  'cycle awareness', 'mood logging',
+];
+
+export function detectTopic(text: string): Topic {
+  const haystack = text.toLowerCase();
+  return HAMDAM_TERMS.some((term) => haystack.includes(term)) ? 'hamdam' : 'general_it';
+}
+
+/**
+ * The floor a Hamdam ticket cannot fall below.
+ *
+ * P3 rather than P2: the point is that an app problem is never merely
+ * "whenever you get to it", not that every app problem is urgent. A Hamdam
+ * ticket that the matrix already rated P1 or P2 keeps that rating, because
+ * the floor raises and never lowers.
+ */
+export const HAMDAM_PRIORITY_FLOOR: Priority = 'P3';
+
+const RANK: Record<Priority, number> = { P1: 0, P2: 1, P3: 2, P4: 3 };
+
+export function applyTopicFloor(priority: Priority, topic: Topic): Priority {
+  if (topic !== 'hamdam') return priority;
+  return RANK[priority] <= RANK[HAMDAM_PRIORITY_FLOOR] ? priority : HAMDAM_PRIORITY_FLOOR;
+}
+
+/** Classification and the topic floor in one call, which is how callers want it. */
+export function classifyTicket(
+  impact: Impact,
+  urgency: Urgency,
+  text: string,
+): { priority: Priority; topic: Topic; floored: boolean } {
+  const base = classifyFromMatrix(impact, urgency);
+  const topic = detectTopic(text);
+  const priority = applyTopicFloor(base, topic);
+  return { priority, topic, floored: priority !== base };
+}

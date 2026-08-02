@@ -1,4 +1,4 @@
-import { KB_ARTICLES, type KbArticle } from './data/kb.js';
+import { APP_REFERENCE, KB_ARTICLES, type AppReference, type KbArticle } from './data/kb.js';
 
 // Matching a ticket to a known answer.
 //
@@ -62,5 +62,5 @@ export function clarifyingQuestionFor(match: KbMatch, alreadyAsked: readonly str
   return match.article.clarifying.find((q) => !alreadyAsked.includes(q)) ?? null;
 }
 
-export { KB_ARTICLES };
-export type { KbArticle };
+export { APP_REFERENCE, KB_ARTICLES };
+export type { AppReference, KbArticle };

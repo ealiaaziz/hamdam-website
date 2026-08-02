@@ -34,9 +34,9 @@ describe('requestedAHuman', () => {
 
 describe('decideAgentAction', () => {
   it('sends a solution on a confident match', () => {
-    const r = decideAgentAction({ ...base, conversationText: "cannot sign in, password not working" });
+    const r = decideAgentAction({ ...base, conversationText: "cannot sign in, subscription missing" });
     expect(r.action).toBe('send_solution');
-    if (r.action === 'send_solution') expect(r.articleId).toBe('cannot-sign-in');
+    if (r.action === 'send_solution') expect(r.articleId).toBe('purchase-not-appearing');
   });
 
   it('asks a clarifying question on a partial match', () => {
@@ -55,7 +55,7 @@ describe('decideAgentAction', () => {
   it('escalates a request for a human even with a confident match', () => {
     const r = decideAgentAction({
       ...base,
-      conversationText: "cannot sign in, password not working -- can I speak to a human",
+      conversationText: "cannot sign in, subscription missing -- can I speak to a human",
     });
     expect(r.action).toBe('escalate');
     if (r.action === 'escalate') expect(r.reason).toContain('asked for a person');
@@ -65,7 +65,7 @@ describe('decideAgentAction', () => {
     const r = decideAgentAction({
       ...base,
       priority: 'P1',
-      conversationText: 'cannot sign in, password not working',
+      conversationText: 'cannot sign in, subscription missing',
     });
     expect(r.action).toBe('escalate');
   });
@@ -74,7 +74,7 @@ describe('decideAgentAction', () => {
     const r = decideAgentAction({
       ...base,
       priority: 'P2',
-      conversationText: 'cannot sign in, password not working',
+      conversationText: 'cannot sign in, subscription missing',
     });
     expect(r.action).toBe('escalate');
   });
@@ -83,7 +83,7 @@ describe('decideAgentAction', () => {
     const r = decideAgentAction({
       ...base,
       assistantTurns: MAX_ASSISTANT_TURNS,
-      conversationText: 'cannot sign in, password not working',
+      conversationText: 'cannot sign in, subscription missing',
     });
     expect(r.action).toBe('escalate');
     if (r.action === 'escalate') expect(r.reason).toContain('turns');

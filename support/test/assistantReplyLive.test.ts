@@ -9,7 +9,7 @@ import type { ModelReply } from '../src/assistantModel.js';
 
 const base: AssistantReplyInput = {
   priority: 'P4',
-  conversationText: 'cannot sign in, password not working',
+  conversationText: 'cannot sign in, subscription missing',
   assistantTurns: 0,
   askedQuestions: [],
   rejectedArticles: [],
@@ -28,12 +28,12 @@ const opts = (generate: ReturnType<typeof stub>) => ({
 
 describe('composeAssistantReplyLive', () => {
   it('uses the model when the guards allow it', async () => {
-    const generate = stub({ action: 'answer', body: 'Reopen the app.', articleId: 'cannot-sign-in', question: null });
+    const generate = stub({ action: 'answer', body: 'Reopen the app.', articleId: 'purchase-not-appearing', question: null });
     const r = await composeAssistantReplyLive(base, opts(generate));
     expect(generate).toHaveBeenCalledOnce();
     expect(r.body).toBe('Reopen the app.');
     expect(r.action).toBe('send_solution');
-    expect(r.articleId).toBe('cannot-sign-in');
+    expect(r.articleId).toBe('purchase-not-appearing');
     expect(r.escalated).toBe(false);
   });
 
@@ -77,10 +77,10 @@ describe('composeAssistantReplyLive', () => {
 
   it('withholds rejected articles from the model entirely', async () => {
     const generate = stub({ action: 'escalate', body: 'A person will pick this up.', articleId: null, question: null });
-    await composeAssistantReplyLive({ ...base, rejectedArticles: ['cannot-sign-in'] }, opts(generate));
+    await composeAssistantReplyLive({ ...base, rejectedArticles: ['purchase-not-appearing'] }, opts(generate));
     const [, input] = generate.mock.calls[0] as unknown as [string, { articles: { id: string }[]; rejectedTitles: string[] }];
-    expect(input.articles.map((a) => a.id)).not.toContain('cannot-sign-in');
-    expect(input.rejectedTitles).toContain('Cannot sign in to the Hamdam app');
+    expect(input.articles.map((a) => a.id)).not.toContain('purchase-not-appearing');
+    expect(input.rejectedTitles).toContain('A purchase or subscription is not showing up');
   });
 
   it('falls back to the written answer when the call fails', async () => {
@@ -90,21 +90,21 @@ describe('composeAssistantReplyLive', () => {
       throw new Error('503');
     });
     const r = await composeAssistantReplyLive(base, opts(generate as never));
-    expect(r.body).toContain('Cannot sign in to the Hamdam app');
+    expect(r.body).toContain('A purchase or subscription is not showing up');
     expect(r.action).toBe('send_solution');
   });
 
   it('falls back when the model returns something unusable', async () => {
     const r = await composeAssistantReplyLive(base, opts(stub(null)));
     expect(r.body.length).toBeGreaterThan(0);
-    expect(r.body).toContain('Cannot sign in to the Hamdam app');
+    expect(r.body).toContain('A purchase or subscription is not showing up');
   });
 
   it('works with no API key at all', async () => {
     // Local development and CI have no credential, and the desk still has to
     // answer.
     const r = await composeAssistantReplyLive(base, { ticketSubject: 'Cannot sign in', turns: [] });
-    expect(r.body).toContain('Cannot sign in to the Hamdam app');
+    expect(r.body).toContain('A purchase or subscription is not showing up');
   });
 
   it('marks a model escalation as escalated, and records the question on an ask', async () => {
@@ -127,9 +127,9 @@ describe('composeAssistantReplyLive', () => {
   it('records where the answer came from, so a reviewer can tell', async () => {
     const fromArticle = await composeAssistantReplyLive(
       base,
-      opts(stub({ action: 'answer', body: 'Reopen it.', articleId: 'cannot-sign-in', question: null })),
+      opts(stub({ action: 'answer', body: 'Reopen it.', articleId: 'purchase-not-appearing', question: null })),
     );
-    expect(fromArticle.reason).toContain('cannot-sign-in');
+    expect(fromArticle.reason).toContain('purchase-not-appearing');
 
     const fromModel = await composeAssistantReplyLive(
       base,
@@ -144,7 +144,7 @@ describe('composeAssistantReplyLive', () => {
     const generate = stub({ action: 'answer', body: 'model wrote this', articleId: null, question: null });
     const r = await composeAssistantReplyLive(base, { ...opts(generate), claim: async () => false });
     expect(generate).not.toHaveBeenCalled();
-    expect(r.body).toContain('Cannot sign in to the Hamdam app');
+    expect(r.body).toContain('A purchase or subscription is not showing up');
   });
 
   it('still answers when the budget check itself fails', async () => {

@@ -13,10 +13,18 @@ clarifying:
   - Does it happen every time, or only sometimes?
 ---
 
-1. Pull down on the verse screen to refresh it.
-2. Confirm the device is online, since the verse of the day is fetched
-   rather than stored on the device.
-3. Close and reopen the app.
-4. If the screen has been stuck loading for more than a minute, reply and
-   tell us roughly when it started, which helps us check whether it lines up
-   with something on our side.
+The core library of 235 verses is built into the app and needs no connection,
+so this is not usually an internet problem.
+
+1. Close the app fully and reopen it. Swipe up from the bottom of the screen
+   and flick the Hamdam card away, then tap the icon again.
+2. Check for an app update in the App Store.
+3. Restart the phone if it has been a while.
+
+If you have Hamdam Plus and it is only the newer verses that are missing
+rather than all of them, that pool is fetched rather than built in, so tell
+us that when you reply: it points at something different.
+
+If the screen has been stuck for more than a minute, reply and say roughly
+when it started, which helps us check whether it lines up with something on
+our side.

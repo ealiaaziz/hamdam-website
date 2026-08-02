@@ -4,8 +4,8 @@ import { APP_CSS } from './render/styles.js';
 import { submitFormPage, trackLookupPage } from './render/portal.js';
 import { ticketStatusPage } from './render/status.js';
 import { adminQueuePage, adminTicketPage } from './render/admin.js';
-import { classifyFromMatrix, parsePriority, slaDueDates, type Impact, type Urgency } from './itil.js';
-import { ackEmail, agentReplyEmail, requesterReplyNotification, resolvedEmail } from './render/email.js';
+import { classifyTicket, parsePriority, slaDueDates, type Impact, type Urgency } from './itil.js';
+import { ackEmail, agentReplyEmail, conversationSummaryEmail, requesterReplyNotification, resolvedEmail } from './render/email.js';
 import { assistantWrittenEmail } from './render/agentEmail.js';
 import { generateTrackingToken, parseTicketPublicId, stripHtml, ticketPublicId } from './ids.js';
 import { httpsRedirectTarget, isCrossSiteRequest, isLocalHost, trackingUrl } from './urls.js';
@@ -35,7 +35,7 @@ import {
   updateTicketStatus,
   upsertRequester,
 } from './db.js';
-import { parseTicketStatus, type CommentRow } from './types.js';
+import { parseTicketStatus, type CommentRow, type TicketWithRequester } from './types.js';
 
 // The desk's own mailbox. Notifications about ticket activity go here, and
 // the routine must ignore inbound mail from this address so the desk does
@@ -65,6 +65,47 @@ function threadTurns(comments: readonly CommentRow[]): { author: 'requester' | '
 function dailyCallLimit(env: Env): number {
   const configured = Number(env.ASSISTANT_DAILY_CALL_LIMIT);
   return Number.isInteger(configured) && configured > 0 ? configured : DEFAULT_DAILY_CALL_LIMIT;
+}
+
+/**
+ * Queues the one outbound update this desk sends a requester mid-ticket.
+ *
+ * Called at the points where the conversation has actually settled: they
+ * said it worked, a person took it over, or they asked for it. Not on every
+ * turn. The portal is where the fast back-and-forth happens and they are
+ * watching it; an email per turn would be a pile of half-finished threads
+ * about a problem that has since moved on.
+ */
+async function queueConversationSummary(
+  db: D1Database,
+  ticket: TicketWithRequester,
+  comments: readonly CommentRow[],
+  status: 'resolved' | 'with_a_person' | 'in_progress',
+  requestUrl: string,
+): Promise<void> {
+  const turns = comments
+    .filter((m) => m.author_type === 'requester' || m.author_type === 'agent')
+    .map((m) => ({ who: m.author_type === 'requester' ? ('you' as const) : ('support' as const), body: m.body }));
+
+  const rendered = conversationSummaryEmail({
+    ticketId: ticket.id,
+    subject: ticket.subject,
+    priority: ticket.priority,
+    requesterName: ticket.requester_name,
+    trackingUrl: trackingUrl(requestUrl, ticket.id, ticket.tracking_token),
+    status,
+    turns,
+  });
+
+  await queueOutboundEmail(db, {
+    ticketId: ticket.id,
+    commentId: null,
+    kind: 'status_change',
+    toEmail: ticket.requester_email,
+    subject: rendered.subject,
+    bodyHtml: rendered.html,
+    inReplyToMessageId: ticket.last_inbound_message_id,
+  });
 }
 
 const app = new Hono<{ Bindings: Env; Variables: { agentEmail: string } }>();
@@ -128,7 +169,11 @@ app.post('/tickets', async (c) => {
   }
 
   const requester = await upsertRequester(c.env.DB, email, name);
-  const priority = classifyFromMatrix(impact, urgency);
+  // The form's impact and urgency set the base rating; what the ticket is
+  // about can only raise it. A Hamdam problem never sits in the "whenever we
+  // get to it" band, however mildly the person described it, because they
+  // are having trouble with the thing they paid for.
+  const { priority, topic } = classifyTicket(impact, urgency, `${subject}\n${description}`);
   const now = new Date();
   const { firstResponseDue, resolveDue } = slaDueDates(priority, now);
   const trackingToken = generateTrackingToken();
@@ -141,6 +186,7 @@ app.post('/tickets', async (c) => {
     urgency,
     category: null,
     channel: 'portal',
+    topic,
     trackingToken,
     sourceConversationId: null,
     lastInboundMessageId: null,
@@ -238,7 +284,7 @@ app.get('/tickets/:id', async (c) => {
     ? suggestionBlock({ article: citedArticle, ticketId: id, token, confidence: 'confident' })
     : undefined;
 
-  return c.html(ticketStatusPage({ ticket, comments, justSubmitted: c.req.query('submitted') === '1', suggestion }));
+  return c.html(ticketStatusPage({ ticket, comments, justSubmitted: c.req.query('submitted') === '1', justEmailed: c.req.query('emailed') === '1', suggestion }));
 });
 
 // Feedback on a suggestion. Recorded either way: "this did not help" is the
@@ -259,6 +305,9 @@ app.post('/tickets/:id/feedback', async (c) => {
   if (outcome === 'solved') {
     await addComment(c.env.DB, id, 'system', null, `Requester reported that the suggested article "${articleId}" resolved this.`);
     await updateTicketStatus(c.env.DB, id, 'resolved');
+    // They have agreed it is fixed. That is the settled state worth putting
+    // in their inbox, and the only thing in it is what they already read.
+    await queueConversationSummary(c.env.DB, ticket, await listComments(c.env.DB, id), 'resolved', c.req.url);
   } else if (outcome === 'unresolved') {
     await addComment(c.env.DB, id, 'system', null, `Requester reported that the suggested article "${articleId}" did not help. Needs a person.`);
     // Remember it, so nothing offers this article again on this ticket.
@@ -267,6 +316,29 @@ app.post('/tickets/:id/feedback', async (c) => {
   }
 
   return c.redirect(`/tickets/${id}?token=${encodeURIComponent(token)}`, 303);
+});
+
+// "Email me where this got to."
+//
+// The requester decides when the conversation has reached a state worth
+// keeping, which is the case the automatic triggers cannot read: they have
+// what they need, they are done reading, and they want it in writing. No
+// approval step, because every word of it is already on their screen.
+app.post('/tickets/:id/summary', async (c) => {
+  const id = Number(c.req.param('id'));
+  const token = String(c.req.query('token') ?? '');
+  if (!Number.isInteger(id) || !token) return c.notFound();
+
+  const ticket = await getTicketById(c.env.DB, id);
+  if (!ticket || ticket.tracking_token !== token) return c.notFound();
+
+  const comments = await listComments(c.env.DB, id);
+  const state = await getAgentState(c.env.DB, id);
+  const status = ticket.status === 'resolved' ? 'resolved' : state.escalated ? 'with_a_person' : 'in_progress';
+  await queueConversationSummary(c.env.DB, ticket, comments, status, c.req.url);
+  await addComment(c.env.DB, id, 'system', null, 'Requester asked for the conversation by email.');
+
+  return c.redirect(`/tickets/${id}?token=${encodeURIComponent(token)}&emailed=1`, 303);
 });
 
 app.post('/tickets/:id/reply', async (c) => {
@@ -343,37 +415,16 @@ app.post('/tickets/:id/reply', async (c) => {
       await updateTicketStatus(c.env.DB, id, 'open');
     }
 
-    // And queue the same words as a draft email, so the requester's inbox
-    // and the thread they are reading say the same thing. Drafting something
-    // separately worded, as this used to, is how a desk ends up contradicting
-    // itself across two channels about one problem.
+    // No email per turn. The portal already answered them, instantly, and
+    // they are looking at it. An email now would describe a conversation
+    // that is still moving.
     //
-    // Draft, not sent: email leaves the building over the desk's name and
-    // reaches people who never chose to talk to a machine, so a person
-    // approves it in the console first. The portal reply above is instant
-    // because the requester is right there and can see who wrote it.
-    //
-    // Nothing is drafted once the assistant has handed over: putting words
-    // back in the queue it just stepped out of is not helping.
-    if (!reply.escalated) {
-      const rendered = assistantWrittenEmail({
-        ticketId: id,
-        subject: ticket.subject,
-        body: reply.body,
-        requesterName: ticket.requester_name,
-        trackingUrl: trackingUrl(c.req.url, id, token),
-      });
-      await queueAssistantDraft(c.env.DB, {
-        ticketId: id,
-        commentId,
-        kind: 'assistant_draft',
-        toEmail: ticket.requester_email,
-        subject: rendered.subject,
-        bodyHtml: rendered.html,
-        inReplyToMessageId: ticket.last_inbound_message_id,
-        assistantReason: reply.reason,
-        assistantArticleId: reply.articleId ?? null,
-      });
+    // The exception is a handover: once a person owns the ticket the fast
+    // loop is over, the requester may well close the tab, and "a human has
+    // this and can see everything you wrote" is exactly the thing worth
+    // having in their inbox.
+    if (reply.escalated) {
+      await queueConversationSummary(c.env.DB, ticket, await listComments(c.env.DB, id), 'with_a_person', c.req.url);
     }
   }
   return c.redirect(`/tickets/${id}?token=${encodeURIComponent(token)}`, 303);

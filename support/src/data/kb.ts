@@ -14,25 +14,6 @@ export interface KbArticle {
 
 export const KB_ARTICLES: readonly KbArticle[] = [
   {
-    "id": "cannot-sign-in",
-    "title": "Cannot sign in to the Hamdam app",
-    "symptoms": [
-      "cannot sign in",
-      "can't sign in",
-      "cannot log in",
-      "can't log in",
-      "login fails",
-      "sign in fails",
-      "locked out",
-      "password not working"
-    ],
-    "clarifying": [
-      "Which sign-in method are you using -- Apple, email, or something else?",
-      "Does the app show an error message, and if so what does it say exactly?"
-    ],
-    "steps": "1. Close the app fully and reopen it. On iPhone, swipe up from the bottom\n   and flick the Hamdam card away, then tap the icon again.\n2. Check the device has a working connection by loading any web page.\n3. If you sign in with Apple, open Settings, tap your name, then Sign-In and\n   Security, and confirm Hamdam is still listed under apps using Apple.\n4. If the error mentions a network or server problem, wait a few minutes and\n   try once more; it is usually temporary.\n\nIf none of that helps, reply here and a person will pick it up."
-  },
-  {
     "id": "change-notification-time",
     "title": "Change the daily reminder time",
     "symptoms": [
@@ -50,6 +31,28 @@ export const KB_ARTICLES: readonly KbArticle[] = [
     "steps": "1. Open Hamdam and go to Settings.\n2. Tap Daily reminder.\n3. Set the time you would like, or switch the reminder off.\n\nIf reminders are not arriving at all, check iPhone Settings, then\nNotifications, then Hamdam, and confirm Allow Notifications is on."
   },
   {
+    "id": "purchase-not-appearing",
+    "title": "A purchase or subscription is not showing up",
+    "symptoms": [
+      "cannot sign in",
+      "can't sign in",
+      "cannot log in",
+      "can't log in",
+      "locked out",
+      "restore purchase",
+      "lost my subscription",
+      "paid but",
+      "plus not working",
+      "subscription missing",
+      "new phone"
+    ],
+    "clarifying": [
+      "Are you on the same Apple ID you bought Hamdam with?",
+      "Is this a new device, or the same one it was working on before?"
+    ],
+    "steps": "Hamdam has no account and no sign in, so there is nothing to be locked out\nof. What this usually is instead:\n\n1. Check you are signed in to the same Apple ID you bought with. On iPhone,\n   open Settings and look at the name at the top.\n2. Restore the purchase from the App Store: open the App Store, tap your\n   picture, then Purchased, and find Hamdam.\n3. If it was a Lifetime purchase shared through Family Sharing, confirm the\n   organiser still has sharing switched on for purchases.\n4. Give it a minute after restoring and reopen Hamdam.\n\nIf it still does not appear, reply and tell us whether this is a new device,\nand a person will pick it up."
+  },
+  {
     "id": "verse-not-loading",
     "title": "Daily verse is blank or will not load",
     "symptoms": [
@@ -64,6 +67,107 @@ export const KB_ARTICLES: readonly KbArticle[] = [
       "Is the screen blank, or does it show a loading spinner that never finishes?",
       "Does it happen every time, or only sometimes?"
     ],
-    "steps": "1. Pull down on the verse screen to refresh it.\n2. Confirm the device is online, since the verse of the day is fetched\n   rather than stored on the device.\n3. Close and reopen the app.\n4. If the screen has been stuck loading for more than a minute, reply and\n   tell us roughly when it started, which helps us check whether it lines up\n   with something on our side."
+    "steps": "The core library of 235 verses is built into the app and needs no connection,\nso this is not usually an internet problem.\n\n1. Close the app fully and reopen it. Swipe up from the bottom of the screen\n   and flick the Hamdam card away, then tap the icon again.\n2. Check for an app update in the App Store.\n3. Restart the phone if it has been a while.\n\nIf you have Hamdam Plus and it is only the newer verses that are missing\nrather than all of them, that pool is fetched rather than built in, so tell\nus that when you reply: it points at something different.\n\nIf the screen has been stuck for more than a minute, reply and say roughly\nwhen it started, which helps us check whether it lines up with something on\nour side."
+  }
+] as const;
+
+/**
+ * Background the assistant answers *from*, as opposed to fixes it offers.
+ * Every entry is traceable to a reviewed page in this repository via
+ * `source`, because the knowledge base this replaced described a sign-in
+ * screen the app does not have.
+ */
+export interface AppReference {
+  id: string;
+  title: string;
+  /** Where in this repository the facts came from. */
+  source: string;
+  body: string;
+}
+
+export const APP_REFERENCE: readonly AppReference[] = [
+  {
+    "id": "accounts-and-sign-in",
+    "title": "There are no accounts and no sign in",
+    "source": "src/pages/privacy.astro section 2",
+    "body": "Hamdam has no user accounts. There is no sign in, no password, no username,\nand no email address collected when you start using it. Nothing to be locked\nout of, and nothing to reset.\n\nThis matters when someone writes in about being unable to log in. They are\nalmost certainly describing one of:\n\n- An Apple ID problem, which is Apple's, not Hamdam's, and is handled in\n  iPhone Settings under their name.\n- A purchase that has not appeared on a new device, which is a restore through\n  the App Store rather than a sign in.\n- iCloud sync not working, which needs a Hamdam Plus subscription and the\n  device to be signed in to iCloud.\n\nAsk which of those it is rather than assuming, and never walk someone through\nsigning in to Hamdam, because there is nowhere for them to do it."
+  },
+  {
+    "id": "ai-reflections",
+    "title": "How reflections are generated",
+    "source": "src/pages/privacy.astro section 1.7",
+    "body": "On supported hardware, iPhone 15 Pro and later running iOS 26 or newer,\nreflections are generated on the device using Apple's Foundation Models. No\ntext and no personal data leaves the device for this.\n\nOn unsupported devices Hamdam falls back to a static, pre-written library of\ncontent.\n\nSo \"why are my reflections different from my friend's\" or \"why do these feel\nless personal\" usually comes down to device hardware, and that is worth\nchecking before anything else."
+  },
+  {
+    "id": "calendar",
+    "title": "Calendar",
+    "source": "src/pages/privacy.astro section 1.2",
+    "body": "Reading and writing the calendar are separate opt-ins. Turning one on does\nnot turn on the other.\n\nReading: free and busy time only. Never event titles, descriptions,\nattendees, or locations.\n\nWriting: optional reflection blocks and cultural moment reminders. Everything\nHamdam creates goes into a dedicated calendar named \"Hamdam\" and is prefixed\n\"Hamdam:\" so it is always distinguishable.\n\nHamdam identifies its own events by the calendar's identifier rather than by\nmatching title text. Renaming an event therefore does not put it beyond\nHamdam's reach, and does not pull one of the person's own events into it.\nHamdam never modifies an event it did not create."
+  },
+  {
+    "id": "discover-tab",
+    "title": "The Discover tab",
+    "source": "src/pages/privacy.astro section 1.6",
+    "body": "Discover refreshes once a day with books and podcasts from Apple's public\ncatalogue, through the iTunes Search API.\n\nThose requests go from the device straight to Apple. They never pass through\na Hamdam server, and no identifier tied to the person is sent with them.\n\nBecause it refreshes daily, \"the recommendations have not changed\" is\nexpected within a single day."
+  },
+  {
+    "id": "health-signals",
+    "title": "Health signals",
+    "source": "src/pages/privacy.astro section 1.1, src/pages/terms.astro sections 4.4 to 4.6",
+    "body": "All of this is opt-in and stays on the device.\n\nWith permission Hamdam reads resting heart rate, heart rate variability,\nsleep analysis, blood oxygen, step count, exercise minutes, and active energy.\nMenstrual flow is read only if cycle awareness is separately enabled, and\ncycle awareness is a distinct opt-in from everything else here.\n\nWith permission Hamdam writes State of Mind entries to Apple Health when mood\nlogging is turned on.\n\nThese signals shape the tone of a reflection. They are not scored, charted, or\ndisplayed back. Cycle data in particular is never shown anywhere in the\nHamdam interface.\n\nPermissions are changed in iPhone Settings, under Privacy and Security, then\nHealth, then Hamdam.\n\nObservations about sleep, activity or cycle are contextual, not medical\nassessments. If someone is asking a health question rather than an app\nquestion, that is for a qualified healthcare provider, and the ticket goes to\na person."
+  },
+  {
+    "id": "icloud-sync",
+    "title": "iCloud sync",
+    "source": "src/pages/privacy.astro section 1.4",
+    "body": "Sync requires a Hamdam Plus subscription. On the free tier nothing is written\nto iCloud at all and data stays on the device.\n\nWith Plus and sync enabled, journal entries, the streak counter and settings\nmove between that person's own devices through Apple's CloudKit private\ndatabase, scoped to their Apple ID. Hamdam runs no servers that receive this\ndata, so there is no copy on Hamdam's side to recover from.\n\nIf someone deletes their iCloud data or signs out of iCloud, the synced Hamdam\ndata goes with it.\n\nSync problems are usually one of: no Plus subscription, the device not signed\nin to iCloud, or iCloud Drive turned off for Hamdam in iPhone Settings."
+  },
+  {
+    "id": "journal",
+    "title": "Journal entries",
+    "source": "src/pages/terms.astro sections 6.1 and 6.2",
+    "body": "People own their journal entries. Hamdam holds no licence to that content and\nany entry can be deleted at any time.\n\nJournals sync only through the person's own iCloud account, and only with\nHamdam Plus. Hamdam does not share journal content with anyone: there is no\npublic feed and no social features.\n\nThere is no Hamdam-side copy. If someone has lost entries and had no iCloud\nsync enabled, there is nowhere to recover them from, and saying so honestly is\nbetter than raising hope. That conversation goes to a person."
+  },
+  {
+    "id": "plans-and-billing",
+    "title": "Plans, trial, and cancelling",
+    "source": "src/pages/terms.astro sections 3.1 to 3.6",
+    "body": "There is a free tier. Paid plans are Monthly, Yearly, and a one-time Lifetime\npurchase.\n\n- Pricing is set and shown by Apple at the point of purchase. Never quote a\n  price: it varies by region and Apple can change it. Point people at the App\n  Store listing.\n- Monthly and Yearly include a 7 day free trial for new subscribers. The trial\n  becomes a paid subscription unless it is cancelled before it ends.\n- Lifetime supports Apple Family Sharing for up to six members. Monthly and\n  Yearly are single user.\n- Monthly and Yearly auto-renew at the then-current price, charged to the\n  Apple ID, until cancelled.\n- Cancelling: Settings, then their Apple ID at the top, then Subscriptions.\n  Cancelling stops the next renewal and access continues to the end of the\n  period already paid for.\n- There is no refund for the unused part of a period, subject to Apple's own\n  refund policy. Refunds are Apple's decision, not Hamdam's, and the desk\n  cannot issue one. Requests go through Apple's \"Report a Problem\" page."
+  },
+  {
+    "id": "poetry-library",
+    "title": "The verse library",
+    "source": "src/pages/privacy.astro section 1.5, src/pages/terms.astro section 5.1",
+    "body": "The core library is 235 verses, built into the app. It needs no network\nconnection to read. A blank or missing verse is therefore not an internet\nproblem, and telling someone to check their connection is wrong.\n\nHamdam Plus subscribers additionally receive a growing pool of verses stored\nin a CloudKit public database and fetched as it grows. Free users never fetch\nthat pool.\n\nVerses are public domain, from Hafez, Rumi, Saadi, Khayyam and Parvin\nEtesami, sourced from the Ganjoor.net archive with attribution. No data is\nexchanged with Ganjoor.net while the app runs. Hamdam's curation, English\ntranslations and cultural context are its own copyright.\n\nPersian poetry uses wine, love and mystical imagery as literary and spiritual\nmetaphor. These are historical conventions of the form, not endorsements of\nanything."
+  },
+  {
+    "id": "privacy-posture",
+    "title": "What Hamdam does not collect",
+    "source": "src/pages/privacy.astro section 2",
+    "body": "Worth being able to state plainly, because people do ask:\n\n- No user accounts and no email collection.\n- No analytics of any kind in the app. No Firebase, Mixpanel, Amplitude, or\n  Google Analytics. The only crash data is Apple's own built-in reporting via\n  App Store Connect, aggregated and anonymised.\n- No advertising SDKs, no tracking pixels, no cross-app tracking, no\n  behavioural profiling.\n- No Hamdam-owned servers receiving user data.\n- Data is never sold, under any circumstance.\n- Signals are never used for advertising, never used to train AI models off\n  the device, and never shared with third parties.\n\nStorage is local, using Apple's SwiftData, and in the person's own iCloud\naccount if they enable sync. Data is kept until they delete it in the app or\nuninstall.\n\nThe website separately uses Cloudflare Web Analytics for cookieless page\ncounts. That is the website only, not the app."
+  },
+  {
+    "id": "roots-and-holidays",
+    "title": "Roots, cultural moments, and poet biographies",
+    "source": "src/pages/privacy.astro section 5",
+    "body": "The Roots calendar shows public holidays for where the person is. Those dates\ncome from Nager.Date (date.nager.at), which is the only service Hamdam\ncontacts that Apple does not operate. The device sends a country code and a\nyear, and nothing else.\n\nPoet biographies and cultural symbol descriptions come from the Wikipedia REST\nAPI, and portraits from upload.wikimedia.org. The device sends only the title\nof the page being looked up. Nothing about the person, their reflections or\ntheir health is included."
+  },
+  {
+    "id": "weather-and-location",
+    "title": "Weather and location",
+    "source": "src/pages/privacy.astro section 1.3",
+    "body": "Location is used only when weather or cultural moment features are enabled.\nWeather comes through Apple's WeatherKit and is used to theme the day's\nreflection.\n\nHamdam does not store location and does not share it with anyone.\n\nIf weather looks wrong or missing, the usual cause is location permission\nbeing off for Hamdam in iPhone Settings, under Privacy and Security, then\nLocation Services."
+  },
+  {
+    "id": "wellbeing-boundaries",
+    "title": "Health and crisis boundaries",
+    "source": "src/pages/terms.astro sections 4.1 to 4.7",
+    "body": "Hamdam is a reflection companion, not medical, mental health, or wellness\nadvice, and not therapy, counselling, or spiritual guidance for medical use.\nIt does not substitute for professional healthcare, diagnosis, or treatment.\n\nAny health question, as opposed to a question about how the app works, goes\nto a qualified healthcare provider, and the ticket goes to a person.\n\nIf someone writes in describing a crisis, or anything suggesting they may be\nat risk of harming themselves, that is not a support ticket to be worked\nthrough. Give them these, plainly and immediately, and hand the ticket to a\nperson:\n\n- Australia, Lifeline: 13 11 14, 24 hours\n- Australia, emergency: 000\n- Anywhere else: their local crisis line or emergency services\n\nDo not attempt to counsel, reassure at length, or continue troubleshooting\nwhatever they originally wrote in about."
+  },
+  {
+    "id": "what-hamdam-is",
+    "title": "What Hamdam is",
+    "source": "src/pages/privacy.astro, src/pages/terms.astro section 4.1",
+    "body": "Hamdam is an iPhone app: a daily reflection companion built around classical\nPersian poetry. Each day it offers a verse and a reflection, and it can take\naccount of signals you choose to share, such as sleep or weather, to shape the\ntone of that reflection rather than to score anything about you.\n\nThe poets are Hafez, Rumi, Saadi, Khayyam and Parvin Etesami.\n\nIt is explicitly not medical, mental health, or wellness advice, and it is not\na substitute for professional care."
   }
 ] as const;

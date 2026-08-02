@@ -8,7 +8,7 @@ import type {
   TicketStatus,
   TicketWithRequester,
 } from './types.js';
-import type { Impact, Priority, Urgency } from './itil.js';
+import type { Impact, Priority, Topic, Urgency } from './itil.js';
 import type { Channel } from './types.js';
 
 export async function upsertRequester(db: D1Database, email: string, name: string | null): Promise<RequesterRow> {
@@ -33,6 +33,7 @@ export interface NewTicket {
   urgency: Urgency | null;
   category: string | null;
   channel: Channel;
+  topic: Topic;
   trackingToken: string;
   sourceConversationId: string | null;
   lastInboundMessageId: string | null;
@@ -65,6 +66,7 @@ export async function createTicket(db: D1Database, t: NewTicket): Promise<number
       t.createdAt,
       t.slaFirstResponseDue,
       t.slaResolveDue,
+      t.topic,
     )
     .first<{ id: number }>();
   if (!result) throw new Error('createTicket: insert did not return an id');

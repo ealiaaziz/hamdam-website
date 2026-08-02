@@ -24,27 +24,27 @@ describe('composeAssistantReply', () => {
   });
 
   it('offers a matching article', () => {
-    const r = composeAssistantReply({ ...base, conversationText: 'cannot sign in, password not working' });
+    const r = composeAssistantReply({ ...base, conversationText: 'cannot sign in, subscription missing' });
     expect(r.action).toBe('send_solution');
-    expect(r.body).toContain('Cannot sign in to the Hamdam app');
+    expect(r.body).toContain('A purchase or subscription is not showing up');
   });
 
   it('never re-offers an article the requester rejected', () => {
     // The HAM-3 bug, as an assertion.
     const r = composeAssistantReply({
       ...base,
-      conversationText: 'cannot sign in, password not working',
-      rejectedArticles: ['cannot-sign-in'],
+      conversationText: 'cannot sign in, subscription missing',
+      rejectedArticles: ['purchase-not-appearing'],
     });
-    expect(r.articleId).not.toBe('cannot-sign-in');
-    expect(r.body).not.toContain('Cannot sign in to the Hamdam app');
+    expect(r.articleId).not.toBe('purchase-not-appearing');
+    expect(r.body).not.toContain('A purchase or subscription is not showing up');
   });
 
   it('admits it is out of ideas once everything has been rejected', () => {
     const r = composeAssistantReply({
       ...base,
-      conversationText: 'cannot sign in, password not working',
-      rejectedArticles: ['cannot-sign-in', 'verse-not-loading', 'change-notification-time'],
+      conversationText: 'cannot sign in, subscription missing',
+      rejectedArticles: ['purchase-not-appearing', 'verse-not-loading', 'change-notification-time'],
     });
     expect(r.action).toBe('escalate');
     expect(r.escalated).toBe(true);
@@ -76,7 +76,7 @@ describe('composeAssistantReply', () => {
     const r = composeAssistantReply({
       ...base,
       conversationText: 'do you know how windows 11 password reset works?',
-      rejectedArticles: ['cannot-sign-in'],
+      rejectedArticles: ['purchase-not-appearing'],
     });
     expect(r.body).not.toContain('run out of things');
     expect(r.body).toContain('outside what I have written down');
@@ -85,14 +85,14 @@ describe('composeAssistantReply', () => {
   it('still says it is out of ideas when the topic did match and was rejected', () => {
     const r = composeAssistantReply({
       ...base,
-      conversationText: 'cannot sign in, password not working',
-      rejectedArticles: ['cannot-sign-in'],
+      conversationText: 'cannot sign in, subscription missing',
+      rejectedArticles: ['purchase-not-appearing'],
     });
     expect(r.body).toContain('run out of things');
   });
 
   it('escalates visibly on P1 rather than going quiet', () => {
-    const r = composeAssistantReply({ ...base, priority: 'P1', conversationText: 'cannot sign in, password not working' });
+    const r = composeAssistantReply({ ...base, priority: 'P1', conversationText: 'cannot sign in, subscription missing' });
     expect(r.escalated).toBe(true);
     expect(r.body.length).toBeGreaterThan(0);
   });
@@ -105,15 +105,15 @@ describe('composeAssistantReply', () => {
 
   it('never claims to be a person', () => {
     expect(ASSISTANT_NAME).toContain('automated');
-    for (const text of ['cannot sign in, password not working', 'locked out', 'nonsense']) {
+    for (const text of ['cannot sign in, subscription missing', 'locked out', 'nonsense']) {
       const r = composeAssistantReply({ ...base, conversationText: text });
       expect(r.body).not.toMatch(/\bI have looked into\b|\bour engineer\b|\bI checked your account\b/i);
     }
   });
 
   it('only ever quotes steps from the matched article', () => {
-    const r = composeAssistantReply({ ...base, conversationText: 'cannot sign in, password not working' });
-    expect(r.body).toContain('Close the app fully and reopen it');
+    const r = composeAssistantReply({ ...base, conversationText: 'cannot sign in, subscription missing' });
+    expect(r.body).toContain('Restore the purchase from the App Store');
     expect(r.body).not.toContain('reinstall');
   });
 });

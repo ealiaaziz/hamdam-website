@@ -111,7 +111,8 @@ export function adminTicketPage(opts: { ticket: TicketWithRequester; comments: C
 <p class="lede"><a href="/admin">&larr; Queue</a></p>
 <h1>${escapeHtml(ticket.subject)}</h1>
 <p class="lede">${publicId} &middot; ${escapeHtml(ticket.requester_name ?? ticket.requester_email)} &lt;${escapeHtml(ticket.requester_email)}&gt;
-&middot; opened ${formatDateTime(ticket.created_at)} &middot; via ${ticket.channel === 'email' ? 'email' : 'portal'}</p>
+&middot; opened ${formatDateTime(ticket.created_at)} &middot; via ${ticket.channel === 'email' ? 'email' : 'portal'}
+&middot; ${ticket.topic === 'hamdam' ? 'Hamdam app' : 'general IT'}</p>
 
 <div class="grid-2">
   <div class="card">

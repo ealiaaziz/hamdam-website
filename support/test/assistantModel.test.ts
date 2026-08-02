@@ -100,8 +100,8 @@ describe('buildMessages', () => {
     // HAM-3, as an assertion: the same answer three times after three
     // rejections. Removing the article is not enough on its own, because the
     // model can reproduce its advice from general knowledge.
-    const messages = buildMessages({ ...base, rejectedTitles: ['Cannot sign in to the Hamdam app'] });
-    expect(messages[0].content).toContain('did not help: Cannot sign in to the Hamdam app');
+    const messages = buildMessages({ ...base, rejectedTitles: ['A purchase or subscription is not showing up'] });
+    expect(messages[0].content).toContain('did not help: A purchase or subscription is not showing up');
     expect(messages[0].content).toContain('Do not suggest any of these again');
   });
 

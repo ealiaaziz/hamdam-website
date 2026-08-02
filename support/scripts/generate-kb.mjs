@@ -15,6 +15,7 @@ import { fileURLToPath } from 'node:url';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const kbDir = join(here, '..', 'kb');
+const referenceDir = join(kbDir, 'reference');
 const outFile = join(here, '..', 'src', 'data', 'kb.ts');
 
 /** Minimal front-matter reader: `key:` scalars and `- ` lists, nothing more. */
@@ -44,6 +45,21 @@ function parseFrontMatter(raw) {
     }
   }
   return { meta, body: bodyText.trim() };
+}
+
+// Reference material: what the app actually does, as opposed to what to try
+// when it does not. Kept separate from articles because the two are used
+// differently -- an article is offered as a fix and can be rejected by the
+// requester, a reference file is only ever background for answering a
+// question. Merging them would put "how does iCloud sync work" into the
+// feedback card as though it were something to try.
+const reference = [];
+for (const name of readdirSync(referenceDir).filter((f) => f.endsWith('.md') && f !== 'README.md').sort()) {
+  const { meta, body } = parseFrontMatter(readFileSync(join(referenceDir, name), 'utf8'));
+  for (const required of ['id', 'title', 'source']) {
+    if (!meta[required]) throw new Error(`reference/${name}: missing "${required}"`);
+  }
+  reference.push({ id: meta.id, title: meta.title, source: meta.source, body });
 }
 
 const articles = [];
@@ -86,7 +102,23 @@ export interface KbArticle {
 }
 
 export const KB_ARTICLES: readonly KbArticle[] = ${JSON.stringify(articles, null, 2)} as const;
+
+/**
+ * Background the assistant answers *from*, as opposed to fixes it offers.
+ * Every entry is traceable to a reviewed page in this repository via
+ * \`source\`, because the knowledge base this replaced described a sign-in
+ * screen the app does not have.
+ */
+export interface AppReference {
+  id: string;
+  title: string;
+  /** Where in this repository the facts came from. */
+  source: string;
+  body: string;
+}
+
+export const APP_REFERENCE: readonly AppReference[] = ${JSON.stringify(reference, null, 2)} as const;
 `,
 );
 
-console.log(`Generated ${articles.length} article(s) into src/data/kb.ts`);
+console.log(`Generated ${articles.length} article(s) and ${reference.length} reference file(s) into src/data/kb.ts`);

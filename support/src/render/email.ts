@@ -100,3 +100,69 @@ ${FOOTER}
 ${WRAP_CLOSE}`;
   return { subject: `[${publicId}] Resolved: ${opts.subject}`, html };
 }
+
+/**
+ * The conversation so far, emailed to the requester.
+ *
+ * This is the desk's one outbound update per ticket, and it exists because
+ * of how the portal and the mailbox differ. The portal answers instantly and
+ * the requester is watching it. Email is slower and lands somewhere they
+ * will read later, so sending one on every turn produces a pile of
+ * half-finished threads describing a problem that has since moved on.
+ *
+ * So it goes out when the conversation has reached a state worth recording:
+ * they said it was solved, a person took the ticket, or they asked for it.
+ * The content is the thread they have already read, which is what makes
+ * sending it without a human first reading it defensible. Nothing new is
+ * being asserted here, and nothing in it has escaped review that was not
+ * already on the requester's screen.
+ */
+export function conversationSummaryEmail(opts: {
+  ticketId: number;
+  subject: string;
+  priority: Priority;
+  requesterName: string | null;
+  trackingUrl: string;
+  status: 'resolved' | 'with_a_person' | 'in_progress';
+  turns: readonly { who: 'you' | 'support'; body: string }[];
+}): { subject: string; html: string } {
+  const publicId = ticketPublicId(opts.ticketId);
+  const greeting = opts.requesterName ? `Hi ${escapeHtml(opts.requesterName.split(' ')[0])},` : 'Hi,';
+
+  const opening = {
+    resolved: 'Glad that sorted it. Here is the whole conversation for your records, in case it comes up again:',
+    with_a_person:
+      'This one is now with a person on the team rather than the assistant. They can see everything below, so you will not need to repeat any of it. Here is where things got to:',
+    in_progress: 'Here is where this has got to so far:',
+  }[opts.status];
+
+  const closing = {
+    resolved: 'If it comes back, reply to this email and it reopens the same ticket.',
+    with_a_person: 'You will hear from them here. Replying to this email adds to the same ticket.',
+    in_progress: 'Reply to this email or use the link below to carry on.',
+  }[opts.status];
+
+  const thread = opts.turns
+    .map(
+      (t) => `<div style="margin:0 0 1rem 0;padding:0 0 0 0.85rem;border-left:2px solid ${t.who === 'you' ? '#D07B3F' : '#C9BBA6'}">
+  <p style="margin:0 0 0.3rem 0;font-size:0.78rem;letter-spacing:0.04em;text-transform:uppercase;color:#574A38">${t.who === 'you' ? 'You' : 'Hamdam Support'}</p>
+  <p style="margin:0">${textToSafeHtml(t.body)}</p>
+</div>`,
+    )
+    .join('\n');
+
+  const html = `${WRAP_OPEN}
+<p>${greeting}</p>
+<p>${opening}</p>
+<p style="font-size:1.05rem"><strong>${escapeHtml(publicId)}</strong> &middot; ${escapeHtml(opts.subject)}</p>
+${RULE}
+${thread}
+${RULE}
+<p>${closing}</p>
+<p><a href="${opts.trackingUrl}" style="color:#D07B3F">Open ${escapeHtml(publicId)}</a></p>
+${FOOTER}
+${WRAP_CLOSE}`;
+
+  const prefix = { resolved: 'Resolved', with_a_person: 'Update', in_progress: 'Update' }[opts.status];
+  return { subject: `[${publicId}] ${prefix}: ${opts.subject}`, html };
+}

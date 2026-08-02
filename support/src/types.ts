@@ -1,4 +1,4 @@
-import type { Impact, Priority, Urgency } from './itil.js';
+import type { Impact, Priority, Topic, Urgency } from './itil.js';
 
 export type TicketStatus = 'new' | 'open' | 'pending' | 'resolved' | 'closed';
 
@@ -38,6 +38,7 @@ export interface TicketRow {
   urgency: Urgency | null;
   category: string | null;
   channel: Channel;
+  topic: Topic;
   tracking_token: string;
   source_conversation_id: string | null;
   last_inbound_message_id: string | null;
