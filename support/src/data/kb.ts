@@ -97,6 +97,12 @@ export const APP_REFERENCE: readonly AppReference[] = [
     "body": "On supported hardware, iPhone 15 Pro and later running iOS 26 or newer,\nreflections are generated on the device using Apple's Foundation Models. No\ntext and no personal data leaves the device for this.\n\nOn unsupported devices Hamdam falls back to a static, pre-written library of\ncontent.\n\nSo \"why are my reflections different from my friend's\" or \"why do these feel\nless personal\" usually comes down to device hardware, and that is worth\nchecking before anything else."
   },
   {
+    "id": "buying-plus",
+    "title": "What Plus unlocks, and how buying works",
+    "source": "src/components/PlansAndFoundingCompanion.astro, src/pages/terms.astro sections 3.1 to 3.3",
+    "body": "The free tier gives fifteen reflections a month, always, with no time limit\non it.\n\nHamdam Plus adds unlimited reflections, the reflection archive and insights\nacross your whole history, iCloud sync between your devices, Health body\nsignals, and the poet deep-dives beyond Hafez and Rumi. It is sold monthly or\nyearly, with a seven day free trial for new subscribers.\n\nFounding Companion is the one-time purchase: yours for life, shareable with\nyour family through Apple Family Sharing, up to six members.\n\nEverything is bought through Apple. Apple sets the price, displays it at the\npoint of purchase, and takes the payment against the Apple ID. Never quote a\nfigure: it varies by region and Apple can change it.\n\nWhat is deliberately not written down here is the sequence of taps inside the\napp that opens the purchase screen. Nobody has verified it for the current\nbuild, so do not describe it, do not reason it out from how apps like this\nusually work, and do not offer the App Store \"Purchased\" list, which is the\nrestore flow for something already bought and not a way to buy anything.\nSomeone asking where to subscribe gets handed to a person who can open the\napp and look."
+  },
+  {
     "id": "calendar",
     "title": "Calendar",
     "source": "src/pages/privacy.astro section 1.2",

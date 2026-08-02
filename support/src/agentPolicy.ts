@@ -38,6 +38,39 @@ const HUMAN_REQUEST_PHRASES = [
   'human please',
 ];
 
+/**
+ * Phrases that mean "I am done with this", checked so the desk can actually
+ * act on them.
+ *
+ * Live, a requester wrote "close this ticket" and the assistant replied
+ * "This ticket is being closed as requested". Nothing closed it. That is the
+ * worst kind of reply a support desk can send: it reads as an action taken,
+ * so the person stops chasing, and the ticket sits open behind them. An
+ * assistant that cannot do a thing must not say it did.
+ *
+ * Narrow on purpose. "Close" appears in plenty of sentences that are not a
+ * request to close anything, so the word alone is not enough.
+ */
+const CLOSE_REQUEST_PHRASES = [
+  'close this ticket',
+  'close the ticket',
+  'close this case',
+  'close this',
+  'closing this',
+  'you can close',
+  'please close',
+  'no longer need',
+  'sorted now',
+  'all sorted',
+  'that is all i needed',
+  "that's all i needed",
+];
+
+export function requestedClosure(text: string): boolean {
+  const haystack = text.toLowerCase();
+  return CLOSE_REQUEST_PHRASES.some((phrase) => haystack.includes(phrase));
+}
+
 export function requestedAHuman(text: string): boolean {
   const haystack = text.toLowerCase();
   return HUMAN_REQUEST_PHRASES.some((phrase) => haystack.includes(phrase));

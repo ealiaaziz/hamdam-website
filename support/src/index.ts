@@ -12,6 +12,7 @@ import { httpsRedirectTarget, isCrossSiteRequest, isLocalHost, trackingUrl } fro
 import { extractAccessToken, fetchAccessKeys, verifyAccessJwt } from './access.js';
 import { KB_ARTICLES } from './kb.js';
 import { suggestionBlock } from './render/agentSuggestion.js';
+import { requestedClosure } from './agentPolicy.js';
 
 import { composeAssistantReplyLive, ASSISTANT_NAME } from './assistantReply.js';
 import {
@@ -227,6 +228,7 @@ app.post('/tickets', async (c) => {
       assistantTurns: 0,
       askedQuestions: [],
       rejectedArticles: [],
+      topic,
     },
     {
       ai: c.env.AI,
@@ -381,6 +383,25 @@ app.post('/tickets/:id/reply', async (c) => {
       inReplyToMessageId: null,
     });
 
+    // "Close this ticket" is an instruction, not a question, and it is one
+    // the desk can carry out. Doing it here rather than sending it to the
+    // model is the difference between a ticket that closes and a reply that
+    // says it closed: the assistant has no way to change a ticket's status,
+    // so asked to handle this it produced "This ticket is being closed as
+    // requested" and left it open.
+    if (requestedClosure(body)) {
+      await updateTicketStatus(c.env.DB, id, 'closed');
+      await addComment(
+        c.env.DB,
+        id,
+        'agent',
+        ASSISTANT_NAME,
+        'Closed, as you asked. I am emailing you the whole conversation for your records. If it comes up again, reply to that email and this ticket reopens.',
+      );
+      await queueConversationSummary(c.env.DB, { ...ticket, status: 'closed' }, await listComments(c.env.DB, id), 'resolved', c.req.url);
+      return c.redirect(`/tickets/${id}?token=${encodeURIComponent(token)}`, 303);
+    }
+
     // Answer them now, in the thread. This is what was missing: the engine
     // was matching, drafting and notifying, but every output went somewhere
     // the requester could not see, so from their side the desk was silent.
@@ -395,6 +416,7 @@ app.post('/tickets/:id/reply', async (c) => {
         askedQuestions: state.askedQuestions,
         rejectedArticles: state.rejectedArticles,
         alreadyEscalated: state.escalated,
+      topic: ticket.topic,
       },
       {
         ai: c.env.AI,
@@ -556,6 +578,7 @@ app.post('/admin/tickets/:id/assistant-draft', async (c) => {
       askedQuestions: state.askedQuestions,
       rejectedArticles: state.rejectedArticles,
       alreadyEscalated: state.escalated,
+      topic: ticket.topic,
     },
     {
       ai: c.env.AI,

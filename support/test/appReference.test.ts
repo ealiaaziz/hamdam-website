@@ -68,3 +68,93 @@ describe('buildSystemPrompt with reference', () => {
     expect(prompt).toContain('Any price.');
   });
 });
+
+describe('Hamdam questions are never answered from general knowledge', () => {
+  // Live failure: "where do I buy Hamdam Plus" was answered twice from the
+  // model's own guesses. First with the App Store restore flow, which buys
+  // nothing, then with "go to the app's settings or a similar section where
+  // purchases are usually available, however the exact steps may vary",
+  // which is the model saying it does not know in a register that reads as
+  // though it does.
+  it('refuses an answer with no source and hands over instead', async () => {
+    const { composeAssistantReplyLive } = await import('../src/assistantReply.js');
+    const { vi } = await import('vitest');
+    const generate = vi.fn(async () => ({
+      action: 'answer' as const,
+      body: 'You can probably find it in the app settings somewhere.',
+      articleId: null,
+      referenceId: null,
+      question: null,
+    }));
+
+    const r = await composeAssistantReplyLive(
+      {
+        priority: 'P3',
+        conversationText: 'where do I buy Hamdam Plus?',
+        assistantTurns: 0,
+        askedQuestions: [],
+        rejectedArticles: [],
+        topic: 'hamdam',
+      },
+      { ai: {} as Ai, ticketSubject: 'Buying Plus', turns: [], generate },
+    );
+
+    expect(r.escalated).toBe(true);
+    expect(r.body).toContain('do not have it written down');
+    expect(r.body).not.toContain('app settings somewhere');
+  });
+
+  it('still allows a general IT ticket to be answered from general knowledge', async () => {
+    const { composeAssistantReplyLive } = await import('../src/assistantReply.js');
+    const { vi } = await import('vitest');
+    const generate = vi.fn(async () => ({
+      action: 'answer' as const,
+      body: 'On Windows 11, open Settings, then Accounts.',
+      articleId: null,
+      referenceId: null,
+      question: null,
+    }));
+
+    const r = await composeAssistantReplyLive(
+      {
+        priority: 'P4',
+        conversationText: 'how does windows 11 password reset work?',
+        assistantTurns: 0,
+        askedQuestions: [],
+        rejectedArticles: [],
+        topic: 'general_it',
+      },
+      { ai: {} as Ai, ticketSubject: 'Windows', turns: [], generate },
+    );
+
+    expect(r.escalated).toBe(false);
+    expect(r.body).toContain('Windows 11');
+  });
+
+  it('still lets it ask a clarifying question, which asserts nothing', async () => {
+    const { composeAssistantReplyLive } = await import('../src/assistantReply.js');
+    const { vi } = await import('vitest');
+    const generate = vi.fn(async () => ({
+      action: 'ask' as const,
+      body: 'Which iPhone model are you on?',
+      articleId: null,
+      referenceId: null,
+      question: 'Which iPhone model are you on?',
+    }));
+
+    const r = await composeAssistantReplyLive(
+      {
+        priority: 'P3',
+        conversationText: 'reflections feel generic',
+        assistantTurns: 0,
+        askedQuestions: [],
+        rejectedArticles: [],
+        topic: 'hamdam',
+      },
+      { ai: {} as Ai, ticketSubject: 'Reflections', turns: [], generate },
+    );
+
+    expect(r.action).toBe('ask_clarifying');
+    expect(r.escalated).toBe(false);
+  });
+});

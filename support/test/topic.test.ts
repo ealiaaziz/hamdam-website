@@ -96,3 +96,25 @@ describe('article symptoms do not reach past this desk', () => {
     });
   });
 });
+
+describe('requestedClosure', () => {
+  // "This ticket is being closed as requested", said the assistant, and left
+  // it open. A reply that reads as an action taken stops the person chasing.
+  it('recognises being asked to close', async () => {
+    const { requestedClosure } = await import('../src/agentPolicy.js');
+    for (const text of ['close this ticket', 'Please close this', 'you can close it now', 'all sorted, thanks']) {
+      expect(requestedClosure(text), text).toBe(true);
+    }
+  });
+
+  it('does not fire on ordinary uses of the word', async () => {
+    const { requestedClosure } = await import('../src/agentPolicy.js');
+    for (const text of [
+      'the app closes when I open it',
+      'I closed the app and reopened it',
+      'it crashes close to when I tap the verse',
+    ]) {
+      expect(requestedClosure(text), text).toBe(false);
+    }
+  });
+});

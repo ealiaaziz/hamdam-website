@@ -1,6 +1,7 @@
 import { decideAgentAction, requestedAHuman, MAX_ASSISTANT_TURNS, type AgentContext } from './agentPolicy.js';
 import { matchArticles, KB_ARTICLES, type KbArticle } from './kb.js';
 import { generateModelReply, type ModelReply } from './assistantModel.js';
+import type { Topic } from './itil.js';
 
 // The assistant's visible reply in the ticket thread.
 //
@@ -34,6 +35,8 @@ export interface AssistantReplyInput extends AgentContext {
   rejectedArticles: readonly string[];
   /** True once this ticket has already been handed to a person. */
   alreadyEscalated?: boolean;
+  /** Whether this ticket is about the app or about general computing. */
+  topic?: Topic;
 }
 
 function stepsAsText(article: KbArticle): string {
@@ -227,6 +230,29 @@ export async function composeAssistantReplyLive(
   }
 
   if (!reply) return deterministic('model returned nothing');
+
+  // A question about Hamdam answered from general knowledge is a guess about
+  // someone else's product, dressed as support.
+  //
+  // Live, this produced two confident wrong answers to "where do I buy
+  // Hamdam Plus": first the App Store *restore* flow, which is a different
+  // thing entirely, then "go to the app's settings or a similar section
+  // where purchases are usually available, however the exact steps may
+  // vary". The second one is the model telling you it does not know, in a
+  // register that reads as if it does.
+  //
+  // The prompt already said not to. Prompts are advice. This is the rule:
+  // on a Hamdam ticket, an answer must come from a reviewed article or from
+  // the app reference, or it is not an answer. Asking a clarifying question
+  // is still fine, since a question asserts nothing.
+  if (input.topic === 'hamdam' && reply.action === 'answer' && !reply.articleId && !reply.referenceId) {
+    return {
+      body: 'That is a question about Hamdam itself and I do not have it written down, so I am passing it to a person rather than guessing. They can see this whole conversation, so you will not need to repeat any of it.',
+      action: 'escalate',
+      reason: 'model answered a Hamdam question from general knowledge; refused',
+      escalated: true,
+    };
+  }
 
   if (reply.action === 'escalate') {
     return {
