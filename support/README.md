@@ -74,6 +74,12 @@ account, so the runbook below reads as history rather than pending work:
 | Access policy | Allow: `azizollahi@live.com`, `developer@hamdam.com.au` |
 | Team domain | `wispy-art-3af8.cloudflareaccess.com` |
 
+Assistant verified against production on 2026-08-02: a Windows 11 password
+question answered from general knowledge with the "this is general advice"
+line attached, a sign-in ticket answered from the reviewed article and
+recorded as such, and a P1 escalated by the priority gate without a model
+call being spent. Test tickets removed afterwards.
+
 Verified against production: HTTPS 200, HSTS/CSP/XFO/nosniff all present,
 a submitted ticket classified P1 from high impact + high urgency, a wrong
 tracking token 404s, the public portal reachable, and `/admin` 302s to the
@@ -216,6 +222,17 @@ and the desk answers from the keyword matcher instead, which is also what
 
 There is nothing to turn on. The `ai` binding in `wrangler.jsonc` is the
 whole configuration, and `npm run deploy` is the whole install.
+
+One wart worth knowing before you touch `assistantModel.ts`: Cloudflare
+documents JSON mode as supported on this model and rejects every such
+request with `4009: an internal server error occured`, whatever the schema.
+So the call asks twice: once with `response_format`, and once in plain text
+with the shape described in the final turn. Only the second attempt has ever
+succeeded in production. Both are kept because the first costs nothing when
+it fails and will start working the day Cloudflare fixes it. The format
+instruction lives in the *last* turn on purpose: in the system prompt it was
+ignored on exactly the tickets that mattered, where the model had articles to
+work from and wrote an excellent support answer in prose and no JSON.
 
 What this buys, and what it does not:
 
