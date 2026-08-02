@@ -15,6 +15,7 @@ import { suggestionBlock } from './render/agentSuggestion.js';
 import { canSendDirectly, sendMail } from './mailer.js';
 import { isAllowedCountry, parseAllowedCountries } from './geo.js';
 import { ingestInbox } from './ingest.js';
+import { notifyEscalation } from './escalation.js';
 import { requestedClosure } from './agentPolicy.js';
 
 import { composeAssistantReplyLive, ASSISTANT_NAME } from './assistantReply.js';
@@ -308,6 +309,9 @@ app.post('/tickets', async (c) => {
     reason: first.reason,
     escalated: first.escalated,
   });
+  // A brand new ticket has never been escalated before, so this is always
+  // the first time and always worth sending.
+  if (first.escalated) c.executionCtx.waitUntil(notifyEscalation(c.env, ticketId, first.reason));
 
   return c.redirect(`/tickets/${ticketId}?token=${trackingToken}&submitted=1`, 303);
 });
@@ -498,6 +502,13 @@ app.post('/tickets/:id/reply', async (c) => {
     });
     if (reply.escalated && ticket.status === 'new') {
       await updateTicketStatus(c.env.DB, id, 'open');
+    }
+    // Only on the transition. A requester adding three messages to a ticket
+    // already handed over should not produce three identical alerts: an
+    // alert that arrives repeatedly stops being read, which is worse than
+    // one that never arrived.
+    if (reply.escalated && !state.escalated) {
+      c.executionCtx.waitUntil(notifyEscalation(c.env, id, reply.reason));
     }
 
     // No email per turn. The portal already answered them, instantly, and

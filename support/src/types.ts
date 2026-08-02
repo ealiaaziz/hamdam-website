@@ -118,6 +118,12 @@ export interface Env {
    */
   ALLOWED_COUNTRIES?: string;
   /**
+   * Who is told when a ticket needs a person, comma-separated. Plain config:
+   * these are the team's own addresses, and who is on call is a fact that
+   * should be visible in a diff rather than buried in a secret.
+   */
+  ESCALATION_RECIPIENTS?: string;
+  /**
    * Microsoft Graph app-only credentials, so the Worker can send mail as
    * developer@hamdam.com.au the moment there is something to send, instead
    * of leaving it for the hourly Routine.

@@ -5,6 +5,7 @@ import { fetchInbox, sendMail, canSendDirectly, SENDER, type InboundMessage } fr
 import { cleanSubject, planInbound } from './inbound.js';
 import { composeAssistantReplyLive, ASSISTANT_NAME } from './assistantReply.js';
 import { requestedClosure } from './agentPolicy.js';
+import { notifyEscalation } from './escalation.js';
 import { ackEmail } from './render/email.js';
 import { assistantWrittenEmail } from './render/agentEmail.js';
 import {
@@ -126,6 +127,9 @@ async function replyWithAssistant(env: Env, ticketId: number): Promise<void> {
     escalated: reply.escalated,
   });
   if (reply.escalated && ticket.status === 'new') await updateTicketStatus(env.DB, ticketId, 'open');
+  // Only on the transition, same as the portal: state was read before the
+  // reply, so this is the ticket's first handover and not a repeat.
+  if (reply.escalated && !state.escalated) await notifyEscalation(env, ticketId, reply.reason);
 
   const rendered = assistantWrittenEmail({
     ticketId,
