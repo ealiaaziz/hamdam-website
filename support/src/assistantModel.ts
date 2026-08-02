@@ -284,43 +284,81 @@ export function sanitiseModelReply(
 }
 
 /**
- * Calls the model. Throws on anything unexpected; the caller is expected to
- * catch and fall back, because a support desk that returns a 500 because an
- * inference queue was busy is worse than one that answers from its keyword
- * matcher.
+ * Pulls the first JSON object out of a model's reply.
  *
- * Workers AI takes the system prompt as the first message rather than as its
- * own parameter, and returns the JSON-mode result already parsed under
- * `response`. It can also hand back a string, and it can fail to satisfy the
- * schema at all, so both are handled here rather than assumed away.
+ * Needed for the plain-text attempt below, where there is no grammar holding
+ * the model to the shape and it will wrap the object in a sentence, a code
+ * fence, or both. Deliberately crude: find the first brace, find the last,
+ * and let JSON.parse be the judge.
+ */
+export function extractJsonObject(text: string): unknown {
+  const open = text.indexOf('{');
+  const close = text.lastIndexOf('}');
+  if (open === -1 || close <= open) return null;
+  try {
+    return JSON.parse(text.slice(open, close + 1));
+  } catch {
+    return null;
+  }
+}
+
+/** What to send when the model must be told about the shape in words. */
+const JSON_INSTRUCTION = `Reply with a single JSON object and nothing else. No code fence, no explanation around it. Exactly these four keys:
+{"action": "answer | ask | escalate", "body": "the message the requester reads", "article_id": "the reviewed article id, or an empty string", "question": "your one question when action is ask, or an empty string"}`;
+
+/**
+ * Calls the model, and keeps a second way of asking.
+ *
+ * Workers AI advertises JSON mode for this model and rejects the request
+ * with "4009: an internal server error occurred" anyway. Rather than pick
+ * one and hope, this asks with the grammar first and, if that fails, asks
+ * again in words. The second attempt is worse -- nothing constrains the
+ * output, so it fails validation more often -- but "worse" and "nothing" are
+ * a long way apart when someone is waiting on the page.
+ *
+ * Both attempts feed the same validator. Neither is trusted more than the
+ * other because of how it was obtained.
  */
 export async function generateModelReply(ai: Ai, input: ModelReplyInput): Promise<ModelReply | null> {
-  const result = (await ai.run(ASSISTANT_MODEL as keyof AiModels, {
-    messages: [{ role: 'system', content: buildSystemPrompt(input.articles) }, ...buildMessages(input)],
-    // Short, because the reply is short and the person is waiting. A small
-    // model given room to keep writing will use it.
-    max_tokens: 700,
-    // Low, not zero. Support answers should be steady rather than creative,
-    // and the interesting variation is in which article applies, not in the
-    // wording.
-    temperature: 0.2,
-    response_format: { type: 'json_schema', json_schema: REPLY_SCHEMA },
-  } as never)) as { response?: unknown };
+  const system = buildSystemPrompt(input.articles);
+  const conversation = buildMessages(input);
 
-  const payload = result?.response;
-  if (payload === undefined || payload === null) {
+  const call = async (extra: Record<string, unknown>, systemText: string) =>
+    (await ai.run(ASSISTANT_MODEL as keyof AiModels, {
+      messages: [{ role: 'system', content: systemText }, ...conversation],
+      // Short, because the reply is short and the person is waiting. A small
+      // model given room to keep writing will use it.
+      max_tokens: 700,
+      // Low, not zero. Support answers should be steady rather than
+      // creative, and the interesting variation is in which article applies,
+      // not in the wording.
+      temperature: 0.2,
+      ...extra,
+    } as never)) as { response?: unknown };
+
+  let raw: unknown = null;
+  let howAsked = 'json schema';
+
+  try {
+    raw = (await call({ response_format: { type: 'json_schema', json_schema: REPLY_SCHEMA } }, system))?.response ?? null;
+  } catch (error) {
+    console.warn('assistant: json mode refused, asking in words', error instanceof Error ? error.message : String(error));
+  }
+
+  if (raw === null) {
+    howAsked = 'plain text';
+    raw = (await call({}, `${system}\n\n${JSON_INSTRUCTION}`))?.response ?? null;
+  }
+
+  if (raw === null) {
     console.warn('assistant: model returned no response payload');
     return null;
   }
 
-  let parsed: unknown = payload;
-  if (typeof payload === 'string') {
-    try {
-      parsed = JSON.parse(payload);
-    } catch {
-      console.warn('assistant: model response was not JSON', payload.slice(0, 200));
-      return null;
-    }
+  const parsed = typeof raw === 'string' ? extractJsonObject(raw) : raw;
+  if (parsed === null) {
+    console.warn('assistant: model response was not JSON', String(raw).slice(0, 200));
+    return null;
   }
 
   const reply = sanitiseModelReply(parsed, input);
@@ -328,6 +366,6 @@ export async function generateModelReply(ai: Ai, input: ModelReplyInput): Promis
   // reply that fails validation looks identical from the outside to a reply
   // that was never asked for: both show up as a keyword answer. Without this
   // line the only way to tell them apart is to guess.
-  if (!reply) console.warn('assistant: model reply failed validation', JSON.stringify(parsed).slice(0, 300));
+  if (!reply) console.warn(`assistant: reply failed validation (asked via ${howAsked})`, JSON.stringify(parsed).slice(0, 300));
   return reply;
 }

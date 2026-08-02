@@ -3,6 +3,7 @@ import { KB_ARTICLES } from '../src/kb.js';
 import {
   buildMessages,
   buildSystemPrompt,
+  extractJsonObject,
   readsAsHumanAction,
   sanitiseModelReply,
   MAX_REPLY_CHARS,
@@ -183,5 +184,25 @@ describe('sanitiseModelReply', () => {
   it('discards a question attached to an action that is not asking one', () => {
     const r = sanitiseModelReply({ ...ok, action: 'answer', question: 'Which device?' }, base);
     expect(r?.question).toBeNull();
+  });
+});
+
+describe('extractJsonObject', () => {
+  // The plain-text attempt has no grammar holding the model to the shape, so
+  // it wraps the object in prose, a code fence, or both.
+  it('finds the object inside whatever the model wrapped it in', () => {
+    for (const wrapped of [
+      '{"action":"answer"}',
+      'Here you go:\n```json\n{"action":"answer"}\n```',
+      'Sure. {"action":"answer"} Hope that helps.',
+    ]) {
+      expect(extractJsonObject(wrapped), wrapped).toEqual({ action: 'answer' });
+    }
+  });
+
+  it('returns null rather than throwing when there is no object', () => {
+    for (const bad of ['', 'no json here', '{ not json ]']) {
+      expect(extractJsonObject(bad), bad).toBeNull();
+    }
   });
 });
