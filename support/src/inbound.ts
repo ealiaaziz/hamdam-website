@@ -40,15 +40,30 @@ export function isFromTheDesk(fromEmail: string): boolean {
  * replying to it cannot work; an auto-reply means the person is away and
  * will read the thread when they return.
  */
-const AUTOMATED_SENDER =
-  /^(postmaster|mailer-daemon|maildaemon|microsoftexchange[0-9a-f]*|no-?reply|donot-?reply|bounces?|notifications?)[@+]/i;
+/**
+ * Tokens that mark an address as a machine, matched anywhere in the local
+ * part rather than only at its start.
+ *
+ * Anchoring at the start was not enough, and the miss was expensive:
+ * `microsoft-noreply@microsoft.com` sent an admin notification that became a
+ * P3 ticket, got an acknowledgement posted back to the noreply address, and
+ * escalated, which put a "needs a person" alert in front of two people about
+ * a Microsoft billing notice. A false escalation is worse than a missed one,
+ * because it is what teaches people to stop reading the alerts.
+ *
+ * Bounded by a separator or an end, so `noreplacement@` and a person called
+ * Bounce are still people.
+ */
+const AUTOMATED_LOCALPART =
+  /(^|[.\-_+])(postmaster|mailer-?daemon|maildaemon|microsoftexchange[0-9a-f]*|no-?reply|do-?not-?reply|bounces?|notifications?|automailer|autoreply)([.\-_+]|$)/i;
 
 const AUTOMATED_SUBJECT =
   /^\s*(undeliverable|undelivered\s+mail|delivery\s+(status\s+notification|failure)|mail\s+delivery\s+(failed|subsystem)|returned\s+mail|automatic\s+reply|auto(matic)?[-\s]?reply|out\s+of\s+(the\s+)?office|away\s+from\s+my\s+mail)/i;
 
 export function isAutomatedMail(fromEmail: string, subject: string): boolean {
   const from = fromEmail.trim().toLowerCase();
-  if (AUTOMATED_SENDER.test(from)) return true;
+  const localPart = from.split('@')[0] ?? '';
+  if (AUTOMATED_LOCALPART.test(localPart)) return true;
   // Some bounce generators use an ordinary-looking envelope address, so the
   // subject is checked independently rather than only as a tiebreak.
   return AUTOMATED_SUBJECT.test(subject);
