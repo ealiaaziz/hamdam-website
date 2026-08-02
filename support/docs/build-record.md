@@ -735,3 +735,154 @@ subdomain and version preview URLs were both confirmed disabled on the
 deployed Worker, which matters more than it sounds: either one would have
 been a hostname serving this desk with no WAF rule and no Access application
 in front of it.
+
+---
+
+## Closing the audit's findings, 2026-08-02
+
+Everything the audit left open, closed, except the parts that are not in this
+repository. Seven code changes, two DNS deletions and a zone setting. The
+common shape: almost none of these were things that were broken. They were
+controls that existed and did less than the documentation around them
+claimed.
+
+### The From header is no longer an identity
+
+Appending to a ticket now requires that Exchange authenticated the sender's
+address, not merely that the address matches. `authResults.ts` reads the
+`Authentication-Results` header Exchange stamps on delivery and accepts three
+things, which are the three ways DMARC can be satisfied: `dmarc=pass`, a
+`dkim=pass` whose `header.d` aligns with the From domain, or an `spf=pass`
+whose envelope aligns with it. Anything else, including the absence of a
+verdict, is unauthenticated.
+
+The part that had to be right is *which* header to believe.
+`Authentication-Results` is an ordinary header and the sender can put one in
+the message they compose, saying whatever they like; a check that scanned all
+of them for a pass would be asking the attacker whether the attacker is
+authentic. The receiving server prepends its own, so the genuine verdict is
+above any the sender wrote, and Microsoft always includes `compauth=` in
+theirs while nothing else does. Taking the first header carrying `compauth=`
+lands on Exchange's own even if the ordering assumption is ever wrong, and on
+nothing at all if Exchange did not stamp one.
+
+Failing the check loses nothing: the message becomes its own ticket, in front
+of a person, exactly as a tag from a non-owner already did.
+
+The header is fetched per message rather than added to the batch query's
+`$select`, and only for messages that would otherwise write to an existing
+thread. The cheap reason is cost. The real reason is that if
+`internetMessageHeaders` is ever unavailable in a list projection, folding it
+into the batch would make every message in the mailbox fail at once, and a
+graceful degradation applied to one message is a mess applied to all of them.
+
+**This is the change most likely to be noticed in ordinary use.** A reply from
+a requester whose mail cannot be authenticated now opens a new ticket instead
+of continuing the old one. That is the intended behaviour and it is still a
+behaviour change, so the first real reply after this deploy is worth watching.
+
+### The rate limit keys stopped being literal
+
+`victim+1@example.com` and `victim+2@example.com` are one inbox and were two
+buckets. An IPv6 caller sources traffic from a /64 they were delegated, which
+is eighteen quintillion addresses, so the per-caller ceiling counted nothing
+at all for anyone on a modern connection.
+
+Metering now folds: plus-tags stripped for everyone, dots folded for Google's
+domains only, IPv6 counted per /64. Authorisation still does not fold and
+must not. `sameAddress` in `inbound.ts` stays literal, because folding widens
+a set, and a wider set is right for counting how much mail one person can be
+sent and wrong for deciding who somebody is. The same two lines of code were
+doing both jobs and only one of them wanted this.
+
+### One ceiling on mail to any one address
+
+The portal metered its own submissions and the mailbox metered its own
+senders, and neither counted the thing that matters to a stranger, which is
+their own inbox. The mailbox in particular had no recipient ceiling at all,
+so the door described as the gentler one would push roughly forty pieces of
+mail an hour into an address of the sender's choosing.
+
+`outbound_recipient` is checked at the act of sending, which is the single
+point every path crosses, so a route added later inherits it without having
+to remember it. The row is still written and still visible in the console
+when the limit is hit; what stops is delivery, with a reason attached.
+Escalation is exempt by address, because an alert to the team is the one
+message whose entire purpose is to arrive.
+
+### The console has a second lock
+
+`ADMIN_EMAILS`, checked in the Worker after the Access assertion verifies.
+Who counted as an agent lived entirely in one Cloudflare Access policy, so
+widening that policy widened this console silently, from somewhere that
+leaves no line in a diff. This is the argument the country check already won,
+applied at last to the surface that actually holds people's data.
+
+Unset admits everyone, which is how the desk has been running, and the
+console says so on every page instead of pretending. Failing closed is the
+right instinct and it was the wrong trade here: the deploy introducing the
+file would have locked the only two people out of the console they would
+then need in order to fix it. **It is not a second lock until the secret is
+set**, and that needs the addresses on the Access policy, which are not
+knowable from inside this repository.
+
+### Smaller, and one of them is not small
+
+The four separate readings of `CF-Ray` are now one named function in
+`edge.ts`. Naming a shared assumption does not remove it. It makes it greppable,
+so the person adding a fifth caller meets the comment, and a change of signal
+is one edit instead of four.
+
+Bidirectional and zero-width characters are stripped. U+202E reorders the
+text after it without appearing, so a subject can be stored as one string and
+displayed as another in the console and in the escalation email, which are
+what a person reads when deciding what a ticket is. Escaping cannot help
+because these are text, not markup. **U+200C is deliberately kept**: in
+Persian it is orthography rather than decoration, and removing it would
+corrupt ordinary text on a desk that is half Persian, to defend against a
+spoof it cannot perform.
+
+The processed-message ledger is scoped to the sender. Its key is
+`internetMessageId`, which is the sender's own `Message-ID`, so an unscoped
+ledger let anyone insert a row under an id a later message would carry and
+have that message skipped without trace. Not practical against Exchange's
+ids; still an attacker-controlled primary key doing an integrity job, and
+pairing it with the address was free.
+
+Observability is on, which was the audit's lowest score by a distance. Every
+finding so far was found by somebody deliberately looking, and nothing in the
+system would have raised its hand. `preview_urls: false` and
+`workers_dev: false` are both pinned in `wrangler.jsonc` now: they were
+already off on the deployed Worker, and either one would publish this desk on
+a `*.workers.dev` address where the WAF rule does not match and the Access
+application does not apply.
+
+### Infrastructure
+
+`msoid` (a retired Office 365 client-configuration record the earlier pass
+missed) and `_domainconnect` are deleted. `_domainconnect` had been kept
+deliberately, on the reasoning that removing it breaks the registrar's setup
+flow; that reasoning was wrong, because this zone is served by Cloudflare
+nameservers and GoDaddy's Domain Connect flow does not apply to it. Twenty
+four records remain.
+
+The zone SSL mode is `full (strict)`. It is inert today, since all four
+proxied records are Worker custom domains with no origin behind them, and it
+is correct the moment one of them points at a real server, which is exactly
+when nobody would think to check it.
+
+### Still not done, and not doable from here
+
+Both are in the Microsoft tenant and both were on the accepted-risk list
+before the audit raised them again:
+
+* **`Mail.Send` is unscoped**, so the credential can send as every mailbox in
+  the tenant, from a Worker on the public internet. `New-ApplicationAccessPolicy`
+  in Exchange Online scopes it to the one mailbox; the command is in
+  `../README.md`. This is the largest single risk in the system.
+* **The Graph client secret has never been rotated**, and it has been quoted
+  in a chat transcript.
+* **Cloudflare Access still has no MFA** and a 24 hour session. The tenant has
+  Entra ID with MFA available; wiring it in as the Access identity provider
+  is the fix, and it is the change that can lock both agents out, so it is
+  deliberately not something to slip into a hardening pass.
