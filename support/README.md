@@ -74,6 +74,48 @@ account, so the runbook below reads as history rather than pending work:
 | Access policy | Allow: `azizollahi@live.com`, `developer@hamdam.com.au` |
 | Team domain | `wispy-art-3af8.cloudflareaccess.com` |
 
+## Two queues, one desk
+
+The desk answers questions about the Hamdam app and general computing
+questions, and it does not owe them the same speed.
+
+`detectTopic` in `src/itil.ts` reads which one a ticket is. A Hamdam ticket
+cannot fall below **P3** however mildly it was described, because someone
+hitting a problem with the product may be a day from deleting it. The floor
+only ever raises: a Hamdam ticket the impact/urgency matrix already rated P1
+or P2 keeps that rating. General questions keep whatever the matrix gave them
+and are answered properly, not brushed off. They are a courtesy, and a
+courtesy done badly is worse than one declined.
+
+Topic is stored on the ticket rather than re-derived, because it sets an SLA
+clock at creation. Re-deriving it later would let an edit to the term list
+silently retime a promise already made.
+
+## When email goes out
+
+The portal is instant. Email is not, and the two are used for different
+things.
+
+* **On creation**: the acknowledgement, automatically.
+* **On every portal reply**: nothing. The requester is watching the page and
+  already has their answer. An email per turn produces a pile of
+  half-finished threads about a problem that has since moved on.
+* **When the state settles**: one email carrying the conversation. That is
+  when they mark it solved, when a person takes the ticket over, or when they
+  press "Email me this conversation" on the ticket page.
+
+The settled-state email sends without anyone approving it, which is a
+deliberate departure from draft-first and worth understanding. It contains
+only the thread the requester has already read on their own screen. Nothing
+in it is new, so there is nothing for a reviewer to catch that they have not
+already seen. Assistant replies drafted for *email-originated* tickets, via
+the console button, are still drafts: those go to someone who never chose to
+talk to a machine.
+
+Delivery is the hourly Routine, not the Worker. Workers cannot reach
+Composio, so a queued row waits for the next run. Check when that is with the
+Routine's cron before concluding an email is lost.
+
 ### Smoke-testing against production
 
 Use `@example.com` for the requester address. Never a real mailbox, and
