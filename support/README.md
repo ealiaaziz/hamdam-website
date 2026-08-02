@@ -35,6 +35,24 @@ Agent ──(dashboard reply)──► Worker ──► D1 ──► queued outb
   file's header comments for the reasoning behind each design choice.
 * **ITIL engine** (`src/itil.ts`): impact x urgency -> P1-P4, plus the SLA
   policy table. Fully unit tested (`test/itil.test.ts`).
+* **Assistant** (`src/agentPolicy.ts`, `src/assistantModel.ts`,
+  `src/assistantReply.ts`): what the desk says back, in two halves that are
+  deliberately not mixed. The *policy* half decides whether the assistant may
+  answer at all -- never a P1 or P2, never after a request for a person,
+  never past three turns -- and it is ordinary code with tests beside it, not
+  a paragraph in a prompt. The *model* half decides the words, calling
+  Cloudflare Workers AI (`llama-3.3-70b-instruct-fp8-fast`) with the reviewed
+  knowledge base articles as its only source for anything Hamdam-specific,
+  and general computing knowledge allowed for everything else. Answers that
+  did not come from an article say so to the requester, because a reviewed
+  answer and a model's confidence read identically on screen unless one of
+  them admits which it is. Every model reply is validated before anyone
+  reads it (`sanitiseModelReply`): an invented article id, a repeat of a
+  question already asked, or wording that implies a person looked at the
+  account all cause the reply to be thrown away and the keyword answer used
+  instead. With no `AI` binding, on any inference failure, or once the daily
+  call budget is spent, the whole thing degrades to the keyword matcher. The
+  desk gets plainer. It never goes silent.
 * **Hourly Routine**: the only thing that can reach Composio/Outlook. Reads
   new inbox mail, creates/updates tickets, sends the queued outbound email.
   Full design and the exact prompt: `docs/email-routine.md`. **Read that
@@ -55,6 +73,159 @@ account, so the runbook below reads as history rather than pending work:
 | Access app | `Hamdam Support Admin` on `support.hamdam.com.au/admin`, 24h sessions |
 | Access policy | Allow: `azizollahi@live.com`, `developer@hamdam.com.au` |
 | Team domain | `wispy-art-3af8.cloudflareaccess.com` |
+
+## Two queues, one desk
+
+The desk answers questions about the Hamdam app and general computing
+questions, and it does not owe them the same speed.
+
+`detectTopic` in `src/itil.ts` reads which one a ticket is. A Hamdam ticket
+cannot fall below **P3** however mildly it was described, because someone
+hitting a problem with the product may be a day from deleting it. The floor
+only ever raises: a Hamdam ticket the impact/urgency matrix already rated P1
+or P2 keeps that rating. General questions keep whatever the matrix gave them
+and are answered properly, not brushed off. They are a courtesy, and a
+courtesy done badly is worse than one declined.
+
+Topic is stored on the ticket rather than re-derived, because it sets an SLA
+clock at creation. Re-deriving it later would let an edit to the term list
+silently retime a promise already made.
+
+## When email goes out
+
+The portal is instant. Email is not, and the two are used for different
+things.
+
+* **On creation**: the acknowledgement, automatically.
+* **On every portal reply**: nothing. The requester is watching the page and
+  already has their answer. An email per turn produces a pile of
+  half-finished threads about a problem that has since moved on.
+* **When the state settles**: one email carrying the conversation. That is
+  when they mark it solved, when a person takes the ticket over, or when they
+  press "Email me this conversation" on the ticket page.
+
+The settled-state email sends without anyone approving it, which is a
+deliberate departure from draft-first and worth understanding. It contains
+only the thread the requester has already read on their own screen. Nothing
+in it is new, so there is nothing for a reviewer to catch that they have not
+already seen. Assistant replies drafted for *email-originated* tickets, via
+the console button, are still drafts: those go to someone who never chose to
+talk to a machine.
+
+### Reading the inbox
+
+A cron trigger runs every minute and reads `developer@hamdam.com.au` through
+Graph. New mail becomes a ticket with an acknowledgement and an assistant
+reply inside that minute; a reply on an existing thread becomes a comment and
+gets answered the same way. Same guards as the portal, because it is the same
+function: P1 and P2 never reach the model, a Hamdam answer must cite a
+source, closure requests are carried out rather than described.
+
+This replaces the hourly Routine, and the reason is not only speed. The
+Routine was a Claude session holding database credentials and a mailbox,
+reading text written by strangers. That is the one place in this system where
+attacker-authored input met tools, and it is now a function that reads a
+sender, a subject and a body and cannot be argued into anything else.
+
+Three things make a re-run safe, which matters because Cloudflare retries a
+failed scheduled handler:
+
+* `inbound_emails` is keyed on Outlook's `internetMessageId`, so a message is
+  only ever processed once.
+* The checkpoint advances only after a clean pass, and only as far as the
+  newest message actually handled. Advancing it optimistically turns one bad
+  run into permanently unread mail, which nobody notices until a requester
+  asks why they were ignored.
+* Mail from the desk's own address is skipped before anything else. Without
+  that the desk emails a requester, reads its own message, files it as a
+  ticket, and acknowledges it, forever.
+
+Quoted history is stripped from replies, conservatively: cutting too little
+leaves untidy text on a ticket, cutting too much loses what the person
+actually wrote.
+
+`Mail.Read` is needed on the app registration alongside `Mail.Send`. Without
+the Graph secrets the cron does nothing and the Routine remains the way mail
+arrives.
+
+### Delivery
+
+The Worker sends directly, through Microsoft Graph, as
+`developer@hamdam.com.au`. That is the real mailbox sending: the message
+lands in its Sent Items next to anything a person sends by hand, and replies
+come back to the same inbox the Routine already reads. Nothing about
+receiving mail changed.
+
+The queue is still the record. A row is written first and only marked `sent`
+once Graph accepts it, so a failed send leaves an ordinary pending row that
+the hourly Routine picks up exactly as it always did. Immediate delivery is
+an improvement on the queue, not a replacement, and the failure mode is the
+old behaviour rather than a lost email. Failures are marked `failed` with the
+reason from Graph, because a row with no explanation is what wastes an
+afternoon.
+
+Three secrets turn it on. Without them every row simply waits for the
+Routine, which is what CI and local development do:
+
+```
+npx wrangler secret put GRAPH_TENANT_ID
+npx wrangler secret put GRAPH_CLIENT_ID
+npx wrangler secret put GRAPH_CLIENT_SECRET
+npm run deploy
+```
+
+They come from an app registration in Entra ID (Azure portal, Microsoft Entra
+ID, App registrations, New registration; then API permissions, Microsoft
+Graph, **Application** permissions, `Mail.Send` and `Mail.Read`, and Grant
+admin consent;
+then Certificates and secrets for the value). `Mail.Send` as an application
+permission grants send-as rights for *every* mailbox in the tenant, so scope
+it down to this one with an application access policy:
+
+```
+New-ApplicationAccessPolicy -AppId <client-id> -PolicyScopeGroupId developer@hamdam.com.au `
+  -AccessRight RestrictAccess -Description "Hamdam support desk"
+```
+
+Skipping that leaves a credential that can send as anyone in the tenant, in a
+Worker reachable from the public internet.
+
+### Smoke-testing against production
+
+Use `@example.com` for the requester address. Never a real mailbox, and
+never the desk owner's.
+
+That domain is reserved by RFC 2606 and undeliverable, so the acknowledgement
+queues, the routine tries to send it, and it goes nowhere. Everything else
+about the test is identical.
+
+This is written down because the alternative was tried. Testing the assistant
+on 2026-08-02 used the owner's real address for the requester, the hourly
+routine drained the queue mid-test, and four acknowledgement emails for
+tickets that no longer existed arrived in their inbox. Deleting the ticket
+rows afterwards did not recall them: the queue is a queue, and once a row is
+marked sent the mail is gone.
+
+Requesters are keyed on email, so reusing a real address also overwrites that
+person's name with whatever the test form said. Check the `requesters` table
+after any test that used one.
+
+Delete test tickets when finished, child rows first, or the foreign keys
+refuse:
+
+```
+npx wrangler d1 execute hamdam-support-db --remote --command \
+  "DELETE FROM outbound_emails WHERE ticket_id = N; \
+   DELETE FROM comments WHERE ticket_id = N; \
+   DELETE FROM ticket_agent_state WHERE ticket_id = N; \
+   DELETE FROM tickets WHERE id = N;"
+```
+
+Assistant verified against production on 2026-08-02: a Windows 11 password
+question answered from general knowledge with the "this is general advice"
+line attached, a sign-in ticket answered from the reviewed article and
+recorded as such, and a P1 escalated by the priority gate without a model
+call being spent. Test tickets removed afterwards.
 
 Verified against production: HTTPS 200, HSTS/CSP/XFO/nosniff all present,
 a submitted ticket classified P1 from high impact + high urgency, a wrong
@@ -135,6 +306,64 @@ Two consequences worth knowing:
   `CF-Ray` header, which every real edge request carries, so it cannot open
   the console on the deployed site. `.dev.vars` is gitignored.
 
+## Where the portal answers from
+
+Set in `ALLOWED_COUNTRIES` in `wrangler.jsonc`. Currently Australia, New
+Zealand, Iran, the UAE, the United Kingdom, the United States and the
+Netherlands: Hamdam is a Persian poetry app sold from Brisbane, so the
+audience is the diaspora as much as the local market.
+
+The portal is the one unauthenticated, internet-facing part of this system.
+Everywhere outside that list is refused, not because those visitors are
+suspect but because serving a country nobody is selling to is exposure bought
+for nothing.
+
+Two locks, deliberately:
+
+1. **A Cloudflare WAF custom rule**, which stops the request at the edge
+   before a Worker runs. This is the one that actually saves anything, and it
+   also covers the Cloudflare Access login page, which the Worker never sees.
+2. **The same list in `src/geo.ts`**, checked in middleware. A WAF rule is one
+   dashboard click from being deleted by someone tidying up, and that failure
+   is silent. Same reasoning as the HTTPS redirect living in the Worker
+   despite the zone setting.
+
+The WAF rule, in **Security, WAF, Custom rules, Create rule** on the
+`hamdam.com.au` zone:
+
+```
+Field       Hostname          equals  support.hamdam.com.au
+  and
+Field       Country       not in     Australia, New Zealand, Iran,
+                                       United Arab Emirates, United Kingdom,
+                                       United States, Netherlands
+Action      Block
+```
+
+Expression form, if editing as text:
+
+```
+(http.host eq "support.hamdam.com.au" and not ip.src.country in {"AU" "NZ" "IR" "AE" "GB" "US" "NL"})
+```
+
+Unknown origins are refused, not waved through. Cloudflare reports `XX` when
+it cannot place an address and `T1` for Tor, and treating "we do not know" as
+"probably fine" would make the whole rule decorative.
+
+**Email is not restricted, on purpose.** A customer travelling overseas still
+reaches the desk at `developer@hamdam.com.au`, the cron opens their ticket
+within the minute, and the blocked page says exactly that. A refusal with no
+route through is just a wall.
+
+Two consequences worth knowing before this bites:
+
+* An agent travelling outside the list cannot open `/admin`, even signed in
+  through Access. Widen `ALLOWED_COUNTRIES` and the WAF rule for the trip, or
+  work the queue by email.
+* A customer outside the list cannot open their own tracking link. They get the
+  blocked page, which tells them to email, and their ticket continues in that
+  thread.
+
 ## Known residual risks
 
 Fixed and covered by tests: Access identity forgery, plaintext tracking
@@ -146,7 +375,12 @@ console's state-changing posts. What is *not* addressed in v1:
   doubles as a way to flood the desk or bounce mail at a forged address.
   There is no in-Worker rate limiting (that needs KV or a Durable Object).
   The cheap fix is a Cloudflare **Rate Limiting rule** on `POST /tickets` in
-  the dashboard -- worth adding before publicising the URL.
+  the dashboard -- worth adding before publicising the URL. Since the same
+  endpoint now spends money on a model call, there is a crude second control
+  in the meantime: `assistant_usage` caps model calls per UTC day
+  (`ASSISTANT_DAILY_CALL_LIMIT`, default 200), above which replies come from
+  the keyword matcher. That bounds the bill. It does not bound the mail, so
+  the edge rule is still the fix.
 * **The routine reads attacker-authored text with tools attached.** Inbound
   email is fed to a Claude session holding database and send-mail tools, so
   a crafted message is a prompt-injection attempt by construction. The
@@ -176,10 +410,52 @@ console, which uses the `DEV_ADMIN_EMAIL` identity from `.dev.vars`. Without
 that file `/admin` returns 503, which is the same fail-closed behaviour the
 deployed Worker has before Access is configured.
 
-Run tests with `npm test` (vitest). Covered: the ITIL matrix and SLA policy,
-the URL/HTTPS rules, Access JWT verification (against a generated keypair,
-so the signature path is exercised for real rather than mocked), and the
-`scripts/*.mjs` CLI wrappers.
+The assistant runs without inference locally: `wrangler dev --local` has no
+`AI` binding, so replies come from the keyword matcher, which is also what
+CI runs against. Use `npx wrangler dev --remote` to exercise the model path,
+and remember that local tickets then spend the same daily allocation
+production does.
+
+## The assistant, and what it costs
+
+Nothing. Workers AI is included in the free Workers plan this Worker already
+runs on: **10,000 neurons per day, reset at 00:00 UTC**, no card and no API
+key. A support reply costs roughly 80 neurons, so the free allocation is
+about **120 assisted replies a day**. Past that, Cloudflare returns an error
+and the desk answers from the keyword matcher instead, which is also what
+`ASSISTANT_DAILY_CALL_LIMIT` (default 200) is there to keep bounded.
+
+There is nothing to turn on. The `ai` binding in `wrangler.jsonc` is the
+whole configuration, and `npm run deploy` is the whole install.
+
+One wart worth knowing before you touch `assistantModel.ts`: Cloudflare
+documents JSON mode as supported on this model and rejects every such
+request with `4009: an internal server error occured`, whatever the schema.
+So the call asks twice: once with `response_format`, and once in plain text
+with the shape described in the final turn. Only the second attempt has ever
+succeeded in production. Both are kept because the first costs nothing when
+it fails and will start working the day Cloudflare fixes it. The format
+instruction lives in the *last* turn on purpose: in the system prompt it was
+ignored on exactly the tickets that mattered, where the model had articles to
+work from and wrote an excellent support answer in prose and no JSON.
+
+What this buys, and what it does not:
+
+* It answers questions no article covers. That was the point: "how does
+  Windows 11 password reset work" used to come back as "outside what I have
+  written down", which is honest and useless.
+* It is a smaller model than a frontier one, so the writing is plainer and
+  it will occasionally be clumsy. The prompt is written for that: shorter
+  rules, and a standing instruction to escalate when it is between an answer
+  and a handover rather than to reason its way to one.
+* It is not a source of truth about the app. Reviewed articles are, and the
+  model may not add Hamdam-specific steps that are not in one. Anything
+  needing a look at the requester's account is an escalation by rule, in
+  code, because the model cannot see an account and should not imply it can.
+
+To turn the writing off without touching code, delete the `ai` block from
+`wrangler.jsonc` and redeploy. Every reply then comes from the keyword
+matcher, which is the state the desk shipped in and is fully tested.
 
 ## First deploy, step by step
 

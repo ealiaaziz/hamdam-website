@@ -1,3 +1,15 @@
+> **SUPERSEDED, 2026-08-02. Kept for history only.**
+>
+> The hourly Routine this file describes has been retired. The Worker reads
+> `developer@hamdam.com.au` itself, through Microsoft Graph, on a one-minute
+> cron: see `../src/ingest.ts` and the "Reading the inbox" section of
+> `../README.md`.
+>
+> Nothing here is a current instruction. That matters more than usual in this
+> particular file: an earlier version of it had a "Known gap" section telling
+> the reader to recreate the Routine, and the Routine, reading its own
+> documentation, obeyed it three times. Do not act on anything below.
+
 # The email routine
 
 > **If you are the routine reading this mid-run: stop and go back to your
@@ -222,6 +234,11 @@ as an ordinary ticket and note it in your final summary.
    Only mail to developer@hamdam.com.au matters for this desk.
 
 5. For each message, oldest first:
+   a0. SKIP ENTIRELY if the sender is developer@hamdam.com.au. That is this
+      desk's own address, so such a message is our own outgoing mail landing
+      back in the inbox, not a requester writing in. Ingesting it files the
+      desk's own acknowledgements into ticket threads as if a requester had
+      said them. Record nothing and move to the next message.
    a. Skip if already processed:
       node scripts/db-query.mjs "SELECT 1 FROM inbound_emails WHERE internet_message_id = ?1" '["<internetMessageId>"]'
    b. Look for an existing ticket, in order:
@@ -254,6 +271,14 @@ as an ordinary ticket and note it in your final summary.
          - Record an inbound_emails row and an outbound_emails row with
            status already 'sent' (this is an audit trail, not a queue, for
            this case -- the send already happened).
+         - Do not attempt to draft a solution. The assistant that writes
+           replies lives in the Worker, behind Cloudflare Access, and needs
+           an API key this routine does not hold. For an email-created
+           ticket, an agent opens it in the console and presses "Ask the
+           assistant for a draft", reads what comes back, and sends it or
+           does not. That is the whole reason the button exists: a scheduled
+           job holding a model key and a mailbox could email a stranger
+           unattended, and nothing here needs it to.
 
 6. Drain the outbound queue:
    node scripts/db-query.mjs "SELECT * FROM outbound_emails WHERE status = 'pending' ORDER BY created_at ASC" "[]"

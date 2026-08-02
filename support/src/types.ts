@@ -1,4 +1,5 @@
-import type { Impact, Priority, Urgency } from './itil.js';
+import type { Impact, Priority, Topic, Urgency } from './itil.js';
+import type { Locale } from './i18n.js';
 
 export type TicketStatus = 'new' | 'open' | 'pending' | 'resolved' | 'closed';
 
@@ -18,8 +19,8 @@ export function parseTicketStatus(value: string | undefined | null): TicketStatu
 }
 export type Channel = 'portal' | 'email';
 export type CommentAuthorType = 'requester' | 'agent' | 'system';
-export type OutboundKind = 'ack' | 'agent_reply' | 'status_change';
-export type OutboundStatus = 'pending' | 'sent' | 'failed';
+export type OutboundKind = 'ack' | 'agent_reply' | 'status_change' | 'requester_reply' | 'assistant_draft';
+export type OutboundStatus = 'draft' | 'pending' | 'sent' | 'failed' | 'discarded';
 
 export interface RequesterRow {
   id: number;
@@ -38,6 +39,8 @@ export interface TicketRow {
   urgency: Urgency | null;
   category: string | null;
   channel: Channel;
+  topic: Topic;
+  locale: Locale;
   tracking_token: string;
   source_conversation_id: string | null;
   last_inbound_message_id: string | null;
@@ -91,6 +94,52 @@ export interface Env {
    */
   ACCESS_TEAM_DOMAIN?: string;
   ACCESS_AUD?: string;
+  /**
+   * Cloudflare Workers AI. Declared in wrangler.jsonc, not a secret, and no
+   * account credential of any kind: inference runs on the same account the
+   * Worker already runs on, inside the free daily allocation.
+   *
+   * Optional on purpose. Unbound, every reply falls back to the keyword
+   * matcher in `assistantReply.ts`, which is what local development and CI
+   * run against.
+   */
+  AI?: Ai;
+  /**
+   * Model calls allowed per UTC day. Plain config, not a secret. Over the
+   * ceiling the desk answers from the knowledge base instead: plainer, never
+   * silent, and never a refused ticket.
+   */
+  ASSISTANT_DAILY_CALL_LIMIT?: string;
+  /**
+   * Countries the portal serves, comma-separated ISO 3166-1 alpha-2. Plain
+   * config in wrangler.jsonc, because widening or narrowing it is an
+   * operational decision that should be visible in a diff.
+   *
+   * Unset or unparseable falls back to AU and NZ rather than to serving
+   * everyone: a typo here should not quietly open the site to the world.
+   */
+  ALLOWED_COUNTRIES?: string;
+  /**
+   * Who is told when a ticket needs a person, comma-separated. Plain config:
+   * these are the team's own addresses, and who is on call is a fact that
+   * should be visible in a diff rather than buried in a secret.
+   */
+  ESCALATION_RECIPIENTS?: string;
+  /**
+   * Microsoft Graph app-only credentials, so the Worker can send mail as
+   * developer@hamdam.com.au the moment there is something to send, instead
+   * of leaving it for the hourly Routine.
+   *
+   * Tenant and client id are identifiers, not secrets, but they live with
+   * the secret rather than in wrangler.jsonc so all three are set or none
+   * are: two thirds of a credential is just a confusing outage.
+   *
+   * Unset, outbound mail queues exactly as it did before and the Routine
+   * sends it. Slower, never lost.
+   */
+  GRAPH_TENANT_ID?: string;
+  GRAPH_CLIENT_ID?: string;
+  GRAPH_CLIENT_SECRET?: string;
   /**
    * Local-development-only escape hatch, set in .dev.vars (never deployed).
    * Only honoured for requests with no CF-Ray header, which production

@@ -75,10 +75,21 @@ export function slaDueDates(priority: Priority, createdAt: Date) {
   };
 }
 
+// Security wording is deliberately broad here. The list originally held
+// 'security breach' and 'breach' but not 'security incident', so a real
+// email subject -- "Checking Tim's support for security incidents" -- fell
+// through every rule and was classified P3. Under-calling a security report
+// is the worst mistake this function can make: a P1 wrongly raised costs an
+// agent a minute to re-price, while a genuine incident sitting in a P3
+// queue costs considerably more. False positives are the acceptable
+// direction of error, so phrases like "no security incidents to report"
+// will also land as P1 and be corrected by hand.
 const P1_KEYWORDS = [
   'down', 'outage', 'all users', 'everyone', 'entire team', 'production down',
-  "can't access anything", 'cannot access anything', 'security breach',
-  'breach', 'data loss', 'ransomware', 'compromised', 'lost data',
+  "can't access anything", 'cannot access anything',
+  'security breach', 'security incident', 'breach', 'compromised', 'hacked',
+  'phishing', 'malware', 'ransomware', 'unauthorised access', 'unauthorized access',
+  'data loss', 'data leak', 'lost data',
 ];
 
 const P2_KEYWORDS = [
@@ -114,4 +125,93 @@ export function classifyFromText(subject: string, body: string): { priority: Pri
     return { priority: 'P4', impact: 'low', urgency: 'low' };
   }
   return { priority: 'P3', impact: 'medium', urgency: 'medium' };
+}
+
+// ---- what the ticket is about ---------------------------------------------
+//
+// A support desk that serves one product and also answers general computing
+// questions has two queues wearing one uniform. Both get answered; they do
+// not get answered with the same urgency. A Hamdam problem is a problem with
+// the thing the company sells, and someone hitting it may be about to give up
+// on the app. "How do I reset a Windows password" is a favour, gladly done.
+//
+// So topic is detected here rather than left to the model, for the same
+// reason priority always has been: it decides an SLA clock, and an SLA that
+// depends on how a model felt about a sentence is not a commitment.
+
+export type Topic = 'hamdam' | 'general_it';
+
+/**
+ * Words that only appear when someone is talking about the app.
+ *
+ * Kept narrow on purpose. A false "hamdam" reading only costs a faster clock
+ * on a general question, which is survivable; the list avoids bare words like
+ * "verse" or "journal" only where they would drag in unrelated tickets, and
+ * accepts them where the desk's own vocabulary makes them unambiguous.
+ */
+const HAMDAM_TERMS = [
+  'hamdam', 'hamdan',
+  'daily verse', 'the verse', 'verses', 'poem of the day',
+  'reflection', 'reflections',
+  'hafez', 'rumi', 'saadi', 'khayyam', 'parvin', 'ganjoor',
+  'discover tab', 'roots calendar', 'cultural moment',
+  'streak', 'journal entry', 'journal entries',
+  'hamdam plus', 'lifetime plan', 'founding companion',
+  'daily reminder', 'state of mind',
+  'cycle awareness', 'mood logging',
+  // The same vocabulary in Persian. Without these, a Persian speaker asking
+  // about iCloud sync in Hamdam was read as a general computing question and
+  // lost the P3 floor: the app's own audience got the slower queue, which is
+  // precisely backwards.
+  'همدم',
+  'پلاس',
+  'آیکلاد',
+  'شعر',
+  'بیت',
+  'حافظ',
+  'مولانا',
+  'مولوی',
+  'سعدی',
+  'خیام',
+  'پروین',
+  'گنجور',
+  'تأمل',
+  'تامل',
+  'یادآور',
+  'یادداشت',
+  'اشتراک',
+];
+
+export function detectTopic(text: string): Topic {
+  const haystack = text.toLowerCase();
+  return HAMDAM_TERMS.some((term) => haystack.includes(term)) ? 'hamdam' : 'general_it';
+}
+
+/**
+ * The floor a Hamdam ticket cannot fall below.
+ *
+ * P3 rather than P2: the point is that an app problem is never merely
+ * "whenever you get to it", not that every app problem is urgent. A Hamdam
+ * ticket that the matrix already rated P1 or P2 keeps that rating, because
+ * the floor raises and never lowers.
+ */
+export const HAMDAM_PRIORITY_FLOOR: Priority = 'P3';
+
+const RANK: Record<Priority, number> = { P1: 0, P2: 1, P3: 2, P4: 3 };
+
+export function applyTopicFloor(priority: Priority, topic: Topic): Priority {
+  if (topic !== 'hamdam') return priority;
+  return RANK[priority] <= RANK[HAMDAM_PRIORITY_FLOOR] ? priority : HAMDAM_PRIORITY_FLOOR;
+}
+
+/** Classification and the topic floor in one call, which is how callers want it. */
+export function classifyTicket(
+  impact: Impact,
+  urgency: Urgency,
+  text: string,
+): { priority: Priority; topic: Topic; floored: boolean } {
+  const base = classifyFromMatrix(impact, urgency);
+  const topic = detectTopic(text);
+  const priority = applyTopicFloor(base, topic);
+  return { priority, topic, floored: priority !== base };
 }

@@ -46,6 +46,25 @@ describe('classifyFromText', () => {
     expect(r.priority).toBe('P3');
   });
 
+  it('flags a security incident as P1 -- the real miss that prompted this', () => {
+    // Live email, classified P3 before the keyword list was widened.
+    const r = classifyFromText("Checking Tim's support for security incidents. He's under fire!", '');
+    expect(r.priority).toBe('P1');
+  });
+
+  it('flags the other security wordings people actually use', () => {
+    for (const text of ['we got hacked', 'phishing email going around', 'malware on the laptop', 'unauthorised access to the admin panel', 'possible data leak']) {
+      expect(classifyFromText('help', text).priority).toBe('P1');
+    }
+  });
+
+  it('accepts false positives in the security direction, knowingly', () => {
+    // Reads as reassurance to a human, P1 to the classifier. Deliberate:
+    // an over-called security ticket costs a re-price, an under-called one
+    // costs much more. Documented rather than quietly tolerated.
+    expect(classifyFromText('Weekly report', 'No security incidents to report.').priority).toBe('P1');
+  });
+
   it('prefers P1 over P2 keywords when both are present', () => {
     const r = classifyFromText('down', 'Everything is down and broken for everyone.');
     expect(r.priority).toBe('P1');

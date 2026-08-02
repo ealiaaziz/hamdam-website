@@ -14,8 +14,37 @@
   // so filling these in and redeploying is what switches it on.
   "vars": {
     "ACCESS_TEAM_DOMAIN": "wispy-art-3af8.cloudflareaccess.com",
-    "ACCESS_AUD": "f9fd91afd878949abf0009cd76f5ce70f690eedaf521b9d6052dd81341975286"
+    "ACCESS_AUD": "f9fd91afd878949abf0009cd76f5ce70f690eedaf521b9d6052dd81341975286",
+    // Countries the portal answers from: Australia, New Zealand, Iran, the
+    // UAE, the United Kingdom, the United States, the Netherlands. Hamdam is
+    // a Persian poetry app sold from Brisbane, so the audience is the
+    // diaspora as much as the local market.
+    //
+    // The WAF rule at the edge is the real control; the Worker checks the
+    // same list so removing that rule does not silently open the site. Keep
+    // the two in step: widening here without widening the WAF rule changes
+    // nothing, because the edge refuses first.
+    //
+    // Email is never restricted, so anyone outside this list still reaches
+    // the desk at developer@hamdam.com.au.
+    "ALLOWED_COUNTRIES": "AU,NZ,IR,AE,GB,US,NL"
   },
+  // Cloudflare Workers AI: the assistant's writing, on the free daily
+  // allocation that comes with this Workers plan (10,000 neurons, reset at
+  // 00:00 UTC). No key and no card: inference bills to the same account the
+  // Worker runs on. Remove this binding and every reply falls back to the
+  // keyword matcher, which is exactly what local dev and CI run against.
+  "ai": { "binding": "AI" },
+  // Read the inbox every minute. This is what makes the hourly Routine
+  // unnecessary: a person emailing the desk gets a ticket and an
+  // acknowledgement within a minute rather than within an hour, and the
+  // reading is done by a function rather than by a Claude session holding
+  // database credentials and a mailbox.
+  //
+  // Every minute is affordable because an empty inbox costs one Graph
+  // request and nothing else. See src/ingest.ts for why the checkpoint only
+  // advances on a clean pass.
+  "triggers": { "crons": ["* * * * *"] },
   // Created by `wrangler d1 create hamdam-support-db` on 2026-08-01; see
   // support/README.md. Not a secret: a database_id only identifies the
   // database, and reaching it still requires an authorised API token.

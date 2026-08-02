@@ -1,0 +1,256 @@
+# The support desk: what was built, and what it taught us
+
+Built 2026-08-01 and 2026-08-02, on `claude/it-ticketing-platform-krbwoi`.
+Live at **https://support.hamdam.com.au**.
+
+This is the record of decisions and of the things that went wrong, because
+the second list is the one worth keeping. `../README.md` is the operational
+manual: how to deploy it, what the secrets are, how to test it safely. This
+file is why it is shaped the way it is.
+
+---
+
+## What it does
+
+A small IT service desk for Hamdam, in two languages, with an assistant that
+answers what it can and hands over what it cannot.
+
+**Two front doors.** The portal at `/` (English) and `/fa` (Persian, RTL),
+and the mailbox `developer@hamdam.com.au`. They produce the same thing: a
+ticket, an acknowledgement, and an answer. Nothing is a second-class channel.
+
+**ITIL classification.** Impact x urgency sets P1 to P4, with SLA targets per
+priority. A ticket about the Hamdam app cannot fall below **P3** however
+mildly it was described, because someone hitting a problem with the product
+may be a day from deleting it. The floor only raises: a P1 app outage stays
+P1. General computing questions keep whatever the matrix gave them and are
+answered properly, because a courtesy done badly is worse than one declined.
+
+**An assistant, on Cloudflare Workers AI.** Free on the existing Workers
+plan: 10,000 neurons a day, roughly 120 assisted replies. It answers from
+reviewed knowledge base articles, from an app reference built out of the
+site's own privacy policy and terms, and from general computing knowledge for
+questions that are not about Hamdam.
+
+**Everything immediate.** The portal answers in about three seconds. Email is
+read by a cron every minute, and outbound mail is sent by the Worker through
+Microsoft Graph as the real mailbox, so it lands in Sent Items next to
+anything a person sends by hand.
+
+**Escalation reaches a person.** When the assistant hands over, both people
+covering the desk get an email written to be answerable from a phone.
+
+---
+
+## The decisions that mattered
+
+### Rules live in code, not in the prompt
+
+The P1/P2 gate, the handover when someone asks for a person, the three-turn
+limit, the refusal to answer a Hamdam question without a source: all of these
+are `if` statements in `agentPolicy.ts` and `assistantReply.ts`, checked
+*before* the model is consulted. A prompt can be talked out of a rule.
+
+This is also what made the model swappable. The assistant ran on Sonnet, then
+on Workers AI, and the change was one constant and one call site because
+nothing important lived in the prompt.
+
+### The knowledge base must cite its sources
+
+The starter articles described a sign-in screen, a password and being locked
+out. Hamdam has no accounts and collects no email address. Another told
+people a blank verse meant checking their internet, when the core 235 verses
+are bundled and work offline. Both had been offered to real requesters and
+both had been grounding every model reply since the assistant shipped.
+
+An assistant grounded in wrong facts is worse than one grounded in nothing,
+because it is wrong with a straight face. So `kb/reference/` holds sixteen
+files, every one citing the reviewed page it came from, and its README says
+the rule plainly: **if you cannot cite it, do not write it.** "The team will
+need to check that" is a legitimate thing for a support desk to say.
+
+### Degrade, never go silent
+
+Every layer falls back rather than failing. No `AI` binding, an inference
+error, a spent daily budget, a reply that fails validation: all of them land
+on the keyword matcher, which needs no network and always returns something.
+No Graph credentials means mail queues instead of sending. The desk gets
+plainer. It never goes quiet, which was the original bug that started all of
+this.
+
+### Say why, on the ticket
+
+Worker logs need a websocket to tail, which is unavailable in exactly the
+situation where you want them. A silently degraded desk looks identical to a
+working one. So every fallback records its reason in the ticket's agent
+state, where the console shows it: `model call failed: ...`, `today's model
+budget is spent`, `body claims a person acted`. Two of the bugs below were
+only findable because of this.
+
+### Language is a property of the ticket
+
+Decided once, when the ticket opens, and every later email follows it. A
+one-word reply cannot flip a conversation into the wrong language halfway
+through. Email carries no locale at all, so inbound mail is read by script
+*proportion*: an English message quoting one Persian word is still English.
+
+---
+
+## What went wrong, in production
+
+Every one of these was found by testing against the live system. None would
+have been caught by the test suite as it stood.
+
+### A mail loop, running once a minute
+
+An outbound reply to a dead test address bounced. Exchange returned
+`Undeliverable: [HAM-27] Testing workflow`, which carries the ticket tag, so
+it was filed as a reply on that ticket, so the assistant answered it, so that
+answer bounced. Every minute, each cycle spending a model call.
+
+The desk-address guard could never catch this: a bounce genuinely comes from
+somewhere else. What identifies it is that no person wrote it, which is
+equally true of out-of-office replies. Those would have looped identically
+against a real customer rather than a test address. Automated mail is now
+detected *before* the ticket tag is read, because the tag is precisely what
+makes a bounce dangerous.
+
+### A 500 on the live ticket form
+
+Adding the `topic` column meant editing a prepared statement and its `bind()`
+together. The bind edit landed and the SQL edit silently did not: thirteen
+placeholders, fourteen values. TypeScript cannot see it, 144 tests passed,
+and the first thing that noticed was a 500 on the public form.
+
+Nothing in the suite talks to D1, so nothing was going to notice.
+`test/sqlBindings.test.ts` now checks that both halves of each prepared
+statement agree on how many parameters exist. It was confirmed to fail
+against the actual bug before being committed.
+
+### JSON mode that does not work
+
+Cloudflare documents JSON mode as supported on
+`llama-3.3-70b-instruct-fp8-fast` and rejects every such request with
+`4009: an internal server error occured`, whatever the schema. Every model
+call was failing and falling back to keywords, so the assistant *looked* like
+it was working.
+
+The schema is gone rather than kept as a disabled first attempt: an attempt
+that has never succeeded is not a fallback, it is a guaranteed wasted round
+trip, and two sequential inference calls is what timed out a request with a
+person waiting. The shape is described in words in the final turn instead.
+Putting it in the system prompt did not work either: given articles to work
+from, the model wrote an excellent support answer in prose and no JSON, and a
+good answer in the wrong shape is discarded the same as a bad one.
+
+### The desk disclaiming itself
+
+A verbatim correct answer about iCloud sync, straight out of the app
+reference, carried "that is general advice rather than something from our own
+notes" underneath it. The disclaimer keyed on `articleId` being empty, and
+reference answers legitimately have no article. Replies now distinguish
+three sources; only general knowledge gets a hedge.
+
+### Claiming an action it could not take
+
+A requester wrote "close this ticket". The assistant replied "This ticket is
+being closed as requested" and left it open. It has no way to change a
+status, so it described one instead. That is the worst kind of support reply:
+it reads as done, so the person stops chasing. Closure requests are now
+handled before the model sees them.
+
+### A Persian ticket in the English queue
+
+Topic detection was English-only, so a Persian speaker asking how iCloud sync
+works in Hamdam was classified general IT and lost the P3 floor. The app's
+own audience was getting the slower queue, which is precisely backwards. It
+took a Persian test ticket to see it.
+
+### Four stray emails
+
+Testing used the owner's real address as the requester. The hourly Routine
+drained the queue mid-test and sent four acknowledgements for tickets that,
+by the time they arrived, had been deleted. Deleting a row does not recall
+mail already sent. Smoke tests now use `@example.com`, which is reserved and
+undeliverable, and the rule is written down in the README.
+
+---
+
+## The retired Routine
+
+Inbound mail was originally read by an hourly Claude Code Routine holding
+database credentials and a mailbox. It worked. It was replaced anyway, for
+two reasons.
+
+Speed was the visible one: someone emailing the desk waited up to an hour to
+learn their message had arrived, with no page to reassure them the way the
+portal has.
+
+The other reason is better. That Routine was the one place in this system
+where attacker-authored text met tools, and it had already been talked into
+something once: a documentation file's "Known gap" section told the reader to
+recreate the Routine, and the Routine obeyed it three times. Reading the
+inbox is now a function that takes a sender, a subject and a body, and cannot
+be argued into anything by the contents of an email.
+
+`email-routine.md` in this directory describes the retired design and is kept
+for history only.
+
+---
+
+## Numbers
+
+| | |
+|---|---|
+| Tests | 236 (Vitest) |
+| Migrations | 8 |
+| Knowledge base | 3 articles, 16 reference files |
+| Languages | English, Persian |
+| Assistant | `@cf/meta/llama-3.3-70b-instruct-fp8-fast` on Workers AI |
+| Model cost | Free tier, 10,000 neurons/day, ~120 replies |
+| Portal response | ~3 seconds |
+| Inbox poll | every minute |
+
+---
+
+## Known and deliberate
+
+* **`POST /tickets` is unauthenticated and unthrottled.** Someone who needs
+  help should not need an account first. The daily model-call cap bounds the
+  spend; a Cloudflare Rate Limiting rule is still the right fix for the mail.
+* **The console is English only.** An internal tool with two users who both
+  read English. A half-translated admin surface is worse than an untranslated
+  one.
+* **Tracking tokens are compared with `!==`, not constant-time.** 122 bits of
+  entropy and network jitter make this theoretical, but it is a real
+  difference if the threat model changes.
+* **No audit log of agent actions.** Replies carry the verified Access email;
+  status and priority changes do not. Fine at one agent, not at three.
+* **The Farsi was authored by a session, not translated from an approved
+  bank.** The repo's convention is that Persian copy is Ealia's call, and it
+  was, but `src/i18n.ts` has still not been read by a second Persian speaker.
+  `check-persian.mjs` covers it for corruption; it cannot judge tone.
+
+## Still outstanding
+
+1. **Rotate the Graph client secret.** It was pasted into a working
+   transcript and should be replaced.
+2. **Scope `Mail.Send` to one mailbox.** As an application permission it
+   currently covers every mailbox in the tenant, from a Worker on the public
+   internet:
+   ```powershell
+   New-ApplicationAccessPolicy -AppId <client-id> `
+     -PolicyScopeGroupId developer@hamdam.com.au `
+     -AccessRight RestrictAccess -Description "Hamdam support desk"
+   ```
+3. **Add the WAF rule.** The Worker enforces the country list, but the edge
+   rule is what stops the traffic before it costs anything and what covers
+   the Access login page. Host-scoped, or it takes the marketing site with
+   it:
+   ```
+   (http.host eq "support.hamdam.com.au" and not ip.src.country in {"AU" "NZ" "IR" "AE" "GB" "US" "NL"})
+   ```
+4. **Write down the in-app purchase steps.** `kb/reference/buying-plus.md`
+   records that nobody has verified them against the current build, so the
+   assistant hands that question to a person. Someone with the app open can
+   close it in five minutes.

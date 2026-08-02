@@ -8,7 +8,8 @@ import type {
   TicketStatus,
   TicketWithRequester,
 } from './types.js';
-import type { Impact, Priority, Urgency } from './itil.js';
+import type { Impact, Priority, Topic, Urgency } from './itil.js';
+import type { Locale } from './i18n.js';
 import type { Channel } from './types.js';
 
 export async function upsertRequester(db: D1Database, email: string, name: string | null): Promise<RequesterRow> {
@@ -33,6 +34,8 @@ export interface NewTicket {
   urgency: Urgency | null;
   category: string | null;
   channel: Channel;
+  topic: Topic;
+  locale: Locale;
   trackingToken: string;
   sourceConversationId: string | null;
   lastInboundMessageId: string | null;
@@ -47,8 +50,8 @@ export async function createTicket(db: D1Database, t: NewTicket): Promise<number
       `INSERT INTO tickets (
          requester_id, subject, status, priority, impact, urgency, category, channel,
          tracking_token, source_conversation_id, last_inbound_message_id,
-         created_at, updated_at, sla_first_response_due, sla_resolve_due
-       ) VALUES (?1, ?2, 'new', ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?11, ?12, ?13)
+         created_at, updated_at, sla_first_response_due, sla_resolve_due, topic, locale
+       ) VALUES (?1, ?2, 'new', ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?11, ?12, ?13, ?14, ?15)
        RETURNING id`,
     )
     .bind(
@@ -65,6 +68,8 @@ export async function createTicket(db: D1Database, t: NewTicket): Promise<number
       t.createdAt,
       t.slaFirstResponseDue,
       t.slaResolveDue,
+      t.topic,
+      t.locale,
     )
     .first<{ id: number }>();
   if (!result) throw new Error('createTicket: insert did not return an id');
@@ -189,14 +194,17 @@ export interface NewOutboundEmail {
   inReplyToMessageId: string | null;
 }
 
-export async function queueOutboundEmail(db: D1Database, e: NewOutboundEmail): Promise<void> {
-  await db
+export async function queueOutboundEmail(db: D1Database, e: NewOutboundEmail): Promise<number> {
+  const row = await db
     .prepare(
       `INSERT INTO outbound_emails (ticket_id, comment_id, kind, to_email, subject, body_html, in_reply_to_message_id)
-       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)`,
+       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)
+       RETURNING id`,
     )
     .bind(e.ticketId, e.commentId, e.kind, e.toEmail, e.subject, e.bodyHtml, e.inReplyToMessageId)
-    .run();
+    .first<{ id: number }>();
+  if (!row) throw new Error('queueOutboundEmail: insert did not return an id');
+  return row.id;
 }
 
 export async function listPendingOutboundEmails(db: D1Database): Promise<OutboundEmailRow[]> {
@@ -252,5 +260,260 @@ export async function setSyncState(db: D1Database, key: string, value: string): 
        ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at`,
     )
     .bind(key, value)
+    .run();
+}
+
+// ---- assistant drafts -----------------------------------------------------
+//
+// A draft is an outbound_emails row that has not been released. Approving it
+// moves it to 'pending', after which the routine's existing drain sends it
+// like anything else -- the approved path and the automatic path are the
+// same code from that point on.
+
+export interface DraftRow extends OutboundEmailRow {
+  assistant_reason: string | null;
+  assistant_article_id: string | null;
+  approved_by: string | null;
+  approved_at: string | null;
+}
+
+export async function listDrafts(db: D1Database, ticketId: number): Promise<DraftRow[]> {
+  const result = await db
+    .prepare(`SELECT * FROM outbound_emails WHERE ticket_id = ?1 AND status = 'draft' ORDER BY created_at ASC`)
+    .bind(ticketId)
+    .all<DraftRow>();
+  return result.results;
+}
+
+export async function countDrafts(db: D1Database): Promise<number> {
+  const row = await db.prepare(`SELECT COUNT(*) AS n FROM outbound_emails WHERE status = 'draft'`).first<{ n: number }>();
+  return row?.n ?? 0;
+}
+
+export async function queueAssistantDraft(
+  db: D1Database,
+  e: NewOutboundEmail & { assistantReason: string; assistantArticleId: string | null },
+): Promise<void> {
+  await db
+    .prepare(
+      `INSERT INTO outbound_emails
+         (ticket_id, comment_id, kind, to_email, subject, body_html, in_reply_to_message_id,
+          status, assistant_reason, assistant_article_id)
+       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 'draft', ?8, ?9)`,
+    )
+    .bind(
+      e.ticketId, e.commentId, e.kind, e.toEmail, e.subject, e.bodyHtml,
+      e.inReplyToMessageId, e.assistantReason, e.assistantArticleId,
+    )
+    .run();
+}
+
+/**
+ * Release a draft for sending. Scoped to status='draft' so approving twice
+ * is harmless: the second UPDATE matches nothing rather than resurrecting a
+ * row the routine has already sent.
+ */
+export async function approveDraft(db: D1Database, draftId: number, ticketId: number, approvedBy: string): Promise<DraftRow | null> {
+  const draft = await db
+    .prepare(`SELECT * FROM outbound_emails WHERE id = ?1 AND ticket_id = ?2 AND status = 'draft'`)
+    .bind(draftId, ticketId)
+    .first<DraftRow>();
+  if (!draft) return null;
+
+  await db
+    .prepare(
+      `UPDATE outbound_emails
+       SET status = 'pending', approved_by = ?2, approved_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+       WHERE id = ?1 AND status = 'draft'`,
+    )
+    .bind(draftId, approvedBy)
+    .run();
+  return draft;
+}
+
+export async function discardDraft(db: D1Database, draftId: number, ticketId: number): Promise<boolean> {
+  const result = await db
+    .prepare(`UPDATE outbound_emails SET status = 'discarded' WHERE id = ?1 AND ticket_id = ?2 AND status = 'draft'`)
+    .bind(draftId, ticketId)
+    .run();
+  return (result.meta.changes ?? 0) > 0;
+}
+
+// ---- assistant conversation state ----------------------------------------
+
+export interface AgentStateRow {
+  ticket_id: number;
+  assistant_turns: number;
+  asked_questions: string;
+  rejected_articles: string;
+  last_article_id: string | null;
+  escalated_at: string | null;
+}
+
+function parseJsonArray(value: string | null | undefined): string[] {
+  if (!value) return [];
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed.filter((v): v is string => typeof v === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
+export interface AgentState {
+  assistantTurns: number;
+  askedQuestions: string[];
+  rejectedArticles: string[];
+  /** The article the assistant cited in its most recent reply, if any. */
+  lastArticleId: string | null;
+  escalated: boolean;
+}
+
+export async function getAgentState(db: D1Database, ticketId: number): Promise<AgentState> {
+  const row = await db.prepare('SELECT * FROM ticket_agent_state WHERE ticket_id = ?1').bind(ticketId).first<AgentStateRow>();
+  return {
+    assistantTurns: row?.assistant_turns ?? 0,
+    askedQuestions: parseJsonArray(row?.asked_questions),
+    rejectedArticles: parseJsonArray(row?.rejected_articles),
+    lastArticleId: row?.last_article_id ?? null,
+    escalated: Boolean(row?.escalated_at),
+  };
+}
+
+/** Upsert helper: the row is created lazily on the assistant's first involvement. */
+async function ensureAgentState(db: D1Database, ticketId: number): Promise<void> {
+  await db
+    .prepare(`INSERT INTO ticket_agent_state (ticket_id) VALUES (?1) ON CONFLICT(ticket_id) DO NOTHING`)
+    .bind(ticketId)
+    .run();
+}
+
+export async function recordRejectedArticle(db: D1Database, ticketId: number, articleId: string): Promise<void> {
+  await ensureAgentState(db, ticketId);
+  const state = await getAgentState(db, ticketId);
+  if (state.rejectedArticles.includes(articleId)) return;
+  const next = [...state.rejectedArticles, articleId];
+  await db
+    .prepare(`UPDATE ticket_agent_state SET rejected_articles = ?2, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE ticket_id = ?1`)
+    .bind(ticketId, JSON.stringify(next))
+    .run();
+}
+
+export async function recordAssistantTurn(
+  db: D1Database,
+  ticketId: number,
+  opts: { question?: string; action: string; articleId?: string; reason: string; escalated?: boolean },
+): Promise<void> {
+  await ensureAgentState(db, ticketId);
+  const state = await getAgentState(db, ticketId);
+  const askedQuestions = opts.question && !state.askedQuestions.includes(opts.question)
+    ? [...state.askedQuestions, opts.question]
+    : state.askedQuestions;
+  await db
+    .prepare(
+      `UPDATE ticket_agent_state
+       SET assistant_turns = ?2, asked_questions = ?3, last_action = ?4,
+           last_article_id = ?5, last_reason = ?6,
+           escalated_at = CASE WHEN ?7 = 1 AND escalated_at IS NULL
+                               THEN strftime('%Y-%m-%dT%H:%M:%fZ','now') ELSE escalated_at END,
+           updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')
+       WHERE ticket_id = ?1`,
+    )
+    .bind(
+      ticketId,
+      state.assistantTurns + 1,
+      JSON.stringify(askedQuestions),
+      opts.action,
+      opts.articleId ?? null,
+      opts.reason,
+      opts.escalated ? 1 : 0,
+    )
+    .run();
+}
+
+// ---- model call budget ----------------------------------------------------
+
+/** Model calls allowed per UTC day before the desk falls back to keywords. */
+export const DEFAULT_DAILY_CALL_LIMIT = 200;
+
+/**
+ * Claims one call against today's budget. Returns false when the budget is
+ * spent, which the caller treats as "answer from the knowledge base instead".
+ *
+ * The increment and the read are one statement, so two requests arriving
+ * together cannot both see the last slot as free. Refused attempts still
+ * count: a burst that has already blown the ceiling is exactly the traffic
+ * that should not get a second look on the next request.
+ */
+export async function claimModelCall(db: D1Database, limit = DEFAULT_DAILY_CALL_LIMIT): Promise<boolean> {
+  const day = new Date().toISOString().slice(0, 10);
+  const row = await db
+    .prepare(
+      `INSERT INTO assistant_usage (day, calls) VALUES (?1, 1)
+       ON CONFLICT(day) DO UPDATE SET calls = calls + 1, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')
+       RETURNING calls`,
+    )
+    .bind(day)
+    .first<{ calls: number }>();
+  return (row?.calls ?? Number.MAX_SAFE_INTEGER) <= limit;
+}
+
+// ---- inbound ledger and checkpoint ---------------------------------------
+
+export async function wasProcessed(db: D1Database, internetMessageId: string): Promise<boolean> {
+  const row = await db
+    .prepare('SELECT 1 AS hit FROM inbound_emails WHERE internet_message_id = ?1')
+    .bind(internetMessageId)
+    .first<{ hit: number }>();
+  return Boolean(row);
+}
+
+export async function recordInbound(
+  db: D1Database,
+  e: { internetMessageId: string; conversationId: string | null; ticketId: number | null; fromEmail: string; subject: string },
+): Promise<void> {
+  await db
+    .prepare(
+      `INSERT INTO inbound_emails (internet_message_id, conversation_id, ticket_id, raw_from, raw_subject)
+       VALUES (?1, ?2, ?3, ?4, ?5)
+       ON CONFLICT(internet_message_id) DO NOTHING`,
+    )
+    .bind(e.internetMessageId, e.conversationId, e.ticketId, e.fromEmail, e.subject)
+    .run();
+}
+
+export async function ticketIdForConversation(db: D1Database, conversationId: string | null): Promise<number | null> {
+  if (!conversationId) return null;
+  const row = await db
+    .prepare('SELECT id FROM tickets WHERE source_conversation_id = ?1 ORDER BY id DESC LIMIT 1')
+    .bind(conversationId)
+    .first<{ id: number }>();
+  return row?.id ?? null;
+}
+
+export async function ticketExists(db: D1Database, id: number): Promise<boolean> {
+  const row = await db.prepare('SELECT 1 AS hit FROM tickets WHERE id = ?1').bind(id).first<{ hit: number }>();
+  return Boolean(row);
+}
+
+/**
+ * The point in time the desk has read up to.
+ *
+ * Advanced only after a batch is fully processed. Advancing it early would
+ * turn one failed run into permanently unread mail, which is the failure
+ * nobody notices until someone asks why they were ignored.
+ */
+export async function getCheckpoint(db: D1Database, fallbackMinutes = 15): Promise<string> {
+  const row = await db.prepare(`SELECT value FROM sync_state WHERE key = 'last_checked_utc'`).bind().first<{ value: string }>();
+  return row?.value ?? new Date(Date.now() - fallbackMinutes * 60_000).toISOString();
+}
+
+export async function setCheckpoint(db: D1Database, value: string): Promise<void> {
+  await db
+    .prepare(
+      `INSERT INTO sync_state (key, value, updated_at) VALUES ('last_checked_utc', ?1, strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+       ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at`,
+    )
+    .bind(value)
     .run();
 }

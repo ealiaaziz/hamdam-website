@@ -197,6 +197,55 @@ footer.meta {
   .grid-2 { grid-template-columns: 1fr; }
 }
 
+.suggest { border-left: 3px solid var(--saffron); background: #FEFBF5; margin-bottom: 1.25rem; }
+.suggest-lead { font-size: 0.85rem; color: var(--text-soft); margin: 0 0 0.35rem; }
+.suggest-title { font-family: ui-serif, Georgia, serif; font-size: 1.1rem; margin: 0 0 0.75rem; }
+.suggest-body ol { margin: 0 0 0.75rem; padding-left: 1.25rem; }
+.suggest-body li { margin-bottom: 0.4rem; }
+.suggest-body p { margin: 0 0 0.75rem; }
+.suggest-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.5rem; }
+.suggest .hint { font-size: 0.78rem; color: var(--text-soft); margin: 0; }
+
+.draft { border: 1px solid rgb(232 176 75 / 55%); background: #FEFBF5; border-radius: 0.6rem; padding: 1rem 1.1rem; margin-bottom: 1.25rem; }
+.draft-head { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 0.5rem; }
+.badge--draft { background: var(--p3-bg); color: var(--p3); }
+.draft-why { font-size: 0.78rem; color: var(--text-soft); }
+.draft-meta { font-size: 0.78rem; color: var(--text-soft); margin: 0 0 0.75rem; }
+.draft-body { background: #fff; border: 1px solid var(--line); border-radius: 0.5rem; padding: 0.75rem 1rem; margin-bottom: 0.85rem; font-size: 0.9rem; }
+.draft .hint { font-size: 0.78rem; color: var(--text-soft); margin: 0.5rem 0 0; }
+
 .sla-line { font-size: 0.85rem; color: var(--text-soft); display: flex; gap: 1.25rem; flex-wrap: wrap; }
 .sla-line strong { color: var(--text); }
+
+/* Persian, without a webfont.
+ *
+ * The marketing site serves Vazirmatn. This portal deliberately does not: a
+ * font file means a request in front of someone who already has a problem
+ * and a layout shift on a page whose whole job is to be quick. The stack
+ * reaches Vazirmatn when the reader already has it and lands on a system
+ * Persian face otherwise. All of them render Persian correctly.
+ *
+ * It lives here rather than in a <style> tag because this response is served
+ * under a style-src of self with no unsafe-inline, so an inline block would
+ * simply not apply and the page would silently render Persian in a serif
+ * face meant for Latin. */
+html[lang='fa'] body,
+html[lang='fa'] h1,
+html[lang='fa'] h2,
+html[lang='fa'] .wordmark,
+html[lang='fa'] .lede,
+html[lang='fa'] .btn,
+html[lang='fa'] input,
+html[lang='fa'] textarea,
+html[lang='fa'] select {
+  font-family: Vazirmatn, 'Iran Sans', IRANSans, Tahoma, 'Segoe UI', system-ui, sans-serif;
+}
+
+/* Right-to-left needs the text edges swapped, not the whole grid rebuilt:
+ * the layout is already flow-relative almost everywhere. These are the
+ * places that hard-coded a side. */
+html[dir='rtl'] .msg { border-left: none; border-right: 3px solid var(--rule); padding-left: 0; padding-right: 0.85rem; }
+html[dir='rtl'] .filters a { margin-right: 0; margin-left: 0.4rem; }
+html[dir='rtl'] .queue th,
+html[dir='rtl'] .queue td { text-align: right; }
 `;
