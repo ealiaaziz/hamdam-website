@@ -272,7 +272,20 @@ export async function ingestInbox(env: Env): Promise<IngestSummary> {
   if (!canSendDirectly(env)) return summary;
 
   const since = await getCheckpoint(env.DB);
-  const messages = await fetchInbox(env, since, BATCH_LIMIT);
+
+  // Why a run failed is written to the database, not only to the log.
+  // Worker logs need a websocket to tail, which is exactly the thing that is
+  // unavailable when you most want it, and "the inbox is not being read" is
+  // otherwise indistinguishable from "nobody has emailed".
+  let messages: Awaited<ReturnType<typeof fetchInbox>>;
+  try {
+    messages = await fetchInbox(env, since, BATCH_LIMIT);
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : String(error);
+    await setSyncState(env.DB, 'last_ingest_error', `${new Date().toISOString()} ${reason}`.slice(0, 400));
+    throw error;
+  }
+  await setSyncState(env.DB, 'last_ingest_error', '');
   summary.fetched = messages.length;
   if (messages.length === 0) return summary;
 
