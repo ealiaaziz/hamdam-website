@@ -49,6 +49,22 @@ export const RATE_LIMITS = {
   ticket_reply: { limit: 60, windowSeconds: 3600 },
   /** "Email me this conversation", which sends mail on every press. */
   ticket_summary: { limit: 10, windowSeconds: 3600 },
+  /**
+   * Messages from one email sender that the desk will answer automatically.
+   *
+   * The portal got limits and the mailbox did not, which left the cheaper of
+   * the two doors unlocked: anyone can send mail, every new email ticket
+   * produces an acknowledgement and an assistant reply, and a subject with a
+   * P1 word in it also produces an alert to the team's own addresses. Sixty
+   * emails is sixty alerts, and an alert that arrives sixty times is one
+   * nobody reads afterwards.
+   *
+   * Higher than the portal's, because a real thread genuinely goes back and
+   * forth, and because the consequence of crossing it is gentler: over this
+   * line the desk still files everything, it just stops replying by itself
+   * until a person looks. Nothing is dropped.
+   */
+  inbound_sender: { limit: 20, windowSeconds: 3600 },
 } as const satisfies Record<string, RateLimitRule>;
 
 export type RateLimitBucket = keyof typeof RATE_LIMITS;

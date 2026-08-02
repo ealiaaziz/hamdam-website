@@ -74,7 +74,7 @@ account, so the runbook below reads as history rather than pending work:
 | Custom domain | `support.hamdam.com.au` |
 | Zone TLS | Always Use HTTPS **on**, min TLS **1.2**, SSL mode `full` |
 | Access app | `Hamdam Support Admin` on `support.hamdam.com.au/admin`, 24h sessions |
-| Access policy | Allow: `azizollahi@live.com`, `developer@hamdam.com.au` |
+| Access policy | Allow: a named list of individual addresses, set in Zero Trust. Not written down here: this repository is public, and a list of exactly which accounts open the console is a shopping list. Read it from the Access application. |
 | Team domain | `wispy-art-3af8.cloudflareaccess.com` |
 
 ## Two queues, one desk

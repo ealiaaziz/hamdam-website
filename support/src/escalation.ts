@@ -11,15 +11,34 @@ import { getAgentState, getTicketById, listComments, markOutboundFailed, markOut
 // handover at all. The requester was told "a person will pick this up" and
 // that was, strictly, a hope.
 
-/** Who gets told. Overridable, because the team will change before the code does. */
-export const DEFAULT_ESCALATION_RECIPIENTS = ['azizollahi@live.com', 'binesh.fce19@gmail.com'];
+/**
+ * Where an alert goes when nothing has been configured.
+ *
+ * The desk's own mailbox, which is monitored and is already printed on every
+ * page. It used to be the two team members' personal addresses, written into
+ * this file, and this repository is public: that published a private Gmail
+ * and a private Outlook address, attached to a named product, in a file that
+ * says out loud that these are the people who read the security reports. That
+ * is a spearphishing target list, assembled and hosted at no cost to whoever
+ * wanted it.
+ *
+ * The real recipients now come from ESCALATION_RECIPIENTS, set with
+ * `wrangler secret put`. A secret rather than a var in wrangler.jsonc for the
+ * same reason: that file is public too.
+ *
+ * Falling back to the desk inbox rather than to nothing matters. An
+ * escalation that reaches a monitored mailbox late is a delay; an escalation
+ * that reaches nobody because a secret was not set is the alert that never
+ * arrives, which is the failure this whole file exists to prevent.
+ */
+export const FALLBACK_ESCALATION_RECIPIENTS = ['developer@hamdam.com.au'];
 
 export function escalationRecipients(env: Env): string[] {
   const configured = (env.ESCALATION_RECIPIENTS ?? '')
     .split(',')
     .map((address) => address.trim())
     .filter((address) => address.includes('@'));
-  return configured.length > 0 ? configured : DEFAULT_ESCALATION_RECIPIENTS;
+  return configured.length > 0 ? configured : FALLBACK_ESCALATION_RECIPIENTS;
 }
 
 /**

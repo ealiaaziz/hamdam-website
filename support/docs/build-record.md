@@ -202,7 +202,7 @@ for history only.
 
 | | |
 |---|---|
-| Tests | 269 (Vitest) |
+| Tests | 278 (Vitest) |
 | Migrations | 9 |
 | Knowledge base | 3 articles, 16 reference files |
 | Languages | English, Persian |
@@ -346,3 +346,132 @@ strict-origin-when-cross-origin` covers the leak that matters. And the portal
 still emails an address the submitter typed without proving they own it,
 which is inherent to a support desk that does not want an account first; the
 rate limits bound the damage rather than removing it.
+
+---
+
+## Red team pass, 2026-08-02
+
+A second review, run adversarially rather than as a diff read: DNS and mail
+posture, TLS and zone settings, Cloudflare Access configuration, content
+discovery against both hosts, and a fresh look at the trust boundaries in
+code. It found one thing that was genuinely serious and one that was
+genuinely embarrassing, plus a set of infrastructure gaps that are not the
+Worker's fault and are still the domain's problem.
+
+### Anyone could write on anyone's ticket
+
+The inbound email path routed a message onto an existing ticket on the
+strength of the `[HAM-N]` tag in its subject, and checked nothing else. Not
+who sent it. Ticket ids are sequential and every requester sees their own in
+every email the desk sends, so `HAM-41` and `HAM-43` were free guesses.
+
+Sending `Subject: RE: [HAM-42] hello` to developer@hamdam.com.au was enough
+to file your text as a *requester* comment on a stranger's ticket. From
+there the desk did the rest of the work unprompted: if the message contained
+one of the closure phrases it closed their ticket, and otherwise it ran the
+assistant over a thread that now contained your words and emailed the result
+to the real requester, from an address that passes SPF and DKIM for this
+domain. No spoofing was required at any point. The tag was the credential,
+and the tag was printed on everything.
+
+What it could not do is read. The assistant's reply goes to the ticket's
+requester, never to the sender, so this was a write and a nuisance rather
+than a disclosure. That is the only reason it is written up as serious
+rather than as an emergency.
+
+`planInbound` now takes the owning address of each candidate thread and
+appends only when the sender matches it. A tag from someone else is not an
+error, because a stranger quoting a ticket number is far more likely to have
+been forwarded a thread than to be an attacker: their message simply becomes
+its own ticket. Nothing is lost and nothing is written where it should not
+be. The conversation id path got the same check, on the principle that
+"harder to guess" is not "proves who you are".
+
+### The console had a second front door
+
+Cloudflare Access is scoped to the path `support.hamdam.com.au/admin`. The
+locale prefix made `/fa/<anything>` an alias for `/<anything>`, the console
+included. So `/admin` was stopped at the edge with a redirect to the Access
+login, and `/fa/admin` went straight past Access to the console handler.
+
+The Worker's own JWT verification refused it, which is exactly why that check
+was written instead of trusting the proxy, and it is the reason this is a
+defence in depth finding rather than an authentication bypass. But it was an
+entrance Access could not log, could not rate limit and could not attach a
+policy to, and one control silently doing the work of two is how the next
+change breaks something nobody is watching. `/fa/admin` is now a 404.
+
+### The mailbox had no limits while the portal had them
+
+The morning's work metered the portal and left the email channel open, which
+put the ceiling on the more expensive door and none on the cheaper one.
+Every emailed ticket produces an acknowledgement, an assistant reply, and,
+for anything with a P1 word in the subject, an alert to the team. Crossing
+the new per-sender limit does not drop mail: everything is still read, filed
+and queued, and what stops is the desk answering by itself until a person
+looks. A system note on the ticket says so, because a ticket that looks like
+the assistant simply failed is worse than one that explains itself.
+
+### Two personal addresses were published
+
+`src/escalation.ts` hardcoded a private Gmail and a private Outlook address
+as the escalation recipients. This repository is public. That published two
+personal addresses, attached to a named product, in a file whose surrounding
+comment explains that these are the people who read the security alerts: a
+spearphishing target list, assembled and hosted at no cost to whoever wanted
+it. The README named the console's Access account for the same reason and
+with the same effect.
+
+The real list is now the `ESCALATION_RECIPIENTS` secret, and the fallback in
+source is the desk's own monitored mailbox, which is printed on every page
+anyway. Note what this does not do: git history still contains the
+addresses, and rewriting a public repository's history is a bigger and
+noisier operation than the exposure warrants. Treat both addresses as
+public, because they have been.
+
+### Smaller
+
+`CF-IPCountry` was a fallback for the country check. Cloudflare only adds
+that header when the visitor-location transform is enabled, and where it is
+not added a client-supplied one arrives untouched, so the fallback could
+only ever fire in exactly the configuration where it was attacker
+controlled. Removed; `request.cf.country` is populated by the runtime and
+cannot be set from outside. A `.well-known/security.txt` was added, because
+the previous answer to "how do I report something" was to guess.
+
+### What held
+
+Worth writing down, because a review that only lists failures reads as
+though nothing was built right. Content discovery found no source, config,
+`.git`, `.env` or `.dev.vars` on either host. Access is scoped to three
+named addresses with no wildcard. The Worker's JWT verification pins RS256
+and checks issuer, audience and expiry. Every admin path variant tried
+(`/Admin`, `//admin`, `/admin/../admin`, `/admin%2f`) was refused. SPF is
+`-all`, DKIM selectors are published, min TLS is 1.2 and TLS 1.3 is on.
+
+### Not fixed here, because it is DNS
+
+These are recorded rather than applied. Changing a live mail domain's DNS on
+the strength of a review, without watching what it does to delivery, is how
+a support desk stops receiving support requests.
+
+* **DMARC is `p=quarantine`.** Spoofed mail is junked, not refused. `p=reject`
+  is the target, and SPF already says `-all`, but confirm Exchange is
+  actually signing with the published DKIM selectors before moving.
+* **DMARC `rua` points at `dmarc_rua@onsecureserver.net`.** The registrar
+  receives the aggregate reports; the owner does not. Nobody here can see who
+  is spoofing this domain.
+* **No CAA record.** Any certificate authority in the world may issue for
+  `hamdam.com.au`. Add one covering the issuers Cloudflare actually uses.
+* **No MTA-STS or TLS-RPT.** Inbound mail can be downgraded by an active
+  network attacker between a sender and Exchange Online.
+* **Zone SSL mode is `full`, not `full (strict)`.** Near meaningless today,
+  since every proxied record is a Worker and there is no origin to protect,
+  and wrong the moment one of them points at a real server.
+* **Stale delegations.** `sip`, `lyncdiscover`, `_sip._tls` and
+  `_sipfederationtls` are Skype for Business, retired in 2021.
+  `email.hamdam.com.au` points at GoDaddy email marketing and resolves to a
+  host that does not claim the name. None are known to be takeoverable; all
+  are attack surface kept for nothing.
+* **Access has no MFA requirement** and a 24 hour session, on a console that
+  shows every requester's name, address and ticket text.

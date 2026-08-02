@@ -10,7 +10,7 @@ import { assistantWrittenEmail } from './render/agentEmail.js';
 import { generateTrackingToken, parseTicketPublicId, stripHtml, ticketPublicId, tokensMatch } from './ids.js';
 import { cleanLine, cleanText, isOversizedBody, isValidEmail, MAX_BODY_CHARS, MAX_NAME_CHARS, MAX_SUBJECT_CHARS } from './validation.js';
 import { callerKey, consumeRateLimit, purgeRateLimits, type RateLimitBucket } from './rateLimit.js';
-import { httpsRedirectTarget, isCrossSiteRequest, isLocalHost, trackingUrl } from './urls.js';
+import { httpsRedirectTarget, isCrossSiteRequest, isLocalHost, localePrefixTarget, trackingUrl } from './urls.js';
 import { extractAccessToken, fetchAccessKeys, verifyAccessJwt } from './access.js';
 import { KB_ARTICLES } from './kb.js';
 import { suggestionBlock } from './render/agentSuggestion.js';
@@ -253,7 +253,15 @@ app.use('*', async (c, next) => {
 app.use('*', async (c, next) => {
   if (!c.req.header('cf-ray')) return next();
 
-  const country = (c.req.raw as Request & { cf?: { country?: string } }).cf?.country ?? c.req.header('cf-ipcountry');
+  // `request.cf.country` only. The CF-IPCountry header used to be a fallback
+  // here, and it is the wrong shape for one: Cloudflare adds it only when the
+  // visitor-location managed transform is enabled, and where it is not added,
+  // a client-supplied `CF-IPCountry: AU` arrives untouched. So the fallback
+  // could only ever fire in precisely the configuration where it is
+  // attacker-controlled. `request.cf` is populated by the runtime on every
+  // edge request and cannot be set from outside; absent means no country,
+  // which this already treats as a refusal.
+  const country = (c.req.raw as Request & { cf?: { country?: string } }).cf?.country;
   if (isAllowedCountry(country, parseAllowedCountries(c.env.ALLOWED_COUNTRIES))) return next();
 
   return c.html(outOfRegionPage(), 403);
@@ -900,9 +908,21 @@ const LOCALE_HEADER = 'x-hamdam-locale';
  * The console is deliberately not translated. It is an internal tool with one
  * or two users who both read English, and a half-translated admin surface is
  * worse than an untranslated one.
+ *
+ * Which is why /fa/admin is refused outright rather than merely left in
+ * English. The prefix strip made an alias for *every* route, the console
+ * included, and the Cloudflare Access application in front of this Worker is
+ * scoped to the path `support.hamdam.com.au/admin`. So /fa/admin reached the
+ * console handler without Access ever seeing the request: the Worker's own
+ * JWT check refused it, which is exactly the defence in depth that check
+ * exists for and is why this was a second front door rather than an open one.
+ * But it was a door Access could not log, could not rate limit, and could not
+ * apply a policy to, and "the inner check happened to hold" is not a thing to
+ * leave standing once you have noticed it.
  */
 function withLocalePrefix(request: Request): Request {
   const url = new URL(request.url);
+  const target = localePrefixTarget(url.pathname);
 
   // The path decides, and only the path. This header is an internal channel
   // between this function and the handlers, so a client sending one of its
@@ -911,19 +931,22 @@ function withLocalePrefix(request: Request): Request {
   // locale it sets is the locale the resulting ticket and every email on it
   // are conducted in. Cosmetic today, and a header nobody can reach is one
   // less thing to reason about tomorrow.
-  if (url.pathname !== '/fa' && !url.pathname.startsWith('/fa/')) {
+  // Nothing to rewrite: either no prefix, or a prefixed path the prefix is
+  // not allowed to reach (/fa/admin). Either way the request is served as it
+  // arrived, minus any locale header a client tried to supply.
+  if (target === null) {
     if (!request.headers.has(LOCALE_HEADER)) return request;
-    const stripped = new Headers(request.headers);
-    stripped.delete(LOCALE_HEADER);
+    const cleaned = new Headers(request.headers);
+    cleaned.delete(LOCALE_HEADER);
     return new Request(url, {
       method: request.method,
-      headers: stripped,
+      headers: cleaned,
       body: request.method === 'GET' || request.method === 'HEAD' ? undefined : request.body,
       redirect: 'manual',
     });
   }
 
-  url.pathname = url.pathname.slice(3) || '/';
+  url.pathname = target;
   const headers = new Headers(request.headers);
   headers.set(LOCALE_HEADER, 'fa');
   return new Request(url, {

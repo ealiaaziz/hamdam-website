@@ -18,10 +18,14 @@ const message = (over: Partial<InboundMessage> = {}): InboundMessage => ({
   ...over,
 });
 
+// The sender of `message()` above, so the default fixture is a person
+// replying on their own ticket rather than a stranger reaching into one.
+const OWNER = 'someone@example.com';
+
 const known = (over: Partial<Parameters<typeof planInbound>[1]> = {}) => ({
   alreadyProcessed: false,
-  ticketIdForConversation: null,
-  ticketExists: () => true,
+  taggedTicket: null,
+  conversationTicket: null,
   ...over,
 });
 
@@ -100,20 +104,34 @@ describe('planInbound', () => {
     expect(planInbound(message({ bodyHtml: '' }), known()).action).toBe('skip');
   });
 
-  it('appends to the ticket named in the subject', () => {
-    const plan = planInbound(message({ subject: 'RE: [HAM-9] Verse will not load' }), known());
+  it('appends to the ticket named in the subject when the sender owns it', () => {
+    const plan = planInbound(
+      message({ subject: 'RE: [HAM-9] Verse will not load' }),
+      known({ taggedTicket: { id: 9, requesterEmail: OWNER } }),
+    );
+    expect(plan).toMatchObject({ action: 'append', ticketId: 9 });
+  });
+
+  it('matches the owner regardless of case and stray whitespace', () => {
+    const plan = planInbound(
+      message({ subject: 'RE: [HAM-9] thing', fromEmail: '  SomeOne@Example.COM ' }),
+      known({ taggedTicket: { id: 9, requesterEmail: OWNER } }),
+    );
     expect(plan).toMatchObject({ action: 'append', ticketId: 9 });
   });
 
   it('prefers the subject tag over the conversation id', () => {
     // The tag survives forwarding and a change of client. A conversation id
     // does not.
-    const plan = planInbound(message({ subject: 'RE: [HAM-9] thing' }), known({ ticketIdForConversation: 3 }));
+    const plan = planInbound(
+      message({ subject: 'RE: [HAM-9] thing' }),
+      known({ taggedTicket: { id: 9, requesterEmail: OWNER }, conversationTicket: { id: 3, requesterEmail: OWNER } }),
+    );
     expect(plan).toMatchObject({ action: 'append', ticketId: 9 });
   });
 
   it('falls back to the conversation id when the subject has no tag', () => {
-    const plan = planInbound(message(), known({ ticketIdForConversation: 3 }));
+    const plan = planInbound(message(), known({ conversationTicket: { id: 3, requesterEmail: OWNER } }));
     expect(plan).toMatchObject({ action: 'append', ticketId: 3 });
   });
 
@@ -124,8 +142,39 @@ describe('planInbound', () => {
   });
 
   it('does not append to a ticket that does not exist', () => {
-    const plan = planInbound(message({ subject: 'RE: [HAM-999] thing' }), known({ ticketExists: () => false }));
+    const plan = planInbound(message({ subject: 'RE: [HAM-999] thing' }), known({ taggedTicket: null }));
     expect(plan.action).toBe('create');
+  });
+
+  // The finding this check exists for. Ticket ids are sequential and printed
+  // in every email the desk sends, so HAM-41 and HAM-43 are free guesses.
+  // Without an owner check the tag *was* the credential: a stranger's message
+  // was filed as a requester comment on somebody else's ticket, could close
+  // it, and made the desk email that stranger's words onward to the real
+  // requester from an address that passes SPF and DKIM for this domain.
+  it('refuses to write a stranger onto another person ticket', () => {
+    const plan = planInbound(
+      message({ subject: 'RE: [HAM-9] Verse will not load', fromEmail: 'attacker@evil.example' }),
+      known({ taggedTicket: { id: 9, requesterEmail: OWNER } }),
+    );
+    expect(plan.action).toBe('create');
+  });
+
+  it('will not let a guessed conversation id write onto a ticket either', () => {
+    const plan = planInbound(
+      message({ fromEmail: 'attacker@evil.example' }),
+      known({ conversationTicket: { id: 3, requesterEmail: OWNER } }),
+    );
+    expect(plan.action).toBe('create');
+  });
+
+  it('loses nothing when it refuses: the stranger still gets a ticket', () => {
+    const plan = planInbound(
+      message({ subject: 'RE: [HAM-9] thing', fromEmail: 'newcomer@example.com' }),
+      known({ taggedTicket: { id: 9, requesterEmail: OWNER } }),
+    );
+    expect(plan).toMatchObject({ action: 'create' });
+    if (plan.action === 'create') expect(plan.body).toContain('daily verse is blank');
   });
 });
 
@@ -227,7 +276,7 @@ describe('isAutomatedMail', () => {
   it('does not mistake a person for a machine', async () => {
     const { isAutomatedMail } = await import('../src/inbound.js');
     const cases: [string, string][] = [
-      ['azizollahi@live.com', 'RE: [HAM-9] Verse will not load'],
+      ['a.person@example.com', 'RE: [HAM-9] Verse will not load'],
       ['someone@example.com', 'My reply is undeliverable to my colleague, can you help'],
       ['noreplacement@example.com', 'Question about Plus'],
       ['bouncer@example.com', 'The app keeps bouncing me out'],
@@ -244,7 +293,7 @@ describe('isAutomatedMail', () => {
         fromEmail: 'postmaster@example.com',
         subject: 'Undeliverable: [HAM-9] Verse will not load',
       }),
-      known({ ticketExists: () => true }),
+      known({ taggedTicket: { id: 9, requesterEmail: OWNER } }),
     );
     expect(plan).toEqual({ action: 'skip', reason: 'automated mail, not a person' });
   });
@@ -280,7 +329,7 @@ describe('automated senders that are not at the start of the address', () => {
   it('still lets people through', async () => {
     const { isAutomatedMail } = await import('../src/inbound.js');
     for (const from of [
-      'azizollahi@live.com',
+      'a.person@example.com',
       'noreplacement@example.com',
       'bouncer@example.com',
       'sima.binesh@example.com',

@@ -85,8 +85,20 @@ there are worth repeating here because breaking them is expensive:
    acknowledgements for tickets that no longer existed. Deleting the row does
    not recall the mail.
 
-`npm test` (269 cases), `npm run check:persian` and `node
+`npm test` (278 cases), `npm run check:persian` and `node
 scripts/check-dashes.mjs` all cover `support/` and must pass.
+
+**Inbound email is not an identity (added 2026-08-02).** A message may only be
+appended to an existing ticket when the sender's address matches that
+ticket's requester. The `[HAM-N]` subject tag is a routing hint, never a
+credential: ids are sequential and printed in every email the desk sends, so
+before this check anyone could write onto, and close, a stranger's ticket by
+guessing a number. A tag from a non-owner creates a new ticket instead.
+
+**`/fa` is not an alias for `/admin`.** Cloudflare Access is scoped to the
+path `/admin`, so a locale-prefixed alias reached the console without Access
+seeing it. `localePrefixTarget` in `src/urls.ts` holds the exclusion list;
+anything added under `/admin` inherits it automatically.
 
 **Anything a stranger types is validated and metered (added 2026-08-02).**
 The portal is the only surface anyone on the internet can reach, and every

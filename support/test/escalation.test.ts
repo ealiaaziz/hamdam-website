@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { escalationEmail } from '../src/render/escalation.js';
-import { DEFAULT_ESCALATION_RECIPIENTS, escalationRecipients } from '../src/escalation.js';
+import { FALLBACK_ESCALATION_RECIPIENTS, escalationRecipients } from '../src/escalation.js';
 import type { CommentRow, TicketWithRequester } from '../src/types.js';
 import type { Env } from '../src/types.js';
 
@@ -126,10 +126,14 @@ describe('escalationEmail', () => {
 });
 
 describe('escalationRecipients', () => {
-  it('tells both of the people who cover the desk', () => {
-    expect(escalationRecipients({} as Env)).toEqual(DEFAULT_ESCALATION_RECIPIENTS);
-    expect(DEFAULT_ESCALATION_RECIPIENTS).toContain('azizollahi@live.com');
-    expect(DEFAULT_ESCALATION_RECIPIENTS).toContain('binesh.fce19@gmail.com');
+  it('falls back to the monitored desk mailbox, not to a personal address', () => {
+    // The default used to be the two team members' own addresses, written
+    // into a file in a public repository, next to a sentence saying these
+    // are the people who read the security escalations. The real list is a
+    // secret now; what is left in the source is the address already printed
+    // on every page.
+    expect(escalationRecipients({} as Env)).toEqual(FALLBACK_ESCALATION_RECIPIENTS);
+    expect(FALLBACK_ESCALATION_RECIPIENTS).toEqual(['developer@hamdam.com.au']);
   });
 
   it('honours a configured list', () => {
@@ -139,7 +143,7 @@ describe('escalationRecipients', () => {
   it('falls back rather than telling nobody', () => {
     // An empty or malformed setting must not silently mean "alert no one".
     for (const value of ['', '   ', 'not-an-address']) {
-      expect(escalationRecipients({ ESCALATION_RECIPIENTS: value } as Env)).toEqual(DEFAULT_ESCALATION_RECIPIENTS);
+      expect(escalationRecipients({ ESCALATION_RECIPIENTS: value } as Env)).toEqual(FALLBACK_ESCALATION_RECIPIENTS);
     }
   });
 });

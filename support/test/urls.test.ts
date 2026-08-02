@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { httpsRedirectTarget, isCrossSiteRequest, isLocalHost, trackingUrl } from '../src/urls.js';
+import { httpsRedirectTarget, isCrossSiteRequest, isLocalHost, localePrefixTarget, trackingUrl } from '../src/urls.js';
 
 describe('trackingUrl', () => {
   it('emits https for a production request', () => {
@@ -96,5 +96,45 @@ describe('isCrossSiteRequest', () => {
 
   it('treats a lookalike host as cross-site', () => {
     expect(isCrossSiteRequest(URL_, 'https://support.hamdam.com.au.evil.example', EDGE)).toBe(true);
+  });
+});
+
+describe('localePrefixTarget', () => {
+  it('serves the Persian portal from the same handlers as the English one', () => {
+    expect(localePrefixTarget('/fa')).toBe('/');
+    expect(localePrefixTarget('/fa/')).toBe('/');
+    expect(localePrefixTarget('/fa/track')).toBe('/track');
+    expect(localePrefixTarget('/fa/tickets/42')).toBe('/tickets/42');
+  });
+
+  it('leaves an unprefixed path alone', () => {
+    expect(localePrefixTarget('/')).toBeNull();
+    expect(localePrefixTarget('/track')).toBeNull();
+  });
+
+  it('does not treat a path that merely starts with fa as prefixed', () => {
+    expect(localePrefixTarget('/favicon.ico')).toBeNull();
+    expect(localePrefixTarget('/faq')).toBeNull();
+  });
+
+  // The finding. The Cloudflare Access application is scoped to the path
+  // `support.hamdam.com.au/admin`, so while the prefix strip rewrote
+  // /fa/admin to /admin *inside* the Worker, Access never saw the request:
+  // /admin was stopped at the edge with a 302 to the login page, and
+  // /fa/admin reached the console handler and was refused only by the
+  // Worker's own JWT check. That check held, which is why this was a second
+  // front door rather than an open one. It was still a door Access could not
+  // log or apply a policy to.
+  it('refuses to make /fa an alias for the console', () => {
+    expect(localePrefixTarget('/fa/admin')).toBeNull();
+    expect(localePrefixTarget('/fa/admin/')).toBeNull();
+    expect(localePrefixTarget('/fa/admin/tickets/1')).toBeNull();
+    expect(localePrefixTarget('/fa/admin/tickets/1/status')).toBeNull();
+  });
+
+  it('does not over-match a public path that starts with the same letters', () => {
+    // /fa/administrivia is not the console, and blocking it would be a
+    // different bug in the same place.
+    expect(localePrefixTarget('/fa/administrivia')).toBe('/administrivia');
   });
 });
