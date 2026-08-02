@@ -191,14 +191,17 @@ export interface NewOutboundEmail {
   inReplyToMessageId: string | null;
 }
 
-export async function queueOutboundEmail(db: D1Database, e: NewOutboundEmail): Promise<void> {
-  await db
+export async function queueOutboundEmail(db: D1Database, e: NewOutboundEmail): Promise<number> {
+  const row = await db
     .prepare(
       `INSERT INTO outbound_emails (ticket_id, comment_id, kind, to_email, subject, body_html, in_reply_to_message_id)
-       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)`,
+       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)
+       RETURNING id`,
     )
     .bind(e.ticketId, e.commentId, e.kind, e.toEmail, e.subject, e.bodyHtml, e.inReplyToMessageId)
-    .run();
+    .first<{ id: number }>();
+  if (!row) throw new Error('queueOutboundEmail: insert did not return an id');
+  return row.id;
 }
 
 export async function listPendingOutboundEmails(db: D1Database): Promise<OutboundEmailRow[]> {

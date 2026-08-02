@@ -1,4 +1,4 @@
-import { Hono } from 'hono';
+import { Hono, type Context } from 'hono';
 import type { Env } from './types.js';
 import { APP_CSS } from './render/styles.js';
 import { submitFormPage, trackLookupPage } from './render/portal.js';
@@ -12,6 +12,7 @@ import { httpsRedirectTarget, isCrossSiteRequest, isLocalHost, trackingUrl } fro
 import { extractAccessToken, fetchAccessKeys, verifyAccessJwt } from './access.js';
 import { KB_ARTICLES } from './kb.js';
 import { suggestionBlock } from './render/agentSuggestion.js';
+import { canSendDirectly, sendMail } from './mailer.js';
 import { requestedClosure } from './agentPolicy.js';
 
 import { composeAssistantReplyLive, ASSISTANT_NAME } from './assistantReply.js';
@@ -31,7 +32,10 @@ import {
   listComments,
   listQueue,
   markFirstResponse,
+  markOutboundFailed,
+  markOutboundSent,
   queueOutboundEmail,
+  type NewOutboundEmail,
   updateTicketPriority,
   updateTicketStatus,
   upsertRequester,
@@ -42,6 +46,10 @@ import { parseTicketStatus, type CommentRow, type TicketWithRequester } from './
 // the routine must ignore inbound mail from this address so the desk does
 // not ingest its own outgoing email as requester replies.
 const SUPPORT_INBOX = 'developer@hamdam.com.au';
+
+/** The Hono context this app actually builds, so helpers can accept one. */
+type DeskEnv = { Bindings: Env; Variables: { agentEmail: string } };
+type DeskContext = Context<DeskEnv>;
 
 /**
  * The thread as the assistant should see it: what the requester wrote and
@@ -78,11 +86,10 @@ function dailyCallLimit(env: Env): number {
  * about a problem that has since moved on.
  */
 async function queueConversationSummary(
-  db: D1Database,
+  c: DeskContext,
   ticket: TicketWithRequester,
   comments: readonly CommentRow[],
   status: 'resolved' | 'with_a_person' | 'in_progress',
-  requestUrl: string,
 ): Promise<void> {
   const turns = comments
     .filter((m) => m.author_type === 'requester' || m.author_type === 'agent')
@@ -93,12 +100,12 @@ async function queueConversationSummary(
     subject: ticket.subject,
     priority: ticket.priority,
     requesterName: ticket.requester_name,
-    trackingUrl: trackingUrl(requestUrl, ticket.id, ticket.tracking_token),
+    trackingUrl: trackingUrl(c.req.url, ticket.id, ticket.tracking_token),
     status,
     turns,
   });
 
-  await queueOutboundEmail(db, {
+  await queueAndSend(c, {
     ticketId: ticket.id,
     commentId: null,
     kind: 'status_change',
@@ -109,7 +116,38 @@ async function queueConversationSummary(
   });
 }
 
-const app = new Hono<{ Bindings: Env; Variables: { agentEmail: string } }>();
+/**
+ * Queues an email and tries to send it there and then.
+ *
+ * The queue is still the record: the row goes in first, and it only becomes
+ * 'sent' once Graph has accepted it. A failed send therefore leaves a
+ * perfectly ordinary pending row, which the hourly Routine picks up exactly
+ * as it always has. Immediate delivery is an improvement on the queue, not a
+ * replacement for it, and the failure mode is the old behaviour rather than
+ * a lost email.
+ *
+ * The send is not awaited by the request. A requester pressing "submit"
+ * should not wait on SMTP to see their ticket, and `waitUntil` keeps the
+ * Worker alive for it after the response has gone.
+ */
+async function queueAndSend(c: DeskContext, email: NewOutboundEmail): Promise<number> {
+  const id = await queueOutboundEmail(c.env.DB, email);
+  if (!canSendDirectly(c.env)) return id;
+
+  const deliver = async () => {
+    const result = await sendMail(c.env, { toEmail: email.toEmail, subject: email.subject, bodyHtml: email.bodyHtml });
+    if (result.sent) await markOutboundSent(c.env.DB, id);
+    else await markOutboundFailed(c.env.DB, id, result.reason);
+  };
+
+  // Marked failed, not left pending, so the reason is visible. The Routine
+  // retries failed rows too; a row with no explanation is the thing that
+  // wastes an afternoon.
+  c.executionCtx.waitUntil(deliver());
+  return id;
+}
+
+const app = new Hono<DeskEnv>();
 
 // Redirect http to https before anything else runs, and never serve a
 // ticket over plaintext.
@@ -205,7 +243,7 @@ app.post('/tickets', async (c) => {
     trackingUrl: trackingUrl(c.req.url, ticketId, trackingToken),
     requesterName: name,
   });
-  await queueOutboundEmail(c.env.DB, {
+  await queueAndSend(c, {
     ticketId,
     commentId: null,
     kind: 'ack',
@@ -309,7 +347,7 @@ app.post('/tickets/:id/feedback', async (c) => {
     await updateTicketStatus(c.env.DB, id, 'resolved');
     // They have agreed it is fixed. That is the settled state worth putting
     // in their inbox, and the only thing in it is what they already read.
-    await queueConversationSummary(c.env.DB, ticket, await listComments(c.env.DB, id), 'resolved', c.req.url);
+    await queueConversationSummary(c, ticket, await listComments(c.env.DB, id), 'resolved');
   } else if (outcome === 'unresolved') {
     await addComment(c.env.DB, id, 'system', null, `Requester reported that the suggested article "${articleId}" did not help. Needs a person.`);
     // Remember it, so nothing offers this article again on this ticket.
@@ -337,7 +375,7 @@ app.post('/tickets/:id/summary', async (c) => {
   const comments = await listComments(c.env.DB, id);
   const state = await getAgentState(c.env.DB, id);
   const status = ticket.status === 'resolved' ? 'resolved' : state.escalated ? 'with_a_person' : 'in_progress';
-  await queueConversationSummary(c.env.DB, ticket, comments, status, c.req.url);
+  await queueConversationSummary(c, ticket, comments, status);
   await addComment(c.env.DB, id, 'system', null, 'Requester asked for the conversation by email.');
 
   return c.redirect(`/tickets/${id}?token=${encodeURIComponent(token)}&emailed=1`, 303);
@@ -373,7 +411,7 @@ app.post('/tickets/:id/reply', async (c) => {
       message: body,
       adminUrl,
     });
-    await queueOutboundEmail(c.env.DB, {
+    await queueAndSend(c, {
       ticketId: id,
       commentId,
       kind: 'requester_reply',
@@ -398,7 +436,7 @@ app.post('/tickets/:id/reply', async (c) => {
         ASSISTANT_NAME,
         'Closed, as you asked. I am emailing you the whole conversation for your records. If it comes up again, reply to that email and this ticket reopens.',
       );
-      await queueConversationSummary(c.env.DB, { ...ticket, status: 'closed' }, await listComments(c.env.DB, id), 'resolved', c.req.url);
+      await queueConversationSummary(c, { ...ticket, status: 'closed' }, await listComments(c.env.DB, id), 'resolved');
       return c.redirect(`/tickets/${id}?token=${encodeURIComponent(token)}`, 303);
     }
 
@@ -446,7 +484,7 @@ app.post('/tickets/:id/reply', async (c) => {
     // this and can see everything you wrote" is exactly the thing worth
     // having in their inbox.
     if (reply.escalated) {
-      await queueConversationSummary(c.env.DB, ticket, await listComments(c.env.DB, id), 'with_a_person', c.req.url);
+      await queueConversationSummary(c, ticket, await listComments(c.env.DB, id), 'with_a_person');
     }
   }
   return c.redirect(`/tickets/${id}?token=${encodeURIComponent(token)}`, 303);
@@ -540,7 +578,7 @@ app.post('/admin/tickets/:id/reply', async (c) => {
     if (ticket.status === 'new') await updateTicketStatus(c.env.DB, id, 'open');
 
     const rendered = agentReplyEmail({ ticketId: id, subject: ticket.subject, agentName: agentEmail, message: body });
-    await queueOutboundEmail(c.env.DB, {
+    await queueAndSend(c, {
       ticketId: id,
       commentId,
       kind: 'agent_reply',
@@ -636,7 +674,7 @@ app.post('/admin/tickets/:id/status', async (c) => {
     if (status === 'resolved') {
       const trackingUrlStr = trackingUrl(c.req.url, id, ticket.tracking_token);
       const rendered = resolvedEmail({ ticketId: id, subject: ticket.subject, trackingUrl: trackingUrlStr });
-      await queueOutboundEmail(c.env.DB, {
+      await queueAndSend(c, {
         ticketId: id,
         commentId: null,
         kind: 'status_change',

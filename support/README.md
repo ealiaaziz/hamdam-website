@@ -112,9 +112,46 @@ already seen. Assistant replies drafted for *email-originated* tickets, via
 the console button, are still drafts: those go to someone who never chose to
 talk to a machine.
 
-Delivery is the hourly Routine, not the Worker. Workers cannot reach
-Composio, so a queued row waits for the next run. Check when that is with the
-Routine's cron before concluding an email is lost.
+### Delivery
+
+The Worker sends directly, through Microsoft Graph, as
+`developer@hamdam.com.au`. That is the real mailbox sending: the message
+lands in its Sent Items next to anything a person sends by hand, and replies
+come back to the same inbox the Routine already reads. Nothing about
+receiving mail changed.
+
+The queue is still the record. A row is written first and only marked `sent`
+once Graph accepts it, so a failed send leaves an ordinary pending row that
+the hourly Routine picks up exactly as it always did. Immediate delivery is
+an improvement on the queue, not a replacement, and the failure mode is the
+old behaviour rather than a lost email. Failures are marked `failed` with the
+reason from Graph, because a row with no explanation is what wastes an
+afternoon.
+
+Three secrets turn it on. Without them every row simply waits for the
+Routine, which is what CI and local development do:
+
+```
+npx wrangler secret put GRAPH_TENANT_ID
+npx wrangler secret put GRAPH_CLIENT_ID
+npx wrangler secret put GRAPH_CLIENT_SECRET
+npm run deploy
+```
+
+They come from an app registration in Entra ID (Azure portal, Microsoft Entra
+ID, App registrations, New registration; then API permissions, Microsoft
+Graph, **Application** permissions, `Mail.Send`, and Grant admin consent;
+then Certificates and secrets for the value). `Mail.Send` as an application
+permission grants send-as rights for *every* mailbox in the tenant, so scope
+it down to this one with an application access policy:
+
+```
+New-ApplicationAccessPolicy -AppId <client-id> -PolicyScopeGroupId developer@hamdam.com.au `
+  -AccessRight RestrictAccess -Description "Hamdam support desk"
+```
+
+Skipping that leaves a credential that can send as anyone in the tenant, in a
+Worker reachable from the public internet.
 
 ### Smoke-testing against production
 

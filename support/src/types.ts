@@ -109,6 +109,21 @@ export interface Env {
    */
   ASSISTANT_DAILY_CALL_LIMIT?: string;
   /**
+   * Microsoft Graph app-only credentials, so the Worker can send mail as
+   * developer@hamdam.com.au the moment there is something to send, instead
+   * of leaving it for the hourly Routine.
+   *
+   * Tenant and client id are identifiers, not secrets, but they live with
+   * the secret rather than in wrangler.jsonc so all three are set or none
+   * are: two thirds of a credential is just a confusing outage.
+   *
+   * Unset, outbound mail queues exactly as it did before and the Routine
+   * sends it. Slower, never lost.
+   */
+  GRAPH_TENANT_ID?: string;
+  GRAPH_CLIENT_ID?: string;
+  GRAPH_CLIENT_SECRET?: string;
+  /**
    * Local-development-only escape hatch, set in .dev.vars (never deployed).
    * Only honoured for requests with no CF-Ray header, which production
    * requests always carry, so this cannot open the console on the live site.

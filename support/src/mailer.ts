@@ -1,0 +1,127 @@
+import type { Env } from './types.js';
+
+// Sending mail from the Worker, immediately.
+//
+// Until now every outbound email waited for the hourly Routine, because
+// Workers cannot reach Composio and the Routine was the only thing that
+// could. That is fine for a nightly digest and wrong for an acknowledgement:
+// someone who has just described a problem and been told "a confirmation
+// email is on its way" should not be waiting fifty minutes to find out that
+// was true.
+//
+// Microsoft Graph, app-only. The mail genuinely comes from
+// developer@hamdam.com.au: it is that mailbox sending, so it lands in Sent
+// Items alongside everything a person sends by hand, and replies come back
+// to the same inbox the Routine already reads. Nothing about the receiving
+// half changes.
+//
+// The alternative was a third-party sending service with SPF and DKIM
+// records pointed at it. That would also work, and it would mean a second
+// system holding the right to send as this domain, plus a credential that
+// can send as anyone. `Mail.Send` scoped to one mailbox is the smaller
+// thing to be wrong about.
+
+/** The one mailbox this desk sends from. */
+export const SENDER = 'developer@hamdam.com.au';
+
+const TOKEN_ENDPOINT = (tenant: string) => `https://login.microsoftonline.com/${tenant}/oauth2/v2.0/token`;
+const SEND_ENDPOINT = `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(SENDER)}/sendMail`;
+
+export interface MailToSend {
+  toEmail: string;
+  subject: string;
+  bodyHtml: string;
+}
+
+export type SendResult = { sent: true } | { sent: false; reason: string };
+
+/**
+ * Cached app token, so a burst of tickets does not mean a burst of token
+ * requests. Module scope, so it lives as long as the isolate and no longer,
+ * which is the correct lifetime: a new isolate simply fetches another.
+ *
+ * Expiry is deliberately treated as thirty seconds earlier than claimed. A
+ * token that expires in flight fails the send, and the cost of asking again
+ * slightly too often is one extra request.
+ */
+let cachedToken: { value: string; expiresAt: number } | null = null;
+const EXPIRY_MARGIN_MS = 30_000;
+
+export function resetTokenCache(): void {
+  cachedToken = null;
+}
+
+/** True when the Worker has everything it needs to send without the Routine. */
+export function canSendDirectly(env: Env): boolean {
+  return Boolean(env.GRAPH_TENANT_ID && env.GRAPH_CLIENT_ID && env.GRAPH_CLIENT_SECRET);
+}
+
+async function accessToken(env: Env, now: number): Promise<string> {
+  if (cachedToken && cachedToken.expiresAt > now) return cachedToken.value;
+
+  const response = await fetch(TOKEN_ENDPOINT(env.GRAPH_TENANT_ID!), {
+    method: 'POST',
+    headers: { 'content-type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      client_id: env.GRAPH_CLIENT_ID!,
+      client_secret: env.GRAPH_CLIENT_SECRET!,
+      scope: 'https://graph.microsoft.com/.default',
+      grant_type: 'client_credentials',
+    }),
+  });
+
+  if (!response.ok) {
+    // The body carries Entra's own error code, which is the difference
+    // between "the secret expired" and "consent was never granted". Both
+    // look like "email stopped working" from outside.
+    throw new Error(`token request failed: ${response.status} ${(await response.text()).slice(0, 200)}`);
+  }
+
+  const body = (await response.json()) as { access_token?: string; expires_in?: number };
+  if (!body.access_token) throw new Error('token response had no access_token');
+
+  cachedToken = {
+    value: body.access_token,
+    expiresAt: now + Math.max(0, (body.expires_in ?? 3600) * 1000 - EXPIRY_MARGIN_MS),
+  };
+  return cachedToken.value;
+}
+
+/**
+ * Sends one email. Never throws: a failure comes back as a reason, because
+ * every caller wants the same thing from a failed send, which is to leave
+ * the row pending so the hourly Routine tries again. An exception here would
+ * only give each of them a chance to forget that.
+ */
+export async function sendMail(env: Env, mail: MailToSend, now = Date.now()): Promise<SendResult> {
+  if (!canSendDirectly(env)) return { sent: false, reason: 'graph credentials not configured' };
+
+  try {
+    const token = await accessToken(env, now);
+    const response = await fetch(SEND_ENDPOINT, {
+      method: 'POST',
+      headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
+      body: JSON.stringify({
+        message: {
+          subject: mail.subject,
+          body: { contentType: 'HTML', content: mail.bodyHtml },
+          toRecipients: [{ emailAddress: { address: mail.toEmail } }],
+        },
+        // Keep it in Sent Items. A support desk where half the outgoing mail
+        // is invisible to the person running it is worse than one that is
+        // slow, and this is the only record that the send happened at all.
+        saveToSentItems: true,
+      }),
+      signal: AbortSignal.timeout(15_000),
+    });
+
+    if (response.status === 202) return { sent: true };
+
+    // A stale cached token reads as 401. Drop it so the next attempt fetches
+    // a fresh one rather than failing identically until the isolate recycles.
+    if (response.status === 401) cachedToken = null;
+    return { sent: false, reason: `graph ${response.status}: ${(await response.text()).slice(0, 200)}` };
+  } catch (error) {
+    return { sent: false, reason: error instanceof Error ? error.message : String(error) };
+  }
+}
