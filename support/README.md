@@ -306,6 +306,57 @@ Two consequences worth knowing:
   `CF-Ray` header, which every real edge request carries, so it cannot open
   the console on the deployed site. `.dev.vars` is gitignored.
 
+## Where the portal answers from
+
+Australia and New Zealand only, set in `ALLOWED_COUNTRIES` in
+`wrangler.jsonc`. The portal is the one unauthenticated, internet-facing part
+of this system, and the customers are in two countries, so serving the rest
+of the world is exposure bought for nothing.
+
+Two locks, deliberately:
+
+1. **A Cloudflare WAF custom rule**, which stops the request at the edge
+   before a Worker runs. This is the one that actually saves anything, and it
+   also covers the Cloudflare Access login page, which the Worker never sees.
+2. **The same list in `src/geo.ts`**, checked in middleware. A WAF rule is one
+   dashboard click from being deleted by someone tidying up, and that failure
+   is silent. Same reasoning as the HTTPS redirect living in the Worker
+   despite the zone setting.
+
+The WAF rule, in **Security, WAF, Custom rules, Create rule** on the
+`hamdam.com.au` zone:
+
+```
+Field       Hostname          equals  support.hamdam.com.au
+  and
+Field       Country       not in     Australia, New Zealand
+Action      Block
+```
+
+Expression form, if editing as text:
+
+```
+(http.host eq "support.hamdam.com.au" and not ip.src.country in {"AU" "NZ"})
+```
+
+Unknown origins are refused, not waved through. Cloudflare reports `XX` when
+it cannot place an address and `T1` for Tor, and treating "we do not know" as
+"probably fine" would make the whole rule decorative.
+
+**Email is not restricted, on purpose.** A customer travelling overseas still
+reaches the desk at `developer@hamdam.com.au`, the cron opens their ticket
+within the minute, and the blocked page says exactly that. A refusal with no
+route through is just a wall.
+
+Two consequences worth knowing before this bites:
+
+* An agent travelling outside AU or NZ cannot open `/admin`, even signed in
+  through Access. Widen `ALLOWED_COUNTRIES` and the WAF rule for the trip, or
+  work the queue by email.
+* A customer on holiday cannot open their own tracking link. They get the
+  blocked page, which tells them to email, and their ticket continues in that
+  thread.
+
 ## Known residual risks
 
 Fixed and covered by tests: Access identity forgery, plaintext tracking
