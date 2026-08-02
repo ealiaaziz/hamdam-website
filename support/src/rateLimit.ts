@@ -16,6 +16,8 @@
 // caps spend and degrades to the keyword matcher, which is exactly the
 // graceful outcome that would let an abusive burst continue quietly.
 
+import { edgeClientIp } from './edge.js';
+
 export interface RateLimitRule {
   /** Requests permitted inside one window. */
   limit: number;
@@ -65,6 +67,28 @@ export const RATE_LIMITS = {
    * until a person looks. Nothing is dropped.
    */
   inbound_sender: { limit: 20, windowSeconds: 3600 },
+  /**
+   * Mail the desk will send to one address, counted wherever it is sent from.
+   *
+   * The per-recipient ceiling on the portal was the right idea applied to one
+   * door. The mailbox had no recipient ceiling at all, only a per-sender one,
+   * and since an emailed ticket's acknowledgement goes back to the `From`
+   * address, that door would push twenty tickets and roughly forty pieces of
+   * mail an hour into an address of the sender's choosing. The channel
+   * described as the gentler of the two was, measured at a stranger's inbox,
+   * the more permissive one.
+   *
+   * So the ceiling moved to the only place that sees every path: the act of
+   * sending. Ten is above what any real ticket generates, an acknowledgement
+   * plus a reply plus a summary, and well below a useful volume of unwanted
+   * mail.
+   *
+   * Escalation is exempt, deliberately and by address rather than by
+   * accident: an alert to the team is the one message whose whole purpose is
+   * to arrive, and metering it would let a busy hour silence the thing that
+   * tells a person the hour is busy.
+   */
+  outbound_recipient: { limit: 10, windowSeconds: 3600 },
 } as const satisfies Record<string, RateLimitRule>;
 
 export type RateLimitBucket = keyof typeof RATE_LIMITS;
@@ -145,8 +169,112 @@ export async function consumeRateLimit(
  * `wrangler dev`.
  */
 export function callerKey(headers: { get(name: string): string | null }): string | null {
-  if (headers.get('cf-ray') === null) return null;
-  return headers.get('cf-connecting-ip');
+  const ip = edgeClientIp(headers);
+  return ip === null ? null : networkKey(ip);
+}
+
+/**
+ * The address, reduced to the network its owner controls.
+ *
+ * IPv4 is counted whole, because one address is roughly one caller. IPv6 is
+ * not: the smallest allocation a residential connection receives is a /64,
+ * which is eighteen quintillion addresses that one person can source traffic
+ * from at will. Counting the full address there is counting nothing, and the
+ * ceiling it appeared to enforce was decorative for any caller with a modern
+ * connection.
+ *
+ * A /64 is the right granularity and not merely a convenient one: it is the
+ * smallest block RFC 4291 lets a single subscriber be delegated, so folding
+ * to it cannot merge two subscribers who were separately assigned.
+ */
+export function networkKey(ip: string): string {
+  const address = ip.trim().toLowerCase();
+  if (!address.includes(':')) return address;
+
+  // Expand only as far as needed to take the first four groups. `::` in the
+  // first half means the leading groups are zeros, which is already the
+  // canonical prefix.
+  const [head] = address.split('%');
+  const groups = head.split(':');
+  const doubleColon = head.includes('::');
+  const prefix: string[] = [];
+  for (const group of groups) {
+    if (prefix.length === 4) break;
+    if (group === '') {
+      if (!doubleColon) continue;
+      while (prefix.length < 4) prefix.push('0');
+      break;
+    }
+    prefix.push(group.replace(/^0+(?=.)/, ''));
+  }
+  while (prefix.length < 4) prefix.push('0');
+  return `${prefix.join(':')}::/64`;
+}
+
+/**
+ * An email address reduced to the inbox it actually reaches.
+ *
+ * Metering and authorisation want opposite things from an address, and the
+ * same literal comparison was doing both. Deciding whether a sender owns a
+ * ticket must be literal: folding there would widen the set of people who
+ * count as somebody else, which is why `sameAddress` in inbound.ts refuses to
+ * do any of this and should carry on refusing.
+ *
+ * Counting how much mail one person can be sent is the opposite. Left
+ * literal, `victim+1@gmail.com` and `victim+2@gmail.com` are two buckets
+ * pointing at one inbox, and the per-recipient ceiling is a suggestion. Here,
+ * being too generous about what counts as the same person is the safe
+ * direction: the worst case is that two genuinely different addresses share a
+ * ceiling and one of them waits.
+ *
+ * Plus-tagging is stripped for everyone because the convention is near
+ * universal and, where a provider does not implement it, the address simply
+ * does not exist and no real person is throttled. Dots are folded only for
+ * Google's domains, because dot-insensitivity is specifically their behaviour
+ * and folding it elsewhere would merge addresses that are genuinely different
+ * people.
+ */
+const DOTLESS_DOMAINS = new Set(['gmail.com', 'googlemail.com']);
+
+export function meteringSubject(email: string): string {
+  const address = email.trim().toLowerCase();
+  const at = address.lastIndexOf('@');
+  if (at <= 0) return address;
+
+  let local = address.slice(0, at);
+  const domain = address.slice(at + 1);
+
+  const plus = local.indexOf('+');
+  if (plus > 0) local = local.slice(0, plus);
+  if (DOTLESS_DOMAINS.has(domain)) local = local.replaceAll('.', '');
+
+  return `${local}@${domain}`;
+}
+
+/**
+ * Whether the desk may send one more email to this address right now.
+ *
+ * Called at the point of sending rather than at the point of accepting, which
+ * is what makes it a single ceiling across the portal, the mailbox, and
+ * anything added later: a new route that emails somebody inherits the limit
+ * without having to remember it.
+ *
+ * `exempt` is the escalation list, passed in rather than read here so this
+ * file keeps knowing nothing about who the team are. Matching folds the same
+ * way the counting does, so an exemption cannot be dodged by spelling a team
+ * address differently, and cannot be missed because it was.
+ */
+export async function mayEmailRecipient(
+  db: D1Database,
+  toEmail: string,
+  exempt: readonly string[],
+  now: Date = new Date(),
+): Promise<RateLimitOutcome> {
+  const subject = meteringSubject(toEmail);
+  if (exempt.some((address) => meteringSubject(address) === subject)) {
+    return { allowed: true, count: 0, retryAfterSeconds: 0 };
+  }
+  return consumeRateLimit(db, 'outbound_recipient', subject, now);
 }
 
 /**

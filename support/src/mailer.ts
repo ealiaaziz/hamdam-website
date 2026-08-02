@@ -1,4 +1,5 @@
 import type { Env } from './types.js';
+import type { MessageHeader } from './authResults.js';
 
 // Sending mail from the Worker, immediately.
 //
@@ -195,6 +196,49 @@ export async function fetchInbox(env: Env, since: string, limit = 25, now = Date
       receivedAt: m.receivedDateTime ?? new Date(now).toISOString(),
       bodyHtml: m.body?.content ?? '',
     }));
+}
+
+/**
+ * The headers Exchange stamped on one message, for the sender check.
+ *
+ * Fetched per message rather than added to the list query's `$select`, and
+ * only for the messages where it changes the outcome, which is the ones
+ * proposing to write on an existing ticket. Two reasons, and the second is
+ * the one that decided it.
+ *
+ * The cheap reason is cost: most inbound mail opens a new ticket, where the
+ * sender's address is simply recorded and authenticating it proves nothing
+ * about anybody.
+ *
+ * The real reason is blast radius. If `internetMessageHeaders` is ever
+ * unavailable in a list projection, folding it into the batch query would
+ * make *every* message fail the check at once, and failing this check turns
+ * a reply into a new ticket. That is a graceful outcome for one message and a
+ * mess across a whole mailbox. A separate GET fails one message at a time.
+ *
+ * Returns an empty array on any failure, which the caller must read as "no
+ * evidence" and therefore as not authenticated. It must never read as
+ * "nothing failed, so it passed".
+ */
+export async function fetchMessageHeaders(env: Env, messageId: string, now = Date.now()): Promise<MessageHeader[]> {
+  if (!canSendDirectly(env)) return [];
+  try {
+    const token = await accessToken(env, now);
+    const response = await fetch(
+      `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(SENDER)}/messages/${encodeURIComponent(messageId)}?$select=internetMessageHeaders`,
+      { headers: { authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(10_000) },
+    );
+    if (response.status === 401) cachedToken = null;
+    if (!response.ok) {
+      console.warn(`graph headers ${response.status} for ${messageId}`);
+      return [];
+    }
+    const body = (await response.json()) as { internetMessageHeaders?: MessageHeader[] };
+    return body.internetMessageHeaders ?? [];
+  } catch (error) {
+    console.warn(`graph headers failed for ${messageId}:`, error instanceof Error ? error.message : String(error));
+    return [];
+  }
 }
 
 /**

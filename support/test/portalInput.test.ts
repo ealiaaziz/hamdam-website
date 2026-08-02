@@ -126,3 +126,37 @@ describe('stripHtml', () => {
     expect(stripHtml('<p>One</p><p>Two</p>')).toBe('One\nTwo');
   });
 });
+
+// Invisible characters, which on a deliberately right-to-left desk are not a
+// theoretical problem. Escaping does not help: these are text rather than
+// markup, and escapeHtml correctly passes them through. Not storing them is
+// the only fix.
+describe('invisible characters', () => {
+  it('strips the bidirectional overrides that make stored text lie about itself', () => {
+    // U+202E reorders everything after it without appearing. A subject can be
+    // stored as one string and displayed as another, in the console and in
+    // the escalation email, which are read by whoever is deciding what a
+    // ticket is.
+    expect(cleanLine('urgent ‮gpj.exe', 100)).toBe('urgent gpj.exe');
+    expect(cleanText('a‪b‫c‬d‮e', 100)).toBe('abcde');
+    expect(cleanText('a⁦b⁧c⁨d⁩e', 100)).toBe('abcde');
+  });
+
+  it('strips the zero-width characters that make two strings compare unequal', () => {
+    expect(cleanLine('HAM​-1', 100)).toBe('HAM-1');
+    expect(cleanText('a‍b﻿c⁠d', 100)).toBe('abcd');
+  });
+
+  it('keeps the zero-width non-joiner, which Persian spelling requires', () => {
+    // U+200C is orthography here, not decoration: words are misspelled
+    // without it. Removing it would corrupt ordinary Persian to defend
+    // against a spoof it cannot perform.
+    const persian = 'می‌روم';
+    expect(cleanText(persian, 100)).toBe(persian);
+    expect(cleanLine(persian, 100)).toBe(persian);
+  });
+
+  it('leaves ordinary Persian and English untouched', () => {
+    expect(cleanText('سلام hello', 100)).toBe('سلام hello');
+  });
+});

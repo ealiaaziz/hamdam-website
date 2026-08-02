@@ -85,20 +85,50 @@ there are worth repeating here because breaking them is expensive:
    acknowledgements for tickets that no longer existed. Deleting the row does
    not recall the mail.
 
-`npm test` (278 cases), `npm run check:persian` and `node
+`npm test` (334 cases), `npm run check:persian` and `node
 scripts/check-dashes.mjs` all cover `support/` and must pass.
 
-**Inbound email is not an identity (added 2026-08-02).** A message may only be
-appended to an existing ticket when the sender's address matches that
-ticket's requester. The `[HAM-N]` subject tag is a routing hint, never a
+**Inbound email is not an identity (added 2026-08-02, completed the same
+day).** A message may only be appended to an existing ticket when Exchange
+authenticated the sender's address *and* that address matches the ticket's
+requester. Both halves are needed and the first was missing at first:
+matching a `From` header proves nothing on its own, because `From` is a line
+of text the sending client writes. `src/authResults.ts` reads the
+`Authentication-Results` header Exchange stamps on delivery, and consults
+only the header Exchange itself produced, because a sender can put one in the
+message they compose. The `[HAM-N]` subject tag is a routing hint, never a
 credential: ids are sequential and printed in every email the desk sends, so
 before this check anyone could write onto, and close, a stranger's ticket by
-guessing a number. A tag from a non-owner creates a new ticket instead.
+guessing a number. A tag from a non-owner, or from a sender Exchange could not
+authenticate, creates a new ticket instead.
 
-**`/fa` is not an alias for `/admin`.** Cloudflare Access is scoped to the
-path `/admin`, so a locale-prefixed alias reached the console without Access
-seeing it. `localePrefixTarget` in `src/urls.ts` holds the exclusion list;
-anything added under `/admin` inherits it automatically.
+**Metering folds addresses; authorisation never does.** `meteringSubject` in
+`src/rateLimit.ts` strips plus-tags and folds Google's dots, and IPv6 counts
+per /64, because otherwise one inbox is unlimited buckets and one caller is
+unlimited addresses. `sameAddress` in `src/inbound.ts` and the `ADMIN_EMAILS`
+check stay literal for the opposite reason: folding widens a set, which is
+right for counting and wrong for deciding who somebody is. One ceiling,
+`outbound_recipient`, caps mail to any one address at the act of sending,
+which is the single point the portal, the mailbox and anything added later
+all cross. Escalation is exempt by address.
+
+**The console has two locks.** `ADMIN_EMAILS` is checked in the Worker after
+the Access assertion verifies, so widening the Cloudflare Access policy does
+not silently widen the console. It is set, to the same three addresses the
+Access policy names; keep the two in step the way the country list is kept in
+step between the WAF rule and `geo.ts`. Unset would admit whoever Access
+admits, and the console shows a banner on every page while that is the case.
+`npx wrangler secret put ADMIN_EMAILS`, comma-separated.
+
+**`/fa` is not an alias for `/admin`, however the path is spelled.**
+Cloudflare Access is scoped to the path `/admin`, so a locale-prefixed alias
+reached the console without Access seeing it. `localePrefixTarget` in
+`src/urls.ts` holds the exclusion list and anything under `/admin` inherits
+it. The comparison runs on a **canonical** path, not the raw one: the first
+version of this fix compared the raw pathname while the router matches the
+decoded one, so `/fa/%61dmin` walked straight past it and reached the console
+in production. Decode once, collapse slashes, resolve dot segments,
+lowercase, then compare.
 
 **Anything a stranger types is validated and metered (added 2026-08-02).**
 The portal is the only surface anyone on the internet can reach, and every
@@ -106,9 +136,12 @@ submission makes developer@hamdam.com.au deliver mail to an address the
 submitter chose. So: `src/validation.ts` checks the address shape and caps
 every field, and `src/rateLimit.ts` counts submissions per caller *and per
 recipient* against the `rate_limits` table. A new public route that stores
-text, spends a model call or sends an email goes through both. The limiter
-keys on `CF-Ray`, not on `CF-Connecting-IP`, because `wrangler dev` supplies
-the latter as 127.0.0.1 and keying on it throttles local development.
+text, spends a model call or sends an email goes through both. The limiter counts
+`CF-Connecting-IP` but *gates* on `CF-Ray`: it limits nothing when CF-Ray is
+absent, because `wrangler dev` supplies CF-Connecting-IP as 127.0.0.1 and
+counting it would throttle local development. Two different headers doing two
+different jobs, and this file said the wrong one until an audit read the code
+on 2026-08-02.
 
 **DMARC is `p=reject` (applied 2026-08-02).** The `hamdam.com.au` zone was
 hardened the same day: `p=reject` with relaxed alignment and reports coming
