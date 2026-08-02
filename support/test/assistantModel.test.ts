@@ -120,6 +120,7 @@ describe('sanitiseModelReply', () => {
       body: 'Try reopening the app.',
       articleId: null,
       question: null,
+      referenceId: null,
     });
   });
 
@@ -234,5 +235,27 @@ describe('validateModelReply', () => {
     const result = validateModelReply({ ...ok, article_id: KB_ARTICLES[0].id }, base);
     expect(result).toHaveProperty('reply');
     expect((result as { reply: { articleId: string } }).reply.articleId).toBe(KB_ARTICLES[0].id);
+  });
+});
+
+describe('reference provenance', () => {
+  const ok = { action: 'answer', body: 'Try reopening the app.', article_id: '', question: '' };
+
+  // The desk stating how its own product behaves is not a guess, and
+  // labelling it as one put "that is general advice" underneath a verbatim,
+  // correct answer about iCloud sync.
+  it('keeps a real reference id', () => {
+    const r = sanitiseModelReply({ ...ok, reference_id: 'icloud-sync' }, base);
+    expect(r?.referenceId).toBe('icloud-sync');
+  });
+
+  it('drops one that does not exist', () => {
+    expect(sanitiseModelReply({ ...ok, reference_id: 'made-up-fact' }, base)?.referenceId).toBeNull();
+  });
+
+  it('treats an empty reference id as absent', () => {
+    for (const value of ['', '  ', 'null', 'none']) {
+      expect(sanitiseModelReply({ ...ok, reference_id: value }, base)?.referenceId, value).toBeNull();
+    }
   });
 });

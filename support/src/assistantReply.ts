@@ -152,13 +152,22 @@ export interface LiveReplyOptions {
  * frontier model.
  */
 function withProvenance(reply: ModelReply): string {
-  if (reply.articleId) return reply.body;
+  // From a reviewed article, or from the desk's own reference on how the app
+  // behaves. Both are the desk speaking about its own product, and neither
+  // needs a disclaimer. Adding one put "that is general advice" underneath a
+  // verbatim, correct answer about iCloud sync, which reads as the desk not
+  // trusting itself.
+  if (reply.articleId || reply.referenceId) return reply.body;
   return `${reply.body}\n\nThat is general advice rather than something from our own notes on the app, so tell me if it does not match what you are seeing and I will pass it to a person.`;
 }
 
 /** Why a given reply came out the way it did. Written to the agent state. */
 function reasonFor(reply: ModelReply): string {
-  const source = reply.articleId ? `article "${reply.articleId}"` : 'general knowledge';
+  const source = reply.articleId
+    ? `article "${reply.articleId}"`
+    : reply.referenceId
+      ? `app reference "${reply.referenceId}"`
+      : 'general knowledge';
   return `model ${reply.action} from ${source}`;
 }
 

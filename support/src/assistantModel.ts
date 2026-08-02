@@ -52,6 +52,17 @@ export interface ModelReply {
   articleId: string | null;
   /** Set when action is 'ask', so the turn is recorded and never repeated. */
   question: string | null;
+  /**
+   * The <how_hamdam_works> entry the answer came from, when it came from one.
+   *
+   * Separate from articleId because the two are different promises to the
+   * requester. An article is a fix the desk wrote and can be marked as not
+   * having helped. A reference fact is the desk stating how its own product
+   * behaves. Neither is guesswork, and conflating either with guesswork is
+   * what put "that is general advice" underneath a verbatim answer about
+   * iCloud sync.
+   */
+  referenceId: string | null;
 }
 
 export interface ModelReplyInput {
@@ -102,8 +113,12 @@ const REPLY_SCHEMA = {
       type: 'string',
       description: 'When action is ask, the single question you need answered. Empty string otherwise.',
     },
+    reference_id: {
+      type: 'string',
+      description: 'The id of the how_hamdam_works fact this answer came from. Empty string if it did not come from one.',
+    },
   },
-  required: ['action', 'body', 'article_id', 'question'],
+  required: ['action', 'body', 'article_id', 'question', 'reference_id'],
 } as const;
 
 /**
@@ -145,7 +160,7 @@ WHAT YOU MAY SAY
 
 1. Anything in the reviewed articles above. These are written and checked by the team. When you use one, set article_id to its id. You may shorten, reorder and rephrase the steps to fit what the person actually described. You may not add Hamdam-specific steps that are not in the article.
 
-2. Anything in <how_hamdam_works>. That is the reference on what the app actually does, checked against the app's own privacy policy and terms, and it is the right source for "how does X work", "does Hamdam do Y", "what happens to my data" and anything else about the product rather than a fault. Answer those directly and in full. Leave article_id empty: reference is not an article and cannot be offered as a fix.
+2. Anything in <how_hamdam_works>. That is the reference on what the app actually does, checked against the app's own privacy policy and terms, and it is the right source for "how does X work", "does Hamdam do Y", "what happens to my data" and anything else about the product rather than a fault. Answer those directly and in full. Leave article_id empty and set reference_id to the fact's id: reference is not an article and cannot be offered as a fix, but it is the desk's own knowledge and not a guess.
 
 3. General computing knowledge -- how iOS, Android, Windows, macOS, browsers, wifi, email clients and so on behave. This is allowed and is often exactly what is needed. Leave article_id empty. Where the answer depends on a version or a setting you cannot see, say so in the reply rather than guessing at their setup.
 
@@ -175,6 +190,7 @@ When you are between answer and escalate, choose escalate. A person reads every 
 
 HOW TO WRITE IT
 
+- Write to the person, as "you". The reviewed articles and the reference are written about users in the third person, as "someone", "the person", "they". Never copy that through. "Your journal entries sync between your devices", not "that person's devices".
 - Plain text. No markdown, no headings, no bold. Numbered steps on their own lines are fine.
 - Short. Under 200 words unless steps genuinely need more.
 - No greeting and no sign-off; the thread already has their name and mine.
@@ -275,6 +291,7 @@ export type ValidationResult = { reply: ModelReply } | { rejected: string };
 export function validateModelReply(
   raw: unknown,
   input: Pick<ModelReplyInput, 'articles' | 'askedQuestions'>,
+  reference: readonly AppReference[] = APP_REFERENCE,
 ): ValidationResult {
   if (typeof raw !== 'object' || raw === null) return { rejected: 'not an object' };
   const r = raw as Record<string, unknown>;
@@ -300,21 +317,25 @@ export function validateModelReply(
   const rawArticle = blank(r.article_id) ? '' : String(r.article_id).trim();
   const articleId = rawArticle && input.articles.some((a) => a.id === rawArticle) ? rawArticle : null;
 
+  const rawReference = blank(r.reference_id) ? '' : String(r.reference_id).trim();
+  const referenceId = rawReference && reference.some((f) => f.id === rawReference) ? rawReference : null;
+
   let question = blank(r.question) ? null : String(r.question).trim();
   if (action !== 'ask') question = null;
   // A question already asked is not a question, it is a loop.
   if (question && input.askedQuestions.includes(question)) return { rejected: 'repeats a question already asked' };
   if (action === 'ask' && !question) return { rejected: 'action is ask with no question' };
 
-  return { reply: { action, body, articleId, question } };
+  return { reply: { action, body, articleId, question, referenceId } };
 }
 
 /** The same check, for callers that only need the answer or nothing. */
 export function sanitiseModelReply(
   raw: unknown,
   input: Pick<ModelReplyInput, 'articles' | 'askedQuestions'>,
+  reference: readonly AppReference[] = APP_REFERENCE,
 ): ModelReply | null {
-  const result = validateModelReply(raw, input);
+  const result = validateModelReply(raw, input, reference);
   return 'reply' in result ? result.reply : null;
 }
 
@@ -360,7 +381,7 @@ export function extractJsonObject(text: string): unknown {
  * as a bad one. A format instruction holds when it is the last thing read.
  */
 const JSON_INSTRUCTION = `Now give your reply as a single JSON object and nothing else. No prose before or after it, no code fence. Exactly these four keys, all strings:
-{"action": "answer or ask or escalate", "body": "the message the requester reads", "article_id": "the reviewed article id you used, or an empty string", "question": "your one question when action is ask, or an empty string"}`;
+{"action": "answer or ask or escalate", "body": "the message the requester reads", "article_id": "the reviewed article id you used, or an empty string", "question": "your one question when action is ask, or an empty string", "reference_id": "the how_hamdam_works fact id you used, or an empty string"}`;
 
 /**
  * Calls the model, and keeps a second way of asking.

@@ -28,7 +28,7 @@ const opts = (generate: ReturnType<typeof stub>) => ({
 
 describe('composeAssistantReplyLive', () => {
   it('uses the model when the guards allow it', async () => {
-    const generate = stub({ action: 'answer', body: 'Reopen the app.', articleId: 'purchase-not-appearing', question: null });
+    const generate = stub({ action: 'answer', body: 'Reopen the app.', articleId: 'purchase-not-appearing', question: null, referenceId: null });
     const r = await composeAssistantReplyLive(base, opts(generate));
     expect(generate).toHaveBeenCalledOnce();
     expect(r.body).toBe('Reopen the app.');
@@ -40,7 +40,7 @@ describe('composeAssistantReplyLive', () => {
   it('answers a question the knowledge base does not cover', async () => {
     // The whole reason for the model. The old engine met this with "that is
     // outside what I have written down", which is honest and useless.
-    const generate = stub({ action: 'answer', body: 'On Windows 11, open Settings, then Accounts.', articleId: null, question: null });
+    const generate = stub({ action: 'answer', body: 'On Windows 11, open Settings, then Accounts.', articleId: null, question: null, referenceId: null });
     const r = await composeAssistantReplyLive(
       { ...base, conversationText: 'how does windows 11 password reset work?' },
       opts(generate),
@@ -53,7 +53,7 @@ describe('composeAssistantReplyLive', () => {
 
   it('never asks the model about a P1 or a P2', async () => {
     for (const priority of ['P1', 'P2'] as const) {
-      const generate = stub({ action: 'answer', body: 'here you go', articleId: null, question: null });
+      const generate = stub({ action: 'answer', body: 'here you go', articleId: null, question: null, referenceId: null });
       const r = await composeAssistantReplyLive({ ...base, priority }, opts(generate));
       expect(generate, priority).not.toHaveBeenCalled();
       expect(r.escalated, priority).toBe(true);
@@ -62,21 +62,21 @@ describe('composeAssistantReplyLive', () => {
   });
 
   it('never asks the model once a person has been requested', async () => {
-    const generate = stub({ action: 'answer', body: 'here you go', articleId: null, question: null });
+    const generate = stub({ action: 'answer', body: 'here you go', articleId: null, question: null, referenceId: null });
     const r = await composeAssistantReplyLive({ ...base, conversationText: 'can I speak to a human' }, opts(generate));
     expect(generate).not.toHaveBeenCalled();
     expect(r.escalated).toBe(true);
   });
 
   it('stops at the turn limit rather than letting the model decide when to stop', async () => {
-    const generate = stub({ action: 'answer', body: 'one more idea', articleId: null, question: null });
+    const generate = stub({ action: 'answer', body: 'one more idea', articleId: null, question: null, referenceId: null });
     const r = await composeAssistantReplyLive({ ...base, assistantTurns: 3 }, opts(generate));
     expect(generate).not.toHaveBeenCalled();
     expect(r.escalated).toBe(true);
   });
 
   it('withholds rejected articles from the model entirely', async () => {
-    const generate = stub({ action: 'escalate', body: 'A person will pick this up.', articleId: null, question: null });
+    const generate = stub({ action: 'escalate', body: 'A person will pick this up.', articleId: null, question: null, referenceId: null });
     await composeAssistantReplyLive({ ...base, rejectedArticles: ['purchase-not-appearing'] }, opts(generate));
     const [, input] = generate.mock.calls[0] as unknown as [string, { articles: { id: string }[]; rejectedTitles: string[] }];
     expect(input.articles.map((a) => a.id)).not.toContain('purchase-not-appearing');
@@ -110,14 +110,14 @@ describe('composeAssistantReplyLive', () => {
   it('marks a model escalation as escalated, and records the question on an ask', async () => {
     const escalated = await composeAssistantReplyLive(
       base,
-      opts(stub({ action: 'escalate', body: 'I do not have this one.', articleId: null, question: null })),
+      opts(stub({ action: 'escalate', body: 'I do not have this one.', articleId: null, question: null, referenceId: null })),
     );
     expect(escalated.escalated).toBe(true);
     expect(escalated.action).toBe('escalate');
 
     const asked = await composeAssistantReplyLive(
       base,
-      opts(stub({ action: 'ask', body: 'Which sign-in method are you using?', articleId: null, question: 'Which sign-in method are you using?' })),
+      opts(stub({ action: 'ask', body: 'Which sign-in method are you using?', articleId: null, question: 'Which sign-in method are you using?', referenceId: null })),
     );
     expect(asked.action).toBe('ask_clarifying');
     expect(asked.question).toBe('Which sign-in method are you using?');
@@ -127,13 +127,13 @@ describe('composeAssistantReplyLive', () => {
   it('records where the answer came from, so a reviewer can tell', async () => {
     const fromArticle = await composeAssistantReplyLive(
       base,
-      opts(stub({ action: 'answer', body: 'Reopen it.', articleId: 'purchase-not-appearing', question: null })),
+      opts(stub({ action: 'answer', body: 'Reopen it.', articleId: 'purchase-not-appearing', question: null, referenceId: null })),
     );
     expect(fromArticle.reason).toContain('purchase-not-appearing');
 
     const fromModel = await composeAssistantReplyLive(
       base,
-      opts(stub({ action: 'answer', body: 'Reopen it.', articleId: null, question: null })),
+      opts(stub({ action: 'answer', body: 'Reopen it.', articleId: null, question: null, referenceId: null })),
     );
     expect(fromModel.reason).toContain('general knowledge');
   });
@@ -141,14 +141,14 @@ describe('composeAssistantReplyLive', () => {
   it('answers from the knowledge base once the day\'s budget is spent', async () => {
     // Running out of budget is a spending outcome, not an outage: the ticket
     // is still taken and still answered, in plainer words.
-    const generate = stub({ action: 'answer', body: 'model wrote this', articleId: null, question: null });
+    const generate = stub({ action: 'answer', body: 'model wrote this', articleId: null, question: null, referenceId: null });
     const r = await composeAssistantReplyLive(base, { ...opts(generate), claim: async () => false });
     expect(generate).not.toHaveBeenCalled();
     expect(r.body).toContain('A purchase or subscription is not showing up');
   });
 
   it('still answers when the budget check itself fails', async () => {
-    const generate = stub({ action: 'answer', body: 'model wrote this', articleId: null, question: null });
+    const generate = stub({ action: 'answer', body: 'model wrote this', articleId: null, question: null, referenceId: null });
     const r = await composeAssistantReplyLive(base, {
       ...opts(generate),
       claim: async () => {
