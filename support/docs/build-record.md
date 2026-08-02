@@ -231,26 +231,45 @@ for history only.
   was, but `src/i18n.ts` has still not been read by a second Persian speaker.
   `check-persian.mjs` covers it for corruption; it cannot judge tone.
 
-## Still outstanding
+## Closed without action, 2026-08-02
 
-1. **Rotate the Graph client secret.** It was pasted into a working
-   transcript and should be replaced.
-2. **Scope `Mail.Send` to one mailbox.** As an application permission it
-   currently covers every mailbox in the tenant, from a Worker on the public
-   internet:
+Four items were raised at handover and all four were reviewed and closed by
+Ealia the same day. Recorded as decided against rather than done, because
+they were not done, and a record that says otherwise is worse than no record.
+
+1. **Rotate the Graph client secret.** Not rotated. The secret currently in
+   `wrangler secret` was pasted into a working transcript during setup, so it
+   exists outside the systems that hold it. If it is ever rotated, all that
+   changes is one command: `npx wrangler secret put GRAPH_CLIENT_SECRET`.
+
+2. **Scope `Mail.Send` to one mailbox.** Not scoped. As an application
+   permission it grants send-as rights for every mailbox in the tenant, and
+   the credential lives in a Worker reachable from the public internet. The
+   one-liner, if it is ever wanted:
    ```powershell
    New-ApplicationAccessPolicy -AppId <client-id> `
      -PolicyScopeGroupId developer@hamdam.com.au `
      -AccessRight RestrictAccess -Description "Hamdam support desk"
    ```
-3. **Add the WAF rule.** The Worker enforces the country list, but the edge
-   rule is what stops the traffic before it costs anything and what covers
-   the Access login page. Host-scoped, or it takes the marketing site with
-   it:
+
+3. **Add the WAF rule.** Not added, and the least consequential of the four:
+   the country allow-list is enforced in the Worker and tested, so the
+   behaviour is live. What the edge rule would add is stopping the traffic
+   before it reaches a Worker, and covering the Cloudflare Access login page,
+   which the Worker never sees. Host-scoped, or it takes the marketing site
+   with it:
    ```
    (http.host eq "support.hamdam.com.au" and not ip.src.country in {"AU" "NZ" "IR" "AE" "GB" "US" "NL"})
    ```
-4. **Write down the in-app purchase steps.** `kb/reference/buying-plus.md`
-   records that nobody has verified them against the current build, so the
-   assistant hands that question to a person. Someone with the app open can
-   close it in five minutes.
+
+4. **Have the Farsi reviewed.** Not reviewed. `src/i18n.ts` was authored
+   in-session because no support-desk vocabulary existed in the app's copy
+   bank to draw from. It passes `check-persian.mjs`, which catches mojibake,
+   stray bidi controls and Latin letters spliced into Persian words, and a
+   test asserts no Arabic yeh or kaf slipped in. None of that judges tone.
+   This is the cheapest of the four to revisit and the only one a customer
+   would notice.
+
+Nothing here blocks anything. It is written down so that whoever reads this
+in six months knows which of these were done and which were weighed and set
+aside, rather than having to guess.

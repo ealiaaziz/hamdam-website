@@ -87,3 +87,10 @@ there are worth repeating here because breaking them is expensive:
 
 `npm test` (236 cases), `npm run check:persian` and `node
 scripts/check-dashes.mjs` all cover `support/` and must pass.
+
+Four follow-ups were raised at handover and all four were reviewed and closed
+without action on 2026-08-02. Two matter before you touch the mail path: the
+Graph client secret has not been rotated since setup, and `Mail.Send` is
+unscoped, so it grants send-as for every mailbox in the tenant. Both are
+deliberate and recorded in the closing section of
+`support/docs/build-record.md`. Do not reopen them as bugs.

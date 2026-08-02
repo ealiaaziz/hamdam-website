@@ -19,17 +19,17 @@ that script's header comment).
 ## Architecture
 
 ```
-Requester ──(portal form)──► Worker ──► D1 ──► queued outbound_emails row
-Requester ──(email)────────► Outlook inbox ──► [hourly Routine] ──► D1
-Agent ──(dashboard reply)──► Worker ──► D1 ──► queued outbound_emails row
-                                                        │
-                              [hourly Routine, via Composio Outlook] ──► requester's inbox
+Requester ──(portal form)──► Worker ──► D1 ──► Graph ──► requester's inbox
+Requester ──(email)────────► Outlook inbox ──► [cron, every minute] ──► Worker ──► D1
+Agent ──(console reply)────► Worker ──► D1 ──► Graph ──► requester's inbox
 ```
 
 * **Worker** (`src/`): Hono app. Public portal (`/`, `/tickets/:id`),
   admin console (`/admin/*`, Cloudflare-Access-gated), D1 reads/writes. It
-  never sends email itself -- Workers cannot call Composio/MCP tools -- it
-  only writes rows to `outbound_emails` for the Routine to pick up.
+  sends mail itself through Microsoft Graph, as `developer@hamdam.com.au`,
+  and reads that mailbox on a one-minute cron. `outbound_emails` is still
+  written first and only marked sent once Graph accepts it, so the queue
+  remains the record and a failed send is visible rather than lost.
 * **D1** (`migrations/0001_init.sql`): tickets, comments, requesters, the
   outbound send queue, and the inbound dedupe/checkpoint ledger. See that
   file's header comments for the reasoning behind each design choice.
@@ -53,11 +53,14 @@ Agent ──(dashboard reply)──► Worker ──► D1 ──► queued outb
   instead. With no `AI` binding, on any inference failure, or once the daily
   call budget is spent, the whole thing degrades to the keyword matcher. The
   desk gets plainer. It never goes silent.
-* **Hourly Routine**: the only thing that can reach Composio/Outlook. Reads
-  new inbox mail, creates/updates tickets, sends the queued outbound email.
-  Full design and the exact prompt: `docs/email-routine.md`. **Read that
-  file's "Why a Routine, not a webhook" section before assuming this is a
-  real-time pipeline -- it isn't, by construction.**
+* **Mail** (`src/mailer.ts`, `src/inbound.ts`, `src/ingest.ts`): Graph
+  app-only, both directions, with the ingestion logic kept pure so the
+  interesting cases are testable without a mailbox. See "Reading the inbox"
+  below. The hourly Claude Code Routine that used to do this is retired;
+  `docs/email-routine.md` describes it and opens with a superseded banner.
+* **Bilingual** (`src/i18n.ts`): the portal serves English at `/` and Persian
+  at `/fa`, right to left. Language is a property of the ticket, decided once
+  and followed by every later email.
 
 ## Deployed state (2026-08-01)
 
@@ -187,8 +190,10 @@ New-ApplicationAccessPolicy -AppId <client-id> -PolicyScopeGroupId developer@ham
   -AccessRight RestrictAccess -Description "Hamdam support desk"
 ```
 
-Skipping that leaves a credential that can send as anyone in the tenant, in a
-Worker reachable from the public internet.
+**Not applied. Reviewed and set aside on 2026-08-02.** The credential in use
+can therefore send as any mailbox in the tenant, from a Worker reachable on
+the public internet. That is a known and accepted position, not an oversight;
+see the closing section of `docs/build-record.md`.
 
 ### Smoke-testing against production
 
