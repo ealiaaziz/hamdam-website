@@ -41,7 +41,7 @@ Agent ──(dashboard reply)──► Worker ──► D1 ──► queued outb
   answer at all -- never a P1 or P2, never after a request for a person,
   never past three turns -- and it is ordinary code with tests beside it, not
   a paragraph in a prompt. The *model* half decides the words, calling
-  `claude-opus-5` with the reviewed knowledge base articles as its only
+  `claude-sonnet-5` with the reviewed knowledge base articles as its only
   source for anything Hamdam-specific, and general computing knowledge
   allowed for everything else. Every model reply is validated before anyone
   reads it (`sanitiseModelReply`): an invented article id, a repeat of a

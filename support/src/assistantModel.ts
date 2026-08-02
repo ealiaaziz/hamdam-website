@@ -24,7 +24,7 @@ import type { KbArticle } from './kb.js';
 // knowledge is allowed but must be marked as general. Anything that would
 // require looking at this person's account is an escalation, not an answer.
 
-export const ASSISTANT_MODEL = 'claude-opus-5';
+export const ASSISTANT_MODEL = 'claude-sonnet-5';
 
 /** Hard ceiling on a reply. Longer than this is a wall of text, not support. */
 export const MAX_REPLY_CHARS = 2500;
