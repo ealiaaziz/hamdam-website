@@ -81,3 +81,53 @@ verified this session, needs Ealia:** any real-browser visual check of the new s
 the new section, a real production Lighthouse run to confirm LCP didn't regress further, and
 the usual FA/RTL/VoiceOver passes this repo already tracks as pending for everything else.
 Nothing pushed or merged; working tree left uncommitted for review.
+
+## Support desk: bilingual IT ticketing platform (shipped 2026-08-02)
+
+A separate Cloudflare Worker, `hamdam-support`, on
+**support.hamdam.com.au**, with its own D1 database. Nothing in the
+marketing site changed. Full record, including the production failures worth
+remembering: `support/docs/build-record.md`. Operations: `support/README.md`.
+
+**Built:** ticket portal in English (`/`) and Persian (`/fa`, RTL); ITIL
+impact x urgency classification into P1-P4 with SLA targets, plus a topic
+floor that keeps any Hamdam-app ticket at P3 or above; Cloudflare Access
+gated agent console; an assistant on Cloudflare Workers AI grounded in three
+reviewed articles and sixteen cited app-reference files; Microsoft Graph
+app-only mail, sending as `developer@hamdam.com.au` and reading the inbox on
+a one-minute cron; escalation notices to both people covering the desk;
+country allow-list enforced in the Worker and at the edge.
+
+**Corrections to product truth:** the starter knowledge base described a
+sign-in screen, a password and being locked out, none of which exist, and
+told requesters a blank verse meant checking their internet when the core 235
+verses are bundled and work offline. Both had been served to real people.
+Replaced with `support/kb/reference/`, where every file cites the reviewed
+page it came from.
+
+**Retired:** the hourly Claude Code Routine that read the inbox. It was the
+one place in the system where attacker-authored text met tools, and it had
+already been talked into re-running itself by a documentation file's "Known
+gap" section. Reading mail is now a function.
+
+**Test suite:** 236 Vitest cases. Notable additions are the ones written
+after a live failure rather than before: a static check that each prepared
+statement and its `bind()` agree on parameter count (a 500 on the public
+form), automated-mail detection (a bounce loop that ran once a minute), and
+an assertion that no article tells anyone to sign in to Hamdam.
+
+**Verification matrix:**
+
+| Row | Result |
+|---|---|
+| Portal ticket, English, answered from app reference | Pass, ~3s |
+| Portal ticket, Persian, `lang="fa" dir="rtl"`, answered in Persian | Pass |
+| Persian Hamdam ticket floored to P3 | Pass |
+| General IT question answered, marked as general advice | Pass |
+| P1 escalated without spending a model call | Pass |
+| Inbound email to ticket, acknowledgement, reply | Pass, 4s end to end |
+| Desk's own mail skipped, no self-ingestion | Pass, live |
+| Bounce skipped, loop stopped | Pass, live |
+| Escalation notice delivered | Pass |
+| Geo block outside the allow-list, main site unaffected | Pass |
+| `npm test`, `check:persian`, `check-dashes` | Pass |

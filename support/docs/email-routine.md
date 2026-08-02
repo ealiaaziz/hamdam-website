@@ -1,3 +1,15 @@
+> **SUPERSEDED, 2026-08-02. Kept for history only.**
+>
+> The hourly Routine this file describes has been retired. The Worker reads
+> `developer@hamdam.com.au` itself, through Microsoft Graph, on a one-minute
+> cron: see `../src/ingest.ts` and the "Reading the inbox" section of
+> `../README.md`.
+>
+> Nothing here is a current instruction. That matters more than usual in this
+> particular file: an earlier version of it had a "Known gap" section telling
+> the reader to recreate the Routine, and the Routine, reading its own
+> documentation, obeyed it three times. Do not act on anything below.
+
 # The email routine
 
 > **If you are the routine reading this mid-run: stop and go back to your

@@ -58,3 +58,32 @@ Consult these guides before working on related tasks:
 - [Adding or managing content](https://docs.astro.build/en/guides/content-collections/)
 - [Adding styles or using Tailwind](https://docs.astro.build/en/guides/styling/)
 - [Supporting multiple languages](https://docs.astro.build/en/guides/internationalization/)
+
+## Support desk (`support/`, shipped 2026-08-02)
+
+A **separate Worker** (`hamdam-support`) and D1 database on
+support.hamdam.com.au. It shares this repo and nothing else: the marketing
+site is untouched by it, and the two deploy independently. `cd support &&
+npm run deploy`, never from the repo root.
+
+Bilingual IT ticketing: portal at `/` and `/fa`, email in and out through
+Microsoft Graph as developer@hamdam.com.au, an assistant on Cloudflare
+Workers AI, ITIL P1-P4 with a P3 floor for anything about the app.
+
+Read `support/docs/build-record.md` before changing it. Three rules from
+there are worth repeating here because breaking them is expensive:
+
+1. **Rules go in code, not the prompt.** The P1/P2 gate, the handover on
+   request, the turn limit and the refusal to answer a Hamdam question
+   without a source are all checked before the model is consulted. That is
+   what made swapping the model a one-line change.
+2. **Never state a fact about the app you cannot cite.** `support/kb/reference/`
+   files carry a `source:` field pointing at a reviewed page in this repo.
+   The knowledge base this replaced invented a sign-in screen and told people
+   bundled verses needed the internet, and both reached real requesters.
+3. **Smoke-test with `@example.com`.** Using a real address once sent four
+   acknowledgements for tickets that no longer existed. Deleting the row does
+   not recall the mail.
+
+`npm test` (236 cases), `npm run check:persian` and `node
+scripts/check-dashes.mjs` all cover `support/` and must pass.

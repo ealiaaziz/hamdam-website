@@ -1,3 +1,13 @@
+> **SUPERSEDED, 2026-08-02. Kept for history only.**
+>
+> This describes the keyword-only design, before the assistant was
+> model-backed. The engine now runs on Cloudflare Workers AI, grounded in
+> reviewed articles and a cited app reference, with the guards in code rather
+> than in a prompt.
+>
+> Current design: `build-record.md` in this directory. Current behaviour:
+> `../src/agentPolicy.ts`, `../src/assistantModel.ts`, `../src/assistantReply.ts`.
+
 # Solution engine: design
 
 An assistant that reads a ticket, finds a known answer, and talks the
