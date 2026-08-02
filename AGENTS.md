@@ -116,10 +116,14 @@ to `dmarc@hamdam.com.au`, ten CAA records, TLS-RPT, and five stale Skype and
 GoDaddy-marketing records deleted. That means anything sending as this
 domain which is not Exchange Online is now refused rather than junked, so a
 new sender needs SPF or DKIM arranged before its first message, not after.
-MTA-STS is deliberately incomplete: publishing the TXT record without the
-policy file at `https://mta-sts.hamdam.com.au/.well-known/mta-sts.txt` is
-worse than publishing neither. The full record, including what is still
-open, is in `support/docs/build-record.md`.
+MTA-STS is live too, and it is the one piece that is code rather than DNS:
+RFC 8461 requires the policy be fetched over HTTPS, so the support Worker
+serves it on a second custom domain, `mta-sts.hamdam.com.au`, above the
+country check and 404ing every other path there. It is in `testing` mode; the
+mode, `MTA_STS_POLICY_ID` in `support/src/mtaSts.ts` and the `_mta-sts` TXT
+record change together or not at all, because that id is the cache key
+senders use to decide whether to refetch. The full record, including what is
+still open, is in `support/docs/build-record.md`.
 
 Four follow-ups were raised at handover and all four were reviewed and closed
 without action on 2026-08-02. Two matter before you touch the mail path: the

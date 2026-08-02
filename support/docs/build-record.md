@@ -506,21 +506,89 @@ correct: SPF `v=spf1 include:spf.protection.outlook.com -all`, both DKIM
 selector CNAMEs to Microsoft, and the MX to
 `hamdam-com-au.mail.protection.outlook.com`.
 
+**MTA-STS, which turned out not to be a DNS change at all.**
+
+Applied later the same day, and worth its own section because the reason it
+could not go in with the others is the interesting part.
+
+The finding was that inbound mail can be downgraded by an active network
+attacker between a sending server and Exchange Online. SMTP's STARTTLS is
+opportunistic by design: strip the capability from the server's greeting and
+a well-behaved sender delivers in plaintext without complaint. There is
+nothing in the protocol that lets the receiving domain say "always encrypt".
+
+MTA-STS (RFC 8461) is that statement, and it deliberately is not a DNS
+record. DNS without DNSSEC is forgeable by the same attacker, so a policy
+published only in DNS could be forged by them too. The DNS record carries
+only a version and an id; the policy itself is fetched over HTTPS from
+`mta-sts.<domain>`, and the certificate is what proves it came from the
+domain's owner. The whole security property is the TLS connection. So a TXT
+record alone does not half-solve this, it mis-solves it: a sender that finds
+the record and cannot fetch the policy has been told to look and found
+nothing.
+
+That made it code. It is served by the support Worker rather than a third
+one, because this is the codebase that owns the mail path and a third deploy
+target is a third thing to remember. `src/mtaSts.ts` answers the one path on
+the one hostname and 404s everything else there, so the portal does not gain
+a second address that nobody audits. `/admin` on that hostname was checked
+live and is a 404: the Access application is scoped to
+`support.hamdam.com.au/admin`, so a second hostname reaching the console
+would have been the `/fa/admin` finding again, from a different direction.
+
+The handler is mounted **above the country check**, which is the detail most
+likely to be undone by accident. Everything below that line is the portal,
+served only where Hamdam is sold. This is not the portal. It is read by mail
+servers sitting wherever the sender's mail happens to be hosted, and this
+desk's own documentation promises that email is the one channel never
+restricted by country, precisely so someone outside the list can still reach
+a person. Geo-blocking the policy would be geo-blocking the mail.
+
+**It is in `testing` mode, not `enforce`.** A sender that cannot make a
+validated TLS connection still delivers, and files a TLS-RPT report about it.
+This is the discipline the DMARC change did not get, and the asymmetry is the
+reason: `p=reject` can only ever affect mail claiming to be *from* this
+domain, while a wrong MTA-STS policy in enforce mode stops mail arriving *at*
+the desk. That is the failure this whole document warns about, in its worst
+form, because nothing arriving looks exactly like a quiet day. TLS-RPT is
+already reporting to `dmarc@hamdam.com.au`, so the evidence for promoting is
+being collected now. A test asserts the mode, so flipping it is a change
+somebody has to look at rather than one that rides along in an unrelated
+commit.
+
+The MX pattern covers both the exact host from the MX record and
+`*.mail.protection.outlook.com`. Too generous on purpose: the wildcard still
+says "Exchange Online, with a certificate proving it", which the attacker in
+the threat model cannot satisfy, and it is what stops this becoming an outage
+the day Microsoft moves the tenant to a different host under the same suffix.
+
+The DNS half is `_mta-sts.hamdam.com.au` TXT `v=STSv1; id=20260802a;`. **That
+id is a cache key and it is the thing that will get forgotten.** Senders
+re-read the cheap TXT record often and refetch the policy only when the id
+changes, so an edited policy under an unchanged id reaches nobody until every
+cached copy expires. Policy, `MTA_STS_POLICY_ID`, TXT record: three edits,
+always together, and only two of them are in this repository.
+
+Verified live after deploying: the policy serves over HTTPS with a valid
+certificate, every other path on that hostname 404s, and the support portal
+and its own `.well-known` are unaffected.
+
 **Still open.**
 
-* **MTA-STS is not done, and a TXT record alone will not do it.** The
-  decision was to apply it, and only the TLS-RPT half of that pair could be.
-  MTA-STS needs two things: a `_mta-sts.hamdam.com.au` TXT record carrying a
-  policy id, *and* a policy file served over HTTPS at
-  `https://mta-sts.hamdam.com.au/.well-known/mta-sts.txt` with a valid
-  certificate for that hostname. Publishing the TXT record without the file
-  is worse than publishing neither: a sending server that finds the record
-  and cannot fetch the policy has been told to look and found nothing.
-  The remaining work is a host for that one file, which this repository is
-  well placed to serve as a third Worker route, plus the TXT record pointing
-  at it.
-* **Zone SSL mode is `full`, not `full (strict)`.** Near meaningless today,
-  since every proxied record is a Worker and there is no origin to protect,
-  and wrong the moment one of them points at a real server.
+* **Zone SSL mode is `full`, not `full (strict)`.** Attempted on 2026-08-02
+  and not applied: the write was refused by the tooling's own guard and was
+  left for the owner rather than worked around. It is inert today in any
+  case. All four proxied records are Worker custom domains pointing at
+  `100::`, and a Worker custom domain never opens a connection to an origin,
+  so there is no origin certificate for either mode to validate. It becomes
+  real the moment one of those records points at a server, which is exactly
+  when nobody will think to check it.
 * **Access has no MFA requirement** and a 24 hour session, on a console that
-  shows every requester's name, address and ticket text.
+  shows every requester's name, address and ticket text. Deliberately not
+  attempted here. Access is currently three named addresses on one-time PIN,
+  which is single-factor whatever the login page implies, and the fix is not
+  a setting: it is putting an identity provider in front of it. The tenant
+  already has Entra ID with MFA, so the material is there, but wiring an IdP
+  into Access is a change that can lock the only two people out of the
+  console, and that is the owner's call to make deliberately rather than
+  something to slip into a hardening pass.
