@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { canSendDirectly, resetTokenCache, sendMail, SENDER } from '../src/mailer.js';
+import { canSendDirectly, markRead, resetTokenCache, sendMail, SENDER } from '../src/mailer.js';
 import type { Env } from '../src/types.js';
 
 // Sending is the one thing here with no undo. These cover the parts that
@@ -137,5 +137,64 @@ describe('sendMail', () => {
     const result = await sendMail(env, mail);
     expect(result.sent).toBe(false);
     if (!result.sent) expect(result.reason).toContain('AADSTS7000215');
+  });
+});
+
+describe('markRead', () => {
+  // Without this the inbox fills up: every message the desk has read, filed
+  // and answered still sits there in bold, and the one thing a mailbox is
+  // good at telling you at a glance stops being true.
+  const token = (url: string) =>
+    url.includes('login.microsoftonline.com')
+      ? new Response(JSON.stringify({ access_token: 'tok', expires_in: 3600 }), { status: 200 })
+      : undefined;
+
+  function respond(handlers: ((url: string, init: RequestInit) => Response | undefined)[]) {
+    return vi.fn(async (url: string, init: RequestInit) => {
+      for (const h of handlers) {
+        const r = h(String(url), init ?? {});
+        if (r) return r;
+      }
+      throw new Error(`unexpected fetch: ${url}`);
+    });
+  }
+
+  it('patches isRead on the message, in the desk mailbox', async () => {
+    const fetchMock = respond([token, (url) => (url.includes('graph.microsoft.com') ? new Response(null, { status: 200 }) : undefined)]);
+    vi.stubGlobal('fetch', fetchMock);
+
+    expect(await markRead(env, 'AAMkAGabc')).toEqual({ sent: true });
+
+    const [url, init] = fetchMock.mock.calls[1];
+    expect(String(url)).toContain(encodeURIComponent(SENDER));
+    expect(String(url)).toContain('AAMkAGabc');
+    expect(init.method).toBe('PATCH');
+    expect(JSON.parse(String(init.body))).toEqual({ isRead: true });
+  });
+
+  it('escapes a message id rather than splicing it into the path', async () => {
+    const fetchMock = respond([token, (url) => (url.includes('graph.microsoft.com') ? new Response(null, { status: 200 }) : undefined)]);
+    vi.stubGlobal('fetch', fetchMock);
+    await markRead(env, 'id/with?awkward=chars');
+    expect(String(fetchMock.mock.calls[1][0])).toContain(encodeURIComponent('id/with?awkward=chars'));
+  });
+
+  it('reports a refusal instead of throwing', async () => {
+    // Mail.Read alone cannot write the flag. The desk should carry on
+    // rather than fail a batch of real work over it.
+    vi.stubGlobal(
+      'fetch',
+      respond([token, (url) => (url.includes('graph.microsoft.com') ? new Response('insufficient privileges', { status: 403 }) : undefined)]),
+    );
+    const result = await markRead(env, 'AAMkAGabc');
+    expect(result.sent).toBe(false);
+    if (!result.sent) expect(result.reason).toContain('403');
+  });
+
+  it('refuses without credentials rather than attempting anything', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+    expect((await markRead({} as Env, 'AAMkAGabc')).sent).toBe(false);
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });

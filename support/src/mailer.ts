@@ -134,6 +134,8 @@ export async function sendMail(env: Env, mail: MailToSend, now = Date.now()): Pr
 // because unlike the portal there is no page to show them an acknowledgement.
 
 export interface InboundMessage {
+  /** Graph's own id for the message, needed to change anything about it. */
+  id: string;
   internetMessageId: string;
   conversationId: string | null;
   subject: string;
@@ -144,6 +146,7 @@ export interface InboundMessage {
 }
 
 interface GraphMessage {
+  id?: string;
   internetMessageId?: string;
   conversationId?: string;
   subject?: string;
@@ -168,7 +171,7 @@ export async function fetchInbox(env: Env, since: string, limit = 25, now = Date
     $filter: `receivedDateTime ge ${since}`,
     $orderby: 'receivedDateTime asc',
     $top: String(limit),
-    $select: 'internetMessageId,conversationId,subject,receivedDateTime,from,body',
+    $select: 'id,internetMessageId,conversationId,subject,receivedDateTime,from,body',
   });
 
   const response = await fetch(
@@ -181,8 +184,9 @@ export async function fetchInbox(env: Env, since: string, limit = 25, now = Date
 
   const body = (await response.json()) as { value?: GraphMessage[] };
   return (body.value ?? [])
-    .filter((m): m is GraphMessage & { internetMessageId: string } => Boolean(m.internetMessageId))
+    .filter((m): m is GraphMessage & { id: string; internetMessageId: string } => Boolean(m.internetMessageId && m.id))
     .map((m) => ({
+      id: m.id,
       internetMessageId: m.internetMessageId,
       conversationId: m.conversationId ?? null,
       subject: m.subject ?? '(no subject)',
@@ -191,4 +195,46 @@ export async function fetchInbox(env: Env, since: string, limit = 25, now = Date
       receivedAt: m.receivedDateTime ?? new Date(now).toISOString(),
       bodyHtml: m.body?.content ?? '',
     }));
+}
+
+/**
+ * Marks a message read, once the desk has actually dealt with it.
+ *
+ * Without this the inbox fills up: every message the desk has read, filed and
+ * answered still sits there in bold, and the one thing a mailbox is good at
+ * telling you at a glance stops being true.
+ *
+ * Deliberately after processing rather than before. An unread message then
+ * means exactly one thing, "the desk has not handled this yet", which makes
+ * the inbox a second view of the queue for free. A crash mid-batch leaves
+ * mail unread, which is the right way round: the dedupe ledger stops it being
+ * processed twice, and a human glancing at the mailbox can see something
+ * stalled.
+ *
+ * Never throws. A message that was handled correctly but could not be marked
+ * read is untidy, not broken, and rolling back real work over a flag would be
+ * the worse trade. Needs `Mail.ReadWrite`; with only `Mail.Read` this returns
+ * a reason and the desk carries on.
+ */
+export async function markRead(env: Env, messageId: string, now = Date.now()): Promise<SendResult> {
+  if (!canSendDirectly(env)) return { sent: false, reason: 'graph credentials not configured' };
+
+  try {
+    const token = await accessToken(env, now);
+    const response = await fetch(
+      `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(SENDER)}/messages/${encodeURIComponent(messageId)}`,
+      {
+        method: 'PATCH',
+        headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
+        body: JSON.stringify({ isRead: true }),
+        signal: AbortSignal.timeout(10_000),
+      },
+    );
+
+    if (response.ok) return { sent: true };
+    if (response.status === 401) cachedToken = null;
+    return { sent: false, reason: `graph ${response.status}: ${(await response.text()).slice(0, 200)}` };
+  } catch (error) {
+    return { sent: false, reason: error instanceof Error ? error.message : String(error) };
+  }
 }

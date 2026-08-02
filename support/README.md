@@ -147,9 +147,19 @@ Quoted history is stripped from replies, conservatively: cutting too little
 leaves untidy text on a ticket, cutting too much loses what the person
 actually wrote.
 
-`Mail.Read` is needed on the app registration alongside `Mail.Send`. Without
-the Graph secrets the cron does nothing and the Routine remains the way mail
-arrives.
+A message is marked read once the desk has finished with it, skips included:
+a bounce has been dealt with as much as a real ticket has, and leaving those
+unread fills the mailbox with exactly the traffic nobody needs to look at.
+Marking happens *after* processing on purpose, so an unread message means one
+thing only, "not handled yet", and the inbox is a second view of the queue
+for free.
+
+That write needs **`Mail.ReadWrite`** on the app registration, not
+`Mail.Read`. With only read access everything else still works and the flag
+silently will not stick, so a failure to mark is counted into the run summary
+and written to `sync_state.last_ingest_error` rather than logged and lost.
+
+Without the Graph secrets the cron does nothing at all.
 
 ### Delivery
 
@@ -179,8 +189,8 @@ npm run deploy
 
 They come from an app registration in Entra ID (Azure portal, Microsoft Entra
 ID, App registrations, New registration; then API permissions, Microsoft
-Graph, **Application** permissions, `Mail.Send` and `Mail.Read`, and Grant
-admin consent;
+Graph, **Application** permissions, `Mail.Send` and `Mail.ReadWrite`, and
+Grant admin consent;
 then Certificates and secrets for the value). `Mail.Send` as an application
 permission grants send-as rights for *every* mailbox in the tenant, so scope
 it down to this one with an application access policy:
