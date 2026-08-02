@@ -454,3 +454,63 @@ export async function claimModelCall(db: D1Database, limit = DEFAULT_DAILY_CALL_
     .first<{ calls: number }>();
   return (row?.calls ?? Number.MAX_SAFE_INTEGER) <= limit;
 }
+
+// ---- inbound ledger and checkpoint ---------------------------------------
+
+export async function wasProcessed(db: D1Database, internetMessageId: string): Promise<boolean> {
+  const row = await db
+    .prepare('SELECT 1 AS hit FROM inbound_emails WHERE internet_message_id = ?1')
+    .bind(internetMessageId)
+    .first<{ hit: number }>();
+  return Boolean(row);
+}
+
+export async function recordInbound(
+  db: D1Database,
+  e: { internetMessageId: string; conversationId: string | null; ticketId: number | null; fromEmail: string; subject: string },
+): Promise<void> {
+  await db
+    .prepare(
+      `INSERT INTO inbound_emails (internet_message_id, conversation_id, ticket_id, raw_from, raw_subject)
+       VALUES (?1, ?2, ?3, ?4, ?5)
+       ON CONFLICT(internet_message_id) DO NOTHING`,
+    )
+    .bind(e.internetMessageId, e.conversationId, e.ticketId, e.fromEmail, e.subject)
+    .run();
+}
+
+export async function ticketIdForConversation(db: D1Database, conversationId: string | null): Promise<number | null> {
+  if (!conversationId) return null;
+  const row = await db
+    .prepare('SELECT id FROM tickets WHERE source_conversation_id = ?1 ORDER BY id DESC LIMIT 1')
+    .bind(conversationId)
+    .first<{ id: number }>();
+  return row?.id ?? null;
+}
+
+export async function ticketExists(db: D1Database, id: number): Promise<boolean> {
+  const row = await db.prepare('SELECT 1 AS hit FROM tickets WHERE id = ?1').bind(id).first<{ hit: number }>();
+  return Boolean(row);
+}
+
+/**
+ * The point in time the desk has read up to.
+ *
+ * Advanced only after a batch is fully processed. Advancing it early would
+ * turn one failed run into permanently unread mail, which is the failure
+ * nobody notices until someone asks why they were ignored.
+ */
+export async function getCheckpoint(db: D1Database, fallbackMinutes = 15): Promise<string> {
+  const row = await db.prepare(`SELECT value FROM sync_state WHERE key = 'last_checked_utc'`).bind().first<{ value: string }>();
+  return row?.value ?? new Date(Date.now() - fallbackMinutes * 60_000).toISOString();
+}
+
+export async function setCheckpoint(db: D1Database, value: string): Promise<void> {
+  await db
+    .prepare(
+      `INSERT INTO sync_state (key, value, updated_at) VALUES ('last_checked_utc', ?1, strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+       ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at`,
+    )
+    .bind(value)
+    .run();
+}

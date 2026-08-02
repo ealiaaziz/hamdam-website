@@ -13,6 +13,7 @@ import { extractAccessToken, fetchAccessKeys, verifyAccessJwt } from './access.j
 import { KB_ARTICLES } from './kb.js';
 import { suggestionBlock } from './render/agentSuggestion.js';
 import { canSendDirectly, sendMail } from './mailer.js';
+import { ingestInbox } from './ingest.js';
 import { requestedClosure } from './agentPolicy.js';
 
 import { composeAssistantReplyLive, ASSISTANT_NAME } from './assistantReply.js';
@@ -727,7 +728,29 @@ app.post('/admin/tickets/:id/drafts/:draftId/discard', async (c) => {
 
 app.notFound((c) => c.text('Not found', 404));
 
-export default app;
+/**
+ * The Worker itself: HTTP, plus the cron that reads the inbox.
+ *
+ * The inbox pass is what makes the hourly Routine unnecessary rather than
+ * merely slower. Failures are logged and swallowed: a scheduled handler that
+ * throws gets retried by Cloudflare, and a retry that re-reads the same
+ * batch is exactly what the dedupe ledger and the held checkpoint already
+ * handle better.
+ */
+export default {
+  fetch: app.fetch,
+  async scheduled(_event: ScheduledController, env: Env, ctx: ExecutionContext): Promise<void> {
+    ctx.waitUntil(
+      ingestInbox(env)
+        .then((summary) => {
+          if (summary.fetched > 0) console.log('ingest', JSON.stringify(summary));
+        })
+        .catch((error) => {
+          console.error('ingest failed:', error instanceof Error ? error.message : String(error));
+        }),
+    );
+  },
+};
 
 // Also exported for the ITIL prompt / email-routine docs to link back to
 // concrete public IDs without re-deriving the format.

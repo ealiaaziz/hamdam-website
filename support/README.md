@@ -112,6 +112,42 @@ already seen. Assistant replies drafted for *email-originated* tickets, via
 the console button, are still drafts: those go to someone who never chose to
 talk to a machine.
 
+### Reading the inbox
+
+A cron trigger runs every minute and reads `developer@hamdam.com.au` through
+Graph. New mail becomes a ticket with an acknowledgement and an assistant
+reply inside that minute; a reply on an existing thread becomes a comment and
+gets answered the same way. Same guards as the portal, because it is the same
+function: P1 and P2 never reach the model, a Hamdam answer must cite a
+source, closure requests are carried out rather than described.
+
+This replaces the hourly Routine, and the reason is not only speed. The
+Routine was a Claude session holding database credentials and a mailbox,
+reading text written by strangers. That is the one place in this system where
+attacker-authored input met tools, and it is now a function that reads a
+sender, a subject and a body and cannot be argued into anything else.
+
+Three things make a re-run safe, which matters because Cloudflare retries a
+failed scheduled handler:
+
+* `inbound_emails` is keyed on Outlook's `internetMessageId`, so a message is
+  only ever processed once.
+* The checkpoint advances only after a clean pass, and only as far as the
+  newest message actually handled. Advancing it optimistically turns one bad
+  run into permanently unread mail, which nobody notices until a requester
+  asks why they were ignored.
+* Mail from the desk's own address is skipped before anything else. Without
+  that the desk emails a requester, reads its own message, files it as a
+  ticket, and acknowledges it, forever.
+
+Quoted history is stripped from replies, conservatively: cutting too little
+leaves untidy text on a ticket, cutting too much loses what the person
+actually wrote.
+
+`Mail.Read` is needed on the app registration alongside `Mail.Send`. Without
+the Graph secrets the cron does nothing and the Routine remains the way mail
+arrives.
+
 ### Delivery
 
 The Worker sends directly, through Microsoft Graph, as
@@ -140,7 +176,8 @@ npm run deploy
 
 They come from an app registration in Entra ID (Azure portal, Microsoft Entra
 ID, App registrations, New registration; then API permissions, Microsoft
-Graph, **Application** permissions, `Mail.Send`, and Grant admin consent;
+Graph, **Application** permissions, `Mail.Send` and `Mail.Read`, and Grant
+admin consent;
 then Certificates and secrets for the value). `Mail.Send` as an application
 permission grants send-as rights for *every* mailbox in the tenant, so scope
 it down to this one with an application access policy:

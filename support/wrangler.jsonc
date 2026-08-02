@@ -22,6 +22,16 @@
   // Worker runs on. Remove this binding and every reply falls back to the
   // keyword matcher, which is exactly what local dev and CI run against.
   "ai": { "binding": "AI" },
+  // Read the inbox every minute. This is what makes the hourly Routine
+  // unnecessary: a person emailing the desk gets a ticket and an
+  // acknowledgement within a minute rather than within an hour, and the
+  // reading is done by a function rather than by a Claude session holding
+  // database credentials and a mailbox.
+  //
+  // Every minute is affordable because an empty inbox costs one Graph
+  // request and nothing else. See src/ingest.ts for why the checkpoint only
+  // advances on a clean pass.
+  "triggers": { "crons": ["* * * * *"] },
   // Created by `wrangler d1 create hamdam-support-db` on 2026-08-01; see
   // support/README.md. Not a secret: a database_id only identifies the
   // database, and reaching it still requires an authorised API token.

@@ -125,3 +125,70 @@ export async function sendMail(env: Env, mail: MailToSend, now = Date.now()): Pr
     return { sent: false, reason: error instanceof Error ? error.message : String(error) };
   }
 }
+
+// ---- reading -------------------------------------------------------------
+//
+// The other half. Outbound went first because it was the visible complaint,
+// but inbound is where the hourly Routine really hurt: a person emails the
+// desk and hears nothing for up to an hour, having been told nothing at all,
+// because unlike the portal there is no page to show them an acknowledgement.
+
+export interface InboundMessage {
+  internetMessageId: string;
+  conversationId: string | null;
+  subject: string;
+  fromEmail: string;
+  fromName: string | null;
+  receivedAt: string;
+  bodyHtml: string;
+}
+
+interface GraphMessage {
+  internetMessageId?: string;
+  conversationId?: string;
+  subject?: string;
+  receivedDateTime?: string;
+  from?: { emailAddress?: { address?: string; name?: string } };
+  body?: { content?: string; contentType?: string };
+}
+
+/**
+ * Inbox messages received since `since`, oldest first.
+ *
+ * `ge` rather than `gt`, with the dedupe ledger doing the real work: two
+ * messages can share a timestamp to the second, and a strict comparison
+ * would drop the second one permanently. Re-reading a message the ledger
+ * already knows costs one skipped row.
+ */
+export async function fetchInbox(env: Env, since: string, limit = 25, now = Date.now()): Promise<InboundMessage[]> {
+  if (!canSendDirectly(env)) return [];
+
+  const token = await accessToken(env, now);
+  const query = new URLSearchParams({
+    $filter: `receivedDateTime ge ${since}`,
+    $orderby: 'receivedDateTime asc',
+    $top: String(limit),
+    $select: 'internetMessageId,conversationId,subject,receivedDateTime,from,body',
+  });
+
+  const response = await fetch(
+    `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(SENDER)}/mailFolders/inbox/messages?${query}`,
+    { headers: { authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(15_000) },
+  );
+
+  if (response.status === 401) cachedToken = null;
+  if (!response.ok) throw new Error(`graph inbox ${response.status}: ${(await response.text()).slice(0, 200)}`);
+
+  const body = (await response.json()) as { value?: GraphMessage[] };
+  return (body.value ?? [])
+    .filter((m): m is GraphMessage & { internetMessageId: string } => Boolean(m.internetMessageId))
+    .map((m) => ({
+      internetMessageId: m.internetMessageId,
+      conversationId: m.conversationId ?? null,
+      subject: m.subject ?? '(no subject)',
+      fromEmail: (m.from?.emailAddress?.address ?? '').toLowerCase(),
+      fromName: m.from?.emailAddress?.name ?? null,
+      receivedAt: m.receivedDateTime ?? new Date(now).toISOString(),
+      bodyHtml: m.body?.content ?? '',
+    }));
+}
