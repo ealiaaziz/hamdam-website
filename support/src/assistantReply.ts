@@ -199,10 +199,13 @@ export async function composeAssistantReplyLive(
       rejectedTitles,
       alreadyEscalated: input.alreadyEscalated,
     });
-  } catch {
+  } catch (error) {
     // Timeout, busy inference queue, allocation exhausted, outage. All the
     // same from here: the requester still gets an answer this request, just
-    // a plainer one.
+    // a plainer one. Logged because a silently degraded desk looks exactly
+    // like a working one, and the day the allocation runs out should not be
+    // something anyone has to infer from the tone of the replies.
+    console.warn('assistant: model call failed', error instanceof Error ? error.message : String(error));
     return deterministic();
   }
 

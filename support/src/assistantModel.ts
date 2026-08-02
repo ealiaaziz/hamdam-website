@@ -294,15 +294,26 @@ export async function generateModelReply(ai: Ai, input: ModelReplyInput): Promis
   } as never)) as { response?: unknown };
 
   const payload = result?.response;
-  if (payload === undefined || payload === null) return null;
+  if (payload === undefined || payload === null) {
+    console.warn('assistant: model returned no response payload');
+    return null;
+  }
 
+  let parsed: unknown = payload;
   if (typeof payload === 'string') {
     try {
-      return sanitiseModelReply(JSON.parse(payload), input);
+      parsed = JSON.parse(payload);
     } catch {
+      console.warn('assistant: model response was not JSON', payload.slice(0, 200));
       return null;
     }
   }
 
-  return sanitiseModelReply(payload, input);
+  const reply = sanitiseModelReply(parsed, input);
+  // Rejections are the interesting event and the easiest one to lose. A
+  // reply that fails validation looks identical from the outside to a reply
+  // that was never asked for: both show up as a keyword answer. Without this
+  // line the only way to tell them apart is to guess.
+  if (!reply) console.warn('assistant: model reply failed validation', JSON.stringify(parsed).slice(0, 300));
+  return reply;
 }
