@@ -1,5 +1,6 @@
 import type { Priority } from './itil.js';
 import { APP_REFERENCE, type AppReference, type KbArticle } from './kb.js';
+import type { Locale } from './i18n.js';
 
 // The model-backed half of the assistant.
 //
@@ -70,6 +71,8 @@ export interface ModelReply {
 
 export interface ModelReplyInput {
   priority: Priority;
+  /** The language the requester is being answered in. */
+  locale?: Locale;
   ticketSubject: string;
   /** The thread in order. Requester turns and the assistant's own replies. */
   turns: readonly { author: 'requester' | 'assistant'; body: string }[];
@@ -143,6 +146,7 @@ export function selectReference(
 export function buildSystemPrompt(
   articles: readonly KbArticle[],
   reference: readonly AppReference[] = APP_REFERENCE,
+  locale: Locale = 'en',
 ): string {
   const kb =
     articles.length === 0
@@ -207,7 +211,7 @@ When you are between answer and escalate, choose escalate. A person reads every 
 
 HOW TO WRITE IT
 
-- Write to the person, as "you". The reviewed articles and the reference are written about users in the third person, as "someone", "the person", "they". Never copy that through. "Your journal entries sync between your devices", not "that person's devices".
+${locale === 'fa' ? '- Write your entire reply in Persian (Farsi). The reviewed articles and the reference below are in English; translate what you use into natural, plain Persian rather than quoting the English. Use Persian characters throughout, and Persian digits are fine. Never mix an English sentence into a Persian reply, though product names, email addresses and links stay as they are.\n' : ''}- Write to the person, as "you". The reviewed articles and the reference are written about users in the third person, as "someone", "the person", "they". Never copy that through. "Your journal entries sync between your devices", not "that person's devices".
 - Plain text. No markdown, no headings, no bold. Numbered steps on their own lines are fine.
 - Short. Under 200 words unless steps genuinely need more.
 - No greeting and no sign-off; the thread already has their name and mine.
@@ -423,7 +427,11 @@ const JSON_INSTRUCTION = `Now give your reply as a single JSON object and nothin
  * other because of how it was obtained.
  */
 export async function generateModelReply(ai: Ai, input: ModelReplyInput): Promise<ModelReply | null> {
-  const system = buildSystemPrompt(input.articles, selectReference(`${input.ticketSubject}\n${input.turns.map((t) => t.body).join('\n')}`));
+  const system = buildSystemPrompt(
+    input.articles,
+    selectReference(`${input.ticketSubject}\n${input.turns.map((t) => t.body).join('\n')}`),
+    input.locale ?? 'en',
+  );
   const conversation = buildMessages(input);
 
   // Someone is looking at a spinner. Past this, a plainer answer now beats a

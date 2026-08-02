@@ -216,4 +216,36 @@ footer.meta {
 
 .sla-line { font-size: 0.85rem; color: var(--text-soft); display: flex; gap: 1.25rem; flex-wrap: wrap; }
 .sla-line strong { color: var(--text); }
+
+/* Persian, without a webfont.
+ *
+ * The marketing site serves Vazirmatn. This portal deliberately does not: a
+ * font file means a request in front of someone who already has a problem
+ * and a layout shift on a page whose whole job is to be quick. The stack
+ * reaches Vazirmatn when the reader already has it and lands on a system
+ * Persian face otherwise. All of them render Persian correctly.
+ *
+ * It lives here rather than in a <style> tag because this response is served
+ * under a style-src of self with no unsafe-inline, so an inline block would
+ * simply not apply and the page would silently render Persian in a serif
+ * face meant for Latin. */
+html[lang='fa'] body,
+html[lang='fa'] h1,
+html[lang='fa'] h2,
+html[lang='fa'] .wordmark,
+html[lang='fa'] .lede,
+html[lang='fa'] .btn,
+html[lang='fa'] input,
+html[lang='fa'] textarea,
+html[lang='fa'] select {
+  font-family: Vazirmatn, 'Iran Sans', IRANSans, Tahoma, 'Segoe UI', system-ui, sans-serif;
+}
+
+/* Right-to-left needs the text edges swapped, not the whole grid rebuilt:
+ * the layout is already flow-relative almost everywhere. These are the
+ * places that hard-coded a side. */
+html[dir='rtl'] .msg { border-left: none; border-right: 3px solid var(--rule); padding-left: 0; padding-right: 0.85rem; }
+html[dir='rtl'] .filters a { margin-right: 0; margin-left: 0.4rem; }
+html[dir='rtl'] .queue th,
+html[dir='rtl'] .queue td { text-align: right; }
 `;

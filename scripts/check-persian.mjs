@@ -20,7 +20,10 @@
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 
-const ROOTS = ['src', 'public/scripts'];
+// support/ carries the Persian half of the support portal, authored rather
+// than generated because no approved Farsi existed for a support desk. That
+// makes checking it more important here, not less.
+const ROOTS = ['src', 'public/scripts', 'support/src'];
 const EXTENSIONS = /\.(astro|ts|js|mjs|css|html|json|md)$/;
 
 const PERSIAN_BLOCKS = '\\u0600-\\u06FF\\u0750-\\u077F\\uFB50-\\uFDFF\\uFE70-\\uFEFF';

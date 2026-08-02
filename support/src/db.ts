@@ -9,6 +9,7 @@ import type {
   TicketWithRequester,
 } from './types.js';
 import type { Impact, Priority, Topic, Urgency } from './itil.js';
+import type { Locale } from './i18n.js';
 import type { Channel } from './types.js';
 
 export async function upsertRequester(db: D1Database, email: string, name: string | null): Promise<RequesterRow> {
@@ -34,6 +35,7 @@ export interface NewTicket {
   category: string | null;
   channel: Channel;
   topic: Topic;
+  locale: Locale;
   trackingToken: string;
   sourceConversationId: string | null;
   lastInboundMessageId: string | null;
@@ -48,8 +50,8 @@ export async function createTicket(db: D1Database, t: NewTicket): Promise<number
       `INSERT INTO tickets (
          requester_id, subject, status, priority, impact, urgency, category, channel,
          tracking_token, source_conversation_id, last_inbound_message_id,
-         created_at, updated_at, sla_first_response_due, sla_resolve_due, topic
-       ) VALUES (?1, ?2, 'new', ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?11, ?12, ?13, ?14)
+         created_at, updated_at, sla_first_response_due, sla_resolve_due, topic, locale
+       ) VALUES (?1, ?2, 'new', ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?11, ?12, ?13, ?14, ?15)
        RETURNING id`,
     )
     .bind(
@@ -67,6 +69,7 @@ export async function createTicket(db: D1Database, t: NewTicket): Promise<number
       t.slaFirstResponseDue,
       t.slaResolveDue,
       t.topic,
+      t.locale,
     )
     .first<{ id: number }>();
   if (!result) throw new Error('createTicket: insert did not return an id');

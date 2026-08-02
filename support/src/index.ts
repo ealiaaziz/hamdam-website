@@ -14,6 +14,7 @@ import { KB_ARTICLES } from './kb.js';
 import { suggestionBlock } from './render/agentSuggestion.js';
 import { canSendDirectly, sendMail } from './mailer.js';
 import { isAllowedCountry, parseAllowedCountries } from './geo.js';
+import { detectLocale, localePath, parseLocale, type Locale } from './i18n.js';
 import { ingestInbox } from './ingest.js';
 import { notifyEscalation } from './escalation.js';
 import { requestedClosure } from './agentPolicy.js';
@@ -44,6 +45,7 @@ import {
   upsertRequester,
 } from './db.js';
 import { parseTicketStatus, type CommentRow, type TicketWithRequester } from './types.js';
+import { strings } from './i18n.js';
 
 // The desk's own mailbox. Notifications about ticket activity go here, and
 // the routine must ignore inbound mail from this address so the desk does
@@ -212,7 +214,7 @@ app.get('/static/app.css', (c) => c.text(APP_CSS, 200, { 'content-type': 'text/c
 
 // ---- public portal ------------------------------------------------------
 
-app.get('/', (c) => c.html(submitFormPage()));
+app.get('/', (c) => c.html(submitFormPage({ locale: requestLocale(c) })));
 
 app.post('/tickets', async (c) => {
   const form = await c.req.formData();
@@ -226,8 +228,9 @@ app.post('/tickets', async (c) => {
   if (!name || !email || !subject || !description) {
     return c.html(
       submitFormPage({
-        error: 'Please fill in every field.',
+        error: strings(requestLocale(c)).errorAllFields,
         values: { name, email, subject, description },
+        locale: requestLocale(c),
       }),
       400,
     );
@@ -239,6 +242,10 @@ app.post('/tickets', async (c) => {
   // get to it" band, however mildly the person described it, because they
   // are having trouble with the thing they paid for.
   const { priority, topic } = classifyTicket(impact, urgency, `${subject}\n${description}`);
+  // The page they used decides the language of the ticket and every email on
+  // it, except when they plainly wrote in the other one: a Persian speaker
+  // who lands on the English form and types Persian meant Persian.
+  const locale = detectLocale(`${subject}\n${description}`) === 'fa' ? 'fa' : requestLocale(c);
   const now = new Date();
   const { firstResponseDue, resolveDue } = slaDueDates(priority, now);
   const trackingToken = generateTrackingToken();
@@ -252,6 +259,7 @@ app.post('/tickets', async (c) => {
     category: null,
     channel: 'portal',
     topic,
+    locale,
     trackingToken,
     sourceConversationId: null,
     lastInboundMessageId: null,
@@ -268,6 +276,7 @@ app.post('/tickets', async (c) => {
     priority,
     trackingUrl: trackingUrl(c.req.url, ticketId, trackingToken),
     requesterName: name,
+    locale,
   });
   await queueAndSend(c, {
     ticketId,
@@ -293,6 +302,7 @@ app.post('/tickets', async (c) => {
       askedQuestions: [],
       rejectedArticles: [],
       topic,
+      locale,
     },
     {
       ai: c.env.AI,
@@ -313,16 +323,17 @@ app.post('/tickets', async (c) => {
   // the first time and always worth sending.
   if (first.escalated) c.executionCtx.waitUntil(notifyEscalation(c.env, ticketId, first.reason));
 
-  return c.redirect(`/tickets/${ticketId}?token=${trackingToken}&submitted=1`, 303);
+  return c.redirect(localePath(locale, `/tickets/${ticketId}?token=${trackingToken}&submitted=1`), 303);
 });
 
-app.get('/track', (c) => c.html(trackLookupPage()));
+app.get('/track', (c) => c.html(trackLookupPage({ locale: requestLocale(c) })));
 
 app.get('/tickets/lookup', (c) => {
   const id = parseTicketPublicId(String(c.req.query('id') ?? ''));
   const token = String(c.req.query('token') ?? '').trim();
-  if (!id || !token) return c.html(trackLookupPage({ error: 'That ticket ID or tracking code looks wrong.' }), 400);
-  return c.redirect(`/tickets/${id}?token=${encodeURIComponent(token)}`, 303);
+  const locale = requestLocale(c);
+  if (!id || !token) return c.html(trackLookupPage({ error: strings(locale).trackError, locale }), 400);
+  return c.redirect(localePath(locale, `/tickets/${id}?token=${encodeURIComponent(token)}`), 303);
 });
 
 app.get('/tickets/:id', async (c) => {
@@ -407,7 +418,7 @@ app.post('/tickets/:id/summary', async (c) => {
   await queueConversationSummary(c, ticket, comments, status);
   await addComment(c.env.DB, id, 'system', null, 'Requester asked for the conversation by email.');
 
-  return c.redirect(`/tickets/${id}?token=${encodeURIComponent(token)}&emailed=1`, 303);
+  return c.redirect(localePath(ticket.locale, `/tickets/${id}?token=${encodeURIComponent(token)}&emailed=1`), 303);
 });
 
 app.post('/tickets/:id/reply', async (c) => {
@@ -463,10 +474,10 @@ app.post('/tickets/:id/reply', async (c) => {
         id,
         'agent',
         ASSISTANT_NAME,
-        'Closed, as you asked. I am emailing you the whole conversation for your records. If it comes up again, reply to that email and this ticket reopens.',
+        strings(ticket.locale).replyClosed,
       );
       await queueConversationSummary(c, { ...ticket, status: 'closed' }, await listComments(c.env.DB, id), 'resolved');
-      return c.redirect(`/tickets/${id}?token=${encodeURIComponent(token)}`, 303);
+      return c.redirect(localePath(ticket.locale, `/tickets/${id}?token=${encodeURIComponent(token)}`), 303);
     }
 
     // Answer them now, in the thread. This is what was missing: the engine
@@ -484,6 +495,7 @@ app.post('/tickets/:id/reply', async (c) => {
         rejectedArticles: state.rejectedArticles,
         alreadyEscalated: state.escalated,
       topic: ticket.topic,
+      locale: ticket.locale,
       },
       {
         ai: c.env.AI,
@@ -523,7 +535,7 @@ app.post('/tickets/:id/reply', async (c) => {
       await queueConversationSummary(c, ticket, await listComments(c.env.DB, id), 'with_a_person');
     }
   }
-  return c.redirect(`/tickets/${id}?token=${encodeURIComponent(token)}`, 303);
+  return c.redirect(localePath(ticket.locale, `/tickets/${id}?token=${encodeURIComponent(token)}`), 303);
 });
 
 // ---- admin console --------------------------------------------------------
@@ -653,6 +665,7 @@ app.post('/admin/tickets/:id/assistant-draft', async (c) => {
       rejectedArticles: state.rejectedArticles,
       alreadyEscalated: state.escalated,
       topic: ticket.topic,
+      locale: ticket.locale,
     },
     {
       ai: c.env.AI,
@@ -772,8 +785,52 @@ app.notFound((c) => c.text('Not found', 404));
  * batch is exactly what the dedupe ledger and the held checkpoint already
  * handle better.
  */
+/**
+ * The locale this request is being served in.
+ *
+ * Set by the prefix strip below, never read from the path inside a handler,
+ * so there is one place that decides and the routes stay single-registration.
+ * Forging the header only changes which language a public page renders in,
+ * which is not a boundary worth defending.
+ */
+function requestLocale(c: DeskContext): Locale {
+  return parseLocale(c.req.header(LOCALE_HEADER));
+}
+
+const LOCALE_HEADER = 'x-hamdam-locale';
+
+/**
+ * Serves the whole public portal under /fa as well as /, without registering
+ * every route twice.
+ *
+ * Hono's routes are flat and a second registration of each one would be a
+ * second place to forget something. Stripping the prefix here means /fa/track
+ * and /track are the same handler reached the same way, differing only in a
+ * header the handler reads for its strings.
+ *
+ * The console is deliberately not translated. It is an internal tool with one
+ * or two users who both read English, and a half-translated admin surface is
+ * worse than an untranslated one.
+ */
+function withLocalePrefix(request: Request): Request {
+  const url = new URL(request.url);
+  if (url.pathname !== '/fa' && !url.pathname.startsWith('/fa/')) return request;
+
+  url.pathname = url.pathname.slice(3) || '/';
+  const headers = new Headers(request.headers);
+  headers.set(LOCALE_HEADER, 'fa');
+  return new Request(url, {
+    method: request.method,
+    headers,
+    body: request.method === 'GET' || request.method === 'HEAD' ? undefined : request.body,
+    redirect: 'manual',
+  });
+}
+
 export default {
-  fetch: app.fetch,
+  fetch(request: Request, env: Env, ctx: ExecutionContext) {
+    return app.fetch(withLocalePrefix(request), env, ctx);
+  },
   async scheduled(_event: ScheduledController, env: Env, ctx: ExecutionContext): Promise<void> {
     ctx.waitUntil(
       ingestInbox(env)

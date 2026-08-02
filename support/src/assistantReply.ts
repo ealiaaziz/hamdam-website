@@ -2,6 +2,7 @@ import { decideAgentAction, requestedAHuman, MAX_ASSISTANT_TURNS, type AgentCont
 import { matchArticles, KB_ARTICLES, type KbArticle } from './kb.js';
 import { generateModelReply, type ModelReply } from './assistantModel.js';
 import type { Topic } from './itil.js';
+import { strings, type Locale } from './i18n.js';
 
 // The assistant's visible reply in the ticket thread.
 //
@@ -37,6 +38,8 @@ export interface AssistantReplyInput extends AgentContext {
   alreadyEscalated?: boolean;
   /** Whether this ticket is about the app or about general computing. */
   topic?: Topic;
+  /** The language to answer in. */
+  locale?: Locale;
 }
 
 function stepsAsText(article: KbArticle): string {
@@ -51,6 +54,7 @@ export function composeAssistantReply(
   input: AssistantReplyInput,
   articles: readonly KbArticle[] = KB_ARTICLES,
 ): AssistantReply {
+  const t = strings(input.locale ?? 'en');
   // Rejection is the strongest signal short of leaving. An article the
   // requester has already turned down is out of the running entirely, not
   // merely ranked lower.
@@ -60,7 +64,7 @@ export function composeAssistantReply(
 
   if (decision.action === 'send_solution' && match.best) {
     return {
-      body: `Thanks for the extra detail. This looks like it might be the one:\n\n${match.best.article.title}\n\n${stepsAsText(match.best.article)}\n\nIf that does not do it, say so and I will pass this to one of the team.`,
+      body: `${t.replySolutionIntro}\n\n${match.best.article.title}\n\n${stepsAsText(match.best.article)}\n\n${t.replySolutionOutro}`,
       action: 'send_solution',
       articleId: decision.articleId,
       reason: decision.reason,
@@ -70,7 +74,7 @@ export function composeAssistantReply(
 
   if (decision.action === 'ask_clarifying') {
     return {
-      body: `Thanks, that helps. One more thing and I should be able to narrow it down:\n\n${decision.question}`,
+      body: `${t.replyClarifyIntro}\n\n${decision.question}`,
       action: 'ask_clarifying',
       articleId: decision.articleId,
       question: decision.question,
@@ -89,7 +93,7 @@ export function composeAssistantReply(
   // the desk look stuck.
   if (input.alreadyEscalated) {
     return {
-      body: 'Thanks, I have added that to the ticket. It is already with a person on the team and they will see it, so there is nothing you need to do.',
+      body: t.replyAlreadyEscalated,
       action: 'escalate',
       reason: 'already escalated; acknowledged without repeating the handover',
       escalated: true,
@@ -104,9 +108,7 @@ export function composeAssistantReply(
   const hadCandidates = matchArticles(input.conversationText, articles).best !== null;
   const exhausted = hadCandidates && available.length < articles.length;
 
-  const body = exhausted
-    ? 'I have run out of things I know to try for this one, so I am handing it to a person on the team. They can see everything you have written here, so you will not need to repeat yourself.'
-    : 'That is outside what I have written down, so I am passing it to a person rather than guessing at an answer. They can see this whole conversation.';
+  const body = exhausted ? t.replyExhausted : t.replyOutsideWritten;
 
   return { body, action: 'escalate', reason: decision.reason, escalated: true };
 }
@@ -154,14 +156,14 @@ export interface LiveReplyOptions {
  * ability to weigh it, which matters more here than it would behind a
  * frontier model.
  */
-function withProvenance(reply: ModelReply): string {
+function withProvenance(reply: ModelReply, locale: Locale = 'en'): string {
   // From a reviewed article, or from the desk's own reference on how the app
   // behaves. Both are the desk speaking about its own product, and neither
   // needs a disclaimer. Adding one put "that is general advice" underneath a
   // verbatim, correct answer about iCloud sync, which reads as the desk not
   // trusting itself.
   if (reply.articleId || reply.referenceId) return reply.body;
-  return `${reply.body}\n\nThat is general advice rather than something from our own notes on the app, so tell me if it does not match what you are seeing and I will pass it to a person.`;
+  return `${reply.body}\n\n${strings(locale).replyGeneralAdvice}`;
 }
 
 /** Why a given reply came out the way it did. Written to the agent state. */
@@ -217,6 +219,7 @@ export async function composeAssistantReplyLive(
       askedQuestions: input.askedQuestions,
       rejectedTitles,
       alreadyEscalated: input.alreadyEscalated,
+      locale: input.locale,
     });
   } catch (error) {
     // Timeout, busy inference queue, allocation exhausted, outage. All the
@@ -247,7 +250,7 @@ export async function composeAssistantReplyLive(
   // is still fine, since a question asserts nothing.
   if (input.topic === 'hamdam' && reply.action === 'answer' && !reply.articleId && !reply.referenceId) {
     return {
-      body: 'That is a question about Hamdam itself and I do not have it written down, so I am passing it to a person rather than guessing. They can see this whole conversation, so you will not need to repeat any of it.',
+      body: strings(input.locale ?? 'en').replyHamdamUnsourced,
       action: 'escalate',
       reason: 'model answered a Hamdam question from general knowledge; refused',
       escalated: true,
@@ -276,7 +279,7 @@ export async function composeAssistantReplyLive(
   }
 
   return {
-    body: withProvenance(reply),
+    body: withProvenance(reply, input.locale ?? 'en'),
     action: 'send_solution',
     articleId: reply.articleId ?? undefined,
     reason: reasonFor(reply),

@@ -2,33 +2,41 @@ import type { Priority } from '../itil.js';
 import { PRIORITY_LABEL } from '../itil.js';
 import type { TicketStatus } from '../types.js';
 import { escapeHtml } from '../ids.js';
+import { direction, localePath, strings, type Locale } from '../i18n.js';
 
 export interface LayoutOptions {
   title: string;
   wide?: boolean;
   nav?: Array<{ href: string; label: string }>;
   bodyClass?: string;
+  /** Defaults to English. The console is always English; the portal is not. */
+  locale?: Locale;
 }
 
 export function page(opts: LayoutOptions, bodyHtml: string): string {
+  const locale = opts.locale ?? 'en';
+  const t = strings(locale);
+  const dir = direction(locale);
+  const home = localePath(locale, '/');
+
   return `<!doctype html>
-<html lang="en">
+<html lang="${locale}" dir="${dir}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>${escapeHtml(opts.title)} · Hamdam Support</title>
+<title>${escapeHtml(opts.title)} · Hamdam ${escapeHtml(t.brandSupport)}</title>
 <link rel="stylesheet" href="/static/app.css">
 <meta name="robots" content="noindex">
 </head>
 <body${opts.bodyClass ? ` class="${opts.bodyClass}"` : ''}>
 <div class="shell${opts.wide ? ' shell--wide' : ''}">
 <header class="brand">
-  <a class="wordmark" href="/">Hamdam <span>Support</span></a>
-  <nav>${(opts.nav ?? []).map((n) => `<a href="${n.href}">${escapeHtml(n.label)}</a>`).join('')}</nav>
+  <a class="wordmark" href="${home}">Hamdam <span>${escapeHtml(t.brandSupport)}</span></a>
+  <nav>${(opts.nav ?? []).map((n) => `<a href="${n.href}">${escapeHtml(n.label)}</a>`).join('')}<a href="${t.otherLanguageHref}" lang="${locale === 'fa' ? 'en' : 'fa'}">${escapeHtml(t.otherLanguage)}</a></nav>
 </header>
 ${bodyHtml}
 <footer class="meta">
-  Hamdam Support · every ticket is emailed to and from developer@hamdam.com.au ·
+  ${t.footer} ·
   <a href="https://hamdam.com.au">hamdam.com.au</a>
 </footer>
 </div>
@@ -48,9 +56,17 @@ const STATUS_LABEL: Record<TicketStatus, string> = {
   closed: 'Closed',
 };
 
-export function statusBadge(status: TicketStatus): string {
+export function statusBadge(status: TicketStatus, locale: Locale = 'en'): string {
   const cls = status === 'resolved' || status === 'closed' ? 'badge--resolved' : 'badge--status';
-  return `<span class="badge ${cls}">${escapeHtml(STATUS_LABEL[status])}</span>`;
+  const t = strings(locale);
+  const label: Record<TicketStatus, string> = {
+    new: locale === 'en' ? STATUS_LABEL.new : t.statusNew,
+    open: locale === 'en' ? STATUS_LABEL.open : t.statusOpen,
+    pending: locale === 'en' ? STATUS_LABEL.pending : t.statusPending,
+    resolved: locale === 'en' ? STATUS_LABEL.resolved : t.statusResolved,
+    closed: locale === 'en' ? STATUS_LABEL.closed : t.statusClosed,
+  };
+  return `<span class="badge ${cls}">${escapeHtml(label[status])}</span>`;
 }
 
 export function formatDateTime(iso: string): string {

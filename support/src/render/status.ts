@@ -1,18 +1,23 @@
 import { page, priorityBadge, statusBadge, formatDateTime, isOverdue } from './layout.js';
 import { escapeHtml, textToSafeHtml, ticketPublicId } from '../ids.js';
 import { SLA_POLICY } from '../itil.js';
+import { localePath, parseLocale, strings } from '../i18n.js';
 import type { CommentRow, TicketWithRequester } from '../types.js';
 
 export function ticketStatusPage(opts: {
   ticket: TicketWithRequester;
   comments: CommentRow[];
   justSubmitted?: boolean;
-  /** True right after the requester asked for the conversation by email. */
   justEmailed?: boolean;
   /** Pre-rendered suggestion block, or empty when nothing matched. */
   suggestion?: string;
 }): string {
   const { ticket, comments } = opts;
+  // The ticket's own language, not the browser's. Someone who opened this in
+  // Persian and later follows a link from an English email should still find
+  // their own conversation in the language they started it in.
+  const locale = parseLocale(ticket.locale);
+  const t = strings(locale);
   const publicId = ticketPublicId(ticket.id);
   const policy = SLA_POLICY[ticket.priority];
   const overdue = isOverdue(ticket.sla_first_response_due, ticket.first_response_at) && !ticket.first_response_at;
@@ -20,7 +25,12 @@ export function ticketStatusPage(opts: {
   const thread = comments
     .map((c) => {
       const roleClass = c.author_type === 'requester' ? 'msg--requester' : c.author_type === 'agent' ? 'msg--agent' : 'msg--system';
-      const who = c.author_type === 'agent' ? escapeHtml(c.author_name ?? 'Hamdam Support') : c.author_type === 'system' ? 'System' : 'You';
+      const who =
+        c.author_type === 'agent'
+          ? escapeHtml(c.author_name ?? t.supportAuthor)
+          : c.author_type === 'system'
+            ? escapeHtml(t.systemAuthor)
+            : escapeHtml(t.you);
       return `<div class="msg ${roleClass}">
   <div class="meta"><span>${who}</span><span>${formatDateTime(c.created_at)}</span></div>
   <div class="body">${textToSafeHtml(c.body)}</div>
@@ -28,41 +38,40 @@ export function ticketStatusPage(opts: {
     })
     .join('\n');
 
+  const token = encodeURIComponent(ticket.tracking_token);
   const body = `
-${opts.justSubmitted ? `<div class="notice notice--ok">Ticket created. A confirmation email is on its way to ${escapeHtml(ticket.requester_email)}.</div>` : ''}
-${opts.justEmailed ? `<div class="notice notice--ok">On its way to ${escapeHtml(ticket.requester_email)}. It carries this conversation exactly as it stands now.</div>` : ''}
+${opts.justSubmitted ? `<div class="notice notice--ok">${escapeHtml(t.statusNoticeCreated)} ${escapeHtml(ticket.requester_email)}.</div>` : ''}
+${opts.justEmailed ? `<div class="notice notice--ok">${escapeHtml(t.statusNoticeEmailed)} ${escapeHtml(ticket.requester_email)}.</div>` : ''}
 <h1>${escapeHtml(ticket.subject)}</h1>
-<p class="lede">${escapeHtml(publicId)} &middot; opened ${formatDateTime(ticket.created_at)}</p>
+<p class="lede">${escapeHtml(publicId)} &middot; ${escapeHtml(t.openedAt)} ${formatDateTime(ticket.created_at)}</p>
 ${opts.suggestion ?? ''}
 <div class="card">
   <div style="display:flex;gap:0.5rem;align-items:center;margin-bottom:1rem">
     ${priorityBadge(ticket.priority)}
-    ${statusBadge(ticket.status)}
-    ${overdue ? '<span class="badge badge--breach">First response overdue</span>' : ''}
+    ${statusBadge(ticket.status, locale)}
+    ${overdue ? `<span class="badge badge--breach">${escapeHtml(t.overdue)}</span>` : ''}
   </div>
   <div class="sla-line">
-    <span>First response target: <strong>${escapeHtml(policy.firstResponseLabel)}</strong></span>
-    <span>Resolution target: <strong>${escapeHtml(policy.resolveLabel)}</strong></span>
+    <span>${escapeHtml(t.firstResponseTarget)}: <strong>${escapeHtml(policy.firstResponseLabel)}</strong></span>
+    <span>${escapeHtml(t.resolutionTarget)}: <strong>${escapeHtml(policy.resolveLabel)}</strong></span>
   </div>
-  <div class="thread">${thread || '<p class="lede">No messages yet.</p>'}</div>
+  <div class="thread">${thread || `<p class="lede">${escapeHtml(t.noMessages)}</p>`}</div>
   ${
     ticket.status !== 'closed'
-      ? `<form method="post" action="/tickets/${ticket.id}/reply?token=${encodeURIComponent(ticket.tracking_token)}">
+      ? `<form method="post" action="${localePath(locale, `/tickets/${ticket.id}/reply`)}?token=${token}">
     <div class="field">
-      <label for="body">Add a reply</label>
+      <label for="body">${escapeHtml(t.addReply)}</label>
       <textarea id="body" name="body" required></textarea>
     </div>
-    <button class="btn" type="submit">Send</button>
+    <button class="btn" type="submit">${escapeHtml(t.sendButton)}</button>
   </form>
-  <form method="post" action="/tickets/${ticket.id}/summary?token=${encodeURIComponent(ticket.tracking_token)}">
-    <button class="btn btn--ghost" type="submit">Email me this conversation</button>
-    <p class="hint">Sends everything above to ${escapeHtml(ticket.requester_email)} as it stands
-    right now. Keep going here as long as you like; ask again whenever you want
-    the latest version.</p>
+  <form method="post" action="${localePath(locale, `/tickets/${ticket.id}/summary`)}?token=${token}">
+    <button class="btn btn--ghost" type="submit">${escapeHtml(t.emailMeButton)}</button>
+    <p class="hint">${escapeHtml(t.emailMeHint)}</p>
   </form>`
-      : '<p class="lede">This ticket is closed. Email developer@hamdam.com.au to reopen it.</p>'
+      : `<p class="lede">${escapeHtml(t.closedNotice)}</p>`
   }
 </div>
 `;
-  return page({ title: `${publicId} · ${ticket.subject}` }, body);
+  return page({ title: `${publicId} · ${ticket.subject}`, locale }, body);
 }

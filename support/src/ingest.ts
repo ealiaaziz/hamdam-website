@@ -3,6 +3,7 @@ import { classifyTicket, slaDueDates } from './itil.js';
 import { generateTrackingToken } from './ids.js';
 import { fetchInbox, sendMail, canSendDirectly, SENDER, type InboundMessage } from './mailer.js';
 import { cleanSubject, planInbound } from './inbound.js';
+import { detectLocale, strings } from './i18n.js';
 import { composeAssistantReplyLive, ASSISTANT_NAME } from './assistantReply.js';
 import { requestedClosure } from './agentPolicy.js';
 import { notifyEscalation } from './escalation.js';
@@ -107,6 +108,7 @@ async function replyWithAssistant(env: Env, ticketId: number): Promise<void> {
       rejectedArticles: state.rejectedArticles,
       alreadyEscalated: state.escalated,
       topic: ticket.topic,
+      locale: ticket.locale,
     },
     {
       ai: env.AI,
@@ -190,7 +192,8 @@ async function handleMessage(env: Env, message: InboundMessage): Promise<'create
     // open is worse than one that says nothing.
     if (requestedClosure(plan.body)) {
       await updateTicketStatus(env.DB, plan.ticketId, 'closed');
-      await addComment(env.DB, plan.ticketId, 'agent', ASSISTANT_NAME, 'Closed, as you asked. Reply to this email if it comes up again and the ticket reopens.');
+      const closing = await getTicketById(env.DB, plan.ticketId);
+      await addComment(env.DB, plan.ticketId, 'agent', ASSISTANT_NAME, strings(closing?.locale ?? 'en').replyClosed);
       return 'appended';
     }
 
@@ -210,6 +213,9 @@ async function handleAsNew(env: Env, message: InboundMessage, body: string): Pro
   // below P3, and a security report still reads as P1, exactly as from the
   // portal.
   const { priority, topic } = classifyTicket('medium', 'medium', `${subject}\n${body}`);
+  // Answer people in the language they wrote in. Email carries no locale, so
+  // the text is the only signal there is.
+  const locale = detectLocale(`${subject}\n${body}`);
   const now = new Date();
   const { firstResponseDue, resolveDue } = slaDueDates(priority, now);
   const trackingToken = generateTrackingToken();
@@ -223,6 +229,7 @@ async function handleAsNew(env: Env, message: InboundMessage, body: string): Pro
     category: null,
     channel: 'email',
     topic,
+    locale,
     trackingToken,
     sourceConversationId: message.conversationId,
     lastInboundMessageId: message.internetMessageId,
@@ -246,6 +253,7 @@ async function handleAsNew(env: Env, message: InboundMessage, body: string): Pro
     priority,
     trackingUrl: ticketUrl(ticketId, trackingToken),
     requesterName: requester.name,
+    locale,
   });
   await queueAndSend(env, {
     ticketId,

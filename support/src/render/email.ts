@@ -6,6 +6,7 @@
 
 import { PRIORITY_LABEL, SLA_POLICY, type Priority } from '../itil.js';
 import { escapeHtml, textToSafeHtml, ticketPublicId } from '../ids.js';
+import { direction, strings, type Locale } from '../i18n.js';
 
 const WRAP_OPEN = `<div style="font-family:Georgia,'Times New Roman',serif;color:#241E15;max-width:34rem;margin:0 auto;line-height:1.55">`;
 const WRAP_CLOSE = `</div>`;
@@ -18,26 +19,25 @@ export function ackEmail(opts: {
   priority: Priority;
   trackingUrl: string;
   requesterName: string | null;
+  locale?: Locale;
 }): { subject: string; html: string } {
+  const locale = opts.locale ?? 'en';
+  const t = strings(locale);
   const publicId = ticketPublicId(opts.ticketId);
   const policy = SLA_POLICY[opts.priority];
-  const greeting = opts.requesterName ? `Hi ${escapeHtml(opts.requesterName.split(' ')[0])},` : 'Hi,';
-  const html = `${WRAP_OPEN}
-<p>${greeting}</p>
-<p>Thanks for reaching out. We've opened a support ticket for you:</p>
+  const dir = direction(locale);
+  const html = `<div dir="${dir}">${WRAP_OPEN}
+<p>${escapeHtml(t.ackGreeting(opts.requesterName))}</p>
+<p>${escapeHtml(t.ackOpened)}</p>
 <p style="font-size:1.05rem"><strong>${escapeHtml(publicId)}</strong> &middot; ${escapeHtml(opts.subject)}</p>
-<p>Priority: <strong>${escapeHtml(PRIORITY_LABEL[opts.priority])}</strong>. Our target is to make first contact
-within ${escapeHtml(policy.firstResponseLabel)} and to resolve within ${escapeHtml(policy.resolveLabel)}.
-${opts.priority === 'P1' || opts.priority === 'P2' ? "Because you've flagged this as urgent, it's now at the top of our queue." : ''}</p>
-<p>You can track progress and reply any time here:<br>
+<p>${escapeHtml(t.priorityLine(PRIORITY_LABEL[opts.priority], policy.firstResponseLabel, policy.resolveLabel))}</p>
+<p>${escapeHtml(t.ackTrack)}<br>
 <a href="${opts.trackingUrl}" style="color:#D07B3F">${escapeHtml(opts.trackingUrl)}</a></p>
-<p>Or just reply to this email. Either way, it lands in the same place.</p>
-<p>One thing worth knowing: the tracking page answers straight away, so if
-we already have a fix written up for what you are seeing, you will get it
-there in seconds rather than waiting on this mailbox.</p>
+<p>${escapeHtml(t.ackOrReply)}</p>
+<p>${escapeHtml(t.ackPortalFast)}</p>
 ${RULE}
 ${FOOTER}
-${WRAP_CLOSE}`;
+${WRAP_CLOSE}</div>`;
   return { subject: `[${publicId}] ${opts.subject}`, html };
 }
 
