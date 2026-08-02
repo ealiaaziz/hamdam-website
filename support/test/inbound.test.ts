@@ -191,3 +191,60 @@ describe('entity decoding', () => {
     expect(body).toContain('ITIL V3, and more');
   });
 });
+
+describe('isAutomatedMail', () => {
+  // This ran in production. An outbound reply to a dead address bounced, the
+  // bounce carried "Undeliverable: [HAM-27] ..." so the tag matched, it was
+  // filed as a reply, the assistant answered it, that answer bounced, once a
+  // minute. The desk-address check could never catch it: the bounce really
+  // does come from somewhere else.
+  it('recognises the Exchange bounce that caused a live mail loop', async () => {
+    const { isAutomatedMail } = await import('../src/inbound.js');
+    expect(
+      isAutomatedMail(
+        'microsoftexchange329e71ec88ae4615bbc36ab6ce41109e@netorgft20885646.onmicrosoft.com',
+        'Undeliverable: [HAM-27] Testing workflow',
+      ),
+    ).toBe(true);
+  });
+
+  it('recognises bounces and auto-replies generally', async () => {
+    const { isAutomatedMail } = await import('../src/inbound.js');
+    const cases: [string, string][] = [
+      ['postmaster@example.com', 'Delivery Status Notification (Failure)'],
+      ['MAILER-DAEMON@example.com', 'Returned mail: see transcript'],
+      ['someone@example.com', 'Automatic reply: [HAM-9] your ticket'],
+      ['someone@example.com', 'Out of Office: [HAM-9] your ticket'],
+      ['no-reply@example.com', 'Anything at all'],
+      ['someone@example.com', 'Undeliverable: [HAM-3] thing'],
+    ];
+    for (const [from, subject] of cases) {
+      expect(isAutomatedMail(from, subject), `${from} / ${subject}`).toBe(true);
+    }
+  });
+
+  it('does not mistake a person for a machine', async () => {
+    const { isAutomatedMail } = await import('../src/inbound.js');
+    const cases: [string, string][] = [
+      ['azizollahi@live.com', 'RE: [HAM-9] Verse will not load'],
+      ['someone@example.com', 'My reply is undeliverable to my colleague, can you help'],
+      ['noreplacement@example.com', 'Question about Plus'],
+      ['bouncer@example.com', 'The app keeps bouncing me out'],
+    ];
+    for (const [from, subject] of cases) {
+      expect(isAutomatedMail(from, subject), `${from} / ${subject}`).toBe(false);
+    }
+  });
+
+  it('skips the bounce before the ticket tag can route it', async () => {
+    const { planInbound } = await import('../src/inbound.js');
+    const plan = planInbound(
+      message({
+        fromEmail: 'postmaster@example.com',
+        subject: 'Undeliverable: [HAM-9] Verse will not load',
+      }),
+      known({ ticketExists: () => true }),
+    );
+    expect(plan).toEqual({ action: 'skip', reason: 'automated mail, not a person' });
+  });
+});
