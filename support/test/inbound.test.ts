@@ -249,3 +249,49 @@ describe('isAutomatedMail', () => {
     expect(plan).toEqual({ action: 'skip', reason: 'automated mail, not a person' });
   });
 });
+
+describe('automated senders that are not at the start of the address', () => {
+  // Live: microsoft-noreply@microsoft.com sent an admin notification that
+  // became a P3 ticket, was acknowledged back to the noreply address, and
+  // escalated, putting a "needs a person" alert in front of two people about
+  // a Microsoft billing notice. A false escalation is worse than a missed
+  // one: it is what teaches people to stop reading the alerts.
+  it('catches the vendor notification that got through', async () => {
+    const { isAutomatedMail } = await import('../src/inbound.js');
+    expect(
+      isAutomatedMail('microsoft-noreply@microsoft.com', 'Someone in your organisation ended your Granular admin relationship'),
+    ).toBe(true);
+  });
+
+  it('catches the token wherever a vendor buried it', async () => {
+    const { isAutomatedMail } = await import('../src/inbound.js');
+    for (const from of [
+      'microsoft-noreply@microsoft.com',
+      'github-noreply@github.com',
+      'atlassian.no-reply@atlassian.net',
+      'billing-notifications@vendor.com',
+      'stripe+bounces@stripe.com',
+      'acme_donotreply@acme.io',
+    ]) {
+      expect(isAutomatedMail(from, 'Anything'), from).toBe(true);
+    }
+  });
+
+  it('still lets people through', async () => {
+    const { isAutomatedMail } = await import('../src/inbound.js');
+    for (const from of [
+      'azizollahi@live.com',
+      'noreplacement@example.com',
+      'bouncer@example.com',
+      'sima.binesh@example.com',
+      'notify.me@example.com',
+    ]) {
+      expect(isAutomatedMail(from, 'The verse will not load'), from).toBe(false);
+    }
+  });
+
+  it('only reads the local part, so a domain cannot make a person a robot', async () => {
+    const { isAutomatedMail } = await import('../src/inbound.js');
+    expect(isAutomatedMail('sima@noreply-hosting.com', 'Help please')).toBe(false);
+  });
+});
