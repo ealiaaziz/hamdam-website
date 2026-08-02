@@ -110,6 +110,17 @@ text, spends a model call or sends an email goes through both. The limiter
 keys on `CF-Ray`, not on `CF-Connecting-IP`, because `wrangler dev` supplies
 the latter as 127.0.0.1 and keying on it throttles local development.
 
+**DMARC is `p=reject` (applied 2026-08-02).** The `hamdam.com.au` zone was
+hardened the same day: `p=reject` with relaxed alignment and reports coming
+to `dmarc@hamdam.com.au`, ten CAA records, TLS-RPT, and five stale Skype and
+GoDaddy-marketing records deleted. That means anything sending as this
+domain which is not Exchange Online is now refused rather than junked, so a
+new sender needs SPF or DKIM arranged before its first message, not after.
+MTA-STS is deliberately incomplete: publishing the TXT record without the
+policy file at `https://mta-sts.hamdam.com.au/.well-known/mta-sts.txt` is
+worse than publishing neither. The full record, including what is still
+open, is in `support/docs/build-record.md`.
+
 Four follow-ups were raised at handover and all four were reviewed and closed
 without action on 2026-08-02. Two matter before you touch the mail path: the
 Graph client secret has not been rotated since setup, and `Mail.Send` is

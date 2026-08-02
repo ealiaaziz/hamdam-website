@@ -449,29 +449,78 @@ and checks issuer, audience and expiry. Every admin path variant tried
 (`/Admin`, `//admin`, `/admin/../admin`, `/admin%2f`) was refused. SPF is
 `-all`, DKIM selectors are published, min TLS is 1.2 and TLS 1.3 is on.
 
-### Not fixed here, because it is DNS
+### The DNS findings, and what was done about them
 
-These are recorded rather than applied. Changing a live mail domain's DNS on
-the strength of a review, without watching what it does to delivery, is how
-a support desk stops receiving support requests.
+The review raised these as recorded rather than applied, on the grounds that
+changing a live mail domain's DNS without watching what it does to delivery
+is how a support desk stops receiving support requests. The owner then
+decided each one individually and the zone was changed the same day, on
+2026-08-02. What follows is the finding, the decision, and the record of the
+change. The state of the zone described below is the state it is in.
 
-* **DMARC is `p=quarantine`.** Spoofed mail is junked, not refused. `p=reject`
-  is the target, and SPF already says `-all`, but confirm Exchange is
-  actually signing with the published DKIM selectors before moving.
-* **DMARC `rua` points at `dmarc_rua@onsecureserver.net`.** The registrar
-  receives the aggregate reports; the owner does not. Nobody here can see who
-  is spoofing this domain.
-* **No CAA record.** Any certificate authority in the world may issue for
-  `hamdam.com.au`. Add one covering the issuers Cloudflare actually uses.
-* **No MTA-STS or TLS-RPT.** Inbound mail can be downgraded by an active
-  network attacker between a sender and Exchange Online.
+**Applied.**
+
+* **DMARC moved from `p=quarantine` to `p=reject`,** and the reports were
+  brought home. `_dmarc.hamdam.com.au` is now
+  `v=DMARC1; p=reject; adkim=r; aspf=r; fo=1; rua=mailto:dmarc@hamdam.com.au; ruf=mailto:dmarc@hamdam.com.au;`
+  The old record sent aggregate reports to `dmarc_rua@onsecureserver.net`,
+  which is the registrar: the owner of the domain could not see who was
+  spoofing it. `dmarc@hamdam.com.au` is a shared mailbox in the tenant.
+  Alignment is relaxed (`adkim=r`, `aspf=r`) deliberately, because Exchange
+  Online signs with the subdomain selector CNAMEs, and strict alignment is the
+  setting that turns a correct DKIM signature into a failure. DKIM was
+  confirmed switched on in the Microsoft admin centre before the move, which
+  was the review's precondition.
+
+  `p=reject` is the one change here that can lose real mail rather than
+  merely fail closed, and it went live without a warm-up period. Watch the
+  aggregate reports for the first week; anything legitimate sending as this
+  domain that is not Exchange Online will now be refused outright rather
+  than junked.
+
+* **CAA records added,** ten of them, all flags `0`: an `issue` and an
+  `issuewild` pair for each of `letsencrypt.org`, `pki.goog`, `ssl.com`,
+  `comodoca.com` and `digicert.com`. That is the set Cloudflare actually
+  issues from, so the constraint is real without being a constraint on
+  ourselves. Before this, any certificate authority in the world could issue
+  for `hamdam.com.au`.
+
+* **TLS-RPT added.** `_smtp._tls.hamdam.com.au` TXT
+  `v=TLSRPTv1; rua=mailto:dmarc@hamdam.com.au`, so a sender that fails to
+  negotiate TLS to Exchange has somewhere to say so.
+
+* **Five stale records deleted.** `sip`, `lyncdiscover`, `_sip._tls` and
+  `_sipfederationtls._tcp` are Skype for Business, retired in 2021.
+  `email.hamdam.com.au` pointed at GoDaddy email marketing and resolved to a
+  host that did not claim the name; the owner does not use it and does not
+  intend to. None were known to be takeoverable. All were attack surface
+  kept for nothing.
+
+  `_domainconnect.hamdam.com.au` was left in place. It was not in the
+  review's stale list and it is what lets the registrar's setup flow write
+  records; removing it breaks that and fixes nothing.
+
+The full zone was read and written to a backup before any of this, and read
+back afterwards to confirm each change landed. Unchanged and verified still
+correct: SPF `v=spf1 include:spf.protection.outlook.com -all`, both DKIM
+selector CNAMEs to Microsoft, and the MX to
+`hamdam-com-au.mail.protection.outlook.com`.
+
+**Still open.**
+
+* **MTA-STS is not done, and a TXT record alone will not do it.** The
+  decision was to apply it, and only the TLS-RPT half of that pair could be.
+  MTA-STS needs two things: a `_mta-sts.hamdam.com.au` TXT record carrying a
+  policy id, *and* a policy file served over HTTPS at
+  `https://mta-sts.hamdam.com.au/.well-known/mta-sts.txt` with a valid
+  certificate for that hostname. Publishing the TXT record without the file
+  is worse than publishing neither: a sending server that finds the record
+  and cannot fetch the policy has been told to look and found nothing.
+  The remaining work is a host for that one file, which this repository is
+  well placed to serve as a third Worker route, plus the TXT record pointing
+  at it.
 * **Zone SSL mode is `full`, not `full (strict)`.** Near meaningless today,
   since every proxied record is a Worker and there is no origin to protect,
   and wrong the moment one of them points at a real server.
-* **Stale delegations.** `sip`, `lyncdiscover`, `_sip._tls` and
-  `_sipfederationtls` are Skype for Business, retired in 2021.
-  `email.hamdam.com.au` points at GoDaddy email marketing and resolves to a
-  host that does not claim the name. None are known to be takeoverable; all
-  are attack surface kept for nothing.
 * **Access has no MFA requirement** and a 24 hour session, on a console that
   shows every requester's name, address and ticket text.
