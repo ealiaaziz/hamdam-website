@@ -123,8 +123,11 @@ export function composeAssistantReply(
 // that is the point: the desk degrades to plainer language, never to silence.
 
 export interface LiveReplyOptions {
-  /** Worker secret. Absent means the deterministic path, not an error. */
-  apiKey?: string;
+  /**
+   * The Workers AI binding. Absent means the deterministic path, not an
+   * error: local development and CI run without it on purpose.
+   */
+  ai?: Ai;
   /** Full thread in order, so the model sees its own previous replies. */
   turns: readonly { author: 'requester' | 'assistant'; body: string }[];
   ticketSubject: string;
@@ -135,6 +138,22 @@ export interface LiveReplyOptions {
   claim?: () => Promise<boolean>;
   /** Seam for tests. Production never passes this. */
   generate?: typeof generateModelReply;
+}
+
+/**
+ * Tells the requester when an answer is general advice rather than something
+ * the desk has checked.
+ *
+ * An answer drawn from an article carries a person's review behind it. An
+ * answer drawn from general knowledge carries a model's confidence and
+ * nothing else, and those two things read identically on a screen unless one
+ * of them says so. Saying so costs a sentence and buys the requester the
+ * ability to weigh it, which matters more here than it would behind a
+ * frontier model.
+ */
+function withProvenance(reply: ModelReply): string {
+  if (reply.articleId) return reply.body;
+  return `${reply.body}\n\nThat is general advice rather than something from our own notes on the app, so tell me if it does not match what you are seeing and I will pass it to a person.`;
 }
 
 /** Why a given reply came out the way it did. Written to the agent state. */
@@ -155,7 +174,7 @@ export async function composeAssistantReplyLive(
   if (requestedAHuman(input.conversationText)) return deterministic();
   if (input.priority === 'P1' || input.priority === 'P2') return deterministic();
   if (input.assistantTurns >= MAX_ASSISTANT_TURNS) return deterministic();
-  if (!opts.apiKey) return deterministic();
+  if (!opts.ai) return deterministic();
 
   // The budget check sits with the guards rather than inside the model
   // module, because running out of money is a policy outcome, not an API
@@ -171,7 +190,7 @@ export async function composeAssistantReplyLive(
 
   let reply: ModelReply | null = null;
   try {
-    reply = await (opts.generate ?? generateModelReply)(opts.apiKey, {
+    reply = await (opts.generate ?? generateModelReply)(opts.ai, {
       priority: input.priority,
       ticketSubject: opts.ticketSubject,
       turns: opts.turns,
@@ -181,8 +200,9 @@ export async function composeAssistantReplyLive(
       alreadyEscalated: input.alreadyEscalated,
     });
   } catch {
-    // Timeout, rate limit, bad key, outage. All the same from here: the
-    // requester still gets an answer this request, just a plainer one.
+    // Timeout, busy inference queue, allocation exhausted, outage. All the
+    // same from here: the requester still gets an answer this request, just
+    // a plainer one.
     return deterministic();
   }
 
@@ -210,7 +230,7 @@ export async function composeAssistantReplyLive(
   }
 
   return {
-    body: reply.body,
+    body: withProvenance(reply),
     action: 'send_solution',
     articleId: reply.articleId ?? undefined,
     reason: reasonFor(reply),

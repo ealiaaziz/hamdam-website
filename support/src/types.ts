@@ -92,15 +92,15 @@ export interface Env {
   ACCESS_TEAM_DOMAIN?: string;
   ACCESS_AUD?: string;
   /**
-   * Anthropic API key for the interactive assistant, set with
-   * `wrangler secret put ANTHROPIC_API_KEY`. A real secret, so it never
-   * appears in wrangler.jsonc.
+   * Cloudflare Workers AI. Declared in wrangler.jsonc, not a secret, and no
+   * account credential of any kind: inference runs on the same account the
+   * Worker already runs on, inside the free daily allocation.
    *
-   * Optional on purpose: unset, every reply falls back to the keyword
-   * matcher in `assistantReply.ts`. A missing key makes the desk plainer,
-   * never silent, and local dev and CI need no credential.
+   * Optional on purpose. Unbound, every reply falls back to the keyword
+   * matcher in `assistantReply.ts`, which is what local development and CI
+   * run against.
    */
-  ANTHROPIC_API_KEY?: string;
+  AI?: Ai;
   /**
    * Model calls allowed per UTC day. Plain config, not a secret. Over the
    * ceiling the desk answers from the knowledge base instead: plainer, never

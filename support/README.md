@@ -41,15 +41,18 @@ Agent ──(dashboard reply)──► Worker ──► D1 ──► queued outb
   answer at all -- never a P1 or P2, never after a request for a person,
   never past three turns -- and it is ordinary code with tests beside it, not
   a paragraph in a prompt. The *model* half decides the words, calling
-  `claude-sonnet-5` with the reviewed knowledge base articles as its only
-  source for anything Hamdam-specific, and general computing knowledge
-  allowed for everything else. Every model reply is validated before anyone
+  Cloudflare Workers AI (`llama-3.3-70b-instruct-fp8-fast`) with the reviewed
+  knowledge base articles as its only source for anything Hamdam-specific,
+  and general computing knowledge allowed for everything else. Answers that
+  did not come from an article say so to the requester, because a reviewed
+  answer and a model's confidence read identically on screen unless one of
+  them admits which it is. Every model reply is validated before anyone
   reads it (`sanitiseModelReply`): an invented article id, a repeat of a
   question already asked, or wording that implies a person looked at the
   account all cause the reply to be thrown away and the keyword answer used
-  instead. With no `ANTHROPIC_API_KEY` set, or on any API failure, or once
-  the daily call budget is spent, the whole thing degrades to the keyword
-  matcher. The desk gets plainer. It never goes silent.
+  instead. With no `AI` binding, on any inference failure, or once the daily
+  call budget is spent, the whole thing degrades to the keyword matcher. The
+  desk gets plainer. It never goes silent.
 * **Hourly Routine**: the only thing that can reach Composio/Outlook. Reads
   new inbox mail, creates/updates tickets, sends the queued outbound email.
   Full design and the exact prompt: `docs/email-routine.md`. **Read that
@@ -196,38 +199,41 @@ console, which uses the `DEV_ADMIN_EMAIL` identity from `.dev.vars`. Without
 that file `/admin` returns 503, which is the same fail-closed behaviour the
 deployed Worker has before Access is configured.
 
-The assistant runs without a credential locally: with no `ANTHROPIC_API_KEY`
-in `.dev.vars` it answers from the keyword matcher, which is also what CI
-runs against. Add the key to `.dev.vars` only if you want to exercise the
-model path, and remember that every local ticket then costs a real call.
+The assistant runs without inference locally: `wrangler dev --local` has no
+`AI` binding, so replies come from the keyword matcher, which is also what
+CI runs against. Use `npx wrangler dev --remote` to exercise the model path,
+and remember that local tickets then spend the same daily allocation
+production does.
 
-## Turning the assistant on
+## The assistant, and what it costs
 
-The model-backed replies need one secret, and it is the only setup step:
+Nothing. Workers AI is included in the free Workers plan this Worker already
+runs on: **10,000 neurons per day, reset at 00:00 UTC**, no card and no API
+key. A support reply costs roughly 80 neurons, so the free allocation is
+about **120 assisted replies a day**. Past that, Cloudflare returns an error
+and the desk answers from the keyword matcher instead, which is also what
+`ASSISTANT_DAILY_CALL_LIMIT` (default 200) is there to keep bounded.
 
-```
-npx wrangler secret put ANTHROPIC_API_KEY   # paste an Anthropic API key
-npm run deploy
-```
+There is nothing to turn on. The `ai` binding in `wrangler.jsonc` is the
+whole configuration, and `npm run deploy` is the whole install.
 
-Until that is set the desk works exactly as it did before: tickets, SLAs,
-console, email queue, and keyword-matched replies. Setting it changes what
-the assistant *says*, not what it is *allowed* to do -- the P1/P2 gate, the
-handover on request, and the three-turn limit are in `agentPolicy.ts` and
-run before the model is consulted, so they hold either way.
+What this buys, and what it does not:
 
-Two knobs, both optional, both plain config in `wrangler.jsonc`:
+* It answers questions no article covers. That was the point: "how does
+  Windows 11 password reset work" used to come back as "outside what I have
+  written down", which is honest and useless.
+* It is a smaller model than a frontier one, so the writing is plainer and
+  it will occasionally be clumsy. The prompt is written for that: shorter
+  rules, and a standing instruction to escalate when it is between an answer
+  and a handover rather than to reason its way to one.
+* It is not a source of truth about the app. Reviewed articles are, and the
+  model may not add Hamdam-specific steps that are not in one. Anything
+  needing a look at the requester's account is an escalation by rule, in
+  code, because the model cannot see an account and should not imply it can.
 
-* `ASSISTANT_DAILY_CALL_LIMIT` -- model calls per UTC day (default 200).
-  Above it, replies come from the keyword matcher rather than stopping.
-
-To turn the assistant's writing back off without redeploying code, delete
-the secret (`npx wrangler secret delete ANTHROPIC_API_KEY`) and redeploy.
-
-Run tests with `npm test` (vitest). Covered: the ITIL matrix and SLA policy,
-the URL/HTTPS rules, Access JWT verification (against a generated keypair,
-so the signature path is exercised for real rather than mocked), and the
-`scripts/*.mjs` CLI wrappers.
+To turn the writing off without touching code, delete the `ai` block from
+`wrangler.jsonc` and redeploy. Every reply then comes from the keyword
+matcher, which is the state the desk shipped in and is fully tested.
 
 ## First deploy, step by step
 

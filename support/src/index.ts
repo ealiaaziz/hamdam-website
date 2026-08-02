@@ -183,7 +183,7 @@ app.post('/tickets', async (c) => {
       rejectedArticles: [],
     },
     {
-      apiKey: c.env.ANTHROPIC_API_KEY,
+      ai: c.env.AI,
       ticketSubject: subject,
       turns: [{ author: 'requester', body: description }],
       claim: () => claimModelCall(c.env.DB, dailyCallLimit(c.env)),
@@ -325,7 +325,7 @@ app.post('/tickets/:id/reply', async (c) => {
         alreadyEscalated: state.escalated,
       },
       {
-        apiKey: c.env.ANTHROPIC_API_KEY,
+        ai: c.env.AI,
         ticketSubject: ticket.subject,
         turns: threadTurns(allComments),
         claim: () => claimModelCall(c.env.DB, dailyCallLimit(c.env)),
@@ -507,7 +507,7 @@ app.post('/admin/tickets/:id/assistant-draft', async (c) => {
       alreadyEscalated: state.escalated,
     },
     {
-      apiKey: c.env.ANTHROPIC_API_KEY,
+      ai: c.env.AI,
       ticketSubject: ticket.subject,
       turns: threadTurns(comments),
       claim: () => claimModelCall(c.env.DB, dailyCallLimit(c.env)),

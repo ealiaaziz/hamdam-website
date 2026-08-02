@@ -20,7 +20,7 @@ function stub(reply: ModelReply | null) {
 }
 
 const opts = (generate: ReturnType<typeof stub>) => ({
-  apiKey: 'test-key',
+  ai: {} as Ai,
   ticketSubject: 'Cannot sign in',
   turns: [{ author: 'requester' as const, body: 'cannot sign in' }],
   generate,
@@ -47,6 +47,7 @@ describe('composeAssistantReplyLive', () => {
     );
     expect(generate).toHaveBeenCalledOnce();
     expect(r.body).toContain('Windows 11');
+    expect(r.body, 'general knowledge answers say so').toContain('general advice');
     expect(r.escalated).toBe(false);
   });
 

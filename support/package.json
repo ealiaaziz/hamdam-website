@@ -17,7 +17,6 @@
     "db:migrate:remote": "wrangler d1 migrations apply hamdam-support-db --remote"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.115.0",
     "hono": "^4.6.14"
   },
   "devDependencies": {
