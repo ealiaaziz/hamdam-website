@@ -328,9 +328,17 @@ export function extractJsonObject(text: string): unknown {
   }
 }
 
-/** What to send when the model must be told about the shape in words. */
-const JSON_INSTRUCTION = `Reply with a single JSON object and nothing else. No code fence, no explanation around it. Exactly these four keys:
-{"action": "answer | ask | escalate", "body": "the message the requester reads", "article_id": "the reviewed article id, or an empty string", "question": "your one question when action is ask, or an empty string"}`;
+/**
+ * What to send when the model must be told about the shape in words.
+ *
+ * This goes in the last turn, not the system prompt. Put in the system
+ * prompt it was ignored on exactly the tickets that matter most: given
+ * articles to work from, the model wrote a good support answer in prose and
+ * no JSON at all, and a good answer in the wrong shape is discarded the same
+ * as a bad one. A format instruction holds when it is the last thing read.
+ */
+const JSON_INSTRUCTION = `Now give your reply as a single JSON object and nothing else. No prose before or after it, no code fence. Exactly these four keys, all strings:
+{"action": "answer or ask or escalate", "body": "the message the requester reads", "article_id": "the reviewed article id you used, or an empty string", "question": "your one question when action is ask, or an empty string"}`;
 
 /**
  * Calls the model, and keeps a second way of asking.
@@ -349,9 +357,9 @@ export async function generateModelReply(ai: Ai, input: ModelReplyInput): Promis
   const system = buildSystemPrompt(input.articles);
   const conversation = buildMessages(input);
 
-  const call = async (extra: Record<string, unknown>, systemText: string) =>
+  const call = async (extra: Record<string, unknown>, extraTurns: { role: string; content: string }[] = []) =>
     (await ai.run(ASSISTANT_MODEL as keyof AiModels, {
-      messages: [{ role: 'system', content: systemText }, ...conversation],
+      messages: [{ role: 'system', content: system }, ...conversation, ...extraTurns],
       // Short, because the reply is short and the person is waiting. A small
       // model given room to keep writing will use it.
       max_tokens: 700,
@@ -366,14 +374,14 @@ export async function generateModelReply(ai: Ai, input: ModelReplyInput): Promis
   let howAsked = 'json schema';
 
   try {
-    raw = (await call({ response_format: { type: 'json_schema', json_schema: REPLY_SCHEMA } }, system))?.response ?? null;
+    raw = (await call({ response_format: { type: 'json_schema', json_schema: REPLY_SCHEMA } }))?.response ?? null;
   } catch (error) {
     console.warn('assistant: json mode refused, asking in words', error instanceof Error ? error.message : String(error));
   }
 
   if (raw === null) {
     howAsked = 'plain text';
-    raw = (await call({}, `${system}\n\n${JSON_INSTRUCTION}`))?.response ?? null;
+    raw = (await call({}, [{ role: 'user', content: JSON_INSTRUCTION }]))?.response ?? null;
   }
 
   if (raw === null) {
