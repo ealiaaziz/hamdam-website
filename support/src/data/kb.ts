@@ -115,6 +115,12 @@ export const APP_REFERENCE: readonly AppReference[] = [
     "body": "Discover refreshes once a day with books and podcasts from Apple's public\ncatalogue, through the iTunes Search API.\n\nThose requests go from the device straight to Apple. They never pass through\na Hamdam server, and no identifier tied to the person is sent with them.\n\nBecause it refreshes daily, \"the recommendations have not changed\" is\nexpected within a single day."
   },
   {
+    "id": "getting-the-app",
+    "title": "Where to get Hamdam",
+    "source": "src/lib/appStore.js, src/components/PlansAndFoundingCompanion.astro",
+    "body": "Hamdam is an iPhone app, on the Apple App Store. There is no Android\nversion, no web version, and no desktop version.\n\nDirect link: https://apps.apple.com/au/app/id6784461990\n\nOr search the App Store for \"Hamdam\".\n\nIt is free to start and stays free: fifteen reflections every month, with no\ntime limit and no card needed. Hamdam Plus and the one-time Founding\nCompanion purchase are optional, bought through Apple from inside the app.\n\nSomeone asking where to get it, or how to download it, wants the link above.\nThat is a question the desk can answer completely, so answer it rather than\nhanding it over."
+  },
+  {
     "id": "health-signals",
     "title": "Health signals",
     "source": "src/pages/privacy.astro section 1.1, src/pages/terms.astro sections 4.4 to 4.6",
