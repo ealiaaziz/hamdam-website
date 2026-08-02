@@ -74,6 +74,37 @@ account, so the runbook below reads as history rather than pending work:
 | Access policy | Allow: `azizollahi@live.com`, `developer@hamdam.com.au` |
 | Team domain | `wispy-art-3af8.cloudflareaccess.com` |
 
+### Smoke-testing against production
+
+Use `@example.com` for the requester address. Never a real mailbox, and
+never the desk owner's.
+
+That domain is reserved by RFC 2606 and undeliverable, so the acknowledgement
+queues, the routine tries to send it, and it goes nowhere. Everything else
+about the test is identical.
+
+This is written down because the alternative was tried. Testing the assistant
+on 2026-08-02 used the owner's real address for the requester, the hourly
+routine drained the queue mid-test, and four acknowledgement emails for
+tickets that no longer existed arrived in their inbox. Deleting the ticket
+rows afterwards did not recall them: the queue is a queue, and once a row is
+marked sent the mail is gone.
+
+Requesters are keyed on email, so reusing a real address also overwrites that
+person's name with whatever the test form said. Check the `requesters` table
+after any test that used one.
+
+Delete test tickets when finished, child rows first, or the foreign keys
+refuse:
+
+```
+npx wrangler d1 execute hamdam-support-db --remote --command \
+  "DELETE FROM outbound_emails WHERE ticket_id = N; \
+   DELETE FROM comments WHERE ticket_id = N; \
+   DELETE FROM ticket_agent_state WHERE ticket_id = N; \
+   DELETE FROM tickets WHERE id = N;"
+```
+
 Assistant verified against production on 2026-08-02: a Windows 11 password
 question answered from general knowledge with the "this is general advice"
 line attached, a sign-in ticket answered from the reviewed article and
