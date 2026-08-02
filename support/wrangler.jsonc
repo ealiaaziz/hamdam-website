@@ -19,8 +19,7 @@
     // real control; the Worker checks the same list so removing that rule
     // does not silently open the site. Email is not restricted, so a
     // customer overseas can still reach the desk.
-    "ALLOWED_COUNTRIES": "AU,NZ,US",
-    "ESCALATION_RECIPIENTS": "azizollahi@live.com"
+    "ALLOWED_COUNTRIES": "AU,NZ"
   },
   // Cloudflare Workers AI: the assistant's writing, on the free daily
   // allocation that comes with this Workers plan (10,000 neurons, reset at
