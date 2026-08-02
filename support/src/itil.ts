@@ -159,6 +159,27 @@ const HAMDAM_TERMS = [
   'hamdam plus', 'lifetime plan', 'founding companion',
   'daily reminder', 'state of mind',
   'cycle awareness', 'mood logging',
+  // The same vocabulary in Persian. Without these, a Persian speaker asking
+  // about iCloud sync in Hamdam was read as a general computing question and
+  // lost the P3 floor: the app's own audience got the slower queue, which is
+  // precisely backwards.
+  'همدم',
+  'پلاس',
+  'آیکلاد',
+  'شعر',
+  'بیت',
+  'حافظ',
+  'مولانا',
+  'مولوی',
+  'سعدی',
+  'خیام',
+  'پروین',
+  'گنجور',
+  'تأمل',
+  'تامل',
+  'یادآور',
+  'یادداشت',
+  'اشتراک',
 ];
 
 export function detectTopic(text: string): Topic {

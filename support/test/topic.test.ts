@@ -118,3 +118,30 @@ describe('requestedClosure', () => {
     }
   });
 });
+
+describe('detectTopic in Persian', () => {
+  // Live: a Persian ticket asking how iCloud sync works in Hamdam was read
+  // as a general computing question and lost the P3 floor. The app's own
+  // audience was getting the slower queue, which is precisely backwards.
+  it('reads Persian app questions as Hamdam', () => {
+    for (const text of [
+      'همگام‌سازی iCloud در همدم چطور کار می‌کند؟',
+      'برنامه همدم روی گوشی من باز نمی‌شود',
+      'شعر روزانه نمایش داده نمی‌شود',
+      'اشتراک پلاس را چطور بخرم؟',
+      'یادآور روزانه را چطور تغییر دهم؟',
+    ]) {
+      expect(detectTopic(text), text).toBe('hamdam');
+    }
+  });
+
+  it('still reads a Persian general computing question as general', () => {
+    expect(detectTopic('رمز عبور ویندوز را چطور بازنشانی کنم؟')).toBe('general_it');
+  });
+
+  it('floors a Persian Hamdam ticket at P3 like any other', () => {
+    const r = classifyTicket('low', 'low', 'شعر روزانه در همدم نمایش داده نمی‌شود');
+    expect(r.topic).toBe('hamdam');
+    expect(r.priority).toBe('P3');
+  });
+});
