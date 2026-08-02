@@ -202,8 +202,8 @@ for history only.
 
 | | |
 |---|---|
-| Tests | 236 (Vitest) |
-| Migrations | 8 |
+| Tests | 278 (Vitest) |
+| Migrations | 9 |
 | Knowledge base | 3 articles, 16 reference files |
 | Languages | English, Persian |
 | Assistant | `@cf/meta/llama-3.3-70b-instruct-fp8-fast` on Workers AI |
@@ -215,15 +215,12 @@ for history only.
 
 ## Known and deliberate
 
-* **`POST /tickets` is unauthenticated and unthrottled.** Someone who needs
-  help should not need an account first. The daily model-call cap bounds the
-  spend; a Cloudflare Rate Limiting rule is still the right fix for the mail.
+* **`POST /tickets` is unauthenticated.** Someone who needs help should not
+  need an account first. It is no longer unthrottled: see the security review
+  below.
 * **The console is English only.** An internal tool with two users who both
   read English. A half-translated admin surface is worse than an untranslated
   one.
-* **Tracking tokens are compared with `!==`, not constant-time.** 122 bits of
-  entropy and network jitter make this theoretical, but it is a real
-  difference if the threat model changes.
 * **No audit log of agent actions.** Replies carry the verified Access email;
   status and priority changes do not. Fine at one agent, not at three.
 * **The Farsi was authored by a session, not translated from an approved
@@ -273,3 +270,325 @@ they were not done, and a record that says otherwise is worse than no record.
 Nothing here blocks anything. It is written down so that whoever reads this
 in six months knows which of these were done and which were weighed and set
 aside, rather than having to guess.
+
+---
+
+## Security review, 2026-08-02
+
+A review of both `hamdam.com.au` and this desk, code and deployed behaviour.
+What it confirmed is worth recording as plainly as what it changed: D1 access
+is parameterised throughout, the Access JWT path pins RS256 and verifies
+issuer, audience and expiry rather than trusting
+`Cf-Access-Authenticated-User-Email`, the console's CSRF check holds, and
+every stored string reaching a page goes through `escapeHtml` or
+`textToSafeHtml`. Probing the live console with a forged identity header, a
+forged `CF_Authorization` cookie and a forged `CF-Ray` was refused in all
+three cases.
+
+Six things changed.
+
+1. **The portal would send mail anywhere, as often as asked.** This was the
+   one finding that mattered. `POST /tickets` checked its fields for
+   emptiness and nothing else, then handed the address to Graph and asked
+   `developer@hamdam.com.au` to deliver a message carrying the submitter's
+   subject line. No format check, no length cap, no rate. The daily model
+   budget bounded the inference spend and nothing bounded the mail, so the
+   asset at risk was never the database: it was the deliverability of every
+   real reply the desk sends. `src/validation.ts` now checks the address
+   shape and caps every field; `src/rateLimit.ts` counts submissions per
+   caller *and per recipient*, because a caller with a pool of addresses
+   defeats the first limit and cannot defeat both.
+
+2. **The rate limiter's first draft throttled local development.** Keyed on
+   `CF-Connecting-IP`, which reads correctly in production and which
+   `wrangler dev` also supplies, as `127.0.0.1`, for every local request. The
+   sixth ticket of a dev session was refused. The gate is now `CF-Ray`, which
+   is what the HTTPS redirect and the country check already use to mean "this
+   came through the edge". Caught by running it, not by reading it.
+
+3. **Tracking tokens were compared with `!==`.** Now `tokensMatch`, which
+   compares every character. 122 bits of entropy makes the timing attack
+   theoretical; the fix is two lines and the token is the only credential
+   guarding a ticket.
+
+4. **Ticket and console pages were cacheable.** No `Cache-Control` at all, on
+   pages carrying a requester's name, address and description, reached by a
+   URL with the credential in its query string. A shared cache keyed on that
+   URL is keyed on the credential. Now `private, no-store`, set only where a
+   route has not spoken, so `/static/app.css` keeps its lifetime.
+
+5. **The console wrote a stored column into the page as markup.**
+   `${d.body_html}`, the one unescaped interpolation left. Safe today, because
+   the only thing writing that column assembles it from escaped pieces, but
+   that is a property of the current callers rather than of the renderer. Now
+   rendered as text. The CSP would have stopped a script; it would not have
+   stopped a convincing fake button on the approve-and-send page.
+
+6. **`stripHtml` removed tags but kept what they contained.** A marketing
+   email's `<style>` block became four hundred lines of CSS in a ticket
+   comment and in the model's context. Script and comment contents went the
+   same way. Now dropped whole.
+
+Two smaller things went with them: the feedback endpoint accepted any string
+as an article id and wrote it into a system comment, so it is now checked
+against the published set, and `X-Hamdam-Locale` is stripped from inbound
+requests so the path is the only thing that decides a locale.
+
+Dependencies: `npm audit` reported three advisories on the marketing site
+(astro, postcss, svgo), all build-time for a fully static site. Upgraded
+anyway, site rebuilt clean. The desk reported none.
+
+**What was deliberately not changed.** The tracking token still travels in a
+query string. Moving it to a cookie would improve the referrer and history
+story and would break the thing the desk is built around, which is that the
+link in the acknowledgement email opens the ticket. `Referrer-Policy:
+strict-origin-when-cross-origin` covers the leak that matters. And the portal
+still emails an address the submitter typed without proving they own it,
+which is inherent to a support desk that does not want an account first; the
+rate limits bound the damage rather than removing it.
+
+---
+
+## Red team pass, 2026-08-02
+
+A second review, run adversarially rather than as a diff read: DNS and mail
+posture, TLS and zone settings, Cloudflare Access configuration, content
+discovery against both hosts, and a fresh look at the trust boundaries in
+code. It found one thing that was genuinely serious and one that was
+genuinely embarrassing, plus a set of infrastructure gaps that are not the
+Worker's fault and are still the domain's problem.
+
+### Anyone could write on anyone's ticket
+
+The inbound email path routed a message onto an existing ticket on the
+strength of the `[HAM-N]` tag in its subject, and checked nothing else. Not
+who sent it. Ticket ids are sequential and every requester sees their own in
+every email the desk sends, so `HAM-41` and `HAM-43` were free guesses.
+
+Sending `Subject: RE: [HAM-42] hello` to developer@hamdam.com.au was enough
+to file your text as a *requester* comment on a stranger's ticket. From
+there the desk did the rest of the work unprompted: if the message contained
+one of the closure phrases it closed their ticket, and otherwise it ran the
+assistant over a thread that now contained your words and emailed the result
+to the real requester, from an address that passes SPF and DKIM for this
+domain. No spoofing was required at any point. The tag was the credential,
+and the tag was printed on everything.
+
+What it could not do is read. The assistant's reply goes to the ticket's
+requester, never to the sender, so this was a write and a nuisance rather
+than a disclosure. That is the only reason it is written up as serious
+rather than as an emergency.
+
+`planInbound` now takes the owning address of each candidate thread and
+appends only when the sender matches it. A tag from someone else is not an
+error, because a stranger quoting a ticket number is far more likely to have
+been forwarded a thread than to be an attacker: their message simply becomes
+its own ticket. Nothing is lost and nothing is written where it should not
+be. The conversation id path got the same check, on the principle that
+"harder to guess" is not "proves who you are".
+
+### The console had a second front door
+
+Cloudflare Access is scoped to the path `support.hamdam.com.au/admin`. The
+locale prefix made `/fa/<anything>` an alias for `/<anything>`, the console
+included. So `/admin` was stopped at the edge with a redirect to the Access
+login, and `/fa/admin` went straight past Access to the console handler.
+
+The Worker's own JWT verification refused it, which is exactly why that check
+was written instead of trusting the proxy, and it is the reason this is a
+defence in depth finding rather than an authentication bypass. But it was an
+entrance Access could not log, could not rate limit and could not attach a
+policy to, and one control silently doing the work of two is how the next
+change breaks something nobody is watching. `/fa/admin` is now a 404.
+
+### The mailbox had no limits while the portal had them
+
+The morning's work metered the portal and left the email channel open, which
+put the ceiling on the more expensive door and none on the cheaper one.
+Every emailed ticket produces an acknowledgement, an assistant reply, and,
+for anything with a P1 word in the subject, an alert to the team. Crossing
+the new per-sender limit does not drop mail: everything is still read, filed
+and queued, and what stops is the desk answering by itself until a person
+looks. A system note on the ticket says so, because a ticket that looks like
+the assistant simply failed is worse than one that explains itself.
+
+### Two personal addresses were published
+
+`src/escalation.ts` hardcoded a private Gmail and a private Outlook address
+as the escalation recipients. This repository is public. That published two
+personal addresses, attached to a named product, in a file whose surrounding
+comment explains that these are the people who read the security alerts: a
+spearphishing target list, assembled and hosted at no cost to whoever wanted
+it. The README named the console's Access account for the same reason and
+with the same effect.
+
+The real list is now the `ESCALATION_RECIPIENTS` secret, and the fallback in
+source is the desk's own monitored mailbox, which is printed on every page
+anyway. Note what this does not do: git history still contains the
+addresses, and rewriting a public repository's history is a bigger and
+noisier operation than the exposure warrants. Treat both addresses as
+public, because they have been.
+
+### Smaller
+
+`CF-IPCountry` was a fallback for the country check. Cloudflare only adds
+that header when the visitor-location transform is enabled, and where it is
+not added a client-supplied one arrives untouched, so the fallback could
+only ever fire in exactly the configuration where it was attacker
+controlled. Removed; `request.cf.country` is populated by the runtime and
+cannot be set from outside. A `.well-known/security.txt` was added, because
+the previous answer to "how do I report something" was to guess.
+
+### What held
+
+Worth writing down, because a review that only lists failures reads as
+though nothing was built right. Content discovery found no source, config,
+`.git`, `.env` or `.dev.vars` on either host. Access is scoped to three
+named addresses with no wildcard. The Worker's JWT verification pins RS256
+and checks issuer, audience and expiry. Every admin path variant tried
+(`/Admin`, `//admin`, `/admin/../admin`, `/admin%2f`) was refused. SPF is
+`-all`, DKIM selectors are published, min TLS is 1.2 and TLS 1.3 is on.
+
+### The DNS findings, and what was done about them
+
+The review raised these as recorded rather than applied, on the grounds that
+changing a live mail domain's DNS without watching what it does to delivery
+is how a support desk stops receiving support requests. The owner then
+decided each one individually and the zone was changed the same day, on
+2026-08-02. What follows is the finding, the decision, and the record of the
+change. The state of the zone described below is the state it is in.
+
+**Applied.**
+
+* **DMARC moved from `p=quarantine` to `p=reject`,** and the reports were
+  brought home. `_dmarc.hamdam.com.au` is now
+  `v=DMARC1; p=reject; adkim=r; aspf=r; fo=1; rua=mailto:dmarc@hamdam.com.au; ruf=mailto:dmarc@hamdam.com.au;`
+  The old record sent aggregate reports to `dmarc_rua@onsecureserver.net`,
+  which is the registrar: the owner of the domain could not see who was
+  spoofing it. `dmarc@hamdam.com.au` is a shared mailbox in the tenant.
+  Alignment is relaxed (`adkim=r`, `aspf=r`) deliberately, because Exchange
+  Online signs with the subdomain selector CNAMEs, and strict alignment is the
+  setting that turns a correct DKIM signature into a failure. DKIM was
+  confirmed switched on in the Microsoft admin centre before the move, which
+  was the review's precondition.
+
+  `p=reject` is the one change here that can lose real mail rather than
+  merely fail closed, and it went live without a warm-up period. Watch the
+  aggregate reports for the first week; anything legitimate sending as this
+  domain that is not Exchange Online will now be refused outright rather
+  than junked.
+
+* **CAA records added,** ten of them, all flags `0`: an `issue` and an
+  `issuewild` pair for each of `letsencrypt.org`, `pki.goog`, `ssl.com`,
+  `comodoca.com` and `digicert.com`. That is the set Cloudflare actually
+  issues from, so the constraint is real without being a constraint on
+  ourselves. Before this, any certificate authority in the world could issue
+  for `hamdam.com.au`.
+
+* **TLS-RPT added.** `_smtp._tls.hamdam.com.au` TXT
+  `v=TLSRPTv1; rua=mailto:dmarc@hamdam.com.au`, so a sender that fails to
+  negotiate TLS to Exchange has somewhere to say so.
+
+* **Five stale records deleted.** `sip`, `lyncdiscover`, `_sip._tls` and
+  `_sipfederationtls._tcp` are Skype for Business, retired in 2021.
+  `email.hamdam.com.au` pointed at GoDaddy email marketing and resolved to a
+  host that did not claim the name; the owner does not use it and does not
+  intend to. None were known to be takeoverable. All were attack surface
+  kept for nothing.
+
+  `_domainconnect.hamdam.com.au` was left in place. It was not in the
+  review's stale list and it is what lets the registrar's setup flow write
+  records; removing it breaks that and fixes nothing.
+
+The full zone was read and written to a backup before any of this, and read
+back afterwards to confirm each change landed. Unchanged and verified still
+correct: SPF `v=spf1 include:spf.protection.outlook.com -all`, both DKIM
+selector CNAMEs to Microsoft, and the MX to
+`hamdam-com-au.mail.protection.outlook.com`.
+
+**MTA-STS, which turned out not to be a DNS change at all.**
+
+Applied later the same day, and worth its own section because the reason it
+could not go in with the others is the interesting part.
+
+The finding was that inbound mail can be downgraded by an active network
+attacker between a sending server and Exchange Online. SMTP's STARTTLS is
+opportunistic by design: strip the capability from the server's greeting and
+a well-behaved sender delivers in plaintext without complaint. There is
+nothing in the protocol that lets the receiving domain say "always encrypt".
+
+MTA-STS (RFC 8461) is that statement, and it deliberately is not a DNS
+record. DNS without DNSSEC is forgeable by the same attacker, so a policy
+published only in DNS could be forged by them too. The DNS record carries
+only a version and an id; the policy itself is fetched over HTTPS from
+`mta-sts.<domain>`, and the certificate is what proves it came from the
+domain's owner. The whole security property is the TLS connection. So a TXT
+record alone does not half-solve this, it mis-solves it: a sender that finds
+the record and cannot fetch the policy has been told to look and found
+nothing.
+
+That made it code. It is served by the support Worker rather than a third
+one, because this is the codebase that owns the mail path and a third deploy
+target is a third thing to remember. `src/mtaSts.ts` answers the one path on
+the one hostname and 404s everything else there, so the portal does not gain
+a second address that nobody audits. `/admin` on that hostname was checked
+live and is a 404: the Access application is scoped to
+`support.hamdam.com.au/admin`, so a second hostname reaching the console
+would have been the `/fa/admin` finding again, from a different direction.
+
+The handler is mounted **above the country check**, which is the detail most
+likely to be undone by accident. Everything below that line is the portal,
+served only where Hamdam is sold. This is not the portal. It is read by mail
+servers sitting wherever the sender's mail happens to be hosted, and this
+desk's own documentation promises that email is the one channel never
+restricted by country, precisely so someone outside the list can still reach
+a person. Geo-blocking the policy would be geo-blocking the mail.
+
+**It is in `testing` mode, not `enforce`.** A sender that cannot make a
+validated TLS connection still delivers, and files a TLS-RPT report about it.
+This is the discipline the DMARC change did not get, and the asymmetry is the
+reason: `p=reject` can only ever affect mail claiming to be *from* this
+domain, while a wrong MTA-STS policy in enforce mode stops mail arriving *at*
+the desk. That is the failure this whole document warns about, in its worst
+form, because nothing arriving looks exactly like a quiet day. TLS-RPT is
+already reporting to `dmarc@hamdam.com.au`, so the evidence for promoting is
+being collected now. A test asserts the mode, so flipping it is a change
+somebody has to look at rather than one that rides along in an unrelated
+commit.
+
+The MX pattern covers both the exact host from the MX record and
+`*.mail.protection.outlook.com`. Too generous on purpose: the wildcard still
+says "Exchange Online, with a certificate proving it", which the attacker in
+the threat model cannot satisfy, and it is what stops this becoming an outage
+the day Microsoft moves the tenant to a different host under the same suffix.
+
+The DNS half is `_mta-sts.hamdam.com.au` TXT `v=STSv1; id=20260802a;`. **That
+id is a cache key and it is the thing that will get forgotten.** Senders
+re-read the cheap TXT record often and refetch the policy only when the id
+changes, so an edited policy under an unchanged id reaches nobody until every
+cached copy expires. Policy, `MTA_STS_POLICY_ID`, TXT record: three edits,
+always together, and only two of them are in this repository.
+
+Verified live after deploying: the policy serves over HTTPS with a valid
+certificate, every other path on that hostname 404s, and the support portal
+and its own `.well-known` are unaffected.
+
+**Still open.**
+
+* **Zone SSL mode is `full`, not `full (strict)`.** Attempted on 2026-08-02
+  and not applied: the write was refused by the tooling's own guard and was
+  left for the owner rather than worked around. It is inert today in any
+  case. All four proxied records are Worker custom domains pointing at
+  `100::`, and a Worker custom domain never opens a connection to an origin,
+  so there is no origin certificate for either mode to validate. It becomes
+  real the moment one of those records points at a server, which is exactly
+  when nobody will think to check it.
+* **Access has no MFA requirement** and a 24 hour session, on a console that
+  shows every requester's name, address and ticket text. Deliberately not
+  attempted here. Access is currently three named addresses on one-time PIN,
+  which is single-factor whatever the login page implies, and the fix is not
+  a setting: it is putting an identity provider in front of it. The tenant
+  already has Entra ID with MFA, so the material is there, but wiring an IdP
+  into Access is a change that can lock the only two people out of the
+  console, and that is the owner's call to make deliberately rather than
+  something to slip into a hardening pass.

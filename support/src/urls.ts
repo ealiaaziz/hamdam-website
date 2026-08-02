@@ -74,6 +74,38 @@ export function isCrossSiteRequest(requestUrl: string, origin: string | undefine
  * dodge the redirect in production, and it is simply absent under
  * wrangler dev.
  */
+/**
+ * Paths the /fa prefix is not an alias for.
+ *
+ * The console. It is not translated, and more to the point the Cloudflare
+ * Access application in front of this Worker is scoped to the path
+ * `support.hamdam.com.au/admin`. A prefix strip that turned /fa/admin into
+ * /admin gave the console a second address that Access never saw, so the only
+ * thing refusing those requests was the Worker's own JWT check. That check
+ * did hold, which is the entire reason it exists rather than trusting the
+ * proxy. It is still a door Access cannot log, cannot rate limit and cannot
+ * attach a policy to, and one control quietly carrying two is how the next
+ * change breaks something nobody was watching.
+ */
+export const UNPREFIXED_PATHS = ['/admin'] as const;
+
+/**
+ * Where a /fa-prefixed path should actually be served from, or null to leave
+ * the request exactly as it arrived.
+ *
+ * Null covers both "no prefix to strip" and "prefixed, but not a path the
+ * prefix is allowed to reach". The second returns null rather than a 404
+ * marker on purpose: an unrewritten /fa/admin matches no route and gets the
+ * ordinary not-found, which is the honest answer for an address that was
+ * never meant to exist.
+ */
+export function localePrefixTarget(pathname: string): string | null {
+  if (pathname !== '/fa' && !pathname.startsWith('/fa/')) return null;
+  const stripped = pathname.slice(3) || '/';
+  if (UNPREFIXED_PATHS.some((p) => stripped === p || stripped.startsWith(`${p}/`))) return null;
+  return stripped;
+}
+
 export function httpsRedirectTarget(requestUrl: string, viaCloudflareEdge: boolean): string | null {
   if (!viaCloudflareEdge) return null;
   const url = new URL(requestUrl);

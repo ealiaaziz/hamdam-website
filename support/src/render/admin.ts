@@ -1,5 +1,5 @@
 import { page, priorityBadge, statusBadge, formatDateTime, isOverdue } from './layout.js';
-import { escapeHtml, textToSafeHtml, ticketPublicId } from '../ids.js';
+import { escapeHtml, stripHtml, textToSafeHtml, ticketPublicId } from '../ids.js';
 import { PRIORITY_LABEL, SLA_POLICY, type Priority } from '../itil.js';
 import type { CommentRow, TicketStatus, TicketWithRequester } from '../types.js';
 import type { DraftRow } from '../db.js';
@@ -61,6 +61,18 @@ export function adminQueuePage(opts: {
   return page({ title: 'Queue', wide: true, nav: ADMIN_NAV }, body);
 }
 
+/**
+ * A draft, as the approver reads it before deciding.
+ *
+ * The body is shown as text, not as markup. It is assembled from escaped
+ * pieces upstream, so today there is nothing dangerous in it, but this is the
+ * one place in the console where a stored string was written into the page
+ * unescaped, and "the only thing that writes this column is careful" is a
+ * property of the current code rather than of the renderer. The console's CSP
+ * would stop a script; it would not stop a convincing fake button. Rendering
+ * through the same path as every other stored string costs nothing here,
+ * because what the approver needs is the words.
+ */
 function draftsBlock(drafts: DraftRow[], ticketId: number): string {
   if (drafts.length === 0) return '';
   return drafts
@@ -73,7 +85,7 @@ function draftsBlock(drafts: DraftRow[], ticketId: number): string {
   </div>
   <p class="draft-meta">To ${escapeHtml(d.to_email)} &middot; subject ${escapeHtml(d.subject)}
   &middot; ${d.assistant_article_id ? `from article <code>${escapeHtml(d.assistant_article_id)}</code>` : 'not from a knowledge base article'}</p>
-  <div class="draft-body">${d.body_html}</div>
+  <div class="draft-body">${textToSafeHtml(stripHtml(d.body_html))}</div>
   <form method="post" action="/admin/tickets/${ticketId}/drafts/${d.id}/approve" style="display:inline">
     <button class="btn" type="submit">Approve and send</button>
   </form>

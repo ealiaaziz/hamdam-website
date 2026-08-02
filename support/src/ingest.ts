@@ -2,7 +2,8 @@ import type { Env } from './types.js';
 import { classifyTicket, slaDueDates } from './itil.js';
 import { generateTrackingToken } from './ids.js';
 import { fetchInbox, markRead, sendMail, canSendDirectly, SENDER, type InboundMessage } from './mailer.js';
-import { cleanSubject, planInbound } from './inbound.js';
+import { cleanSubject, planInbound, ticketIdFromSubject, type KnownThread } from './inbound.js';
+import { consumeRateLimit } from './rateLimit.js';
 import { detectLocale, strings } from './i18n.js';
 import { composeAssistantReplyLive, ASSISTANT_NAME } from './assistantReply.js';
 import { requestedClosure } from './agentPolicy.js';
@@ -26,7 +27,6 @@ import {
   setCheckpoint,
   setLastInboundMessageId,
   setSyncState,
-  ticketExists,
   ticketIdForConversation,
   updateTicketStatus,
   upsertRequester,
@@ -153,19 +153,30 @@ async function replyWithAssistant(env: Env, ticketId: number): Promise<void> {
   });
 }
 
+/** The ticket a candidate id names, with the one fact routing needs about it. */
+async function knownThread(env: Env, id: number | null): Promise<KnownThread | null> {
+  if (id === null) return null;
+  const ticket = await getTicketById(env.DB, id);
+  return ticket ? { id: ticket.id, requesterEmail: ticket.requester_email } : null;
+}
+
 async function handleMessage(env: Env, message: InboundMessage): Promise<'created' | 'appended' | 'skipped'> {
+  // Both candidate threads are resolved for real before routing, rather than
+  // assumed and re-checked afterwards. planInbound needs to know who owns
+  // each one to decide whether this sender may write to it, and a lookup that
+  // returns null also answers the older question of whether it exists at all:
+  // a subject naming HAM-999 now falls through to a new ticket instead of
+  // appending to nothing.
+  const [taggedTicket, conversationTicket] = await Promise.all([
+    knownThread(env, ticketIdFromSubject(message.subject)),
+    knownThread(env, await ticketIdForConversation(env.DB, message.conversationId)),
+  ]);
+
   const plan = planInbound(message, {
     alreadyProcessed: await wasProcessed(env.DB, message.internetMessageId),
-    ticketIdForConversation: await ticketIdForConversation(env.DB, message.conversationId),
-    ticketExists: () => true,
+    taggedTicket,
+    conversationTicket,
   });
-
-  // planInbound asks whether a tagged ticket exists; resolve it for real
-  // rather than assuming, so a subject naming HAM-999 does not append to
-  // nothing and silently vanish.
-  if (plan.action === 'append' && !(await ticketExists(env.DB, plan.ticketId))) {
-    return handleAsNew(env, message, plan.body);
-  }
 
   if (plan.action === 'skip') {
     await recordInbound(env.DB, {
@@ -177,6 +188,11 @@ async function handleMessage(env: Env, message: InboundMessage): Promise<'create
     });
     return 'skipped';
   }
+
+  // Everything below files the message either way. What this decides is
+  // whether the desk also answers by itself, which is the part that costs a
+  // model call and puts mail in somebody's inbox.
+  const quiet = !(await automatedRepliesAllowed(env, message.fromEmail));
 
   if (plan.action === 'append') {
     await addComment(env.DB, plan.ticketId, 'requester', message.fromName, plan.body);
@@ -199,14 +215,45 @@ async function handleMessage(env: Env, message: InboundMessage): Promise<'create
       return 'appended';
     }
 
-    await replyWithAssistant(env, plan.ticketId);
+    if (quiet) await noteSuppressed(env, plan.ticketId);
+    else await replyWithAssistant(env, plan.ticketId);
     return 'appended';
   }
 
-  return handleAsNew(env, message, plan.body);
+  return handleAsNew(env, message, plan.body, quiet);
 }
 
-async function handleAsNew(env: Env, message: InboundMessage, body: string): Promise<'created'> {
+/**
+ * Whether the desk should answer this sender by itself right now.
+ *
+ * False is not a refusal to help. The message is still read, still filed,
+ * still in the queue, and still in the mailbox. All that stops is the desk
+ * generating outbound mail in response, which is the only part an unmetered
+ * sender can turn into volume.
+ */
+async function automatedRepliesAllowed(env: Env, fromEmail: string): Promise<boolean> {
+  const outcome = await consumeRateLimit(env.DB, 'inbound_sender', fromEmail.trim().toLowerCase());
+  return outcome.allowed;
+}
+
+/**
+ * Records, on the ticket, that the desk deliberately said nothing.
+ *
+ * Written as a system note rather than only logged, because the alternative
+ * is a ticket that looks like the assistant simply failed. Whoever opens it
+ * needs to know the silence was a decision and roughly why.
+ */
+async function noteSuppressed(env: Env, ticketId: number): Promise<void> {
+  await addComment(
+    env.DB,
+    ticketId,
+    'system',
+    null,
+    'Automatic replies are paused for this sender: more messages arrived in the last hour than the desk answers by itself. Nothing has been lost, and a person replying here works normally.',
+  );
+}
+
+async function handleAsNew(env: Env, message: InboundMessage, body: string, quiet = false): Promise<'created'> {
   const subject = cleanSubject(message.subject);
   const requester = await upsertRequester(env.DB, message.fromEmail, message.fromName);
 
@@ -248,6 +295,11 @@ async function handleAsNew(env: Env, message: InboundMessage, body: string): Pro
     fromEmail: message.fromEmail,
     subject: message.subject,
   });
+
+  if (quiet) {
+    await noteSuppressed(env, ticketId);
+    return 'created';
+  }
 
   const ack = ackEmail({
     ticketId,

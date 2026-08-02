@@ -150,6 +150,28 @@ export type InboundPlan =
   | { action: 'append'; ticketId: number; body: string }
   | { action: 'create'; body: string };
 
+/** A ticket a message might belong to, and who it belongs to. */
+export interface KnownThread {
+  id: number;
+  requesterEmail: string;
+}
+
+/**
+ * Whether two addresses are the same person, for the purposes of "is this
+ * your ticket".
+ *
+ * Case and surrounding whitespace only. Deliberately not clever: no plus-tag
+ * stripping, no dot-folding, no unicode folding. Every one of those makes the
+ * comparison *looser*, and a looser comparison here is a wider set of people
+ * who count as the owner of somebody else's ticket. Gmail treating
+ * `a+x@gmail.com` as `a@gmail.com` is Gmail's business; this desk should not
+ * be guessing at another provider's aliasing rules to decide an authorisation
+ * question.
+ */
+export function sameAddress(a: string, b: string): boolean {
+  return a.trim().toLowerCase() === b.trim().toLowerCase();
+}
+
 /**
  * What to do with one message, given what the database already knows.
  *
@@ -159,7 +181,13 @@ export type InboundPlan =
  */
 export function planInbound(
   message: InboundMessage,
-  known: { alreadyProcessed: boolean; ticketIdForConversation: number | null; ticketExists: (id: number) => boolean },
+  known: {
+    alreadyProcessed: boolean;
+    /** The ticket the subject's [HAM-N] tag names, if there is one and it exists. */
+    taggedTicket: KnownThread | null;
+    /** The ticket this Exchange conversation already belongs to, if any. */
+    conversationTicket: KnownThread | null;
+  },
 ): InboundPlan {
   // The desk's own outgoing mail, and its own notifications to itself. Left
   // unchecked this is an infinite loop: the desk emails a requester, reads
@@ -179,13 +207,41 @@ export function planInbound(
   const body = messageBodyText(message);
   if (!body) return { action: 'skip', reason: 'empty body' };
 
-  // Subject tag first: it survives forwarding and client changes, whereas a
-  // conversation id does not.
+  // Adding to somebody's ticket is a write on their record, so the sender has
+  // to be them.
+  //
+  // This was missing, and the subject tag was the whole of the routing
+  // decision. Ticket ids are sequential and every requester sees their own,
+  // so `HAM-41` and `HAM-43` are free guesses: anyone could email the desk
+  // with `Subject: RE: [HAM-42] hello` and have their text filed as a
+  // requester comment on a stranger's ticket. From there the desk did the
+  // rest of the work for them. It would close that ticket if the message
+  // asked it to, and otherwise run the assistant over a thread that now
+  // contained the sender's words and email the result to the real requester,
+  // from an address that passes SPF and DKIM for this domain. Nobody had to
+  // spoof anything; the tag was the credential and it was printed in every
+  // email the desk sent.
+  //
+  // A tag from someone else is not treated as an error, because a stranger
+  // quoting a ticket number is far more likely to be a person who was
+  // forwarded a thread than an attacker. It just does not get to append: the
+  // message becomes its own ticket, which loses nothing and lands it in front
+  // of a human.
   const tagged = ticketIdFromSubject(message.subject);
-  if (tagged !== null && known.ticketExists(tagged)) return { action: 'append', ticketId: tagged, body };
+  if (tagged !== null && known.taggedTicket && known.taggedTicket.id === tagged) {
+    if (sameAddress(known.taggedTicket.requesterEmail, message.fromEmail)) {
+      return { action: 'append', ticketId: tagged, body };
+    }
+    return { action: 'create', body };
+  }
 
-  if (known.ticketIdForConversation !== null) {
-    return { action: 'append', ticketId: known.ticketIdForConversation, body };
+  // The conversation id is Exchange's own thread key and is not printed
+  // anywhere, so it is a much better secret than the tag. It is still checked
+  // against the requester, because "harder to guess" is not the same as
+  // "proves who you are", and there is no case where the right answer is to
+  // write a stranger's words onto someone else's ticket.
+  if (known.conversationTicket && sameAddress(known.conversationTicket.requesterEmail, message.fromEmail)) {
+    return { action: 'append', ticketId: known.conversationTicket.id, body };
   }
 
   return { action: 'create', body };

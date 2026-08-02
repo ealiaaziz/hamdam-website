@@ -1,0 +1,16 @@
+Contact: mailto:developer@hamdam.com.au
+Contact: https://support.hamdam.com.au/
+Expires: 2027-08-02T00:00:00.000Z
+Preferred-Languages: en, fa
+Canonical: https://hamdam.com.au/.well-known/security.txt
+Policy: https://hamdam.com.au/privacy/
+
+# Hamdam is a small team in Brisbane. If you have found something, write to
+# the address above and you will get a person, usually the same day.
+#
+# What is in scope: hamdam.com.au, support.hamdam.com.au, and the Hamdam iOS
+# app. Please do not test in ways that reach other people's data. The support
+# desk holds real requesters' names, addresses and whatever they pasted into
+# a ticket, so use your own ticket to test against, not somebody else's.
+#
+# There is no bounty. There is credit, a reply, and the fix.

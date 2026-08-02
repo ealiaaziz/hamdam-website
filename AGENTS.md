@@ -85,12 +85,51 @@ there are worth repeating here because breaking them is expensive:
    acknowledgements for tickets that no longer existed. Deleting the row does
    not recall the mail.
 
-`npm test` (236 cases), `npm run check:persian` and `node
+`npm test` (278 cases), `npm run check:persian` and `node
 scripts/check-dashes.mjs` all cover `support/` and must pass.
+
+**Inbound email is not an identity (added 2026-08-02).** A message may only be
+appended to an existing ticket when the sender's address matches that
+ticket's requester. The `[HAM-N]` subject tag is a routing hint, never a
+credential: ids are sequential and printed in every email the desk sends, so
+before this check anyone could write onto, and close, a stranger's ticket by
+guessing a number. A tag from a non-owner creates a new ticket instead.
+
+**`/fa` is not an alias for `/admin`.** Cloudflare Access is scoped to the
+path `/admin`, so a locale-prefixed alias reached the console without Access
+seeing it. `localePrefixTarget` in `src/urls.ts` holds the exclusion list;
+anything added under `/admin` inherits it automatically.
+
+**Anything a stranger types is validated and metered (added 2026-08-02).**
+The portal is the only surface anyone on the internet can reach, and every
+submission makes developer@hamdam.com.au deliver mail to an address the
+submitter chose. So: `src/validation.ts` checks the address shape and caps
+every field, and `src/rateLimit.ts` counts submissions per caller *and per
+recipient* against the `rate_limits` table. A new public route that stores
+text, spends a model call or sends an email goes through both. The limiter
+keys on `CF-Ray`, not on `CF-Connecting-IP`, because `wrangler dev` supplies
+the latter as 127.0.0.1 and keying on it throttles local development.
+
+**DMARC is `p=reject` (applied 2026-08-02).** The `hamdam.com.au` zone was
+hardened the same day: `p=reject` with relaxed alignment and reports coming
+to `dmarc@hamdam.com.au`, ten CAA records, TLS-RPT, and five stale Skype and
+GoDaddy-marketing records deleted. That means anything sending as this
+domain which is not Exchange Online is now refused rather than junked, so a
+new sender needs SPF or DKIM arranged before its first message, not after.
+MTA-STS is live too, and it is the one piece that is code rather than DNS:
+RFC 8461 requires the policy be fetched over HTTPS, so the support Worker
+serves it on a second custom domain, `mta-sts.hamdam.com.au`, above the
+country check and 404ing every other path there. It is in `testing` mode; the
+mode, `MTA_STS_POLICY_ID` in `support/src/mtaSts.ts` and the `_mta-sts` TXT
+record change together or not at all, because that id is the cache key
+senders use to decide whether to refetch. The full record, including what is
+still open, is in `support/docs/build-record.md`.
 
 Four follow-ups were raised at handover and all four were reviewed and closed
 without action on 2026-08-02. Two matter before you touch the mail path: the
 Graph client secret has not been rotated since setup, and `Mail.Send` is
 unscoped, so it grants send-as for every mailbox in the tenant. Both are
 deliberate and recorded in the closing section of
-`support/docs/build-record.md`. Do not reopen them as bugs.
+`support/docs/build-record.md`. A security review the same day is recorded in
+the section below it: read that before deciding a control is missing, because
+some of them are there now and some were weighed and left alone.
