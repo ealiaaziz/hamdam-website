@@ -924,37 +924,52 @@ function withLocalePrefix(request: Request): Request {
   const url = new URL(request.url);
   const target = localePrefixTarget(url.pathname);
 
-  // The path decides, and only the path. This header is an internal channel
-  // between this function and the handlers, so a client sending one of its
-  // own has to be cleared rather than merged with: otherwise
-  // `X-Hamdam-Locale: fa` on an English URL renders a Persian page, and the
-  // locale it sets is the locale the resulting ticket and every email on it
-  // are conducted in. Cosmetic today, and a header nobody can reach is one
-  // less thing to reason about tomorrow.
+  // Rebuilding a Request drops `cf`, and `cf` is where the country lives.
+  //
+  // This cost the Persian portal an outage, briefly and in production. The
+  // country check used to read `cf?.country ?? header('cf-ipcountry')`, and
+  // the header half was removed as hardening, on the reasoning that it could
+  // only fire in a configuration where it was forgeable. It could also fire
+  // here: every /fa request reaches the geo check as a *reconstructed*
+  // Request, whose `cf` is undefined no matter what the real one carried. So
+  // the header was not a fallback for a rare misconfiguration. It was the
+  // only thing answering the question on half the site, and removing it
+  // turned every Persian page into "not available in your country".
+  //
+  // Carried explicitly now, so the rewrite preserves what the runtime put
+  // there and the geo check reads a real country on every path. Hardening a
+  // fallback away is only safe once you know what the primary actually
+  // returns, and this is what "actually" looked like.
+  const rebuild = (rewritten: URL, headers: Headers): Request =>
+    new Request(rewritten, {
+      method: request.method,
+      headers,
+      body: request.method === 'GET' || request.method === 'HEAD' ? undefined : request.body,
+      redirect: 'manual',
+      cf: (request as Request & { cf?: unknown }).cf,
+    } as RequestInit);
+
   // Nothing to rewrite: either no prefix, or a prefixed path the prefix is
   // not allowed to reach (/fa/admin). Either way the request is served as it
   // arrived, minus any locale header a client tried to supply.
+  //
+  // The path decides the locale, and only the path. That header is an
+  // internal channel between this function and the handlers, so a client
+  // sending its own has to be cleared rather than merged with: otherwise
+  // `X-Hamdam-Locale: fa` on an English URL renders a Persian page, and the
+  // locale it sets is the locale the resulting ticket and every email on it
+  // are conducted in.
   if (target === null) {
     if (!request.headers.has(LOCALE_HEADER)) return request;
     const cleaned = new Headers(request.headers);
     cleaned.delete(LOCALE_HEADER);
-    return new Request(url, {
-      method: request.method,
-      headers: cleaned,
-      body: request.method === 'GET' || request.method === 'HEAD' ? undefined : request.body,
-      redirect: 'manual',
-    });
+    return rebuild(url, cleaned);
   }
 
   url.pathname = target;
   const headers = new Headers(request.headers);
   headers.set(LOCALE_HEADER, 'fa');
-  return new Request(url, {
-    method: request.method,
-    headers,
-    body: request.method === 'GET' || request.method === 'HEAD' ? undefined : request.body,
-    redirect: 'manual',
-  });
+  return rebuild(url, headers);
 }
 
 export default {
