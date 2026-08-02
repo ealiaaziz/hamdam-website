@@ -20,7 +20,7 @@
 // blocked page says so, because a support desk that says "no" without saying
 // "here is how instead" is just a wall.
 
-export const DEFAULT_ALLOWED_COUNTRIES = ['AU', 'NZ'] as const;
+export const DEFAULT_ALLOWED_COUNTRIES = ['AU', 'NZ', 'IR', 'AE', 'GB', 'US', 'NL'] as const;
 
 /**
  * Parses the configured allow-list. Comma-separated ISO 3166-1 alpha-2, as

@@ -22,6 +22,14 @@ describe('parseAllowedCountries', () => {
   it('drops junk without dropping the valid entries beside it', () => {
     expect(parseAllowedCountries('AU,rubbish,NZ')).toEqual(['AU', 'NZ']);
   });
+
+  it('defaults to the markets Hamdam actually sells to', () => {
+    // A Persian poetry app sold from Brisbane: the diaspora is the audience
+    // as much as the local market, so the default is wider than one country.
+    for (const country of ['AU', 'NZ', 'IR', 'AE', 'GB', 'US', 'NL']) {
+      expect(DEFAULT_ALLOWED_COUNTRIES, country).toContain(country);
+    }
+  });
 });
 
 describe('isAllowedCountry', () => {
@@ -33,10 +41,20 @@ describe('isAllowedCountry', () => {
     expect(isAllowedCountry('au', allowed)).toBe(true);
   });
 
-  it('refuses everywhere else', () => {
+  it('refuses everywhere outside the list it was given', () => {
+    // The list is the argument, not a constant: narrowing it for an
+    // incident should take effect without a code change.
     for (const country of ['US', 'GB', 'CN', 'RU', 'IR', 'SG']) {
       expect(isAllowedCountry(country, allowed), country).toBe(false);
     }
+  });
+
+  it('serves the whole default list', () => {
+    for (const country of DEFAULT_ALLOWED_COUNTRIES) {
+      expect(isAllowedCountry(country, DEFAULT_ALLOWED_COUNTRIES), country).toBe(true);
+    }
+    expect(isAllowedCountry('CN', DEFAULT_ALLOWED_COUNTRIES)).toBe(false);
+    expect(isAllowedCountry('XX', DEFAULT_ALLOWED_COUNTRIES)).toBe(false);
   });
 
   it('refuses when the origin cannot be determined', () => {

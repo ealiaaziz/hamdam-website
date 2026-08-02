@@ -308,10 +308,15 @@ Two consequences worth knowing:
 
 ## Where the portal answers from
 
-Australia and New Zealand only, set in `ALLOWED_COUNTRIES` in
-`wrangler.jsonc`. The portal is the one unauthenticated, internet-facing part
-of this system, and the customers are in two countries, so serving the rest
-of the world is exposure bought for nothing.
+Set in `ALLOWED_COUNTRIES` in `wrangler.jsonc`. Currently Australia, New
+Zealand, Iran, the UAE, the United Kingdom, the United States and the
+Netherlands: Hamdam is a Persian poetry app sold from Brisbane, so the
+audience is the diaspora as much as the local market.
+
+The portal is the one unauthenticated, internet-facing part of this system.
+Everywhere outside that list is refused, not because those visitors are
+suspect but because serving a country nobody is selling to is exposure bought
+for nothing.
 
 Two locks, deliberately:
 
@@ -329,14 +334,16 @@ The WAF rule, in **Security, WAF, Custom rules, Create rule** on the
 ```
 Field       Hostname          equals  support.hamdam.com.au
   and
-Field       Country       not in     Australia, New Zealand
+Field       Country       not in     Australia, New Zealand, Iran,
+                                       United Arab Emirates, United Kingdom,
+                                       United States, Netherlands
 Action      Block
 ```
 
 Expression form, if editing as text:
 
 ```
-(http.host eq "support.hamdam.com.au" and not ip.src.country in {"AU" "NZ"})
+(http.host eq "support.hamdam.com.au" and not ip.src.country in {"AU" "NZ" "IR" "AE" "GB" "US" "NL"})
 ```
 
 Unknown origins are refused, not waved through. Cloudflare reports `XX` when
@@ -350,10 +357,10 @@ route through is just a wall.
 
 Two consequences worth knowing before this bites:
 
-* An agent travelling outside AU or NZ cannot open `/admin`, even signed in
+* An agent travelling outside the list cannot open `/admin`, even signed in
   through Access. Widen `ALLOWED_COUNTRIES` and the WAF rule for the trip, or
   work the queue by email.
-* A customer on holiday cannot open their own tracking link. They get the
+* A customer outside the list cannot open their own tracking link. They get the
   blocked page, which tells them to email, and their ticket continues in that
   thread.
 

@@ -84,9 +84,9 @@ export function outOfRegionPage(): string {
   return page(
     { title: 'Support by email' },
     `
-<h1>This page is only available in Australia and New Zealand</h1>
-<p class="lede">The support portal serves the countries Hamdam is sold in.
-That is a deliberate restriction, and it does not mean we cannot help you.</p>
+<h1>The support portal is not available in your country</h1>
+<p class="lede">The portal serves the countries Hamdam is sold in. That is a
+deliberate restriction, and it does not mean we cannot help you.</p>
 <div class="card">
   <p><strong>Email <a href="mailto:developer@hamdam.com.au">developer@hamdam.com.au</a></strong>
   from anywhere in the world and a ticket opens straight away. You will get a
