@@ -176,8 +176,19 @@ describe('sanitiseModelReply', () => {
     expect(r?.articleId).toBe(KB_ARTICLES[0].id);
   });
 
-  it('rejects an ask with no question, and a repeat of one already asked', () => {
-    expect(sanitiseModelReply({ ...ok, action: 'ask', question: null }, base)).toBeNull();
+  it('uses the body as the question when the field was left empty', () => {
+    // Seen live: a good "what can I help you with?" was discarded over the
+    // bookkeeping field, and the requester got a handover instead.
+    const r = sanitiseModelReply({ ...ok, action: 'ask', body: 'What can I help you with?', question: '' }, base);
+    expect(r?.action).toBe('ask');
+    expect(r?.question).toBe('What can I help you with?');
+  });
+
+  it('rejects an ask whose body is too long to be a question', () => {
+    expect(sanitiseModelReply({ ...ok, action: 'ask', body: 'x'.repeat(400), question: '' }, base)).toBeNull();
+  });
+
+  it('rejects a repeat of a question already asked', () => {
     expect(
       sanitiseModelReply({ ...ok, action: 'ask', question: 'Which device?' }, { ...base, askedQuestions: ['Which device?'] }),
     ).toBeNull();
@@ -222,7 +233,7 @@ describe('validateModelReply', () => {
       [{ ...ok, body: '   ' }, 'empty body'],
       [{ ...ok, body: 'x'.repeat(MAX_REPLY_CHARS + 1) }, 'over the'],
       [{ ...ok, body: 'I have checked your account.' }, 'claims a person acted'],
-      [{ ...ok, action: 'ask', question: '' }, 'no question'],
+      [{ ...ok, action: 'ask', body: 'x'.repeat(400), question: '' }, 'no usable body'],
     ];
     for (const [input, expected] of cases) {
       const result = validateModelReply(input, base);

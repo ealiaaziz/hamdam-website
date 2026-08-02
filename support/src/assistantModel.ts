@@ -339,9 +339,18 @@ export function validateModelReply(
 
   let question = blank(r.question) ? null : String(r.question).trim();
   if (action !== 'ask') question = null;
+
+  // The question field exists to stop the same question being asked twice.
+  // When the model asks well but leaves the field empty, the body is the
+  // question, and throwing away a good reply over the bookkeeping is the
+  // wrong trade. Seen live: a content-free ticket got a perfectly sensible
+  // "what can I help you with?" and the requester received a handover
+  // instead, because the field was blank.
+  if (action === 'ask' && !question && body.length <= 300) question = body;
+  if (action === 'ask' && !question) return { rejected: 'action is ask with no question and no usable body' };
+
   // A question already asked is not a question, it is a loop.
   if (question && input.askedQuestions.includes(question)) return { rejected: 'repeats a question already asked' };
-  if (action === 'ask' && !question) return { rejected: 'action is ask with no question' };
 
   return { reply: { action, body, articleId, question, referenceId } };
 }
