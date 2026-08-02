@@ -1,7 +1,7 @@
 import { Hono, type Context } from 'hono';
 import type { Env } from './types.js';
 import { APP_CSS } from './render/styles.js';
-import { submitFormPage, trackLookupPage } from './render/portal.js';
+import { outOfRegionPage, submitFormPage, trackLookupPage } from './render/portal.js';
 import { ticketStatusPage } from './render/status.js';
 import { adminQueuePage, adminTicketPage } from './render/admin.js';
 import { classifyTicket, parsePriority, slaDueDates, type Impact, type Urgency } from './itil.js';
@@ -13,6 +13,7 @@ import { extractAccessToken, fetchAccessKeys, verifyAccessJwt } from './access.j
 import { KB_ARTICLES } from './kb.js';
 import { suggestionBlock } from './render/agentSuggestion.js';
 import { canSendDirectly, sendMail } from './mailer.js';
+import { isAllowedCountry, parseAllowedCountries } from './geo.js';
 import { ingestInbox } from './ingest.js';
 import { requestedClosure } from './agentPolicy.js';
 
@@ -179,6 +180,29 @@ app.use('*', async (c, next) => {
   c.header('Referrer-Policy', 'strict-origin-when-cross-origin');
   c.header('Permissions-Policy', 'geolocation=(), camera=(), microphone=(), payment=()');
   c.header('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
+});
+
+// Serve only where Hamdam is sold.
+//
+// Runs after the HTTPS redirect and inside the header middleware, so a
+// refusal still carries CSP, HSTS and the rest: a blocked response is still
+// a response, and stripping its headers would make the block itself the
+// weakest page on the site.
+//
+// The Cloudflare WAF rule is the real control and stops this traffic before
+// a Worker runs. This is what still refuses if that rule is ever removed,
+// which would otherwise fail silently and stay failed.
+//
+// Local development has no CF-Ray and no country, and is left alone. That is
+// the same signal the HTTPS redirect uses, and it cannot be forged in
+// production because Cloudflare overwrites CF-Ray at the edge.
+app.use('*', async (c, next) => {
+  if (!c.req.header('cf-ray')) return next();
+
+  const country = (c.req.raw as Request & { cf?: { country?: string } }).cf?.country ?? c.req.header('cf-ipcountry');
+  if (isAllowedCountry(country, parseAllowedCountries(c.env.ALLOWED_COUNTRIES))) return next();
+
+  return c.html(outOfRegionPage(), 403);
 });
 
 // ---- static -----------------------------------------------------------

@@ -109,6 +109,15 @@ export interface Env {
    */
   ASSISTANT_DAILY_CALL_LIMIT?: string;
   /**
+   * Countries the portal serves, comma-separated ISO 3166-1 alpha-2. Plain
+   * config in wrangler.jsonc, because widening or narrowing it is an
+   * operational decision that should be visible in a diff.
+   *
+   * Unset or unparseable falls back to AU and NZ rather than to serving
+   * everyone: a typo here should not quietly open the site to the world.
+   */
+  ALLOWED_COUNTRIES?: string;
+  /**
    * Microsoft Graph app-only credentials, so the Worker can send mail as
    * developer@hamdam.com.au the moment there is something to send, instead
    * of leaving it for the hourly Routine.

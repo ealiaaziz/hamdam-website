@@ -71,3 +71,31 @@ ${opts.error ? `<div class="notice notice--error">${escapeHtml(opts.error)}</div
 `;
   return page({ title: 'Track a ticket', nav: [{ href: '/', label: 'Submit a ticket' }] }, body);
 }
+
+/**
+ * What someone outside the served countries gets.
+ *
+ * Not a bare 403. The person on the other end is usually a customer on
+ * holiday, not an attacker, and the one thing they need is the route that
+ * still works. Email is not geo-restricted: the cron reads it and opens a
+ * ticket exactly as this form would.
+ */
+export function outOfRegionPage(): string {
+  return page(
+    { title: 'Support by email' },
+    `
+<h1>This page is only available in Australia and New Zealand</h1>
+<p class="lede">The support portal serves the countries Hamdam is sold in.
+That is a deliberate restriction, and it does not mean we cannot help you.</p>
+<div class="card">
+  <p><strong>Email <a href="mailto:developer@hamdam.com.au">developer@hamdam.com.au</a></strong>
+  from anywhere in the world and a ticket opens straight away. You will get a
+  reply within a minute, and everything the portal can do happens in that
+  thread instead.</p>
+  <p class="hint">Include as much detail as you can: what you were doing, what
+  you expected, and what happened instead. If it is about the Hamdam app, say
+  which iPhone you are on.</p>
+</div>
+`,
+  );
+}
