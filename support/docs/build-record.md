@@ -592,3 +592,146 @@ and its own `.well-known` are unaffected.
   into Access is a change that can lock the only two people out of the
   console, and that is the owner's call to make deliberately rather than
   something to slip into a hardening pass.
+
+---
+
+## Audit of the red team pass, 2026-08-02
+
+The morning's review, reviewed. Not a re-run of the same checks: the question
+here was narrower and less comfortable, which is whether the fixes actually
+fixed anything and what the reviewer took on trust from himself.
+
+One of them did not.
+
+### The console's second front door was never closed
+
+`/fa/admin` was found reaching the console handler without Cloudflare Access
+seeing the request, and was fixed by excluding `/admin` from the paths the
+`/fa` prefix may reach. That fix was verified by requesting `/fa/admin` and
+observing a 404, and there the checking stopped.
+
+`/fa/%61dmin` returned the console's own refusal.
+
+The exclusion list compared the **raw** pathname. Nothing downstream routes on
+the raw pathname: the router decodes first. So `/fa/%61dmin` is not the string
+`/fa/admin`, the exclusion never applied, the path was rewritten to
+`/%61dmin`, and the router then decoded it and matched `/admin`. The list was
+intact and correct and was simply never consulted about the request that
+mattered. `/fa/adm%69n`, `/fa/%61%64%6d%69%6e` and the whole `/admin/*` tree
+behaved the same way.
+
+The consequence is exactly the one written up in the morning, unchanged: an
+address for the console that Access cannot see, log, rate limit or attach a
+policy to, held shut only by the Worker's own JWT check. Which held, again.
+
+Two things about this are worth more than the bug.
+
+The first is that the same pass, on the same day, tested `/Admin`, `//admin`,
+`/admin/../admin` and `/admin%2f` against the *unprefixed* console and
+recorded them as refused. The encoding trick was in the reviewer's hands. It
+was applied to the path that was already safe and not to the path being
+fixed, because that one had just been written and felt understood. A fix is
+the least tested code in any change and it is the code most worth attacking.
+
+The second is that "verified" meant one request. The finding said the prefix
+made `/fa` an alias for every route; the verification checked one spelling of
+one route. Confirming a fix means trying to defeat it, not observing it work
+once.
+
+The comparison now runs on a canonical form: decoded once to mirror the
+router, then slashes collapsed, dot segments resolved, and lowercased. The
+last three are stricter than the router is known to be, deliberately. A check
+that is correct only while Hono keeps matching case-sensitively is a check a
+dependency upgrade can turn back into a bypass, and this door has now been
+found open twice. Undecodable input fails closed. The rewrite still targets
+the original path and never the canonical one, because normalising the
+request itself would smuggle one route into another, which is the bug rather
+than the fix.
+
+Fixed, deployed, and re-verified against production across twelve spellings.
+
+### The documentation described a control that does not exist
+
+Three files said the rate limiter "keys on `CF-Ray`, not on
+`CF-Connecting-IP`". It does not. It *counts* CF-Connecting-IP and *gates* on
+CF-Ray, limiting nothing when CF-Ray is absent so that local development is
+not throttled. Two headers, two jobs.
+
+The code is right and the prose was wrong, which is the more dangerous way
+round: the next person reasoning about whether the limiter can be defeated
+would have reasoned about the wrong key. Corrected in `AGENTS.md` and here.
+
+### Open, and not fixed here
+
+These are design decisions rather than defects, and each one costs something
+real to close. They are the owner's to prioritise.
+
+* **The inbound ownership check is only as strong as the sender's own
+  domain.** The morning's fix routes a reply onto a ticket only when the
+  sender's address matches the requester's. That address is the `From`
+  header, which is authenticated only when the sender's domain publishes an
+  enforcing DMARC policy and Exchange honours it. For a requester on a domain
+  without one, `From:` is a claim. This repository says out loud that inbound
+  email is not an identity, and then uses it as one. Graph exposes the
+  received `Authentication-Results`; requiring `dmarc=pass` or `dkim=pass`
+  before treating a sender as a ticket's owner would make the check mean what
+  the document already says it means.
+* **The rate limit keys are literal.** `victim+1@gmail.com` and
+  `victim+2@gmail.com` are separate buckets that share one inbox, and an IPv6
+  caller gets a fresh bucket per address out of a /64 they already own. The
+  refusal to fold plus-tags is *correct* where it came from, which is
+  deciding who owns a ticket; carrying the same literal comparison into
+  metering means the per-recipient ceiling is a speed bump. Metering should
+  fold; authorisation should not.
+* **The two doors have inconsistent ceilings, and the wrong one is looser.**
+  The portal allows 5 tickets per recipient per hour. The mailbox has no
+  per-recipient limit at all, only 20 per sender, and since the
+  acknowledgement goes to the `From` address that is 20 tickets and roughly
+  40 pieces of mail per hour into an address of the sender's choosing, from a
+  domain that now passes SPF, DKIM and DMARC. The email path was described as
+  the gentler one. To a stranger's inbox it is the more permissive one.
+* **The console has no allowlist in the Worker.** The JWT check proves the
+  assertion is genuine and issued for this application, and then trusts
+  whoever it names. Who counts as an agent lives entirely in one Access
+  policy, so widening that policy widens the console silently. Everywhere
+  else this codebase argues for two locks: the WAF rule *and* `geo.ts`, the
+  Access proxy *and* the JWT check. An `ADMIN_EMAILS` check is the missing
+  second lock on the one surface that shows every requester's name, address
+  and ticket text.
+* **`CF-Ray` is now load-bearing four times over**: the HTTPS redirect, the
+  country check, the rate limiter's gate, and the local-development console
+  bypass. Each use is individually sound and they share a single assumption.
+  Any future path where this Worker runs without CF-Ray, a service binding or
+  a test harness among them, opens all four at once.
+* **Bidirectional and zero-width characters are not stripped.** `cleanText`
+  removes C0 controls and leaves U+202E and friends. On a desk that is
+  deliberately bilingual and renders RTL, a subject line can be made to
+  display in an order that is not the order it is stored in, in the console
+  and in the escalation email, both read by the people deciding what a ticket
+  is.
+* **The processed-message ledger is keyed on a value the sender chooses.**
+  `internetMessageId` is the sender's `Message-ID`. Rows can be inserted
+  freely, and a message whose id has already been recorded is skipped.
+  Exchange's ids are not predictable enough to make that a suppression attack
+  today; it is still an attacker-controlled primary key.
+* **Two more stale DNS records, and one kept for a wrong reason.**
+  `msoid.hamdam.com.au` is a retired Office 365 client-configuration record
+  and was not in the morning's stale list. `_domainconnect` was deliberately
+  kept, on the reasoning that removing it breaks the registrar's setup flow.
+  That reasoning is wrong: this zone is served by Cloudflare nameservers, so
+  GoDaddy's Domain Connect flow does not apply to it.
+
+### What held under a second look
+
+Worth recording, because the point of an audit is not to manufacture a
+finding. Every rendering path escapes: the layout escapes the page title, the
+thread escapes both author and body, and the emails, which have no CSP to
+fall back on, escape as carefully as the pages do. Tracking tokens are 122
+bits from `crypto.randomUUID` and compared in constant time. The Access JWT
+check pins RS256, verifies issuer, audience, expiry and not-before, requires
+an email claim, and verifies the signature against the published keys. The
+ingest checkpoint advances only on a clean pass. And the workers.dev
+subdomain and version preview URLs were both confirmed disabled on the
+deployed Worker, which matters more than it sounds: either one would have
+been a hostname serving this desk with no WAF rule and no Access application
+in front of it.

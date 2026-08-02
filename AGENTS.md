@@ -106,9 +106,12 @@ submission makes developer@hamdam.com.au deliver mail to an address the
 submitter chose. So: `src/validation.ts` checks the address shape and caps
 every field, and `src/rateLimit.ts` counts submissions per caller *and per
 recipient* against the `rate_limits` table. A new public route that stores
-text, spends a model call or sends an email goes through both. The limiter
-keys on `CF-Ray`, not on `CF-Connecting-IP`, because `wrangler dev` supplies
-the latter as 127.0.0.1 and keying on it throttles local development.
+text, spends a model call or sends an email goes through both. The limiter counts
+`CF-Connecting-IP` but *gates* on `CF-Ray`: it limits nothing when CF-Ray is
+absent, because `wrangler dev` supplies CF-Connecting-IP as 127.0.0.1 and
+counting it would throttle local development. Two different headers doing two
+different jobs, and this file said the wrong one until an audit read the code
+on 2026-08-02.
 
 **DMARC is `p=reject` (applied 2026-08-02).** The `hamdam.com.au` zone was
 hardened the same day: `p=reject` with relaxed alignment and reports coming
