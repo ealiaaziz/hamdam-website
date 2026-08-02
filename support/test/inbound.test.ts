@@ -7,6 +7,7 @@ import type { InboundMessage } from '../src/mailer.js';
 // the cases that decide whether it is a safe one.
 
 const message = (over: Partial<InboundMessage> = {}): InboundMessage => ({
+  id: 'AAMkAGabc',
   internetMessageId: '<abc@example.com>',
   conversationId: 'conv-1',
   subject: 'Verse will not load',

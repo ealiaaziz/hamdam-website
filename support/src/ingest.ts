@@ -1,7 +1,7 @@
 import type { Env } from './types.js';
 import { classifyTicket, slaDueDates } from './itil.js';
 import { generateTrackingToken } from './ids.js';
-import { fetchInbox, sendMail, canSendDirectly, SENDER, type InboundMessage } from './mailer.js';
+import { fetchInbox, markRead, sendMail, canSendDirectly, SENDER, type InboundMessage } from './mailer.js';
 import { cleanSubject, planInbound } from './inbound.js';
 import { detectLocale, strings } from './i18n.js';
 import { composeAssistantReplyLive, ASSISTANT_NAME } from './assistantReply.js';
@@ -56,6 +56,8 @@ export interface IngestSummary {
   appended: number;
   skipped: number;
   failed: number;
+  /** Handled, but the read flag would not stick. Usually a missing permission. */
+  unread: number;
 }
 
 function dailyCallLimit(env: Env): number {
@@ -280,7 +282,7 @@ async function handleAsNew(env: Env, message: InboundMessage, body: string): Pro
  * One message failing does not stop the others, for the same reason.
  */
 export async function ingestInbox(env: Env): Promise<IngestSummary> {
-  const summary: IngestSummary = { fetched: 0, created: 0, appended: 0, skipped: 0, failed: 0 };
+  const summary: IngestSummary = { fetched: 0, created: 0, appended: 0, skipped: 0, failed: 0, unread: 0 };
   if (!canSendDirectly(env)) return summary;
 
   const since = await getCheckpoint(env.DB);
@@ -307,10 +309,31 @@ export async function ingestInbox(env: Env): Promise<IngestSummary> {
       const outcome = await handleMessage(env, message);
       summary[outcome === 'created' ? 'created' : outcome === 'appended' ? 'appended' : 'skipped']++;
       if (message.receivedAt > highWater) highWater = message.receivedAt;
+
+      // Only now, and for skips too. A bounce or a piece of the desk's own
+      // mail has been dealt with just as much as a real ticket has, and
+      // leaving those unread would fill the mailbox with exactly the traffic
+      // nobody needs to look at.
+      //
+      // Failing to mark read is untidy, not broken. The work is already done
+      // and recorded, so it is logged and the run continues rather than
+      // being rolled back over a flag.
+      const marked = await markRead(env, message.id);
+      if (!marked.sent) {
+        summary.unread++;
+        console.warn(`ingest: could not mark ${message.internetMessageId} read: ${marked.reason}`);
+      }
     } catch (error) {
       summary.failed++;
       console.error(`ingest ${message.internetMessageId}: ${error instanceof Error ? error.message : String(error)}`);
     }
+  }
+
+  // Surfaced in the database, because the likely cause is a missing
+  // permission rather than a transient error, and a permission does not fix
+  // itself while nobody is looking.
+  if (summary.unread > 0) {
+    await setSyncState(env.DB, 'last_ingest_error', `${new Date().toISOString()} could not mark ${summary.unread} message(s) read, check Mail.ReadWrite`);
   }
 
   // Only past messages that worked. A failure holds the line so the next run
