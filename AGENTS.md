@@ -112,11 +112,13 @@ right for counting and wrong for deciding who somebody is. One ceiling,
 which is the single point the portal, the mailbox and anything added later
 all cross. Escalation is exempt by address.
 
-**The console has two locks, and the second one is off until a secret is
-set.** `ADMIN_EMAILS` is checked in the Worker after the Access assertion
-verifies, so widening the Cloudflare Access policy does not silently widen
-the console. Unset admits whoever Access admits and the console says so on
-every page. Set it with `npx wrangler secret put ADMIN_EMAILS`.
+**The console has two locks.** `ADMIN_EMAILS` is checked in the Worker after
+the Access assertion verifies, so widening the Cloudflare Access policy does
+not silently widen the console. It is set, to the same three addresses the
+Access policy names; keep the two in step the way the country list is kept in
+step between the WAF rule and `geo.ts`. Unset would admit whoever Access
+admits, and the console shows a banner on every page while that is the case.
+`npx wrangler secret put ADMIN_EMAILS`, comma-separated.
 
 **`/fa` is not an alias for `/admin`, however the path is spelled.**
 Cloudflare Access is scoped to the path `/admin`, so a locale-prefixed alias

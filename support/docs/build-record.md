@@ -822,9 +822,21 @@ Unset admits everyone, which is how the desk has been running, and the
 console says so on every page instead of pretending. Failing closed is the
 right instinct and it was the wrong trade here: the deploy introducing the
 file would have locked the only two people out of the console they would
-then need in order to fix it. **It is not a second lock until the secret is
-set**, and that needs the addresses on the Access policy, which are not
-knowable from inside this repository.
+then need in order to fix it.
+
+**The secret is set.** The three addresses were read from the Access policy
+itself through the Cloudflare API rather than guessed, which is the only way
+to set this without risking a lockout: an allowlist assembled from memory is
+a lockout with extra steps. They are `azizollahi@live.com`,
+`developer@hamdam.com.au` and the account's Apple private relay address. The
+two lists now agree, and the point is that they can now *disagree*: widening
+the Access policy no longer widens the console on its own, and the console
+stops showing its warning banner.
+
+Keep them in step the way the country list is kept in step between the WAF
+rule and `geo.ts`. Adding somebody to Access without adding them here gives
+them a 403 from the Worker, which is the safe direction and still a
+confusing ten minutes for whoever hits it.
 
 ### Smaller, and one of them is not small
 
@@ -882,7 +894,19 @@ before the audit raised them again:
   `../README.md`. This is the largest single risk in the system.
 * **The Graph client secret has never been rotated**, and it has been quoted
   in a chat transcript.
-* **Cloudflare Access still has no MFA** and a 24 hour session. The tenant has
-  Entra ID with MFA available; wiring it in as the Access identity provider
-  is the fix, and it is the change that can lock both agents out, so it is
-  deliberately not something to slip into a hardening pass.
+* **Cloudflare Access still has no MFA** and a 24 hour session. Both are
+  dashboard changes: the API token this work used can read the Access
+  application and its policy, which is how the allowlist above was set
+  accurately, and Cloudflare refuses writes to Access for this
+  authentication scheme.
+
+  The session duration is the easy half, in the application's own settings,
+  and eight hours is a working day rather than a day and a night.
+
+  MFA is not a setting. Access currently authenticates three addresses by
+  one-time PIN, which is possession of an inbox and is single-factor whatever
+  the login page implies. The fix is to add Entra ID as the identity
+  provider, which the tenant already has with MFA enforced. It is also the
+  change that can lock both agents out of the console, so it wants doing
+  deliberately, with the one-time PIN policy left in place until the new one
+  is proven.
