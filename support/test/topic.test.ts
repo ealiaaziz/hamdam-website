@@ -73,3 +73,26 @@ describe('classifyTicket', () => {
     expect(r.floored).toBe(false);
   });
 });
+
+describe('article symptoms do not reach past this desk', () => {
+  // A Windows 11 password question matched the Hamdam purchase article on
+  // "locked out" and came back asking which Apple ID they bought with. The
+  // symptom list was describing a feeling, not this product.
+  it('leaves general computing questions unmatched', async () => {
+    const { matchArticles } = await import('../src/kb.js');
+    for (const text of [
+      'How does Windows 11 password reset work? I am locked out of my work laptop.',
+      'I cannot sign in to my work email',
+      'my printer will not connect',
+    ]) {
+      expect(matchArticles(text).confidence, text).toBe('none');
+    }
+  });
+
+  it('still matches the app problem it is for', () => {
+    return import('../src/kb.js').then(({ matchArticles }) => {
+      const m = matchArticles('I paid but Hamdam Plus is not working after restore purchase');
+      expect(m.best?.article.id).toBe('purchase-not-appearing');
+    });
+  });
+});

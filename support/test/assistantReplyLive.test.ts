@@ -9,7 +9,7 @@ import type { ModelReply } from '../src/assistantModel.js';
 
 const base: AssistantReplyInput = {
   priority: 'P4',
-  conversationText: 'cannot sign in, subscription missing',
+  conversationText: 'paid but Hamdam Plus is not working, subscription missing',
   assistantTurns: 0,
   askedQuestions: [],
   rejectedArticles: [],

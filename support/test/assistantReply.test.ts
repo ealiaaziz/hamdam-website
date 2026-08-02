@@ -24,7 +24,7 @@ describe('composeAssistantReply', () => {
   });
 
   it('offers a matching article', () => {
-    const r = composeAssistantReply({ ...base, conversationText: 'cannot sign in, subscription missing' });
+    const r = composeAssistantReply({ ...base, conversationText: 'paid but Hamdam Plus is not working, subscription missing' });
     expect(r.action).toBe('send_solution');
     expect(r.body).toContain('A purchase or subscription is not showing up');
   });
@@ -33,7 +33,7 @@ describe('composeAssistantReply', () => {
     // The HAM-3 bug, as an assertion.
     const r = composeAssistantReply({
       ...base,
-      conversationText: 'cannot sign in, subscription missing',
+      conversationText: 'paid but Hamdam Plus is not working, subscription missing',
       rejectedArticles: ['purchase-not-appearing'],
     });
     expect(r.articleId).not.toBe('purchase-not-appearing');
@@ -43,7 +43,7 @@ describe('composeAssistantReply', () => {
   it('admits it is out of ideas once everything has been rejected', () => {
     const r = composeAssistantReply({
       ...base,
-      conversationText: 'cannot sign in, subscription missing',
+      conversationText: 'paid but Hamdam Plus is not working, subscription missing',
       rejectedArticles: ['purchase-not-appearing', 'verse-not-loading', 'change-notification-time'],
     });
     expect(r.action).toBe('escalate');
@@ -85,14 +85,14 @@ describe('composeAssistantReply', () => {
   it('still says it is out of ideas when the topic did match and was rejected', () => {
     const r = composeAssistantReply({
       ...base,
-      conversationText: 'cannot sign in, subscription missing',
+      conversationText: 'paid but Hamdam Plus is not working, subscription missing',
       rejectedArticles: ['purchase-not-appearing'],
     });
     expect(r.body).toContain('run out of things');
   });
 
   it('escalates visibly on P1 rather than going quiet', () => {
-    const r = composeAssistantReply({ ...base, priority: 'P1', conversationText: 'cannot sign in, subscription missing' });
+    const r = composeAssistantReply({ ...base, priority: 'P1', conversationText: 'paid but Hamdam Plus is not working, subscription missing' });
     expect(r.escalated).toBe(true);
     expect(r.body.length).toBeGreaterThan(0);
   });
@@ -105,14 +105,14 @@ describe('composeAssistantReply', () => {
 
   it('never claims to be a person', () => {
     expect(ASSISTANT_NAME).toContain('automated');
-    for (const text of ['cannot sign in, subscription missing', 'locked out', 'nonsense']) {
+    for (const text of ['paid but Hamdam Plus is not working, subscription missing', 'locked out', 'nonsense']) {
       const r = composeAssistantReply({ ...base, conversationText: text });
       expect(r.body).not.toMatch(/\bI have looked into\b|\bour engineer\b|\bI checked your account\b/i);
     }
   });
 
   it('only ever quotes steps from the matched article', () => {
-    const r = composeAssistantReply({ ...base, conversationText: 'cannot sign in, subscription missing' });
+    const r = composeAssistantReply({ ...base, conversationText: 'paid but Hamdam Plus is not working, subscription missing' });
     expect(r.body).toContain('Restore the purchase from the App Store');
     expect(r.body).not.toContain('reinstall');
   });

@@ -43,6 +43,9 @@ export const ASSISTANT_MODEL = '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
  */
 export const MAX_REPLY_CHARS = 1600;
 
+/** How long to wait on inference before answering from the knowledge base. */
+export const MODEL_TIMEOUT_MS = 20_000;
+
 export type ModelAction = 'answer' | 'ask' | 'escalate';
 
 export interface ModelReply {
@@ -80,55 +83,63 @@ export interface ModelReplyInput {
   alreadyEscalated?: boolean;
 }
 
-// The response shape.
+// The reply shape is described to the model in words, in the final turn,
+// rather than as a decoding grammar.
 //
-// Deliberately the dullest schema that can express the answer: four plain
-// strings, no unions, no enum, no additionalProperties. Workers AI compiles
-// this into a decoding grammar, and the richer version of this schema was
-// rejected outright with "4009: an internal server error occurred", which is
-// what a grammar that will not compile looks like from the outside.
-//
-// So "no article" is the empty string rather than null, and the three legal
-// actions are described rather than enumerated. Nothing is lost: the values
-// are checked in sanitiseModelReply either way, which is where they have to
-// be checked regardless, because a schema constrains what the model emits
-// and not whether it means anything.
-const REPLY_SCHEMA = {
-  type: 'object',
-  properties: {
-    action: {
-      type: 'string',
-      description:
-        'Exactly one of: answer (you are giving them something to try), ask (you need one more detail first), escalate (a person should take this).',
-    },
-    body: {
-      type: 'string',
-      description: 'The message the requester reads, in plain text. No greeting line, no sign-off.',
-    },
-    article_id: {
-      type: 'string',
-      description: 'The id of the reviewed article this answer came from. Empty string if it came from general knowledge.',
-    },
-    question: {
-      type: 'string',
-      description: 'When action is ask, the single question you need answered. Empty string otherwise.',
-    },
-    reference_id: {
-      type: 'string',
-      description: 'The id of the how_hamdam_works fact this answer came from. Empty string if it did not come from one.',
-    },
-  },
-  required: ['action', 'body', 'article_id', 'question', 'reference_id'],
-} as const;
+// Workers AI documents JSON mode as supported on this model and has never
+// once honoured it here: the request either comes back 4009, or comes back
+// as prose that does not parse. The schema is gone rather than kept as a
+// disabled first attempt, because an attempt that has never succeeded is not
+// a fallback, it is a guaranteed wasted round trip on every reply, and two
+// sequential inference calls on a free tier is what timed out a request with
+// a person waiting on it. See JSON_INSTRUCTION below for what replaced it,
+// and validateModelReply for the checking that was always doing the real
+// work anyway.
 
 /**
- * The system prompt. Pure and exported so its rules can be asserted in tests
- * rather than reviewed by reading.
+ * The reference entries worth putting in front of the model for this ticket.
  *
- * The article text is included verbatim. The steps a requester is told to
- * follow are the desk's words, reviewed by a person; the model's job is to
- * choose which of them apply and say so readably.
+ * Sending all fourteen was the obvious thing and it made replies worse, not
+ * better. A 70B model given four thousand tokens of background and asked for
+ * a two paragraph answer started emitting degenerate repetition, and the
+ * round trip got slow enough to time out a request with a person waiting on
+ * it. Relevance beats completeness when the context is the scarce thing.
+ *
+ * Scored on word overlap, not embeddings: the corpus is fourteen documents
+ * about one app, and the failure mode of a crude scorer here is including a
+ * fact that turns out not to matter, which costs tokens and nothing else.
+ * Crisis guidance is never scored out, because the one ticket where it is
+ * needed is the one where nobody gets to retry.
  */
+export const ALWAYS_INCLUDED = ['wellbeing-boundaries'];
+export const MAX_REFERENCE_FACTS = 5;
+
+export function selectReference(
+  text: string,
+  reference: readonly AppReference[] = APP_REFERENCE,
+  limit = MAX_REFERENCE_FACTS,
+): AppReference[] {
+  const words = new Set(
+    text
+      .toLowerCase()
+      .split(/[^a-z0-9]+/)
+      .filter((w) => w.length > 3),
+  );
+
+  const scored = reference
+    .filter((r) => !ALWAYS_INCLUDED.includes(r.id))
+    .map((r) => {
+      const haystack = `${r.id} ${r.title} ${r.body}`.toLowerCase();
+      let score = 0;
+      for (const word of words) if (haystack.includes(word)) score++;
+      return { entry: r, score };
+    })
+    .sort((a, b) => b.score - a.score || a.entry.id.localeCompare(b.entry.id));
+
+  const always = reference.filter((r) => ALWAYS_INCLUDED.includes(r.id));
+  return [...always, ...scored.slice(0, limit).map((s) => s.entry)];
+}
+
 export function buildSystemPrompt(
   articles: readonly KbArticle[],
   reference: readonly AppReference[] = APP_REFERENCE,
@@ -397,9 +408,11 @@ const JSON_INSTRUCTION = `Now give your reply as a single JSON object and nothin
  * other because of how it was obtained.
  */
 export async function generateModelReply(ai: Ai, input: ModelReplyInput): Promise<ModelReply | null> {
-  const system = buildSystemPrompt(input.articles);
+  const system = buildSystemPrompt(input.articles, selectReference(`${input.ticketSubject}\n${input.turns.map((t) => t.body).join('\n')}`));
   const conversation = buildMessages(input);
 
+  // Someone is looking at a spinner. Past this, a plainer answer now beats a
+  // better one they will not wait for.
   const call = async (extra: Record<string, unknown>, extraTurns: { role: string; content: string }[] = []) =>
     (await ai.run(ASSISTANT_MODEL as keyof AiModels, {
       messages: [{ role: 'system', content: system }, ...conversation, ...extraTurns],
@@ -411,21 +424,18 @@ export async function generateModelReply(ai: Ai, input: ModelReplyInput): Promis
       // not in the wording.
       temperature: 0.2,
       ...extra,
-    } as never)) as { response?: unknown };
+    } as never, { signal: AbortSignal.timeout(MODEL_TIMEOUT_MS) } as never)) as { response?: unknown };
 
-  let raw: unknown = null;
-  let howAsked = 'json schema';
-
-  try {
-    raw = (await call({ response_format: { type: 'json_schema', json_schema: REPLY_SCHEMA } }))?.response ?? null;
-  } catch (error) {
-    console.warn('assistant: json mode refused, asking in words', error instanceof Error ? error.message : String(error));
-  }
-
-  if (raw === null) {
-    howAsked = 'plain text';
-    raw = (await call({}, [{ role: 'user', content: JSON_INSTRUCTION }]))?.response ?? null;
-  }
+  // Plain text first, and only.
+  //
+  // The json_schema attempt used to lead. It has never once succeeded
+  // against this model: it either returns 4009 or returns prose that fails
+  // to parse. Leading with it bought a guaranteed wasted round trip on every
+  // single reply, and two sequential inference calls on a free tier is what
+  // turned a slow minute into a request that timed out with someone waiting
+  // on the page. A fallback that has never caught anything is not a
+  // fallback, it is latency.
+  const raw = (await call({}, [{ role: 'user', content: JSON_INSTRUCTION }]))?.response ?? null;
 
   if (raw === null) {
     console.warn('assistant: model returned no response payload');
@@ -433,7 +443,7 @@ export async function generateModelReply(ai: Ai, input: ModelReplyInput): Promis
   }
 
   const parsed = typeof raw === 'string' ? extractJsonObject(raw) : raw;
-  if (parsed === null) throw new ModelReplyRejected(`response was not JSON (asked via ${howAsked})`);
+  if (parsed === null) throw new ModelReplyRejected(`response was not JSON: ${String(raw).slice(0, 120)}`);
 
   const result = validateModelReply(parsed, input);
   // Rejections are the interesting event and the easiest one to lose. A
@@ -441,6 +451,6 @@ export async function generateModelReply(ai: Ai, input: ModelReplyInput): Promis
   // that was never asked for: both show up as a keyword answer. Throwing
   // with the reason puts it on the ticket, where whoever picks it up can
   // read it, rather than in a log stream nobody tails.
-  if ('rejected' in result) throw new ModelReplyRejected(`${result.rejected} (asked via ${howAsked})`);
+  if ('rejected' in result) throw new ModelReplyRejected(result.rejected);
   return result.reply;
 }

@@ -34,13 +34,13 @@ describe('requestedAHuman', () => {
 
 describe('decideAgentAction', () => {
   it('sends a solution on a confident match', () => {
-    const r = decideAgentAction({ ...base, conversationText: "cannot sign in, subscription missing" });
+    const r = decideAgentAction({ ...base, conversationText: "paid but Hamdam Plus is not working, subscription missing" });
     expect(r.action).toBe('send_solution');
     if (r.action === 'send_solution') expect(r.articleId).toBe('purchase-not-appearing');
   });
 
   it('asks a clarifying question on a partial match', () => {
-    const r = decideAgentAction({ ...base, conversationText: 'locked out' });
+    const r = decideAgentAction({ ...base, conversationText: 'restore purchase' });
     expect(r.action).toBe('ask_clarifying');
     if (r.action === 'ask_clarifying') expect(r.question.length).toBeGreaterThan(0);
   });
@@ -55,7 +55,7 @@ describe('decideAgentAction', () => {
   it('escalates a request for a human even with a confident match', () => {
     const r = decideAgentAction({
       ...base,
-      conversationText: "cannot sign in, subscription missing -- can I speak to a human",
+      conversationText: "paid but Hamdam Plus is not working, subscription missing -- can I speak to a human",
     });
     expect(r.action).toBe('escalate');
     if (r.action === 'escalate') expect(r.reason).toContain('asked for a person');
@@ -65,7 +65,7 @@ describe('decideAgentAction', () => {
     const r = decideAgentAction({
       ...base,
       priority: 'P1',
-      conversationText: 'cannot sign in, subscription missing',
+      conversationText: 'paid but Hamdam Plus is not working, subscription missing',
     });
     expect(r.action).toBe('escalate');
   });
@@ -74,7 +74,7 @@ describe('decideAgentAction', () => {
     const r = decideAgentAction({
       ...base,
       priority: 'P2',
-      conversationText: 'cannot sign in, subscription missing',
+      conversationText: 'paid but Hamdam Plus is not working, subscription missing',
     });
     expect(r.action).toBe('escalate');
   });
@@ -83,20 +83,20 @@ describe('decideAgentAction', () => {
     const r = decideAgentAction({
       ...base,
       assistantTurns: MAX_ASSISTANT_TURNS,
-      conversationText: 'cannot sign in, subscription missing',
+      conversationText: 'paid but Hamdam Plus is not working, subscription missing',
     });
     expect(r.action).toBe('escalate');
     if (r.action === 'escalate') expect(r.reason).toContain('turns');
   });
 
   it('escalates rather than repeating a clarifying question it already asked', () => {
-    const first = decideAgentAction({ ...base, conversationText: 'locked out' });
+    const first = decideAgentAction({ ...base, conversationText: 'restore purchase' });
     expect(first.action).toBe('ask_clarifying');
     if (first.action !== 'ask_clarifying') return;
 
     const second = decideAgentAction({
       ...base,
-      conversationText: 'locked out',
+      conversationText: 'restore purchase',
       assistantTurns: 1,
       askedQuestions: [first.question],
     });

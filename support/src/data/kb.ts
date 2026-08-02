@@ -34,17 +34,15 @@ export const KB_ARTICLES: readonly KbArticle[] = [
     "id": "purchase-not-appearing",
     "title": "A purchase or subscription is not showing up",
     "symptoms": [
-      "cannot sign in",
-      "can't sign in",
-      "cannot log in",
-      "can't log in",
-      "locked out",
       "restore purchase",
+      "restore my purchase",
       "lost my subscription",
-      "paid but",
-      "plus not working",
       "subscription missing",
-      "new phone"
+      "plus not working",
+      "hamdam plus",
+      "paid but",
+      "lifetime purchase",
+      "family sharing"
     ],
     "clarifying": [
       "Are you on the same Apple ID you bought Hamdam with?",
