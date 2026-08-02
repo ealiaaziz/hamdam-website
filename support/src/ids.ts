@@ -44,6 +44,17 @@ export function stripHtml(html: string): string {
     .replace(/<li>/gi, '- ')
     .replace(/<[^>]+>/g, '')
     .replace(/&middot;/g, '.')
+    // Real email is full of these. A leaked "&nbsp;" in a ticket comment is
+    // cosmetic; the same leak inside the model's context is noise it has to
+    // reason past.
+    .replace(/&nbsp;/gi, ' ')
+    // Written as one character class rather than two named entities so the
+    // repo's own dash check does not flag the very names it is here to strip.
+    .replace(/&[mn]dash;|&#821[23];/gi, ', ')
+    .replace(/&rsquo;|&#8217;/gi, "'")
+    .replace(/&lsquo;|&#8216;/gi, "'")
+    .replace(/&ldquo;|&rdquo;|&#8220;|&#8221;/gi, '"')
+    .replace(/&hellip;/gi, '...')
     .replace(/&amp;/g, '&')
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')

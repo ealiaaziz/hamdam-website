@@ -67,8 +67,33 @@ export function stripQuotedReply(text: string): string {
 }
 
 /** Email body as the plain text a ticket comment should hold. */
+/**
+ * Sign-off lines that begin a signature block.
+ *
+ * Live, a two word test email arrived carrying six lines of job title,
+ * certifications and a mobile number, all of which went into the ticket and
+ * into the model's context. The person wrote "Checking ticketing system".
+ * Everything after "Regards," was their mail client, not them.
+ *
+ * Matched only as a whole line, and only when something survives above it.
+ * "Regards" inside a sentence is not a sign-off, and a message that is
+ * nothing but a signature is better kept whole than emptied.
+ */
+const SIGNOFF_LINE =
+  /^\s*(--\s*|regards|kind regards|best regards|warm regards|many thanks|thanks|thank you|cheers|best|sincerely|yours sincerely|yours faithfully)[,.!]?\s*$/i;
+
+export function stripSignature(text: string): string {
+  const lines = text.split('\n');
+  for (let i = 1; i < lines.length; i++) {
+    if (!SIGNOFF_LINE.test(lines[i])) continue;
+    const kept = lines.slice(0, i).join('\n').trim();
+    if (kept.length > 0) return kept;
+  }
+  return text.trim();
+}
+
 export function messageBodyText(message: InboundMessage): string {
-  return stripQuotedReply(stripHtml(message.bodyHtml)).slice(0, 8000);
+  return stripSignature(stripQuotedReply(stripHtml(message.bodyHtml))).slice(0, 8000);
 }
 
 export type InboundPlan =

@@ -147,3 +147,47 @@ describe('cleanSubject', () => {
     expect(cleanSubject('   ')).toBe('(no subject)');
   });
 });
+
+describe('stripSignature', () => {
+  // Live: a two word test email arrived carrying six lines of job title,
+  // certifications and a mobile number, all of it stored on the ticket and
+  // fed to the model as though the person had written it.
+  it('drops the block a mail client appended', async () => {
+    const { stripSignature } = await import('../src/inbound.js');
+    const body = `Checking ticketing system
+
+Regards,
+Ealia Azizollahi
+Senior Systems Engineer
++61-401 290 104`;
+    expect(stripSignature(body)).toBe('Checking ticketing system');
+  });
+
+  it('handles the other common sign-offs', async () => {
+    const { stripSignature } = await import('../src/inbound.js');
+    for (const signoff of ['Thanks,', 'Kind regards', 'Cheers', '--', 'Sincerely,']) {
+      expect(stripSignature(`The verse is blank.\n\n${signoff}\nSomeone`), signoff).toBe('The verse is blank.');
+    }
+  });
+
+  it('does not cut on the word inside a sentence', async () => {
+    const { stripSignature } = await import('../src/inbound.js');
+    const body = 'Thanks for the last fix. Regards to the team, but the verse is still blank.';
+    expect(stripSignature(body)).toBe(body);
+  });
+
+  it('keeps a message that is nothing but a signature', async () => {
+    const { stripSignature } = await import('../src/inbound.js');
+    const body = 'Regards,\nSomeone';
+    expect(stripSignature(body)).toBe(body);
+  });
+});
+
+describe('entity decoding', () => {
+  it('does not leak &nbsp; into a ticket or the model context', async () => {
+    const { messageBodyText } = await import('../src/inbound.js');
+    const body = messageBodyText(message({ bodyHtml: '<p>ITIL V3,&nbsp;and&nbsp;more</p>' }));
+    expect(body).not.toContain('&nbsp;');
+    expect(body).toContain('ITIL V3, and more');
+  });
+});
