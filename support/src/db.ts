@@ -48,8 +48,8 @@ export async function createTicket(db: D1Database, t: NewTicket): Promise<number
       `INSERT INTO tickets (
          requester_id, subject, status, priority, impact, urgency, category, channel,
          tracking_token, source_conversation_id, last_inbound_message_id,
-         created_at, updated_at, sla_first_response_due, sla_resolve_due
-       ) VALUES (?1, ?2, 'new', ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?11, ?12, ?13)
+         created_at, updated_at, sla_first_response_due, sla_resolve_due, topic
+       ) VALUES (?1, ?2, 'new', ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?11, ?12, ?13, ?14)
        RETURNING id`,
     )
     .bind(
