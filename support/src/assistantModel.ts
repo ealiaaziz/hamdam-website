@@ -248,20 +248,24 @@ export function readsAsHumanAction(body: string): boolean {
  * already asked, an em dash in a desk that does not use them, a reply that
  * quietly claims someone looked at their account.
  */
-export function sanitiseModelReply(
+export type ValidationResult = { reply: ModelReply } | { rejected: string };
+
+export function validateModelReply(
   raw: unknown,
   input: Pick<ModelReplyInput, 'articles' | 'askedQuestions'>,
-): ModelReply | null {
-  if (typeof raw !== 'object' || raw === null) return null;
+): ValidationResult {
+  if (typeof raw !== 'object' || raw === null) return { rejected: 'not an object' };
   const r = raw as Record<string, unknown>;
 
-  const action = r.action;
-  if (action !== 'answer' && action !== 'ask' && action !== 'escalate') return null;
+  const action = typeof r.action === 'string' ? r.action.trim().toLowerCase() : '';
+  if (action !== 'answer' && action !== 'ask' && action !== 'escalate') {
+    return { rejected: `unknown action ${JSON.stringify(r.action)}` };
+  }
 
   let body = typeof r.body === 'string' ? r.body.trim() : '';
-  if (!body) return null;
-  if (body.length > MAX_REPLY_CHARS) return null;
-  if (readsAsHumanAction(body)) return null;
+  if (!body) return { rejected: 'empty body' };
+  if (body.length > MAX_REPLY_CHARS) return { rejected: `body ${body.length} chars, over the ${MAX_REPLY_CHARS} limit` };
+  if (readsAsHumanAction(body)) return { rejected: 'body claims a person acted' };
 
   // The desk does not use em or en dashes anywhere a person reads. A model
   // reaches for them constantly, so normalise rather than reject.
@@ -277,10 +281,32 @@ export function sanitiseModelReply(
   let question = blank(r.question) ? null : String(r.question).trim();
   if (action !== 'ask') question = null;
   // A question already asked is not a question, it is a loop.
-  if (question && input.askedQuestions.includes(question)) return null;
-  if (action === 'ask' && !question) return null;
+  if (question && input.askedQuestions.includes(question)) return { rejected: 'repeats a question already asked' };
+  if (action === 'ask' && !question) return { rejected: 'action is ask with no question' };
 
-  return { action, body, articleId, question };
+  return { reply: { action, body, articleId, question } };
+}
+
+/** The same check, for callers that only need the answer or nothing. */
+export function sanitiseModelReply(
+  raw: unknown,
+  input: Pick<ModelReplyInput, 'articles' | 'askedQuestions'>,
+): ModelReply | null {
+  const result = validateModelReply(raw, input);
+  return 'reply' in result ? result.reply : null;
+}
+
+/**
+ * Thrown when the model answered but the answer was not usable. Separate
+ * from a transport failure because the two mean different things: one is
+ * Cloudflare having a bad minute, the other is this prompt and this model
+ * not getting along, and only the second is worth changing anything over.
+ */
+export class ModelReplyRejected extends Error {
+  constructor(reason: string) {
+    super(reason);
+    this.name = 'ModelReplyRejected';
+  }
 }
 
 /**
@@ -356,16 +382,14 @@ export async function generateModelReply(ai: Ai, input: ModelReplyInput): Promis
   }
 
   const parsed = typeof raw === 'string' ? extractJsonObject(raw) : raw;
-  if (parsed === null) {
-    console.warn('assistant: model response was not JSON', String(raw).slice(0, 200));
-    return null;
-  }
+  if (parsed === null) throw new ModelReplyRejected(`response was not JSON (asked via ${howAsked})`);
 
-  const reply = sanitiseModelReply(parsed, input);
+  const result = validateModelReply(parsed, input);
   // Rejections are the interesting event and the easiest one to lose. A
   // reply that fails validation looks identical from the outside to a reply
-  // that was never asked for: both show up as a keyword answer. Without this
-  // line the only way to tell them apart is to guess.
-  if (!reply) console.warn(`assistant: reply failed validation (asked via ${howAsked})`, JSON.stringify(parsed).slice(0, 300));
-  return reply;
+  // that was never asked for: both show up as a keyword answer. Throwing
+  // with the reason puts it on the ticket, where whoever picks it up can
+  // read it, rather than in a log stream nobody tails.
+  if ('rejected' in result) throw new ModelReplyRejected(`${result.rejected} (asked via ${howAsked})`);
+  return result.reply;
 }

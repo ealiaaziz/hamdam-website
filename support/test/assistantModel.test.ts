@@ -6,6 +6,7 @@ import {
   extractJsonObject,
   readsAsHumanAction,
   sanitiseModelReply,
+  validateModelReply,
   MAX_REPLY_CHARS,
   type ModelReplyInput,
 } from '../src/assistantModel.js';
@@ -204,5 +205,34 @@ describe('extractJsonObject', () => {
     for (const bad of ['', 'no json here', '{ not json ]']) {
       expect(extractJsonObject(bad), bad).toBeNull();
     }
+  });
+});
+
+describe('validateModelReply', () => {
+  // Every rejection carries a reason, because a rejected reply and a reply
+  // that was never asked for look identical from outside: both surface as a
+  // keyword answer on the ticket.
+  const ok = { action: 'answer', body: 'Try reopening the app.', article_id: '', question: '' };
+
+  it('names why it turned a reply down', () => {
+    const cases: [unknown, string][] = [
+      ['not an object', 'not an object'],
+      [{ ...ok, action: 'shout' }, 'unknown action'],
+      [{ ...ok, body: '   ' }, 'empty body'],
+      [{ ...ok, body: 'x'.repeat(MAX_REPLY_CHARS + 1) }, 'over the'],
+      [{ ...ok, body: 'I have checked your account.' }, 'claims a person acted'],
+      [{ ...ok, action: 'ask', question: '' }, 'no question'],
+    ];
+    for (const [input, expected] of cases) {
+      const result = validateModelReply(input, base);
+      expect(result, JSON.stringify(input)).toHaveProperty('rejected');
+      expect((result as { rejected: string }).rejected).toContain(expected);
+    }
+  });
+
+  it('accepts a reply and hands back the cleaned version', () => {
+    const result = validateModelReply({ ...ok, article_id: KB_ARTICLES[0].id }, base);
+    expect(result).toHaveProperty('reply');
+    expect((result as { reply: { articleId: string } }).reply.articleId).toBe(KB_ARTICLES[0].id);
   });
 });

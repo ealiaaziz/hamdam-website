@@ -217,7 +217,7 @@ export async function composeAssistantReplyLive(
     return deterministic(`model call failed: ${message.slice(0, 160)}`);
   }
 
-  if (!reply) return deterministic('model returned nothing usable');
+  if (!reply) return deterministic('model returned nothing');
 
   if (reply.action === 'escalate') {
     return {
