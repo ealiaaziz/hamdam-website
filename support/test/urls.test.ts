@@ -137,4 +137,53 @@ describe('localePrefixTarget', () => {
     // different bug in the same place.
     expect(localePrefixTarget('/fa/administrivia')).toBe('/administrivia');
   });
+
+  // The finding above, found again in an audit of the fix for it.
+  //
+  // The exclusion list was compared against the raw pathname while the router
+  // matches on the *decoded* one, and a single percent-escape is enough to
+  // make those two disagree. `/fa/%61dmin` was not "/admin" by string
+  // comparison, so it was rewritten and served, and Hono then decoded it and
+  // routed it straight to the console handler. Confirmed against production
+  // before this test was written: it returned the Worker's own
+  // "no Cloudflare Access assertion" refusal, which is the console's guard
+  // speaking and therefore proof the request reached it.
+  //
+  // Every variant here is one somebody would actually try. The comparison is
+  // now done on a canonical form, so the list cannot be dodged by spelling
+  // the same path a different way.
+  it('refuses the console however the path is spelled', () => {
+    for (const path of [
+      '/fa/%61dmin',
+      '/fa/adm%69n',
+      '/fa/%61%64%6d%69%6e',
+      '/fa/%61dmin/tickets/1',
+      '/fa/%41dmin',
+      '/fa/ADMIN',
+      '/fa/Admin',
+      '/fa//admin',
+      '/fa/./admin',
+      '/fa/tickets/../admin',
+      '/fa/%2e/admin',
+      '/fa/%2f%2fadmin',
+    ]) {
+      expect(localePrefixTarget(path), path).toBeNull();
+    }
+  });
+
+  it('fails closed on encoding it cannot read', () => {
+    // A lone % is not decodable. The safe answer is to leave the request
+    // unrewritten, which reaches no route and 404s, rather than to guess.
+    expect(localePrefixTarget('/fa/%')).toBeNull();
+    expect(localePrefixTarget('/fa/%zz')).toBeNull();
+  });
+
+  it('still serves ordinary Persian paths that merely contain escapes', () => {
+    // The point is to canonicalise for the comparison, not to refuse anything
+    // encoded. A Persian subject in a query has nothing to do with the path,
+    // but percent-escapes in a path segment are ordinary too.
+    expect(localePrefixTarget('/fa/track')).toBe('/track');
+    expect(localePrefixTarget('/fa/%74rack')).toBe('/%74rack');
+    expect(localePrefixTarget('/fa/administrivia')).toBe('/administrivia');
+  });
 });

@@ -90,6 +90,46 @@ export function isCrossSiteRequest(requestUrl: string, origin: string | undefine
 export const UNPREFIXED_PATHS = ['/admin'] as const;
 
 /**
+ * A path reduced to the one spelling the router will see.
+ *
+ * This exists because the first version of the exclusion check below compared
+ * the raw pathname, and the raw pathname is not what anything downstream
+ * matches on. `/fa/%61dmin` is not the string `/fa/admin`, so it was rewritten
+ * and served; Hono then decoded it and routed it to the console. The exclusion
+ * list was intact and simply never consulted about the request that mattered.
+ *
+ * Decoding once mirrors the router. The rest is deliberately stricter than any
+ * router is known to be: repeated slashes collapse, `.` segments vanish, `..`
+ * pops, and the whole thing is lowercased. None of that is required by today's
+ * behaviour, and that is the point. A comparison that is only correct while
+ * Hono keeps matching case-sensitively and keeps treating `//admin` as
+ * distinct from `/admin` is a comparison that a dependency upgrade can quietly
+ * turn into a bypass, and this is the second time this exact door has been
+ * found open.
+ *
+ * Null means the path could not be decoded, which the caller must treat as a
+ * refusal to rewrite rather than as permission.
+ */
+function canonicalPath(pathname: string): string | null {
+  let decoded: string;
+  try {
+    decoded = decodeURIComponent(pathname);
+  } catch {
+    return null;
+  }
+  const segments: string[] = [];
+  for (const segment of decoded.split('/')) {
+    if (segment === '' || segment === '.') continue;
+    if (segment === '..') {
+      segments.pop();
+      continue;
+    }
+    segments.push(segment);
+  }
+  return `/${segments.join('/')}`.toLowerCase();
+}
+
+/**
  * Where a /fa-prefixed path should actually be served from, or null to leave
  * the request exactly as it arrived.
  *
@@ -98,11 +138,22 @@ export const UNPREFIXED_PATHS = ['/admin'] as const;
  * marker on purpose: an unrewritten /fa/admin matches no route and gets the
  * ordinary not-found, which is the honest answer for an address that was
  * never meant to exist.
+ *
+ * The returned path is the stripped *original*, not the canonical form. Only
+ * the comparison is canonicalised; rewriting a request to a normalised path it
+ * did not ask for would be a way of smuggling one route into another, which is
+ * the shape of the bug this is here to prevent rather than a fix for it.
  */
 export function localePrefixTarget(pathname: string): string | null {
   if (pathname !== '/fa' && !pathname.startsWith('/fa/')) return null;
   const stripped = pathname.slice(3) || '/';
-  if (UNPREFIXED_PATHS.some((p) => stripped === p || stripped.startsWith(`${p}/`))) return null;
+
+  const canonical = canonicalPath(stripped);
+  // Undecodable, so there is no way to know what the router will make of it.
+  // Serve it unrewritten and let it match nothing.
+  if (canonical === null) return null;
+
+  if (UNPREFIXED_PATHS.some((p) => canonical === p || canonical.startsWith(`${p}/`))) return null;
   return stripped;
 }
 
