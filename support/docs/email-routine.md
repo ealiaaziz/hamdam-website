@@ -259,6 +259,14 @@ as an ordinary ticket and note it in your final summary.
          - Record an inbound_emails row and an outbound_emails row with
            status already 'sent' (this is an audit trail, not a queue, for
            this case -- the send already happened).
+         - Do not attempt to draft a solution. The assistant that writes
+           replies lives in the Worker, behind Cloudflare Access, and needs
+           an API key this routine does not hold. For an email-created
+           ticket, an agent opens it in the console and presses "Ask the
+           assistant for a draft", reads what comes back, and sends it or
+           does not. That is the whole reason the button exists: a scheduled
+           job holding a model key and a mailbox could email a stranger
+           unattended, and nothing here needs it to.
 
 6. Drain the outbound queue:
    node scripts/db-query.mjs "SELECT * FROM outbound_emails WHERE status = 'pending' ORDER BY created_at ASC" "[]"

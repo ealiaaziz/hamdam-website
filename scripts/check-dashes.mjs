@@ -46,7 +46,10 @@ function* walk(dir) {
   for (const entry of readdirSync(dir)) {
     const full = join(dir, entry);
     if (statSync(full).isDirectory()) {
-      if (entry === 'node_modules') continue;
+      // Build output, not writing. `wrangler deploy --dry-run --outdir=dist`
+      // bundles the Anthropic SDK, whose vendored prose is full of em dashes
+      // and none of which anyone reads.
+      if (entry === 'node_modules' || entry === 'dist') continue;
       yield* walk(full);
     } else if (EXTENSIONS.test(entry)) {
       yield full;

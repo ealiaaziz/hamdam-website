@@ -35,6 +35,21 @@ Agent ──(dashboard reply)──► Worker ──► D1 ──► queued outb
   file's header comments for the reasoning behind each design choice.
 * **ITIL engine** (`src/itil.ts`): impact x urgency -> P1-P4, plus the SLA
   policy table. Fully unit tested (`test/itil.test.ts`).
+* **Assistant** (`src/agentPolicy.ts`, `src/assistantModel.ts`,
+  `src/assistantReply.ts`): what the desk says back, in two halves that are
+  deliberately not mixed. The *policy* half decides whether the assistant may
+  answer at all -- never a P1 or P2, never after a request for a person,
+  never past three turns -- and it is ordinary code with tests beside it, not
+  a paragraph in a prompt. The *model* half decides the words, calling
+  `claude-opus-5` with the reviewed knowledge base articles as its only
+  source for anything Hamdam-specific, and general computing knowledge
+  allowed for everything else. Every model reply is validated before anyone
+  reads it (`sanitiseModelReply`): an invented article id, a repeat of a
+  question already asked, or wording that implies a person looked at the
+  account all cause the reply to be thrown away and the keyword answer used
+  instead. With no `ANTHROPIC_API_KEY` set, or on any API failure, or once
+  the daily call budget is spent, the whole thing degrades to the keyword
+  matcher. The desk gets plainer. It never goes silent.
 * **Hourly Routine**: the only thing that can reach Composio/Outlook. Reads
   new inbox mail, creates/updates tickets, sends the queued outbound email.
   Full design and the exact prompt: `docs/email-routine.md`. **Read that
@@ -146,7 +161,12 @@ console's state-changing posts. What is *not* addressed in v1:
   doubles as a way to flood the desk or bounce mail at a forged address.
   There is no in-Worker rate limiting (that needs KV or a Durable Object).
   The cheap fix is a Cloudflare **Rate Limiting rule** on `POST /tickets` in
-  the dashboard -- worth adding before publicising the URL.
+  the dashboard -- worth adding before publicising the URL. Since the same
+  endpoint now spends money on a model call, there is a crude second control
+  in the meantime: `assistant_usage` caps model calls per UTC day
+  (`ASSISTANT_DAILY_CALL_LIMIT`, default 200), above which replies come from
+  the keyword matcher. That bounds the bill. It does not bound the mail, so
+  the edge rule is still the fix.
 * **The routine reads attacker-authored text with tools attached.** Inbound
   email is fed to a Claude session holding database and send-mail tools, so
   a crafted message is a prompt-injection attempt by construction. The
@@ -175,6 +195,34 @@ Then visit `http://localhost:8787/` for the portal and `/admin` for the
 console, which uses the `DEV_ADMIN_EMAIL` identity from `.dev.vars`. Without
 that file `/admin` returns 503, which is the same fail-closed behaviour the
 deployed Worker has before Access is configured.
+
+The assistant runs without a credential locally: with no `ANTHROPIC_API_KEY`
+in `.dev.vars` it answers from the keyword matcher, which is also what CI
+runs against. Add the key to `.dev.vars` only if you want to exercise the
+model path, and remember that every local ticket then costs a real call.
+
+## Turning the assistant on
+
+The model-backed replies need one secret, and it is the only setup step:
+
+```
+npx wrangler secret put ANTHROPIC_API_KEY   # paste an Anthropic API key
+npm run deploy
+```
+
+Until that is set the desk works exactly as it did before: tickets, SLAs,
+console, email queue, and keyword-matched replies. Setting it changes what
+the assistant *says*, not what it is *allowed* to do -- the P1/P2 gate, the
+handover on request, and the three-turn limit are in `agentPolicy.ts` and
+run before the model is consulted, so they hold either way.
+
+Two knobs, both optional, both plain config in `wrangler.jsonc`:
+
+* `ASSISTANT_DAILY_CALL_LIMIT` -- model calls per UTC day (default 200).
+  Above it, replies come from the keyword matcher rather than stopping.
+
+To turn the assistant's writing back off without redeploying code, delete
+the secret (`npx wrangler secret delete ANTHROPIC_API_KEY`) and redeploy.
 
 Run tests with `npm test` (vitest). Covered: the ITIL matrix and SLA policy,
 the URL/HTTPS rules, Access JWT verification (against a generated keypair,

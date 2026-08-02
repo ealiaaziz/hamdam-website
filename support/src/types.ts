@@ -92,6 +92,22 @@ export interface Env {
   ACCESS_TEAM_DOMAIN?: string;
   ACCESS_AUD?: string;
   /**
+   * Anthropic API key for the interactive assistant, set with
+   * `wrangler secret put ANTHROPIC_API_KEY`. A real secret, so it never
+   * appears in wrangler.jsonc.
+   *
+   * Optional on purpose: unset, every reply falls back to the keyword
+   * matcher in `assistantReply.ts`. A missing key makes the desk plainer,
+   * never silent, and local dev and CI need no credential.
+   */
+  ANTHROPIC_API_KEY?: string;
+  /**
+   * Model calls allowed per UTC day. Plain config, not a secret. Over the
+   * ceiling the desk answers from the knowledge base instead: plainer, never
+   * silent, and never a refused ticket.
+   */
+  ASSISTANT_DAILY_CALL_LIMIT?: string;
+  /**
    * Local-development-only escape hatch, set in .dev.vars (never deployed).
    * Only honoured for requests with no CF-Ray header, which production
    * requests always carry, so this cannot open the console on the live site.

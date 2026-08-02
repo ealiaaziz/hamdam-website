@@ -72,7 +72,7 @@ function draftsBlock(drafts: DraftRow[], ticketId: number): string {
     <span class="draft-why">${escapeHtml(d.assistant_reason ?? '')}</span>
   </div>
   <p class="draft-meta">To ${escapeHtml(d.to_email)} &middot; subject ${escapeHtml(d.subject)}
-  &middot; from article <code>${escapeHtml(d.assistant_article_id ?? '')}</code></p>
+  &middot; ${d.assistant_article_id ? `from article <code>${escapeHtml(d.assistant_article_id)}</code>` : 'not from a knowledge base article'}</p>
   <div class="draft-body">${d.body_html}</div>
   <form method="post" action="/admin/tickets/${ticketId}/drafts/${d.id}/approve" style="display:inline">
     <button class="btn" type="submit">Approve and send</button>
@@ -126,6 +126,11 @@ export function adminTicketPage(opts: { ticket: TicketWithRequester; comments: C
     </div>
     <div class="thread">${thread}</div>
     ${draftsBlock(opts.drafts ?? [], ticket.id)}
+    <form method="post" action="/admin/tickets/${ticket.id}/assistant-draft">
+      <button class="btn btn--ghost" type="submit">Ask the assistant for a draft</button>
+      <p class="hint">Writes a suggested reply above for you to read. Nothing
+      reaches the requester until you approve it.</p>
+    </form>
     <form method="post" action="/admin/tickets/${ticket.id}/reply">
       <div class="field">
         <label for="body">Reply to requester</label>

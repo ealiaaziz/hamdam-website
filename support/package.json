@@ -9,6 +9,7 @@
   "scripts": {
     "dev": "wrangler dev",
     "test": "vitest run",
+    "build": "wrangler deploy --dry-run --outdir=dist",
     "kb:generate": "node scripts/generate-kb.mjs",
     "predeploy:check": "node scripts/predeploy-check.mjs",
     "deploy": "node scripts/predeploy-check.mjs && wrangler deploy",
@@ -16,6 +17,7 @@
     "db:migrate:remote": "wrangler d1 migrations apply hamdam-support-db --remote"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.115.0",
     "hono": "^4.6.14"
   },
   "devDependencies": {

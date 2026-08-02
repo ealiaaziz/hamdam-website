@@ -1,5 +1,6 @@
-import { decideAgentAction, type AgentContext } from './agentPolicy.js';
+import { decideAgentAction, requestedAHuman, MAX_ASSISTANT_TURNS, type AgentContext } from './agentPolicy.js';
 import { matchArticles, KB_ARTICLES, type KbArticle } from './kb.js';
+import { generateModelReply, type ModelReply } from './assistantModel.js';
 
 // The assistant's visible reply in the ticket thread.
 //
@@ -105,4 +106,114 @@ export function composeAssistantReply(
     : 'That is outside what I have written down, so I am passing it to a person rather than guessing at an answer. They can see this whole conversation.';
 
   return { body, action: 'escalate', reason: decision.reason, escalated: true };
+}
+
+// ---- the live, model-backed reply ----------------------------------------
+//
+// `composeAssistantReply` above is the floor: it always returns something,
+// needs no network and no key, and is what the tests pin. What follows adds
+// the model on top of it without moving any of the rules into a prompt.
+//
+// The order matters. The guards that must never be negotiable run *before*
+// the model is asked anything, so a P1, a request for a person, or a
+// conversation that has gone three turns without landing never reaches an
+// API call at all. Only after those pass does the model get to write, and
+// anything it returns that fails validation is dropped in favour of the
+// deterministic answer. The requester cannot tell which one they got, and
+// that is the point: the desk degrades to plainer language, never to silence.
+
+export interface LiveReplyOptions {
+  /** Worker secret. Absent means the deterministic path, not an error. */
+  apiKey?: string;
+  /** Full thread in order, so the model sees its own previous replies. */
+  turns: readonly { author: 'requester' | 'assistant'; body: string }[];
+  ticketSubject: string;
+  /**
+   * Claims one call against the daily budget. Returns false when it is spent,
+   * and false means a plainer answer, never a refused ticket.
+   */
+  claim?: () => Promise<boolean>;
+  /** Seam for tests. Production never passes this. */
+  generate?: typeof generateModelReply;
+}
+
+/** Why a given reply came out the way it did. Written to the agent state. */
+function reasonFor(reply: ModelReply): string {
+  const source = reply.articleId ? `article "${reply.articleId}"` : 'general knowledge';
+  return `model ${reply.action} from ${source}`;
+}
+
+export async function composeAssistantReplyLive(
+  input: AssistantReplyInput,
+  opts: LiveReplyOptions,
+  articles: readonly KbArticle[] = KB_ARTICLES,
+): Promise<AssistantReply> {
+  const deterministic = () => composeAssistantReply(input, articles);
+
+  // Non-negotiable, and checked here rather than asked of the model. A
+  // prompt can be talked out of a rule; an if statement cannot.
+  if (requestedAHuman(input.conversationText)) return deterministic();
+  if (input.priority === 'P1' || input.priority === 'P2') return deterministic();
+  if (input.assistantTurns >= MAX_ASSISTANT_TURNS) return deterministic();
+  if (!opts.apiKey) return deterministic();
+
+  // The budget check sits with the guards rather than inside the model
+  // module, because running out of money is a policy outcome, not an API
+  // error. Anything that throws here spends nothing and answers anyway.
+  try {
+    if (opts.claim && !(await opts.claim())) return deterministic();
+  } catch {
+    return deterministic();
+  }
+
+  const available = articles.filter((a) => !input.rejectedArticles.includes(a.id));
+  const rejectedTitles = articles.filter((a) => input.rejectedArticles.includes(a.id)).map((a) => a.title);
+
+  let reply: ModelReply | null = null;
+  try {
+    reply = await (opts.generate ?? generateModelReply)(opts.apiKey, {
+      priority: input.priority,
+      ticketSubject: opts.ticketSubject,
+      turns: opts.turns,
+      articles: available,
+      askedQuestions: input.askedQuestions,
+      rejectedTitles,
+      alreadyEscalated: input.alreadyEscalated,
+    });
+  } catch {
+    // Timeout, rate limit, bad key, outage. All the same from here: the
+    // requester still gets an answer this request, just a plainer one.
+    return deterministic();
+  }
+
+  if (!reply) return deterministic();
+
+  if (reply.action === 'escalate') {
+    return {
+      body: reply.body,
+      action: 'escalate',
+      articleId: reply.articleId ?? undefined,
+      reason: reasonFor(reply),
+      escalated: true,
+    };
+  }
+
+  if (reply.action === 'ask') {
+    return {
+      body: reply.body,
+      action: 'ask_clarifying',
+      articleId: reply.articleId ?? undefined,
+      question: reply.question ?? undefined,
+      reason: reasonFor(reply),
+      escalated: false,
+    };
+  }
+
+  return {
+    body: reply.body,
+    action: 'send_solution',
+    articleId: reply.articleId ?? undefined,
+    reason: reasonFor(reply),
+    escalated: false,
+  };
 }

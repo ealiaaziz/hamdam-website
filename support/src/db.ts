@@ -284,7 +284,7 @@ export async function countDrafts(db: D1Database): Promise<number> {
 
 export async function queueAssistantDraft(
   db: D1Database,
-  e: NewOutboundEmail & { assistantReason: string; assistantArticleId: string },
+  e: NewOutboundEmail & { assistantReason: string; assistantArticleId: string | null },
 ): Promise<void> {
   await db
     .prepare(
@@ -338,6 +338,7 @@ export interface AgentStateRow {
   assistant_turns: number;
   asked_questions: string;
   rejected_articles: string;
+  last_article_id: string | null;
   escalated_at: string | null;
 }
 
@@ -355,6 +356,8 @@ export interface AgentState {
   assistantTurns: number;
   askedQuestions: string[];
   rejectedArticles: string[];
+  /** The article the assistant cited in its most recent reply, if any. */
+  lastArticleId: string | null;
   escalated: boolean;
 }
 
@@ -364,6 +367,7 @@ export async function getAgentState(db: D1Database, ticketId: number): Promise<A
     assistantTurns: row?.assistant_turns ?? 0,
     askedQuestions: parseJsonArray(row?.asked_questions),
     rejectedArticles: parseJsonArray(row?.rejected_articles),
+    lastArticleId: row?.last_article_id ?? null,
     escalated: Boolean(row?.escalated_at),
   };
 }
@@ -417,4 +421,31 @@ export async function recordAssistantTurn(
       opts.escalated ? 1 : 0,
     )
     .run();
+}
+
+// ---- model call budget ----------------------------------------------------
+
+/** Model calls allowed per UTC day before the desk falls back to keywords. */
+export const DEFAULT_DAILY_CALL_LIMIT = 200;
+
+/**
+ * Claims one call against today's budget. Returns false when the budget is
+ * spent, which the caller treats as "answer from the knowledge base instead".
+ *
+ * The increment and the read are one statement, so two requests arriving
+ * together cannot both see the last slot as free. Refused attempts still
+ * count: a burst that has already blown the ceiling is exactly the traffic
+ * that should not get a second look on the next request.
+ */
+export async function claimModelCall(db: D1Database, limit = DEFAULT_DAILY_CALL_LIMIT): Promise<boolean> {
+  const day = new Date().toISOString().slice(0, 10);
+  const row = await db
+    .prepare(
+      `INSERT INTO assistant_usage (day, calls) VALUES (?1, 1)
+       ON CONFLICT(day) DO UPDATE SET calls = calls + 1, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')
+       RETURNING calls`,
+    )
+    .bind(day)
+    .first<{ calls: number }>();
+  return (row?.calls ?? Number.MAX_SAFE_INTEGER) <= limit;
 }

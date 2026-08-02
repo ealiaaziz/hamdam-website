@@ -6,17 +6,19 @@ import { ticketStatusPage } from './render/status.js';
 import { adminQueuePage, adminTicketPage } from './render/admin.js';
 import { classifyFromMatrix, parsePriority, slaDueDates, type Impact, type Urgency } from './itil.js';
 import { ackEmail, agentReplyEmail, requesterReplyNotification, resolvedEmail } from './render/email.js';
+import { assistantWrittenEmail } from './render/agentEmail.js';
 import { generateTrackingToken, parseTicketPublicId, stripHtml, ticketPublicId } from './ids.js';
 import { httpsRedirectTarget, isCrossSiteRequest, isLocalHost, trackingUrl } from './urls.js';
 import { extractAccessToken, fetchAccessKeys, verifyAccessJwt } from './access.js';
-import { matchArticles, KB_ARTICLES } from './kb.js';
-import { decideAgentAction } from './agentPolicy.js';
+import { KB_ARTICLES } from './kb.js';
 import { suggestionBlock } from './render/agentSuggestion.js';
-import { proposeDraft } from './agentDraft.js';
-import { composeAssistantReply, ASSISTANT_NAME } from './assistantReply.js';
+
+import { composeAssistantReplyLive, ASSISTANT_NAME } from './assistantReply.js';
 import {
   addComment,
   approveDraft,
+  claimModelCall,
+  DEFAULT_DAILY_CALL_LIMIT,
   getAgentState,
   recordAssistantTurn,
   recordRejectedArticle,
@@ -33,12 +35,37 @@ import {
   updateTicketStatus,
   upsertRequester,
 } from './db.js';
-import { parseTicketStatus } from './types.js';
+import { parseTicketStatus, type CommentRow } from './types.js';
 
 // The desk's own mailbox. Notifications about ticket activity go here, and
 // the routine must ignore inbound mail from this address so the desk does
 // not ingest its own outgoing email as requester replies.
 const SUPPORT_INBOX = 'developer@hamdam.com.au';
+
+/**
+ * The thread as the assistant should see it: what the requester wrote and
+ * what has been written back, in order.
+ *
+ * System notes are dropped. They are the desk talking to itself ("requester
+ * reported that article X did not help") and feeding them in as dialogue
+ * would have the assistant answering its own bookkeeping. The rejection they
+ * record still reaches the model, as state rather than as conversation.
+ */
+function threadTurns(comments: readonly CommentRow[]): { author: 'requester' | 'assistant'; body: string }[] {
+  return comments
+    .filter((m) => m.author_type === 'requester' || m.author_type === 'agent')
+    .map((m) => ({ author: m.author_type === 'requester' ? ('requester' as const) : ('assistant' as const), body: m.body }));
+}
+
+/**
+ * How many model calls the desk may make today. Configurable because the
+ * right number is a spending decision, not an engineering one; the default
+ * is a day of ordinary traffic with headroom, not a day of abuse.
+ */
+function dailyCallLimit(env: Env): number {
+  const configured = Number(env.ASSISTANT_DAILY_CALL_LIMIT);
+  return Number.isInteger(configured) && configured > 0 ? configured : DEFAULT_DAILY_CALL_LIMIT;
+}
 
 const app = new Hono<{ Bindings: Env; Variables: { agentEmail: string } }>();
 
@@ -141,6 +168,36 @@ app.post('/tickets', async (c) => {
     inReplyToMessageId: null,
   });
 
+  // Answer them before they leave the page. A new ticket used to land on a
+  // status page that said "we have got this" and nothing else, so the first
+  // real response was however long the queue took. The whole argument for an
+  // interactive desk is that the person who has just described their problem
+  // is still sitting there: this is the one moment where a fast answer costs
+  // them nothing to read.
+  const first = await composeAssistantReplyLive(
+    {
+      priority,
+      conversationText: `${subject}\n${description}`,
+      assistantTurns: 0,
+      askedQuestions: [],
+      rejectedArticles: [],
+    },
+    {
+      apiKey: c.env.ANTHROPIC_API_KEY,
+      ticketSubject: subject,
+      turns: [{ author: 'requester', body: description }],
+      claim: () => claimModelCall(c.env.DB, dailyCallLimit(c.env)),
+    },
+  );
+  await addComment(c.env.DB, ticketId, 'agent', ASSISTANT_NAME, first.body);
+  await recordAssistantTurn(c.env.DB, ticketId, {
+    question: first.question,
+    action: first.action,
+    articleId: first.articleId,
+    reason: first.reason,
+    escalated: first.escalated,
+  });
+
   return c.redirect(`/tickets/${ticketId}?token=${trackingToken}&submitted=1`, 303);
 });
 
@@ -163,36 +220,23 @@ app.get('/tickets/:id', async (c) => {
 
   const comments = await listComments(c.env.DB, id);
 
-  // The fast path. Matching and policy are pure bundled code, so the answer
-  // is computed inside this request rather than waiting for the hourly
-  // routine. Only the email half of this desk is slow; the portal need not
-  // be, and a requester who is already here should not be told to check
-  // their inbox in an hour.
-  const conversationText = [ticket.subject, ...comments.filter((m) => m.author_type === 'requester').map((m) => m.body)].join('\n');
+  // The card under the thread asks "did that help?", and it has to be about
+  // the answer the assistant actually gave. It used to re-derive a match on
+  // every page load, which meant the card could offer one article while the
+  // reply above it discussed another, and pressing "this did not help"
+  // rejected whichever one the matcher happened to like at that moment.
+  //
+  // So: read what was cited, do not guess at it. Answers drawn from general
+  // knowledge cite nothing and get no card; replying in the thread is the
+  // way to say it did not work, which is the more useful signal anyway.
   const state = await getAgentState(c.env.DB, id);
-  // An article the requester has rejected is out of the running entirely.
-  // Re-offering one is how HAM-3 ended up showing the same answer three
-  // times after being told three times that it did not help.
-  const available = KB_ARTICLES.filter((a) => !state.rejectedArticles.includes(a.id));
-  const decision = decideAgentAction(
-    {
-      priority: ticket.priority,
-      conversationText,
-      assistantTurns: state.assistantTurns,
-      askedQuestions: state.askedQuestions,
-    },
-    matchArticles(conversationText, available),
-  );
-  const match = matchArticles(conversationText, available);
-  const suggestion =
-    (decision.action === 'send_solution' || decision.action === 'ask_clarifying') && match.best
-      ? suggestionBlock({
-          article: match.best.article,
-          ticketId: id,
-          token,
-          confidence: match.confidence === 'confident' ? 'confident' : 'partial',
-        })
+  const citedArticle =
+    state.lastArticleId && !state.rejectedArticles.includes(state.lastArticleId)
+      ? KB_ARTICLES.find((a) => a.id === state.lastArticleId)
       : undefined;
+  const suggestion = citedArticle
+    ? suggestionBlock({ article: citedArticle, ticketId: id, token, confidence: 'confident' })
+    : undefined;
 
   return c.html(ticketStatusPage({ ticket, comments, justSubmitted: c.req.query('submitted') === '1', suggestion }));
 });
@@ -271,14 +315,22 @@ app.post('/tickets/:id/reply', async (c) => {
     const allComments = await listComments(c.env.DB, id);
     const conversationText = [ticket.subject, ...allComments.filter((m) => m.author_type === 'requester').map((m) => m.body)].join('\n');
     const state = await getAgentState(c.env.DB, id);
-    const reply = composeAssistantReply({
-      priority: ticket.priority,
-      conversationText,
-      assistantTurns: state.assistantTurns,
-      askedQuestions: state.askedQuestions,
-      rejectedArticles: state.rejectedArticles,
-      alreadyEscalated: state.escalated,
-    });
+    const reply = await composeAssistantReplyLive(
+      {
+        priority: ticket.priority,
+        conversationText,
+        assistantTurns: state.assistantTurns,
+        askedQuestions: state.askedQuestions,
+        rejectedArticles: state.rejectedArticles,
+        alreadyEscalated: state.escalated,
+      },
+      {
+        apiKey: c.env.ANTHROPIC_API_KEY,
+        ticketSubject: ticket.subject,
+        turns: threadTurns(allComments),
+        claim: () => claimModelCall(c.env.DB, dailyCallLimit(c.env)),
+      },
+    );
     await addComment(c.env.DB, id, 'agent', ASSISTANT_NAME, reply.body);
     await recordAssistantTurn(c.env.DB, id, {
       question: reply.question,
@@ -291,30 +343,36 @@ app.post('/tickets/:id/reply', async (c) => {
       await updateTicketStatus(c.env.DB, id, 'open');
     }
 
-    // And keep a draft ready for whoever picks it up, unless the assistant
-    // has already handed over -- drafting a reply for a ticket it just
-    // escalated would put the words back in the queue it stepped out of.
-    const proposal = reply.escalated ? null : proposeDraft({
-      ticketId: id,
-      ticketSubject: ticket.subject,
-      requesterName: ticket.requester_name,
-      trackingUrl: trackingUrl(c.req.url, id, token),
-      priority: ticket.priority,
-      conversationText: [ticket.subject, ...allComments.filter((m) => m.author_type === 'requester').map((m) => m.body)].join('\n'),
-      assistantTurns: 0,
-      askedQuestions: [],
-    });
-    if (proposal) {
+    // And queue the same words as a draft email, so the requester's inbox
+    // and the thread they are reading say the same thing. Drafting something
+    // separately worded, as this used to, is how a desk ends up contradicting
+    // itself across two channels about one problem.
+    //
+    // Draft, not sent: email leaves the building over the desk's name and
+    // reaches people who never chose to talk to a machine, so a person
+    // approves it in the console first. The portal reply above is instant
+    // because the requester is right there and can see who wrote it.
+    //
+    // Nothing is drafted once the assistant has handed over: putting words
+    // back in the queue it just stepped out of is not helping.
+    if (!reply.escalated) {
+      const rendered = assistantWrittenEmail({
+        ticketId: id,
+        subject: ticket.subject,
+        body: reply.body,
+        requesterName: ticket.requester_name,
+        trackingUrl: trackingUrl(c.req.url, id, token),
+      });
       await queueAssistantDraft(c.env.DB, {
         ticketId: id,
         commentId,
         kind: 'assistant_draft',
         toEmail: ticket.requester_email,
-        subject: proposal.subject,
-        bodyHtml: proposal.bodyHtml,
+        subject: rendered.subject,
+        bodyHtml: rendered.html,
         inReplyToMessageId: ticket.last_inbound_message_id,
-        assistantReason: proposal.reason,
-        assistantArticleId: proposal.articleId,
+        assistantReason: reply.reason,
+        assistantArticleId: reply.articleId ?? null,
       });
     }
   }
@@ -419,6 +477,69 @@ app.post('/admin/tickets/:id/reply', async (c) => {
       inReplyToMessageId: ticket.last_inbound_message_id,
     });
   }
+  return c.redirect(`/admin/tickets/${id}`, 303);
+});
+
+// Ask the assistant for a reply to a ticket it has not touched.
+//
+// Email-created tickets never pass through the portal, so nothing has run
+// the assistant on them: the routine writes them straight to D1. Rather than
+// give a scheduled job an API key and let it email strangers unattended,
+// the button lives here, behind Access, and produces a draft. An agent looks
+// at the ticket, asks for a first pass, reads it, and sends it or does not.
+app.post('/admin/tickets/:id/assistant-draft', async (c) => {
+  const id = Number(c.req.param('id'));
+  if (!Number.isInteger(id)) return c.notFound();
+  const ticket = await getTicketById(c.env.DB, id);
+  if (!ticket) return c.notFound();
+
+  const comments = await listComments(c.env.DB, id);
+  const state = await getAgentState(c.env.DB, id);
+  const conversationText = [ticket.subject, ...comments.filter((m) => m.author_type === 'requester').map((m) => m.body)].join('\n');
+
+  const reply = await composeAssistantReplyLive(
+    {
+      priority: ticket.priority,
+      conversationText,
+      assistantTurns: state.assistantTurns,
+      askedQuestions: state.askedQuestions,
+      rejectedArticles: state.rejectedArticles,
+      alreadyEscalated: state.escalated,
+    },
+    {
+      apiKey: c.env.ANTHROPIC_API_KEY,
+      ticketSubject: ticket.subject,
+      turns: threadTurns(comments),
+      claim: () => claimModelCall(c.env.DB, dailyCallLimit(c.env)),
+    },
+  );
+
+  // An escalation is the assistant saying this one is yours. Queuing that as
+  // an email to the requester would tell them a person is picking it up in
+  // the same breath as the person asking for help writing to them.
+  if (!reply.escalated) {
+    const rendered = assistantWrittenEmail({
+      ticketId: id,
+      subject: ticket.subject,
+      body: reply.body,
+      requesterName: ticket.requester_name,
+      trackingUrl: trackingUrl(c.req.url, id, ticket.tracking_token),
+    });
+    await queueAssistantDraft(c.env.DB, {
+      ticketId: id,
+      commentId: null,
+      kind: 'assistant_draft',
+      toEmail: ticket.requester_email,
+      subject: rendered.subject,
+      bodyHtml: rendered.html,
+      inReplyToMessageId: ticket.last_inbound_message_id,
+      assistantReason: reply.reason,
+      assistantArticleId: reply.articleId ?? null,
+    });
+  } else {
+    await addComment(c.env.DB, id, 'system', null, `Assistant declined to draft a reply: ${reply.reason}`);
+  }
+
   return c.redirect(`/admin/tickets/${id}`, 303);
 });
 
