@@ -1,4 +1,5 @@
 import { page, priorityBadge, statusBadge, formatDateTime, isOverdue } from './layout.js';
+import { describeAge, type Heartbeat } from '../heartbeat.js';
 import { escapeHtml, stripHtml, textToSafeHtml, ticketPublicId } from '../ids.js';
 import { PRIORITY_LABEL, SLA_POLICY, type Priority } from '../itil.js';
 import type { CommentRow, TicketStatus, TicketWithRequester } from '../types.js';
@@ -23,6 +24,28 @@ const ADMIN_NAV = [
  * tail and nobody tails it. Whoever opens the console is exactly the person
  * who can fix this, and they are looking right at it.
  */
+/**
+ * Says out loud when the desk has stopped reading its mail.
+ *
+ * The console is where this belongs, because whoever has it open is the
+ * person who can do something, and because the alternative is finding out
+ * from a customer who thinks they were ignored. `/health` carries the same
+ * fact to an external monitor, which is the half that still works when the
+ * Worker is the thing that broke.
+ *
+ * "Never" is shown as its own case rather than folded into "stale". On a
+ * fresh deploy it means the cron has not had its first minute yet, which is
+ * fine and passes; on a desk that has been up for a day it means ingest has
+ * never once succeeded, which is not.
+ */
+function ingestNotice(beat: Heartbeat): string {
+  if (beat.state === 'ok') return '';
+  const when = describeAge(beat.ageMs);
+  return `<div class="notice notice--error">The desk last read its mailbox <strong>${escapeHtml(when)}</strong>.
+  Email is not being turned into tickets while this says so. Check
+  <code>last_ingest_error</code> in <code>sync_state</code>, and the Graph credentials.</div>`;
+}
+
 function allowlistNotice(configured: boolean): string {
   if (configured) return '';
   return `<div class="notice notice--error">This console is protected by Cloudflare Access alone:
@@ -37,6 +60,8 @@ export function adminQueuePage(opts: {
   agentEmail: string;
   /** Whether ADMIN_EMAILS is set. False means the console's second lock is off. */
   allowlistConfigured: boolean;
+  /** When the desk last successfully read its mailbox. */
+  ingest: Heartbeat;
 }): string {
   const priorities: Priority[] = ['P1', 'P2', 'P3', 'P4'];
   // Encoded even though index.ts now validates this against a fixed set:
@@ -60,6 +85,7 @@ export function adminQueuePage(opts: {
     .join('\n');
 
   const body = `
+${ingestNotice(opts.ingest)}
 ${allowlistNotice(opts.allowlistConfigured)}
 <div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:0.5rem">
   <h1>Support queue</h1>
