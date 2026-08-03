@@ -5,7 +5,7 @@ import { fetchInbox, fetchMessageHeaders, markRead, sendMail, canSendDirectly, S
 import { cleanSubject, planInbound, sameAddress, ticketIdFromSubject, type KnownThread } from './inbound.js';
 import { consumeRateLimit, mayEmailRecipient, meteringSubject } from './rateLimit.js';
 import { senderIsAuthenticated } from './authResults.js';
-import { escalationRecipients } from './escalation.js';
+import { unmeteredRecipients } from './escalation.js';
 import { detectLocale, strings } from './i18n.js';
 import { composeAssistantReplyLive, ASSISTANT_NAME } from './assistantReply.js';
 import { requestedClosure } from './agentPolicy.js';
@@ -21,8 +21,10 @@ import {
   getCheckpoint,
   getTicketById,
   listComments,
+  clearInboundFailure,
   markOutboundFailed,
   markOutboundSent,
+  recordInboundFailure,
   queueOutboundEmail,
   recordAssistantTurn,
   recordInbound,
@@ -60,7 +62,18 @@ export interface IngestSummary {
   failed: number;
   /** Handled, but the read flag would not stick. Usually a missing permission. */
   unread: number;
+  /** Failed too many times and given up on, so the rest of the queue can move. */
+  abandoned: number;
 }
+
+/**
+ * How many times one message is retried before the desk moves past it.
+ *
+ * Three, which at a one minute cron is three minutes of retrying. Long enough
+ * for a blip in D1 or Graph, short enough that a message which will never
+ * work does not hold three minutes of mail hostage, let alone all of it.
+ */
+const MAX_MESSAGE_ATTEMPTS = 3;
 
 function dailyCallLimit(env: Env): number {
   const configured = Number(env.ASSISTANT_DAILY_CALL_LIMIT);
@@ -75,7 +88,7 @@ async function queueAndSend(env: Env, email: NewOutboundEmail): Promise<void> {
   // because here is the one place every path passes through. The row is
   // still written and still visible in the console: what stops is delivery,
   // and it stops with a reason attached rather than disappearing.
-  const allowance = await mayEmailRecipient(env.DB, email.toEmail, escalationRecipients(env));
+  const allowance = await mayEmailRecipient(env.DB, email.toEmail, unmeteredRecipients(env));
   if (!allowance.allowed) {
     await markOutboundFailed(env.DB, id, `recipient hourly limit reached (${allowance.count})`);
     return;
@@ -367,7 +380,7 @@ async function handleAsNew(env: Env, message: InboundMessage, body: string, quie
  * One message failing does not stop the others, for the same reason.
  */
 export async function ingestInbox(env: Env): Promise<IngestSummary> {
-  const summary: IngestSummary = { fetched: 0, created: 0, appended: 0, skipped: 0, failed: 0, unread: 0 };
+  const summary: IngestSummary = { fetched: 0, created: 0, appended: 0, skipped: 0, failed: 0, unread: 0, abandoned: 0 };
   if (!canSendDirectly(env)) return summary;
 
   const since = await getCheckpoint(env.DB);
@@ -393,6 +406,7 @@ export async function ingestInbox(env: Env): Promise<IngestSummary> {
     try {
       const outcome = await handleMessage(env, message);
       summary[outcome === 'created' ? 'created' : outcome === 'appended' ? 'appended' : 'skipped']++;
+      await clearInboundFailure(env.DB, message.internetMessageId);
       if (message.receivedAt > highWater) highWater = message.receivedAt;
 
       // Only now, and for skips too. A bounce or a piece of the desk's own
@@ -409,14 +423,43 @@ export async function ingestInbox(env: Env): Promise<IngestSummary> {
         console.warn(`ingest: could not mark ${message.internetMessageId} read: ${marked.reason}`);
       }
     } catch (error) {
-      summary.failed++;
-      console.error(`ingest ${message.internetMessageId}: ${error instanceof Error ? error.message : String(error)}`);
+      // Retry a few times, then stop letting one message hold the queue.
+      //
+      // The checkpoint advancing only on a clean pass is deliberate and
+      // right: a transient failure must be seen again rather than skipped.
+      // Read literally it also means a message that fails *every* time holds
+      // the line forever, and since the batch is ordered oldest first from
+      // the checkpoint, that message is in every batch and nothing behind it
+      // is ever processed. One crafted email stops the desk receiving mail,
+      // and the mailbox looks entirely normal while it happens.
+      //
+      // Three attempts is three minutes. After that the message is left
+      // unread, in the mailbox, with the reason recorded, and the queue moves.
+      // Giving up loudly on one message beats going quiet on all of them.
+      const reason = error instanceof Error ? error.message : String(error);
+      const attempts = await recordInboundFailure(env.DB, message.internetMessageId, reason);
+      console.error(`ingest ${message.internetMessageId} (attempt ${attempts}): ${reason}`);
+
+      if (attempts < MAX_MESSAGE_ATTEMPTS) {
+        summary.failed++;
+      } else {
+        summary.abandoned++;
+        if (message.receivedAt > highWater) highWater = message.receivedAt;
+      }
     }
   }
 
   // Surfaced in the database, because the likely cause is a missing
   // permission rather than a transient error, and a permission does not fix
   // itself while nobody is looking.
+  if (summary.abandoned > 0) {
+    await setSyncState(
+      env.DB,
+      'last_ingest_error',
+      `${new Date().toISOString()} gave up on ${summary.abandoned} message(s) after ${MAX_MESSAGE_ATTEMPTS} attempts, see inbound_failures`,
+    );
+  }
+
   if (summary.unread > 0) {
     await setSyncState(env.DB, 'last_ingest_error', `${new Date().toISOString()} could not mark ${summary.unread} message(s) read, check Mail.ReadWrite`);
   }

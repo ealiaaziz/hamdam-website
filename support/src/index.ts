@@ -21,7 +21,7 @@ import { viaCloudflareEdge } from './edge.js';
 import { adminAllowlist, isAllowedAgent } from './adminAccess.js';
 import { detectLocale, localePath, parseLocale, type Locale } from './i18n.js';
 import { ingestInbox } from './ingest.js';
-import { escalationRecipients, notifyEscalation } from './escalation.js';
+import { notifyEscalation, unmeteredRecipients } from './escalation.js';
 import { requestedClosure } from './agentPolicy.js';
 
 import { composeAssistantReplyLive, ASSISTANT_NAME } from './assistantReply.js';
@@ -150,7 +150,7 @@ async function queueAndSend(c: DeskContext, email: NewOutboundEmail): Promise<nu
     // path crosses. The portal metered its own submissions and the mailbox
     // metered its own senders, and neither of them was counting the thing
     // that matters to a stranger, which is their own inbox.
-    const allowance = await mayEmailRecipient(c.env.DB, email.toEmail, escalationRecipients(c.env));
+    const allowance = await mayEmailRecipient(c.env.DB, email.toEmail, unmeteredRecipients(c.env));
     if (!allowance.allowed) {
       await markOutboundFailed(c.env.DB, id, `recipient hourly limit reached (${allowance.count})`);
       return;

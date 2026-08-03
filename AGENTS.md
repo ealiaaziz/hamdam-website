@@ -2,13 +2,32 @@
 
 Cinematic warm-dawn bilingual landing site for the 2 August 2026 app launch.
 Astro 7 + Tailwind v4, deployed to hamdam.com.au as a **Cloudflare Worker with
-Static Assets** (corrected 2026-07-21 -- this line previously said "Pages" and
-"on push to main"; both were wrong. There is no CI/CD: every deploy is a
-manual `npm run deploy`, and pushing to `main` alone deploys nothing. Deploy
-via that npm script, never a bare `wrangler deploy` -- it runs
-`scripts/predeploy-check.mjs` first, which blocks deploying a dirty tree or an
-unpushed branch. Added 2026-07-25 after a deploy shipped four unpushed commits
-to production). EN at `/`, Farsi (RTL, Vazirmatn) at `/fa/`. Scroll-driven sunrise
+Static Assets**.
+
+**Pushing deploys this site. Corrected 2026-08-02, and this line has now been
+wrong twice.** It first said "Pages" and "on push to main"; on 2026-07-21 that
+was replaced with "there is no CI/CD, pushing to main alone deploys nothing",
+which is wrong in the opposite direction. A **Cloudflare Workers Builds**
+connection is attached to this repository and deploys `hamdam-website` to
+production within a minute of a push, and not only from `main`: every push to
+the feature branch on 2026-08-02 produced a production deployment, five for
+five, and the build's own dashboard URL says `production`.
+
+Two consequences, and the second is the one that matters. `npm run deploy` is
+not the only path to production, so `scripts/predeploy-check.mjs` is not a
+gate: it guards the manual path, and the automatic path never runs it. That
+guard was added on 2026-07-25 after a deploy shipped four unpushed commits, so
+the risk it was written for is live again on the path that now does most of
+the deploying. And anyone who can push any branch can publish the marketing
+site.
+
+Still deploy with `npm run deploy` rather than a bare `wrangler deploy`, and
+know that a push has the same effect. The Workers Builds connection's
+settings, including which branch it treats as production, are in the
+Cloudflare dashboard and could not be read with the API token used here.
+
+The support desk is a **separate** Worker with no build connection, and is
+unaffected: it deploys only via `cd support && npm run deploy`. EN at `/`, Farsi (RTL, Vazirmatn) at `/fa/`. Scroll-driven sunrise
 hero: pure timeline logic in `src/lib/cinematic.js`, night → morning over the
 first 100vh, reduced-motion renders static morning; pin with `?dawn=N` for
 review. Locale logic in `src/lib/locale.js`; store link state in
@@ -85,7 +104,7 @@ there are worth repeating here because breaking them is expensive:
    acknowledgements for tickets that no longer existed. Deleting the row does
    not recall the mail.
 
-`npm test` (334 cases), `npm run check:persian` and `node
+`npm test` (343 cases), `npm run check:persian` and `node
 scripts/check-dashes.mjs` all cover `support/` and must pass.
 
 **Inbound email is not an identity (added 2026-08-02, completed the same
@@ -101,6 +120,18 @@ credential: ids are sequential and printed in every email the desk sends, so
 before this check anyone could write onto, and close, a stranger's ticket by
 guessing a number. A tag from a non-owner, or from a sender Exchange could not
 authenticate, creates a new ticket instead.
+
+**An email body is attacker-controlled input with no length cap, and
+`stripHtml` touches it first (added 2026-08-02).** Its tag pattern used
+`[^>]`, which matches `<`, so a body of nothing but `<` backtracked
+quadratically: 200KB measured at forty seconds of CPU. That threw, and
+because the ingest checkpoint only advances on a clean pass and the batch is
+ordered oldest first from it, the same message returned every minute and
+nothing behind it was ever processed. One email stopped all email, silently.
+The classes are `[^<>]` now, the input is capped before any pattern runs, and
+a message that fails three times is abandoned into `inbound_failures` so no
+future exception here can wedge the queue. `test/htmlBudget.test.ts` asserts
+the time budget, not the output.
 
 **Metering folds addresses; authorisation never does.** `meteringSubject` in
 `src/rateLimit.ts` strips plus-tags and folds Google's dots, and IPv6 counts

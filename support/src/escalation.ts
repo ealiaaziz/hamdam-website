@@ -33,6 +33,25 @@ import { getAgentState, getTicketById, listComments, markOutboundFailed, markOut
  */
 export const FALLBACK_ESCALATION_RECIPIENTS = ['developer@hamdam.com.au'];
 
+/**
+ * Addresses the outbound-recipient ceiling must never apply to.
+ *
+ * The ceiling exists to stop a stranger being mailed by this desk more than
+ * they agreed to. It has no business throttling the desk's own mail to
+ * itself, and applied there it becomes a mute button: the "requester replied"
+ * notice goes to this mailbox, ten an hour is shared across every ticket, and
+ * anyone could spend that budget on their own ticket in a couple of minutes
+ * and silence the notifications for everybody else's.
+ *
+ * That is a hole this session opened, adding the ceiling this morning, and it
+ * is the shape worth remembering: a control that bounds an attacker's reach
+ * usually bounds the defender's too, and the defender is the one who notices
+ * later.
+ */
+export function unmeteredRecipients(env: Env): string[] {
+  return [...escalationRecipients(env), 'developer@hamdam.com.au'];
+}
+
 export function escalationRecipients(env: Env): string[] {
   const configured = (env.ESCALATION_RECIPIENTS ?? '')
     .split(',')
