@@ -104,7 +104,7 @@ there are worth repeating here because breaking them is expensive:
    acknowledgements for tickets that no longer existed. Deleting the row does
    not recall the mail.
 
-`npm test` (334 cases), `npm run check:persian` and `node
+`npm test` (343 cases), `npm run check:persian` and `node
 scripts/check-dashes.mjs` all cover `support/` and must pass.
 
 **Inbound email is not an identity (added 2026-08-02, completed the same
@@ -120,6 +120,18 @@ credential: ids are sequential and printed in every email the desk sends, so
 before this check anyone could write onto, and close, a stranger's ticket by
 guessing a number. A tag from a non-owner, or from a sender Exchange could not
 authenticate, creates a new ticket instead.
+
+**An email body is attacker-controlled input with no length cap, and
+`stripHtml` touches it first (added 2026-08-02).** Its tag pattern used
+`[^>]`, which matches `<`, so a body of nothing but `<` backtracked
+quadratically: 200KB measured at forty seconds of CPU. That threw, and
+because the ingest checkpoint only advances on a clean pass and the batch is
+ordered oldest first from it, the same message returned every minute and
+nothing behind it was ever processed. One email stopped all email, silently.
+The classes are `[^<>]` now, the input is capped before any pattern runs, and
+a message that fails three times is abandoned into `inbound_failures` so no
+future exception here can wedge the queue. `test/htmlBudget.test.ts` asserts
+the time budget, not the output.
 
 **Metering folds addresses; authorisation never does.** `meteringSubject` in
 `src/rateLimit.ts` strips plus-tags and folds Google's dots, and IPv6 counts

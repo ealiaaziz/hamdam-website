@@ -910,3 +910,106 @@ before the audit raised them again:
   change that can lock both agents out of the console, so it wants doing
   deliberately, with the one-time PIN policy left in place until the new one
   is proven.
+
+---
+
+## Availability pass, 2026-08-02
+
+A third scan, from the position of somebody who wants this desk off the air
+rather than somebody who wants its data. Every earlier round asked what could
+be read or written that should not be. This one asked what could be stopped,
+and the answer was better than an attacker deserves: one email, sent once, at
+no cost, permanently.
+
+### One message could stop all messages
+
+`stripHtml` is the first thing to touch an email body, and an email body is
+the only input to this desk that arrives without passing a form, a length cap
+or a browser. Its tag pattern was `/<[^>]+>/g`.
+
+`[^>]` matches `<`. So against a body that is nothing but `<` characters, the
+class ran to the end of the string at every start position, failed to find
+`>`, and backtracked the whole way. Quadratic, on input a stranger chooses.
+Two hundred kilobytes of `<`, which is a rounding error in an email,
+measured at **forty seconds of CPU**, past what a Worker is allowed to spend.
+
+That on its own is a slow function. What made it an outage is what happens
+next:
+
+1. The message throws.
+2. The ingest checkpoint advances only after a pass with no failures, which
+   is deliberate and correct, because a message that failed transiently must
+   be seen again rather than skipped.
+3. The batch is fetched oldest first *from that checkpoint*, twenty five at a
+   time.
+
+So the poison message is in every batch, forever, and nothing behind it is
+ever processed. Every customer who emails the desk after that point is never
+seen. The mailbox looks entirely normal: mail arrives, it simply sits unread,
+and the one signal a person might notice, an inbox filling up, is the same
+thing an ordinary busy week looks like.
+
+Both halves are fixed, because either alone leaves the other standing.
+
+Excluding `<` from the class, `/<[^<>]*>/g`, means a run of them cannot be
+consumed: the match fails at the first character instead of the last. Real
+HTML is unaffected, since a `<` inside a tag is invalid anyway. The input is
+also capped at 64KB before any pattern runs, which bounds the lazy scan in
+the script and style pattern too. The same body now measures at about a
+millisecond, and a megabyte at six.
+
+And separately from the regex: a message that fails three times is now given
+up on, loudly, recorded in `inbound_failures` with its reason, left unread in
+the mailbox, and stepped over so the queue moves. That is the part that
+matters beyond this bug. Any future exception in this path, from any cause,
+would have wedged the entire channel the same way; now it costs three minutes
+and a line in `last_ingest_error`.
+
+`test/htmlBudget.test.ts` asserts the time budget rather than the output,
+because the output was never wrong.
+
+### A control that muted the defenders
+
+The outbound-recipient ceiling added earlier the same day was applying to the
+desk's own mailbox. The "requester replied" notice goes there, the ceiling is
+ten an hour shared across every ticket, and anyone could spend it on their own
+ticket in about two minutes and silence those notices for everybody else.
+
+Worth remembering as a shape rather than as a bug: a limit that bounds an
+attacker's reach usually bounds the defender's too, and the defender is the
+one who finds out later. `unmeteredRecipients` now covers the desk's own
+address alongside the escalation list.
+
+### Open, and cheaper for an attacker than it should be
+
+None of these stop the desk. All of them degrade it for less effort than the
+result is worth.
+
+* **The assistant's day can be spent by two IP addresses.** The daily model
+  budget is 200 calls and ticket creation is capped at five an hour per
+  caller, so one address can spend 120 in a day and two can exhaust it. After
+  that every reply, for everybody, falls back to the keyword matcher until
+  midnight UTC. The degradation is graceful by design and it is still the
+  product's main feature turned off for a day, at the cost of two addresses.
+  Raising the budget makes it more expensive to spend; a Cloudflare rate
+  limiting rule at the edge makes it harder to reach.
+* **There is no edge rate limiting.** The WAF has one custom rule and it is
+  the country check. Everything else is counted inside the Worker, which
+  means every attempt, including every refused attempt, costs a Worker
+  invocation and a D1 write to the counter table. The counter is a real
+  control and it is on the wrong side of the wall to protect the things
+  underneath it.
+* **Escalation is exempt from the recipient ceiling, deliberately.** An alert
+  to the team is the one message whose purpose is to arrive, so it is not
+  metered. The other side of that decision is that tickets whose subject
+  reads as P1 each produce two unmetered emails to two personal inboxes, and
+  ticket creation is only capped per caller. Named here rather than fixed,
+  because metering the alert is worse than the flood.
+* **MTA-STS now couples the domain's mail policy to this Worker's
+  availability.** The policy is served by the support Worker. In `testing`
+  mode a failed fetch costs nothing. Before promoting to `enforce`, note that
+  the coupling becomes real: senders holding a cached enforcing policy behave
+  differently from senders who can reach the current one.
+* **Mailbox capacity is Exchange's problem and nobody has looked at it.**
+  Nothing in this system limits how much mail can be *sent to*
+  developer@hamdam.com.au, and a full mailbox is a deaf desk.
