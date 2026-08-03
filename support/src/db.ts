@@ -484,6 +484,45 @@ export async function wasProcessed(db: D1Database, internetMessageId: string, fr
   return Boolean(row);
 }
 
+/**
+ * Records that a message failed, and says how many times it now has.
+ *
+ * Returns the attempt count so the caller can decide between retrying and
+ * giving up. Never throws: this runs in the handler for something that has
+ * already gone wrong, and a bookkeeping failure must not replace the original
+ * error with a less useful one.
+ */
+export async function recordInboundFailure(db: D1Database, internetMessageId: string, error: string): Promise<number> {
+  try {
+    const row = await db
+      .prepare(
+        `INSERT INTO inbound_failures (internet_message_id, attempts, last_error)
+         VALUES (?1, 1, ?2)
+         ON CONFLICT(internet_message_id) DO UPDATE SET
+           attempts = inbound_failures.attempts + 1,
+           last_error = ?2,
+           last_seen_at = datetime('now')
+         RETURNING attempts`,
+      )
+      .bind(internetMessageId, error.slice(0, 400))
+      .first<{ attempts: number }>();
+    return row?.attempts ?? 1;
+  } catch {
+    // Unknown attempt count reads as "first attempt", which retries. Better
+    // than giving up on a message because a counter was unavailable.
+    return 1;
+  }
+}
+
+/** Clears the failure record once a message finally goes through. */
+export async function clearInboundFailure(db: D1Database, internetMessageId: string): Promise<void> {
+  try {
+    await db.prepare('DELETE FROM inbound_failures WHERE internet_message_id = ?1').bind(internetMessageId).run();
+  } catch {
+    // Housekeeping only.
+  }
+}
+
 export async function recordInbound(
   db: D1Database,
   e: { internetMessageId: string; conversationId: string | null; ticketId: number | null; fromEmail: string; subject: string },

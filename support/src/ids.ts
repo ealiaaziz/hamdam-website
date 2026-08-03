@@ -60,19 +60,48 @@ export function tokensMatch(expected: string, provided: string): boolean {
  * in the ticket thread. The thread renders with textToSafeHtml, so storing
  * raw HTML there would show the requester a page of tags.
  */
+/**
+ * How much HTML is worth converting, before anything else looks at it.
+ *
+ * The regexes below scan; scanning is linear in the input and the input comes
+ * from strangers. Sixty four kilobytes is several times the largest real
+ * reply and is the first thing a hostile body has to get past. The body is
+ * truncated to 8000 characters afterwards anyway, and the part a person
+ * actually wrote is at the top of a reply, so nothing readable is lost.
+ */
+const MAX_HTML_CHARS = 64 * 1024;
+
 export function stripHtml(html: string): string {
   return html
+    .slice(0, MAX_HTML_CHARS)
     // Element *contents*, not just the tags, for the few elements whose
     // contents are not prose. Stripping only the tags left the body of a
     // <style> block sitting in the ticket as text, which is how a marketing
     // email became four hundred lines of CSS in a comment and in the model's
     // context. Scripts and comments go the same way and for a better reason:
     // whatever they hold, it is not what the person wrote.
-    .replace(/<(script|style|head|title)\b[^>]*>[\s\S]*?<\/\1\s*>/gi, ' ')
+    // `[^<>]`, not `[^>]`, in both this and the tag strip below. The
+    // difference looks cosmetic and is the whole finding.
+    //
+    // `[^>]*` happily consumes `<`, so against a body that is nothing but
+    // `<` characters the class runs to the end of the string at every start
+    // position, fails to find `>`, and backtracks all the way. That is
+    // quadratic, and quadratic on attacker-supplied input is not a
+    // performance note. Two hundred kilobytes of `<` measured at forty
+    // seconds of CPU, which is past what a Worker is allowed, so the message
+    // threw, so the ingest checkpoint never advanced, so every email after it
+    // went unread forever. One message, sent once, and the desk stops
+    // receiving mail.
+    //
+    // Excluding `<` from the class means a run of them cannot be consumed:
+    // the match fails at the first character instead of at the last. Same
+    // output on real HTML, where a `<` inside a tag is invalid anyway. The
+    // same input now measures at about a millisecond.
+    .replace(/<(script|style|head|title)\b[^<>]*>[\s\S]*?<\/\1\s*>/gi, ' ')
     .replace(/<!--[\s\S]*?-->/g, ' ')
     .replace(/<\/(p|div|li|h\d)>/gi, '\n')
     .replace(/<li>/gi, '- ')
-    .replace(/<[^>]+>/g, '')
+    .replace(/<[^<>]*>/g, '')
     .replace(/&middot;/g, '.')
     // Real email is full of these. A leaked "&nbsp;" in a ticket comment is
     // cosmetic; the same leak inside the model's context is noise it has to
