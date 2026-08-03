@@ -18,6 +18,7 @@ import { canSendDirectly, sendMail } from './mailer.js';
 import { isAllowedCountry, parseAllowedCountries } from './geo.js';
 import { mtaStsResponseFor } from './mtaSts.js';
 import { viaCloudflareEdge } from './edge.js';
+import { HEARTBEAT_KEY, readHeartbeat } from './heartbeat.js';
 import { adminAllowlist, isAllowedAgent } from './adminAccess.js';
 import { detectLocale, localePath, parseLocale, type Locale } from './i18n.js';
 import { ingestInbox } from './ingest.js';
@@ -31,6 +32,7 @@ import {
   claimModelCall,
   DEFAULT_DAILY_CALL_LIMIT,
   getAgentState,
+  getSyncState,
   recordAssistantTurn,
   recordRejectedArticle,
   discardDraft,
@@ -274,6 +276,31 @@ app.use('*', async (c, next) => {
     // contains nothing about anybody, and it is fetched by machines that
     // will otherwise ask for it on every delivery.
     'cache-control': 'public, max-age=3600',
+  });
+});
+
+// Whether the desk is still reading its mail, in a form a machine can watch.
+//
+// Above the country check for the same reason the MTA-STS policy is: an
+// uptime monitor runs wherever its provider runs, and a health check that is
+// only reachable from seven countries reports an outage every time the
+// monitor moves. It is also the one endpoint whose whole job is to be
+// checkable by something outside this system, which is the only kind of
+// watching that survives this system being what broke.
+//
+// Deliberately says nothing. Two words and a status code: no ticket counts,
+// no error text, no timestamps. A public endpoint is a public endpoint, and
+// everything an operator needs beyond "is it alive" is behind Access on the
+// console, where it belongs.
+app.get('/health', async (c) => {
+  const beat = readHeartbeat(await getSyncState(c.env.DB, HEARTBEAT_KEY));
+  const healthy = beat.state === 'ok';
+  return c.text(healthy ? 'ok\n' : 'stale\n', healthy ? 200 : 503, {
+    'content-type': 'text/plain; charset=utf-8',
+    // Short, but not zero. A monitor polling every minute should not put a
+    // database read on the critical path of anything, and thirty seconds of
+    // staleness is invisible against a ten minute threshold.
+    'cache-control': 'public, max-age=30',
   });
 });
 
@@ -763,6 +790,7 @@ app.get('/admin', async (c) => {
       filterPriority: priorityParam,
       agentEmail,
       allowlistConfigured: adminAllowlist(c.env).length > 0,
+      ingest: readHeartbeat(await getSyncState(c.env.DB, HEARTBEAT_KEY)),
     }),
   );
 });

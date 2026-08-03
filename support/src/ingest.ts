@@ -7,6 +7,7 @@ import { consumeRateLimit, mayEmailRecipient, meteringSubject } from './rateLimi
 import { senderIsAuthenticated } from './authResults.js';
 import { unmeteredRecipients } from './escalation.js';
 import { detectLocale, strings } from './i18n.js';
+import { HEARTBEAT_KEY } from './heartbeat.js';
 import { composeAssistantReplyLive, ASSISTANT_NAME } from './assistantReply.js';
 import { requestedClosure } from './agentPolicy.js';
 import { notifyEscalation } from './escalation.js';
@@ -398,6 +399,21 @@ export async function ingestInbox(env: Env): Promise<IngestSummary> {
     throw error;
   }
   await setSyncState(env.DB, 'last_ingest_error', '');
+
+  // The heartbeat, written here and not at the end.
+  //
+  // Here is the moment the desk has demonstrably read its mailbox: the
+  // credentials worked, Graph answered, and whatever it said is the truth
+  // about the inbox. What happens to the messages afterwards is a separate
+  // question with its own signals.
+  //
+  // It has to be before the empty-inbox return below, because that return is
+  // the whole bug. On a quiet mailbox this function used to write nothing at
+  // all, so a desk with no mail and a desk with a dead cron left identical
+  // traces, and the difference between them is the difference between a quiet
+  // week and customers being ignored.
+  await setSyncState(env.DB, HEARTBEAT_KEY, new Date().toISOString());
+
   summary.fetched = messages.length;
   if (messages.length === 0) return summary;
 

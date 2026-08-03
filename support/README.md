@@ -253,6 +253,39 @@ and a deploy. Do not promote without reading the reports first: an MTA-STS
 policy in enforce mode with a wrong MX pattern stops inbound mail reaching
 the desk, and nothing arriving looks exactly like a quiet day.
 
+### Knowing whether the desk is still reading its mail
+
+`ingestInbox` writes `last_ingest_at` into `sync_state` after every pass where
+Graph answered, including passes that found nothing. Including those is the
+entire point: before this, a quiet mailbox and a dead cron left the same
+trace, which was none, and the difference between them is the difference
+between a slow week and customers being ignored.
+
+Two things read it, and they fail in different directions on purpose.
+
+**The console** shows a banner when the last pass is more than ten minutes
+old. That reaches the person who can act, and it is the one that works when
+the cron is fine and Graph is not.
+
+**`GET /health`** answers `ok` with 200, or `stale` with 503, and nothing
+else: no counts, no timestamps, no error text. It is public, cached for
+thirty seconds, and served above the country check, because an uptime monitor
+runs wherever its provider runs and a health check reachable from seven
+countries reports an outage every time the monitor moves.
+
+Point a free external monitor at it. That is the half that still works when
+the Worker is what broke, and nothing inside this system can cover that case:
+if the cron is dead, the cron cannot tell you the cron is dead.
+
+Ten minutes is chosen from both ends. The cron fires every minute, so ten
+missed passes is a stopped one rather than a slow one, and it absorbs the
+occasional skipped invocation that Cloudflare does not promise against.
+
+The older `last_run_status`, `last_run_started` and similar keys in
+`sync_state` were written by the hourly Routine, which was retired on
+2026-08-02. They have been frozen since and are not health. Read
+`last_ingest_at` and `last_ingest_error`.
+
 ### Smoke-testing against production
 
 Use `@example.com` for the requester address. Never a real mailbox, and
@@ -408,6 +441,50 @@ Expression form, if editing as text:
 ```
 (http.host eq "support.hamdam.com.au" and not ip.src.country in {"AU" "NZ" "IR" "AE" "GB" "US" "NL"})
 ```
+
+### The rate limiting rule (not yet created)
+
+The country rule above is the only custom rule on this zone, and it answers a
+different question. Everything else is counted *inside* the Worker, in
+`src/rateLimit.ts`, which means every attempt, including every attempt the
+limiter refuses, still costs a Worker invocation and a write to the
+`rate_limits` table. The counter is a real control sitting on the wrong side
+of the wall from the things it protects.
+
+Create this in **Security, WAF, Rate limiting rules**:
+
+```
+If incoming requests match:
+  (http.host eq "support.hamdam.com.au" and http.request.method eq "POST")
+
+Characteristics:  IP
+Period:           1 minute
+Requests:         30
+Then:             Block
+Duration:         1 minute
+```
+
+Thirty a minute is far above anything a person does. Submitting a ticket is
+one POST; a fast back-and-forth on the tracking page is a handful. It is also
+far below what makes a flood worth running, and it costs the attacker at the
+edge rather than costing us a Worker and a database write each time.
+
+Deliberately scoped by hostname, the same as the country rule and for the same
+reason: `hamdam.com.au` and `mta-sts.hamdam.com.au` are different Workers with
+different jobs, and a rule that quietly covered the marketing site would be
+found the hard way. Deliberately POST-only, because the expensive paths all
+write, spend a model call, or send mail, and a GET flood on a static portal
+page is Cloudflare's problem rather than ours.
+
+On a free zone plan only one rate limiting rule is allowed, so create this one
+first. If a second becomes available, `(http.host eq
+"support.hamdam.com.au")` at 300 requests a minute per IP catches the
+remaining shape, which is a GET flood spending Worker invocations.
+
+This does not replace the in-Worker counters and is not meant to. Those
+enforce the policy that matters, five tickets an hour to one recipient, and
+they keep working if the rule is ever deleted. The same two-locks argument as
+everywhere else in this file.
 
 Unknown origins are refused, not waved through. Cloudflare reports `XX` when
 it cannot place an address and `T1` for Tor, and treating "we do not know" as
