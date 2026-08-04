@@ -155,7 +155,10 @@ const ogImage = new URL(
         document.querySelectorAll<HTMLAnchorElement>('a[href^="https://apps.apple.com/"]').forEach((a) => {
           const url = new URL(a.href);
           url.searchParams.set('ct', campaignParams.ct);
-          url.searchParams.set('pt', campaignParams.pt);
+          // No configured provider token means no `pt` at all -- and clear any
+          // the build baked in, so the two paths can never disagree.
+          if (campaignParams.pt) url.searchParams.set('pt', campaignParams.pt);
+          else url.searchParams.delete('pt');
           a.href = url.toString();
         });
       }

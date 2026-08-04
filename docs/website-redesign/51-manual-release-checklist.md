@@ -140,11 +140,16 @@ contrast) were not covered by the first decision and are newly accepted here.
       `'6784461990'` is correct: the app is ASC-approved, just not yet released (matches
       `RELEASED: false`). No code change needed.
       **Superseded same day**: the app went live, and `RELEASED` is now `true`.
-      Optional follow-up, not blocking: `ASC_PROVIDER_TOKEN` in the same file is still the
-      `'[ASC_PROVIDER_TOKEN]'` placeholder — safe to ship as-is (an unresolved `pt` value is
-      just ignored by Apple's attribution system, never a broken link), but if Ealia wants
-      real App Store Connect campaign attribution on outbound clicks, the real provider
-      token from ASC would replace it here.
+      **`ASC_PROVIDER_TOKEN` resolved 2026-08-04.** It had been left as the literal
+      `'[ASC_PROVIDER_TOKEN]'` on the reasoning that an unresolved `pt` is ignored by
+      Apple. That understated it: the placeholder was being published, so all six store
+      links per locale carried `pt=%5BASC_PROVIDER_TOKEN%5D` in a URL visitors can see and
+      share. It now reads `PUBLIC_ASC_PROVIDER_TOKEN` from the build environment and omits
+      `pt` when that is unset or placeholder-shaped. Attribution itself was never lost —
+      `ct` (`web-hero`, `web-fa-nav`, …) is what App Store Connect's Sources report groups
+      by, and it ships on every link. Optional, still not blocking: set
+      `PUBLIC_ASC_PROVIDER_TOKEN` in the Cloudflare Workers Builds environment to add the
+      real ASC provider token; no code change is needed.
 - [ ] CONST-03 wording sign-off against the shipped privacy policy text.
 
 ## Minor, non-blocking

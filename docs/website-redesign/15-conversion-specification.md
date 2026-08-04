@@ -125,8 +125,16 @@ event scripting would contradict the published claims as written. Therefore:
   (`website`). Implemented as a pure function beside `appStoreUrl()` with unit tests, so
   attribution survives without any client-side storage (no cookies, consistent with the
   privacy claims).
-- The provider token value is a placeholder until read from App Store Connect:
-  `[ASC_PROVIDER_TOKEN]`.
+- The provider token comes from the build environment (`PUBLIC_ASC_PROVIDER_TOKEN`), and
+  `pt` is **omitted entirely** when it is unset or placeholder-shaped. It was hard-coded
+  as the literal string `[ASC_PROVIDER_TOKEN]` until 2026-08-04, which put
+  `pt=%5BASC_PROVIDER_TOKEN%5D` on all six store links on each locale — a junk parameter
+  in a user-visible, shareable URL. `ct` is the value App Store Connect groups its Sources
+  report by and works on its own, so per-placement attribution is live with or without the
+  token; setting the env var adds `pt` to every link on the next build and needs no code
+  change. `normalizeProviderToken()` rejects anything not `[A-Za-z0-9_-]+`, so a
+  half-finished value cannot reach an href again, and a unit test asserts no built URL
+  contains a bracketed placeholder.
 
 ## 12. App Store badge treatment
 
@@ -149,7 +157,7 @@ event scripting would contradict the published claims as written. Therefore:
 | 4 | 7-day free trial wording | Already in Terms §3.2; re-verify against ASC subscription configuration at flip time |
 | 5 | Family Sharing up to six members on Lifetime | Terms §3.3; re-verify in ASC |
 | 6 | App Store URL and ID `6784461990` | Verify live at release-flag flip |
-| 7 | `[ASC_PROVIDER_TOKEN]` campaign value | Read from App Store Connect |
+| 7 | ~~`[ASC_PROVIDER_TOKEN]` campaign value~~ — resolved 2026-08-04: no longer published. `pt` is omitted unless `PUBLIC_ASC_PROVIDER_TOKEN` is set at build time | Optional: set the env var if the real ASC provider token is wanted; `ct` attribution works without it |
 | 8 | Trademark line (application no. 2674427) and the two different owner names on legal pages (Ealia Azizollahi in contact, Seyed Valiallah Azizollahi as IP owner) | Ealia confirms both names are intentional before the redesign republishes them |
 | 9 | Poet portrait treatment (artistic interpretations) and cultural moment imagery | Ealia's explicit cultural approval, per asset brief |
 | 10 | Countdown dates for Yalda, Norooz, Chaharshanbe Suri | Cross-check against the app's own date logic for the same dates |

@@ -9,11 +9,43 @@ export const APP_STORE = Object.freeze({
   COUNTRY: 'au',
 });
 
-// Placeholder until read from App Store Connect (conversion spec §11 item
-// 7 / claims-verification table item 7). Safe to ship as-is: an
-// unresolved `pt` value is simply ignored by Apple's attribution system,
-// never a broken link.
-export const ASC_PROVIDER_TOKEN = '[ASC_PROVIDER_TOKEN]';
+// The App Store Connect provider token, read from the build environment
+// (`PUBLIC_ASC_PROVIDER_TOKEN`) rather than hard-coded, because it is an
+// account-specific value only ASC can supply.
+//
+// It shipped as the literal string `[ASC_PROVIDER_TOKEN]` until 2026-08-04.
+// That was recorded as safe ("an unresolved `pt` is just ignored"), and it
+// was wrong in the way that mattered: every store link on the site carried
+// `pt=%5BASC_PROVIDER_TOKEN%5D`, a visible junk parameter in a URL users can
+// see and share, sitting next to the `ct` value that is the part actually
+// doing the attribution work.
+//
+// So: no token, no parameter. `ct` is what App Store Connect groups the
+// Sources report by and it works on its own, which means per-placement
+// attribution (web-hero, web-nav, web-pricing...) is live either way; `pt`
+// only adds the legacy provider dimension on top. Set the env var when the
+// real token is read from ASC and every link picks it up on the next build,
+// with no other change.
+//
+// Anything placeholder-shaped is rejected rather than propagated, so a
+// half-finished value can never reach an href again.
+const PROVIDER_TOKEN_PATTERN = /^[A-Za-z0-9_-]+$/;
+
+/** @param {unknown} raw */
+export function normalizeProviderToken(raw) {
+  if (typeof raw !== 'string') return null;
+  const trimmed = raw.trim();
+  return PROVIDER_TOKEN_PATTERN.test(trimmed) ? trimmed : null;
+}
+
+/**
+ * `null` when unset or placeholder-shaped, which is the signal to omit `pt`
+ * from the URL entirely.
+ * @type {string | null}
+ */
+export const ASC_PROVIDER_TOKEN = normalizeProviderToken(
+  typeof import.meta !== 'undefined' ? import.meta.env?.PUBLIC_ASC_PROVIDER_TOKEN : undefined
+);
 
 const CAMPAIGN_FALLBACK = 'website';
 
@@ -23,6 +55,8 @@ const CAMPAIGN_FALLBACK = 'website';
  * `CAMPAIGN_FALLBACK` when absent. Pure function of a URLSearchParams-like
  * object (anything with `.get()`); no cookies, no client-side storage,
  * consistent with the site's "no tracking" claims.
+ * `pt` is `null` whenever no real provider token is configured; callers omit
+ * the parameter in that case rather than writing an empty or placeholder one.
  * @param {{ get(key: string): string | null } | null | undefined} searchParams
  */
 export function campaignParamsFromSearch(searchParams) {
@@ -52,7 +86,7 @@ export function campaignTokenFor(lang, placement) {
 
 /**
  * @param {'en' | 'fa'} lang
- * @param {{ ct: string, pt: string } | null} [campaignParams]
+ * @param {{ ct: string, pt?: string | null } | null} [campaignParams]
  * @param {string | null} [placement] Static placement token, e.g. 'hero'.
  *   Ignored when campaignParams is supplied, since an inbound utm_campaign is
  *   a real attributed visit and outranks the placement default.
@@ -63,10 +97,10 @@ export function appStoreUrl(lang = 'en', campaignParams = null, placement = null
   if (lang === 'fa') params.set('l', 'fa');
   if (campaignParams) {
     params.set('ct', campaignParams.ct);
-    params.set('pt', campaignParams.pt);
+    if (campaignParams.pt) params.set('pt', campaignParams.pt);
   } else if (placement) {
     params.set('ct', campaignTokenFor(lang, placement));
-    params.set('pt', ASC_PROVIDER_TOKEN);
+    if (ASC_PROVIDER_TOKEN) params.set('pt', ASC_PROVIDER_TOKEN);
   }
   const qs = params.toString();
   return qs ? `${base}?${qs}` : base;
