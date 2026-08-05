@@ -134,9 +134,18 @@ export async function sendMail(env: Env, mail: MailToSend, now = Date.now()): Pr
 // desk and hears nothing for up to an hour, having been told nothing at all,
 // because unlike the portal there is no page to show them an acknowledgement.
 
+/**
+ * Which folder a message was found in.
+ *
+ * Carried through rather than flattened away, because it changes what the
+ * desk is willing to do about the message. See `handleMessage`.
+ */
+export type MailFolder = 'inbox' | 'junk';
+
 export interface InboundMessage {
   /** Graph's own id for the message, needed to change anything about it. */
   id: string;
+  folder: MailFolder;
   internetMessageId: string;
   conversationId: string | null;
   subject: string;
@@ -164,9 +173,10 @@ interface GraphMessage {
  * would drop the second one permanently. Re-reading a message the ledger
  * already knows costs one skipped row.
  */
-export async function fetchInbox(env: Env, since: string, limit = 25, now = Date.now()): Promise<InboundMessage[]> {
-  if (!canSendDirectly(env)) return [];
+/** Graph's well-known folder names for the two places a person's mail lands. */
+const FOLDER_PATH: Record<MailFolder, string> = { inbox: 'inbox', junk: 'junkemail' };
 
+async function fetchFolder(env: Env, folder: MailFolder, since: string, limit: number, now: number): Promise<InboundMessage[]> {
   const token = await accessToken(env, now);
   const query = new URLSearchParams({
     $filter: `receivedDateTime ge ${since}`,
@@ -176,18 +186,19 @@ export async function fetchInbox(env: Env, since: string, limit = 25, now = Date
   });
 
   const response = await fetch(
-    `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(SENDER)}/mailFolders/inbox/messages?${query}`,
+    `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(SENDER)}/mailFolders/${FOLDER_PATH[folder]}/messages?${query}`,
     { headers: { authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(15_000) },
   );
 
   if (response.status === 401) cachedToken = null;
-  if (!response.ok) throw new Error(`graph inbox ${response.status}: ${(await response.text()).slice(0, 200)}`);
+  if (!response.ok) throw new Error(`graph ${folder} ${response.status}: ${(await response.text()).slice(0, 200)}`);
 
   const body = (await response.json()) as { value?: GraphMessage[] };
   return (body.value ?? [])
     .filter((m): m is GraphMessage & { id: string; internetMessageId: string } => Boolean(m.internetMessageId && m.id))
     .map((m) => ({
       id: m.id,
+      folder,
       internetMessageId: m.internetMessageId,
       conversationId: m.conversationId ?? null,
       subject: m.subject ?? '(no subject)',
@@ -196,6 +207,47 @@ export async function fetchInbox(env: Env, since: string, limit = 25, now = Date
       receivedAt: m.receivedDateTime ?? new Date(now).toISOString(),
       bodyHtml: m.body?.content ?? '',
     }));
+}
+
+/**
+ * Messages received since `since`, oldest first, from the Inbox *and* the
+ * junk folder.
+ *
+ * `ge` rather than `gt`, with the dedupe ledger doing the real work: two
+ * messages can share a timestamp to the second, and a strict comparison
+ * would drop the second one permanently. Re-reading a message the ledger
+ * already knows costs one skipped row.
+ *
+ * Junk is read because the desk was reading the Inbox and nothing else, which
+ * meant Exchange's spam filter had a silent veto over which customers get
+ * support. A misclassified email was not delayed or flagged, it was invisible,
+ * permanently, with no trace anywhere in this system. That is the same failure
+ * shape as the poison message, arrived at through somebody else's heuristic.
+ *
+ * Reading it does not mean believing it: `folder` travels with the message and
+ * the desk answers junk differently. See `handleMessage`.
+ *
+ * A junk fetch that fails does not fail the pass. The Inbox is the channel
+ * people are told to use, and losing the safety net is not a reason to lose
+ * the main path with it.
+ */
+export async function fetchInbox(env: Env, since: string, limit = 25, now = Date.now()): Promise<InboundMessage[]> {
+  if (!canSendDirectly(env)) return [];
+
+  const inbox = await fetchFolder(env, 'inbox', since, limit, now);
+
+  let junk: InboundMessage[] = [];
+  try {
+    junk = await fetchFolder(env, 'junk', since, limit, now);
+  } catch (error) {
+    console.warn('junk folder unreadable:', error instanceof Error ? error.message : String(error));
+  }
+
+  // Merged and re-sorted, then trimmed to one batch. Trimming the newest is
+  // what keeps the checkpoint honest: messages are processed oldest first and
+  // the checkpoint only reaches the newest one actually handled, so anything
+  // dropped here is picked up next pass rather than skipped.
+  return [...inbox, ...junk].sort((a, b) => a.receivedAt.localeCompare(b.receivedAt)).slice(0, limit);
 }
 
 /**

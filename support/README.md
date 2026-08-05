@@ -253,6 +253,35 @@ and a deploy. Do not promote without reading the reports first: an MTA-STS
 policy in enforce mode with a wrong MX pattern stops inbound mail reaching
 the desk, and nothing arriving looks exactly like a quiet day.
 
+### The junk folder is read too, and answered differently
+
+The cron reads `developer@hamdam.com.au`'s **Inbox and its junk folder**.
+
+Reading only the Inbox gave Exchange's spam filter a silent veto over which
+customers get support. A misclassified email was not delayed, queued or
+flagged: it was invisible, permanently, with no trace anywhere in this system
+and nothing for anyone to notice. That is the same failure shape as a message
+the desk cannot process, arrived at through somebody else's heuristic.
+
+Reading it and replying normally would be the opposite mistake and a worse
+one. The desk would answer spam from an address that passes SPF, DKIM and
+DMARC for this domain, confirm to whoever sent it that the mailbox is live,
+and spend the day's model budget doing it.
+
+So the two are separated. **A message from junk is filed and never answered
+automatically.** It becomes a ticket, visible in the console, carrying a
+system note that says why it was silent. A person replying to it works
+normally and the thread continues as usual from there.
+
+Everything else is identical: junk messages go through the same routing, the
+same automated-mail guard, and the same sender-authentication check. Being in
+junk is not a reason to trust a message less at that layer, and not a reason
+to trust it more.
+
+A junk fetch that fails is logged and does not fail the pass. The Inbox is the
+channel people are told to use, and losing the safety net is not a reason to
+lose the main path with it.
+
 ### Knowing whether the desk is still reading its mail
 
 `ingestInbox` writes `last_ingest_at` into `sync_state` after every pass where

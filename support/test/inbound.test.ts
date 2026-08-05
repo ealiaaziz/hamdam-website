@@ -8,6 +8,7 @@ import type { InboundMessage } from '../src/mailer.js';
 
 const message = (over: Partial<InboundMessage> = {}): InboundMessage => ({
   id: 'AAMkAGabc',
+  folder: 'inbox',
   internetMessageId: '<abc@example.com>',
   conversationId: 'conv-1',
   subject: 'Verse will not load',

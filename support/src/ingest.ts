@@ -239,7 +239,24 @@ async function handleMessage(env: Env, message: InboundMessage): Promise<'create
   // Everything below files the message either way. What this decides is
   // whether the desk also answers by itself, which is the part that costs a
   // model call and puts mail in somebody's inbox.
-  const quiet = !(await automatedRepliesAllowed(env, message.fromEmail));
+  //
+  // Anything found in the junk folder is filed and never answered, and that
+  // asymmetry is the whole reason reading junk is safe.
+  //
+  // Not reading it gave Exchange's spam filter a silent veto over which
+  // customers get support: a misclassified email was not delayed or flagged,
+  // it was invisible, permanently. Reading it and replying normally would be
+  // the opposite mistake and a worse one, because the desk would answer
+  // spam from an address that passes SPF, DKIM and DMARC for this domain,
+  // confirm the mailbox is live to whoever sent it, and spend the day's model
+  // budget doing it.
+  //
+  // Filed-but-silent is the honest middle. The message becomes a ticket a
+  // person can see and act on in the console, the requester gets nothing
+  // automatic, and if it turns out to be a real customer a human replies and
+  // the thread works normally from there.
+  const fromJunk = message.folder === 'junk';
+  const quiet = fromJunk || !(await automatedRepliesAllowed(env, message.fromEmail));
 
   if (plan.action === 'append') {
     await addComment(env.DB, plan.ticketId, 'requester', message.fromName, plan.body);
@@ -262,12 +279,12 @@ async function handleMessage(env: Env, message: InboundMessage): Promise<'create
       return 'appended';
     }
 
-    if (quiet) await noteSuppressed(env, plan.ticketId);
+    if (quiet) await noteSuppressed(env, plan.ticketId, fromJunk);
     else await replyWithAssistant(env, plan.ticketId);
     return 'appended';
   }
 
-  return handleAsNew(env, message, plan.body, quiet);
+  return handleAsNew(env, message, plan.body, quiet, fromJunk);
 }
 
 /**
@@ -290,17 +307,14 @@ async function automatedRepliesAllowed(env: Env, fromEmail: string): Promise<boo
  * is a ticket that looks like the assistant simply failed. Whoever opens it
  * needs to know the silence was a decision and roughly why.
  */
-async function noteSuppressed(env: Env, ticketId: number): Promise<void> {
-  await addComment(
-    env.DB,
-    ticketId,
-    'system',
-    null,
-    'Automatic replies are paused for this sender: more messages arrived in the last hour than the desk answers by itself. Nothing has been lost, and a person replying here works normally.',
-  );
+async function noteSuppressed(env: Env, ticketId: number, fromJunk = false): Promise<void> {
+  const reason = fromJunk
+    ? 'This arrived in the junk folder, so the desk filed it without replying. That is deliberate: answering a message the spam filter rejected would confirm this mailbox to whoever sent it. If it is a real request, replying here works normally and the thread continues as usual.'
+    : 'Automatic replies are paused for this sender: more messages arrived in the last hour than the desk answers by itself. Nothing has been lost, and a person replying here works normally.';
+  await addComment(env.DB, ticketId, 'system', null, reason);
 }
 
-async function handleAsNew(env: Env, message: InboundMessage, body: string, quiet = false): Promise<'created'> {
+async function handleAsNew(env: Env, message: InboundMessage, body: string, quiet = false, fromJunk = false): Promise<'created'> {
   const subject = cleanSubject(message.subject);
   const requester = await upsertRequester(env.DB, message.fromEmail, message.fromName);
 
@@ -344,7 +358,7 @@ async function handleAsNew(env: Env, message: InboundMessage, body: string, quie
   });
 
   if (quiet) {
-    await noteSuppressed(env, ticketId);
+    await noteSuppressed(env, ticketId, fromJunk);
     return 'created';
   }
 
