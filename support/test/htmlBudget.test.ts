@@ -19,8 +19,25 @@ import { stripHtml } from '../src/ids.js';
 // One email, sent once, and the mailbox looks completely normal while every
 // message after it goes unread.
 
-/** Generous for a regex over a bounded input, and far under a Worker's limit. */
-const BUDGET_MS = 500;
+/**
+ * The ceiling, and why it is where it is.
+ *
+ * 500ms at first, which was too tight and made this file flaky: a shared CI
+ * runner measured 635ms for the unclosed-comment case and failed a build on a
+ * commit that was fine. A flaky test is worse than no test, because it teaches
+ * everyone to re-run and stop reading.
+ *
+ * The right response was not simply a bigger number. 635ms said the comment
+ * pattern was still quadratic inside the input cap, and that got fixed in
+ * ids.ts; the worst case now measures around 300ms locally.
+ *
+ * Two seconds is what is left: several times the measured worst case, so
+ * ordinary contention cannot fail it, and still more than an order of
+ * magnitude below the forty seconds the original bug produced. A regression to
+ * quadratic would blow through this by a factor of twenty, not by a few
+ * percent, which is the only thing this number needs to be able to tell.
+ */
+const BUDGET_MS = 2_000;
 
 function elapsed(input: string): number {
   const started = performance.now();
@@ -51,6 +68,17 @@ describe('stripHtml cannot be made to run long', () => {
 
   it('survives a single enormous tag that never closes', () => {
     expect(elapsed(`<div ${'a'.repeat(500_000)}`)).toBeLessThan(BUDGET_MS);
+  });
+
+  it('costs the same whether the body is large or absurd', () => {
+    // The scaling assertion, and the one that does not care how fast the
+    // machine is. Everything above is capped before a pattern runs, so ten
+    // times the input has to cost about the same rather than ten times as
+    // much. If someone removes the cap, this fails on a slow runner and a
+    // fast one alike, which is more than a wall-clock number can promise.
+    const large = elapsed('<!--<script><'.repeat(20_000));
+    const absurd = elapsed('<!--<script><'.repeat(200_000));
+    expect(absurd).toBeLessThan(Math.max(large, 50) * 3);
   });
 });
 

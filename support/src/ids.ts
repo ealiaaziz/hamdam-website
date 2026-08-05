@@ -98,7 +98,22 @@ export function stripHtml(html: string): string {
     // output on real HTML, where a `<` inside a tag is invalid anyway. The
     // same input now measures at about a millisecond.
     .replace(/<(script|style|head|title)\b[^<>]*>[\s\S]*?<\/\1\s*>/gi, ' ')
-    .replace(/<!--[\s\S]*?-->/g, ' ')
+    // Bounded, for the same reason the classes above exclude `<`, and found
+    // the same way: by measuring rather than by reading.
+    //
+    // A lazy scan for a closing delimiter runs to the end of the string when
+    // there is no closing delimiter, once per opening one. Against 64KB of
+    // `<!--` that is sixteen thousand scans of sixty four kilobytes, which
+    // measured at 572ms. The input cap made that bounded rather than
+    // unbounded, so it stopped being a way to take the desk down, and it was
+    // still most of a second of CPU that a stranger could ask for at will.
+    //
+    // Capping the scan at 2048 characters brings the same input to 138ms. The
+    // cost is that a comment longer than 2KB is not recognised as a comment,
+    // so its text survives into the ticket. That is a cosmetic loss on a
+    // message that was already pathological, and the tag strip below still
+    // removes any markup inside it.
+    .replace(/<!--[\s\S]{0,2048}?-->/g, ' ')
     .replace(/<\/(p|div|li|h\d)>/gi, '\n')
     .replace(/<li>/gi, '- ')
     .replace(/<[^<>]*>/g, '')
