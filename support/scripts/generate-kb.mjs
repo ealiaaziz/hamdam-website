@@ -9,14 +9,25 @@
 //
 // Run after changing anything in kb/:  node scripts/generate-kb.mjs
 
-import { readdirSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
-import { join, dirname } from 'node:path';
+import { readdirSync, readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
+import { join, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+// A second deployment has its own knowledge base, so both directories are
+// arguments with this desk's own as the default. Passing them is what keeps
+// one business's answers away from another's staff, which is the mistake a
+// shared codebase makes easy and nothing downstream would catch: a confident
+// answer about the wrong product reads exactly like a confident right one.
+//
+//   node scripts/generate-kb.mjs --kb ../tenants/x/kb --out ../tenants/x/kb.generated.ts
 const here = dirname(fileURLToPath(import.meta.url));
-const kbDir = join(here, '..', 'kb');
+const arg = (name, fallback) => {
+  const at = process.argv.indexOf(`--${name}`);
+  return at > -1 && process.argv[at + 1] ? resolve(process.argv[at + 1]) : fallback;
+};
+const kbDir = arg('kb', join(here, '..', 'kb'));
 const referenceDir = join(kbDir, 'reference');
-const outFile = join(here, '..', 'src', 'data', 'kb.ts');
+const outFile = arg('out', join(here, '..', 'src', 'data', 'kb.ts'));
 
 /** Minimal front-matter reader: `key:` scalars and `- ` lists, nothing more. */
 function parseFrontMatter(raw) {
@@ -53,8 +64,12 @@ function parseFrontMatter(raw) {
 // requester, a reference file is only ever background for answering a
 // question. Merging them would put "how does iCloud sync work" into the
 // feedback card as though it were something to try.
+// A tenant that has not returned its intake has no reference files yet, and
+// that is a legitimate state rather than an error: with none, the assistant
+// says it does not know and hands over, which is the correct answer to a
+// question about an environment nobody has described to it.
 const reference = [];
-for (const name of readdirSync(referenceDir).filter((f) => f.endsWith('.md') && f !== 'README.md').sort()) {
+for (const name of (existsSync(referenceDir) ? readdirSync(referenceDir) : []).filter((f) => f.endsWith('.md') && f !== 'README.md').sort()) {
   const { meta, body } = parseFrontMatter(readFileSync(join(referenceDir, name), 'utf8'));
   for (const required of ['id', 'title', 'source']) {
     if (!meta[required]) throw new Error(`reference/${name}: missing "${required}"`);
@@ -121,4 +136,4 @@ export const APP_REFERENCE: readonly AppReference[] = ${JSON.stringify(reference
 `,
 );
 
-console.log(`Generated ${articles.length} article(s) and ${reference.length} reference file(s) into src/data/kb.ts`);
+console.log(`Generated ${articles.length} article(s) and ${reference.length} reference file(s) into ${outFile}`);

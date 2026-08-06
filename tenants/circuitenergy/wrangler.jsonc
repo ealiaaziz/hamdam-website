@@ -1,0 +1,74 @@
+{
+  // Circuit Energy's IT desk. Same source as hamdam-support, different
+  // deployment: its own Worker, its own D1, its own knowledge base, its own
+  // mailbox. Nothing is shared at runtime, which is the whole tenancy model.
+  //
+  // Deploy from this directory:  npx wrangler deploy -c wrangler.jsonc
+  "name": "circuitenergy-support",
+  "main": "../../support/src/index.ts",
+  "compatibility_date": "2026-07-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": false,
+  "preview_urls": false,
+  "observability": { "enabled": true, "head_sampling_rate": 1 },
+
+  // The knowledge base, swapped at bundle time.
+  //
+  // This is the single most important line in the file. The shared source
+  // imports `./data/kb.js`, which for hamdam-support is 235 verses and iCloud
+  // sync. Without this alias Circuit Energy's staff would be answered from
+  // Hamdam's knowledge base, confidently and about the wrong product, which is
+  // exactly the failure the reference directory's source rule exists to
+  // prevent. Regenerate after editing kb/:
+  //
+  //   node ../../support/scripts/generate-kb.mjs --kb ./kb --out ./kb.generated.ts
+  "alias": {
+    "./data/kb.js": "./kb.generated.ts"
+  },
+
+  // circuitenergy.org is not in this Cloudflare account, so the desk lives on
+  // a subdomain of the one that is. That is the ordinary arrangement for a
+  // desk run on somebody's behalf: the portal is ours, the requesters are
+  // theirs.
+  "routes": [{ "pattern": "circuitenergy.hamdam.com.au", "custom_domain": true }],
+
+  "vars": {
+    // Who this deployment is. See support/src/identity.ts.
+    "SUPPORT_MAILBOX": "circuitenergy@hamdam.com.au",
+    "TICKET_PREFIX": "CE",
+    "BRAND_NAME": "Circuit Energy IT",
+    "PUBLIC_BASE_URL": "https://circuitenergy.hamdam.com.au",
+
+    // Only Circuit Energy staff may open a ticket. Everything else that
+    // reaches the mailbox is filed and ignored rather than answered, because a
+    // reply confirms a live mailbox to whoever sent it.
+    //
+    // Add a named outsider as a full address when one appears, e.g. an
+    // external bookkeeper: "circuitenergy.org, books@accountants.example".
+    "REQUESTER_ALLOWLIST": "circuitenergy.org",
+
+    // Wider than Hamdam's list because this is a workforce rather than a
+    // market: staff travel, and being unable to raise a ticket from an airport
+    // is a worse failure here than an unwanted visitor from one. Email is
+    // never geo-restricted either way.
+    "ALLOWED_COUNTRIES": "AU,NZ,GB,US,SG,AE,ID,JP,DE,FR"
+
+    // ACCESS_TEAM_DOMAIN and ACCESS_AUD are deliberately absent, so /admin
+    // returns 503 rather than opening. They must come from an Access
+    // application scoped to *this* hostname: reusing hamdam-support's AUD
+    // would make a token issued for Hamdam's console valid on this one, which
+    // is precisely the cross-tenant hole this separation exists to avoid.
+  },
+
+  "ai": { "binding": "AI" },
+  "triggers": { "crons": ["* * * * *", "0 */2 * * *"] },
+
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "circuitenergy-support-db",
+      "database_id": "PLACEHOLDER_SET_BY_D1_CREATE",
+      "migrations_dir": "../../support/migrations"
+    }
+  ]
+}

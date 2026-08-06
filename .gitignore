@@ -27,3 +27,6 @@ pnpm-debug.log*
 
 # wrangler local dev vars (may hold secrets; .example is the committed template)
 .dev.vars
+
+# Tenant bundle output from `npm run tenant:build`.
+tenants/*/dist/
