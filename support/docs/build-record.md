@@ -1013,3 +1013,70 @@ result is worth.
 * **Mailbox capacity is Exchange's problem and nobody has looked at it.**
   Nothing in this system limits how much mail can be *sent to*
   developer@hamdam.com.au, and a full mailbox is a deaf desk.
+
+---
+
+## Fourth pass, 2026-08-06
+
+Run after three previous rounds had each declared the previous one finished.
+Two findings, and the second is the more embarrassing.
+
+### A malformed body was an unhandled exception
+
+Found by probing the live surface rather than by reading it. `POST /tickets`
+with `Content-Type: application/json` returned 500: every POST here called
+`c.req.formData()` unguarded, and that throws on a body it cannot parse.
+
+Nothing leaked, because Hono's default is a bare "Internal Server Error".
+Three things were still wrong. A malformed body is a client error and 500
+says otherwise. The request had already spent a rate limit slot and a
+database write before failing. And any stranger could write an exception into
+the logs at will, on the one endpoint the whole internet can reach.
+
+All five call sites now go through one parser that returns 400, so the next
+POST route added here does not have to remember. `app.onError` was missing
+entirely and is now present: what a failing route tells the world used to be
+whatever the framework decided, which is correct today and is a dependency's
+choice rather than ours through the next upgrade.
+
+### Nobody had ever run `npm audit`
+
+Four security passes, none of which checked the dependencies. The one thing on
+every standard checklist, skipped four times in a row, while the reviews got
+steadily more inventive about the code.
+
+`hono` was on 4.12.33 against an advisory fixed in 4.12.34: a ReDoS in the
+CORS middleware via `Access-Control-Request-Headers`. Not reachable here,
+because this app does not use that middleware, which is worth recording as the
+reason rather than leaving it to look like luck. Upgraded to 4.13.0 anyway,
+because "the vulnerable path is unreachable" is a statement about today's
+routes and the fix costs nothing.
+
+The remaining advisories are `wrangler` and `miniflare`, which are dev
+dependencies: they run in CI and on a developer's machine and are never part
+of what is deployed. Left alone, because the fix is a major version bump of
+the deploy tooling and that wants doing deliberately rather than at the end of
+a security pass.
+
+### What was checked and held
+
+The parts of this that a fourth pass could have found and did not:
+
+* SQL is bound everywhere. The single interpolated fragment in
+  `updateTicketStatus` is one of three literal branches keyed on an enum, and
+  the enum comes from a whitelist parser.
+* Draft approval and discard are both scoped `AND ticket_id = ?2`, so a draft
+  id from one ticket cannot be actioned through another.
+* All four public ticket routes gate on `tokensMatch`, and a wrong token and
+  a missing ticket both return the same 404, so there is no oracle.
+* The model output validator whitelists the action, caps the body, rejects
+  wording that claims a person acted, and accepts an article or reference id
+  only when it exists in the set actually supplied. An invented citation
+  becomes null, which then trips the unsourced-answer guard and escalates, so
+  it fails closed.
+* Model output reaches HTML through `textToSafeHtml` in both the portal thread
+  and the emails, which have no CSP behind them.
+* Live probing: TRACE, PUT, DELETE, OPTIONS, forged `Cf-Access-*` headers,
+  path traversal on `/static`, a null byte in the path, an 8KB header, a 4KB
+  URL, duplicate query parameters, a 2MB body, and CRLF in the email field.
+  All refused correctly. `/tickets/40` on the MTA-STS hostname is a 404.
