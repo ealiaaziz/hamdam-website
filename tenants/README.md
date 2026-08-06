@@ -30,5 +30,5 @@ business's staff about a Persian poetry app, confidently. The bundle is worth
 grepping after any change to the build:
 
 ```sh
-grep -c verse-not-loading tenants/<name>/dist/*.js   # must be 0
+grep -c verse-not-loading tenants/<name>/dist/index.js   # must be 0
 ```

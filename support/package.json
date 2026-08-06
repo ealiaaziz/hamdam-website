@@ -16,7 +16,7 @@
     "db:migrate:local": "wrangler d1 migrations apply hamdam-support-db --local",
     "db:migrate:remote": "wrangler d1 migrations apply hamdam-support-db --remote",
     "kb:generate:tenant": "node scripts/generate-kb.mjs --kb ../tenants/$TENANT/kb --out ../tenants/$TENANT/kb.generated.ts",
-    "tenant:build": "node scripts/predeploy-check.mjs && wrangler deploy -c ../tenants/$TENANT/wrangler.jsonc --dry-run --outdir ../tenants/$TENANT/dist",
+    "tenant:build": "node scripts/predeploy-check.mjs && wrangler deploy -c ../tenants/$TENANT/wrangler.jsonc --dry-run --outdir dist",
     "tenant:deploy": "node scripts/predeploy-check.mjs && wrangler deploy -c ../tenants/$TENANT/wrangler.jsonc",
     "tenant:migrate": "wrangler d1 migrations apply $TENANT-support-db --remote -c ../tenants/$TENANT/wrangler.jsonc"
   },
