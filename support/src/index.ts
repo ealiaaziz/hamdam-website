@@ -59,6 +59,29 @@ import { strings } from './i18n.js';
 // not ingest its own outgoing email as requester replies.
 const SUPPORT_INBOX = 'developer@hamdam.com.au';
 
+/**
+ * The submitted form, or null when the body was not one.
+ *
+ * `c.req.formData()` throws on a body it cannot parse, and every POST here
+ * called it unguarded, so `Content-Type: application/json` on the public
+ * ticket form produced an unhandled exception and a 500. Nothing leaked,
+ * because Hono's default returns a bare "Internal Server Error", but the
+ * request had already consumed a rate limit slot and a database write on its
+ * way to failing, and a 500 is the wrong thing to tell somebody whose request
+ * was simply malformed.
+ *
+ * A body this function cannot read is a client error. Saying so costs one
+ * line and stops a stranger being able to write an exception into the logs
+ * at will.
+ */
+async function readForm(c: DeskContext): Promise<FormData | null> {
+  try {
+    return await c.req.formData();
+  } catch {
+    return null;
+  }
+}
+
 /** The Hono context this app actually builds, so helpers can accept one. */
 type DeskEnv = { Bindings: Env; Variables: { agentEmail: string } };
 type DeskContext = Context<DeskEnv>;
@@ -350,7 +373,8 @@ app.post('/tickets', async (c) => {
   const limited = await overRateLimit(c, 'ticket_create_ip');
   if (limited) return limited;
 
-  const form = await c.req.formData();
+  const form = await readForm(c);
+  if (!form) return c.text('Expected a form submission.', 400);
   // Trimmed, stripped of control characters and capped here rather than
   // trusted from the form. `maxlength` is a courtesy to a browser and nothing
   // at all to a script, and every one of these fields goes on to be stored,
@@ -523,7 +547,8 @@ app.post('/tickets/:id/feedback', async (c) => {
   const ticket = await getTicketById(c.env.DB, id);
   if (!ticket || !tokensMatch(ticket.tracking_token, token)) return c.notFound();
 
-  const form = await c.req.formData();
+  const form = await readForm(c);
+  if (!form) return c.text('Expected a form submission.', 400);
   const outcome = String(form.get('outcome') ?? '');
   // Only an article the desk actually publishes. Anything else was not on
   // the page it came from, and taking it at face value writes attacker text
@@ -592,7 +617,8 @@ app.post('/tickets/:id/reply', async (c) => {
   const limited = await overRateLimit(c, 'ticket_reply');
   if (limited) return limited;
 
-  const form = await c.req.formData();
+  const form = await readForm(c);
+  if (!form) return c.text('Expected a form submission.', 400);
   const body = cleanText(form.get('body'), MAX_BODY_CHARS);
   if (body) {
     const commentId = await addComment(c.env.DB, id, 'requester', ticket.requester_name, body);
@@ -815,7 +841,8 @@ app.post('/admin/tickets/:id/reply', async (c) => {
   const ticket = await getTicketById(c.env.DB, id);
   if (!ticket) return c.notFound();
 
-  const form = await c.req.formData();
+  const form = await readForm(c);
+  if (!form) return c.text('Expected a form submission.', 400);
   // Capped like the requester's, though this side is authenticated: the cap
   // is about what the email and the stored row can hold, not about trust.
   const body = cleanText(form.get('body'), MAX_BODY_CHARS);
@@ -909,7 +936,8 @@ app.post('/admin/tickets/:id/status', async (c) => {
   const ticket = await getTicketById(c.env.DB, id);
   if (!ticket) return c.notFound();
 
-  const form = await c.req.formData();
+  const form = await readForm(c);
+  if (!form) return c.text('Expected a form submission.', 400);
   const status = parseTicketStatus(String(form.get('status') ?? '')) ?? ticket.status;
   const priority = parsePriority(String(form.get('priority') ?? '')) ?? ticket.priority;
 
@@ -974,6 +1002,23 @@ app.post('/admin/tickets/:id/drafts/:draftId/discard', async (c) => {
 });
 
 app.notFound((c) => c.text('Not found', 404));
+
+/**
+ * The last word on anything that throws.
+ *
+ * Without this, what a failing route tells the world is whatever the
+ * framework decides, and that is a dependency's choice rather than ours. It
+ * is a bare "Internal Server Error" today, which is right, and nothing
+ * guarantees it stays that way through an upgrade.
+ *
+ * So: one message out, and the detail goes to the log instead. The log is
+ * worth writing to now that observability is on; before that this would have
+ * been a line nobody could read.
+ */
+app.onError((error, c) => {
+  console.error(`unhandled ${c.req.method} ${new URL(c.req.url).pathname}:`, error instanceof Error ? error.stack ?? error.message : String(error));
+  return c.text('Something went wrong. Please try again, or email developer@hamdam.com.au.', 500);
+});
 
 /**
  * The Worker itself: HTTP, plus the cron that reads the inbox.
