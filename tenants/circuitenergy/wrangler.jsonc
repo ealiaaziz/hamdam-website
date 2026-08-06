@@ -67,7 +67,7 @@
     {
       "binding": "DB",
       "database_name": "circuitenergy-support-db",
-      "database_id": "PLACEHOLDER_SET_BY_D1_CREATE",
+      "database_id": "1a8227fd-152e-4449-8f10-f62fa72c55f6",
       "migrations_dir": "../../support/migrations"
     }
   ]
