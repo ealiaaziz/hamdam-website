@@ -30,6 +30,15 @@ export interface EscalationInput {
   comments: readonly CommentRow[];
   /** Why the assistant stopped, in its own words. */
   reason: string;
+  /**
+   * The engineer this ticket now belongs to, if it belongs to anyone.
+   *
+   * Named in the body rather than left to the recipient list, because the
+   * recipient list is several people and only one of them owns it. "Somebody
+   * should look at this" is how a ticket sits for a day with three people
+   * each assuming one of the other two has it.
+   */
+  assignedTo?: string | null;
   /** Articles the requester explicitly said did not help. */
   rejectedArticles: readonly string[];
   /** Clarifying questions already put to them. */
@@ -92,6 +101,27 @@ export function escalationEmail(input: EscalationInput): { subject: string; html
     general_it: 'General IT',
   };
 
+  const assignedTo = input.assignedTo?.trim() || null;
+
+  // What the allocated engineer can do without opening anything, and it is
+  // worth being precise about it in the email itself: the reply they are most
+  // likely to write is a reply to this message, from a phone, and whether
+  // that reaches the requester is exactly the thing they cannot find out by
+  // guessing. See planInbound for why only this address can do it.
+  const allocation = assignedTo
+    ? `<div style="margin:0 0 1rem 0;padding:0.6rem 0.8rem;background:#F3EFE7;border-left:3px solid #8A9A7B">
+  <p style="margin:0 0 0.3rem 0;font-size:0.9rem"><strong>Allocated to ${escapeHtml(assignedTo)}.</strong></p>
+  <p style="margin:0;font-size:0.88rem;color:#574A38">If that is you, replying to this email works: your reply is added to
+  ${escapeHtml(publicId)} as your own message and sent on to ${escapeHtml(ticket.requester_email)}. Keep
+  <strong>${escapeHtml(publicId)}</strong> in the subject line, and reply from this address, because that pair is what
+  authorises it. Writing "close this ticket" closes it.</p>
+</div>`
+    : `<div style="margin:0 0 1rem 0;padding:0.6rem 0.8rem;background:#FBEAE5;border-left:3px solid #B3402B">
+  <p style="margin:0;font-size:0.9rem"><strong>Not allocated to anyone.</strong> No L3 engineer is configured
+  (<code>L3_ENGINEER_EMAIL</code>), so this ticket has no owner and will be listed in the unassigned sweep until
+  somebody takes it in the console.</p>
+</div>`;
+
   const html = `${WRAP}
 <p style="margin:0 0 0.2rem 0;font-size:0.78rem;letter-spacing:0.08em;text-transform:uppercase;color:#8A7A63">Needs a person</p>
 <h1 style="margin:0 0 0.15rem 0;font-size:1.35rem">${escapeHtml(publicId)} &middot; ${escapeHtml(ticket.subject)}</h1>
@@ -99,6 +129,8 @@ export function escalationEmail(input: EscalationInput): { subject: string; html
   <span style="display:inline-block;padding:0.12rem 0.5rem;border-radius:0.2rem;background:${PRIORITY_COLOUR[ticket.priority]};color:#fff;font-size:0.78rem;font-weight:600">${escapeHtml(PRIORITY_LABEL[ticket.priority])}</span>
   <span style="color:#574A38;font-size:0.86rem">&nbsp;${escapeHtml(topicLabel[ticket.topic])} &middot; via ${ticket.channel === 'email' ? 'email' : 'the portal'} &middot; opened ${escapeHtml(relative(ticket.created_at, now))}</span>
 </p>
+
+${allocation}
 
 ${overdue ? `<p style="margin:0 0 1rem 0;padding:0.5rem 0.7rem;background:#FBEAE5;border-left:3px solid #B3402B;font-size:0.9rem"><strong>First response is overdue.</strong> Target was ${escapeHtml(policy.firstResponseLabel)} from opening.</p>` : ''}
 

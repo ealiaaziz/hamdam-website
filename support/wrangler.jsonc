@@ -74,7 +74,16 @@
   // Every minute is affordable because an empty inbox costs one Graph
   // request and nothing else. See src/ingest.ts for why the checkpoint only
   // advances on a clean pass.
-  "triggers": { "crons": ["* * * * *"] },
+  //
+  // The second expression is the unassigned sweep: every two hours, look for
+  // open tickets nobody owns and email the people who can do something about
+  // it. Cloudflare invokes the handler once per matching expression, so at the
+  // top of an even hour these arrive as two invocations and `scheduled`
+  // decides which job to run from `event.cron`. Keep this string identical to
+  // UNASSIGNED_SWEEP_CRON in src/sweep.ts: a mismatch means the sweep never
+  // runs, and a sweep that never runs looks exactly like a queue that is
+  // always clean.
+  "triggers": { "crons": ["* * * * *", "0 */2 * * *"] },
   // Created by `wrangler d1 create hamdam-support-db` on 2026-08-01; see
   // support/README.md. Not a secret: a database_id only identifies the
   // database, and reaching it still requires an authorised API token.

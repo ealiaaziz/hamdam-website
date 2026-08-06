@@ -145,15 +145,36 @@ export function messageBodyText(message: InboundMessage): string {
   return stripSignature(stripQuotedReply(stripHtml(message.bodyHtml))).slice(0, 8000);
 }
 
+/**
+ * Who is writing, when a message is appended to an existing ticket.
+ *
+ * Not decoration. A requester's words are a question the assistant may answer;
+ * an agent's words are an answer the desk sends onward to the requester, over
+ * this domain, under the desk's name. The two paths do almost opposite things,
+ * so the decision about which one a message gets is made once, here, next to
+ * the check that authorises it, rather than inferred later from an address.
+ */
+export type InboundWriter = 'requester' | 'agent';
+
 export type InboundPlan =
   | { action: 'skip'; reason: string }
-  | { action: 'append'; ticketId: number; body: string }
+  | { action: 'append'; ticketId: number; body: string; as: InboundWriter }
   | { action: 'create'; body: string };
 
 /** A ticket a message might belong to, and who it belongs to. */
 export interface KnownThread {
   id: number;
   requesterEmail: string;
+  /**
+   * The agent this ticket is allocated to, lowercased, if it has one.
+   *
+   * Optional, and absent means nobody: a caller that does not know the
+   * assignee has not established that anyone holds this ticket, and the
+   * default has to be the one that grants nothing. Only ever a value from
+   * `assignableAddresses`, which is what makes it usable as an authority at
+   * all. See assignment.ts.
+   */
+  assignedTo?: string | null;
 }
 
 /**
@@ -250,12 +271,33 @@ export function planInbound(
   // and the authenticated address must be the requester's. Failing either is
   // not an error and loses nothing, for the same reason as below: the message
   // becomes its own ticket, in front of a person.
-  const mayWriteAs = (owner: string): boolean => known.senderAuthenticated && sameAddress(owner, message.fromEmail);
+  //
+  // The second address that may write is the ticket's assignee, which is what
+  // lets an escalated ticket be worked from a phone: the engineer replies to
+  // the handover email and their words reach the requester. The bar is the
+  // same bar, not a softer one. Exchange must have authenticated them too,
+  // and their address must match what is stored in `assigned_to`, which only
+  // ever holds an address from the configured list in assignment.ts. Nothing
+  // about the message can put an address there, which is the property that
+  // makes this an authority rather than a claim: an attacker who guesses a
+  // ticket number still has to be the person the desk already allocated it to.
+  //
+  // Requester first, deliberately. If the assignee is somehow also the
+  // requester, they are the requester on their own ticket, and the reading
+  // that does not mail their words back to themselves is the right one.
+  const writerFor = (thread: KnownThread): InboundWriter | null => {
+    if (!known.senderAuthenticated) return null;
+    if (sameAddress(thread.requesterEmail, message.fromEmail)) return 'requester';
+    const assignee = thread.assignedTo?.trim();
+    if (assignee && sameAddress(assignee, message.fromEmail)) return 'agent';
+    return null;
+  };
 
   const tagged = ticketIdFromSubject(message.subject);
   if (tagged !== null && known.taggedTicket && known.taggedTicket.id === tagged) {
-    if (mayWriteAs(known.taggedTicket.requesterEmail)) {
-      return { action: 'append', ticketId: tagged, body };
+    const writer = writerFor(known.taggedTicket);
+    if (writer) {
+      return { action: 'append', ticketId: tagged, body, as: writer };
     }
     return { action: 'create', body };
   }
@@ -265,8 +307,11 @@ export function planInbound(
   // against the requester, because "harder to guess" is not the same as
   // "proves who you are", and there is no case where the right answer is to
   // write a stranger's words onto someone else's ticket.
-  if (known.conversationTicket && mayWriteAs(known.conversationTicket.requesterEmail)) {
-    return { action: 'append', ticketId: known.conversationTicket.id, body };
+  if (known.conversationTicket) {
+    const writer = writerFor(known.conversationTicket);
+    if (writer) {
+      return { action: 'append', ticketId: known.conversationTicket.id, body, as: writer };
+    }
   }
 
   return { action: 'create', body };

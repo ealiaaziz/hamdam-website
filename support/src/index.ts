@@ -8,7 +8,7 @@ import { classifyTicket, parsePriority, slaDueDates, type Impact, type Urgency }
 import { ackEmail, agentReplyEmail, conversationSummaryEmail, requesterReplyNotification, resolvedEmail } from './render/email.js';
 import { assistantWrittenEmail } from './render/agentEmail.js';
 import { generateTrackingToken, parseTicketPublicId, stripHtml, ticketPublicId, tokensMatch } from './ids.js';
-import { cleanLine, cleanText, isOversizedBody, isValidEmail, MAX_BODY_CHARS, MAX_NAME_CHARS, MAX_SUBJECT_CHARS } from './validation.js';
+import { cleanLine, cleanText, isOversizedBody, isValidEmail, MAX_BODY_CHARS, MAX_EMAIL_CHARS, MAX_NAME_CHARS, MAX_SUBJECT_CHARS } from './validation.js';
 import { callerKey, consumeRateLimit, mayEmailRecipient, purgeRateLimits, type RateLimitBucket } from './rateLimit.js';
 import { httpsRedirectTarget, isCrossSiteRequest, isLocalHost, localePrefixTarget, trackingUrl } from './urls.js';
 import { extractAccessToken, fetchAccessKeys, verifyAccessJwt } from './access.js';
@@ -22,13 +22,16 @@ import { HEARTBEAT_KEY, readHeartbeat } from './heartbeat.js';
 import { adminAllowlist, isAllowedAgent } from './adminAccess.js';
 import { detectLocale, localePath, parseLocale, type Locale } from './i18n.js';
 import { ingestInbox } from './ingest.js';
-import { notifyEscalation, unmeteredRecipients } from './escalation.js';
+import { notifyAssignedAgent, notifyEscalation, unmeteredRecipients } from './escalation.js';
+import { assignableAddresses, l3Engineer, mayBeAssigned } from './assignment.js';
+import { sweepUnassigned, UNASSIGNED_SWEEP_CRON } from './sweep.js';
 import { requestedClosure } from './agentPolicy.js';
 
 import { composeAssistantReplyLive, ASSISTANT_NAME } from './assistantReply.js';
 import {
   addComment,
   approveDraft,
+  assignTicket,
   claimModelCall,
   DEFAULT_DAILY_CALL_LIMIT,
   getAgentState,
@@ -624,6 +627,12 @@ app.post('/tickets/:id/reply', async (c) => {
       inReplyToMessageId: null,
     });
 
+    // And the ticket's own owner, if it has one. The shared mailbox is where
+    // a ticket goes to be noticed by somebody; an allocated ticket has
+    // already been noticed, by a named person who can answer from their phone
+    // and should not have to watch a queue to know their requester replied.
+    c.executionCtx.waitUntil(notifyAssignedAgent(c.env, id, body, 'portal'));
+
     // "Close this ticket" is an instruction, not a question, and it is one
     // the desk can carry out. Doing it here rather than sending it to the
     // model is the difference between a ticket that closes and a reply that
@@ -790,6 +799,7 @@ app.get('/admin', async (c) => {
       filterPriority: priorityParam,
       agentEmail,
       allowlistConfigured: adminAllowlist(c.env).length > 0,
+      l3Configured: l3Engineer(c.env) !== null,
       ingest: readHeartbeat(await getSyncState(c.env.DB, HEARTBEAT_KEY)),
     }),
   );
@@ -804,7 +814,15 @@ app.get('/admin/tickets/:id', async (c) => {
   const comments = await listComments(c.env.DB, id);
   const drafts = await listDrafts(c.env.DB, id);
   return c.html(
-    adminTicketPage({ ticket, comments, agentEmail, drafts, allowlistConfigured: adminAllowlist(c.env).length > 0 }),
+    adminTicketPage({
+      ticket,
+      comments,
+      agentEmail,
+      drafts,
+      allowlistConfigured: adminAllowlist(c.env).length > 0,
+      l3Configured: l3Engineer(c.env) !== null,
+      assignable: assignableAddresses(c.env),
+    }),
   );
 });
 
@@ -900,6 +918,41 @@ app.post('/admin/tickets/:id/assistant-draft', async (c) => {
     await addComment(c.env.DB, id, 'system', null, `Assistant declined to draft a reply: ${reply.reason}`);
   }
 
+  return c.redirect(`/admin/tickets/${id}`, 303);
+});
+
+// Give a ticket an owner, or take the owner off it.
+//
+// Read this as a permission change, not as a label. The address written here
+// may then reply to the desk by email and have those words sent to the
+// requester under this domain (see planInbound), so what may be written is a
+// configured list plus the person doing the writing, and never a string that
+// arrived in a form. `mayBeAssigned` is the check; the special case for the
+// agent's own address is safe because it is the verified Access identity, not
+// a submitted field.
+app.post('/admin/tickets/:id/assign', async (c) => {
+  const agentEmail = c.get('agentEmail');
+  const id = Number(c.req.param('id'));
+  if (!Number.isInteger(id)) return c.notFound();
+  const ticket = await getTicketById(c.env.DB, id);
+  if (!ticket) return c.notFound();
+
+  const form = await c.req.formData();
+  const requested = cleanLine(form.get('assignee'), MAX_EMAIL_CHARS).toLowerCase();
+
+  if (requested === '') {
+    await assignTicket(c.env.DB, id, null);
+    await addComment(c.env.DB, id, 'system', null, `${agentEmail} unassigned this ticket.`);
+    return c.redirect(`/admin/tickets/${id}`, 303);
+  }
+
+  const isSelf = requested === agentEmail.trim().toLowerCase();
+  if (!isSelf && !mayBeAssigned(requested, c.env)) {
+    return c.text('Forbidden: that address is not on the assignable list.', 403);
+  }
+
+  const changed = await assignTicket(c.env.DB, id, requested);
+  if (changed) await addComment(c.env.DB, id, 'system', null, `${agentEmail} assigned this ticket to ${requested}.`);
   return c.redirect(`/admin/tickets/${id}`, 303);
 });
 
@@ -1078,7 +1131,23 @@ export default {
   fetch(request: Request, env: Env, ctx: ExecutionContext) {
     return app.fetch(withLocalePrefix(request), env, ctx);
   },
-  async scheduled(_event: ScheduledController, env: Env, ctx: ExecutionContext): Promise<void> {
+  async scheduled(event: ScheduledController, env: Env, ctx: ExecutionContext): Promise<void> {
+    // Two schedules, one handler. Cloudflare invokes this once per matching
+    // cron expression, so at the top of an even hour both fire as separate
+    // invocations rather than as one that has to do both jobs.
+    //
+    // Anything unrecognised reads the inbox. The unassigned sweep is a report
+    // and can miss a cycle; the inbox pass is the reason people get answered
+    // at all, so a typo in a cron expression must not be able to stop it.
+    if (event.cron === UNASSIGNED_SWEEP_CRON) {
+      ctx.waitUntil(
+        sweepUnassigned(env).then((summary) => {
+          if (summary.unassigned > 0 || summary.alerted) console.log('unassigned sweep', JSON.stringify(summary));
+        }),
+      );
+      return;
+    }
+
     // Housekeeping, on the pass that already runs every minute. Rate limit
     // rows accumulate one per distinct caller and are dead the moment their
     // window rolls; sweeping them here keeps that off the request path, where

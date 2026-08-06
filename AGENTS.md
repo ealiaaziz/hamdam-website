@@ -107,6 +107,22 @@ there are worth repeating here because breaking them is expensive:
 `npm test` (343 cases), `npm run check:persian` and `node
 scripts/check-dashes.mjs` all cover `support/` and must pass.
 
+**Escalation allocates, and the owner can work the ticket by email (added
+2026-08-06).** `notifyEscalation` assigns the ticket to `L3_ENGINEER_EMAIL`
+before it alerts anyone, but only into an empty slot, so a person who has
+already taken it keeps it. That address may then reply to the desk and have
+its words added to the ticket and emailed on to the requester, which makes
+`assigned_to` an authority rather than a label: it can only ever hold an
+address from `assignableAddresses` in `support/src/assignment.ts`
+(`L3_ENGINEER_EMAIL` plus `ADMIN_EMAILS`), and the same Exchange
+authentication a requester has to clear applies. The `[HAM-N]` tag is still
+never a credential. Unset means escalations alert without allocating and the
+console says so on every page; there is deliberately no default address in the
+source, because this repository is public. A second cron, `0 */2 * * *`, runs
+`sweepUnassigned` and emails `UNASSIGNED_ALERT_RECIPIENTS` about open tickets
+nobody owns: not when nothing is unassigned, immediately when something new
+appears, otherwise once a day. Set both secrets with `npx wrangler secret put`.
+
 **Inbound email is not an identity (added 2026-08-02, completed the same
 day).** A message may only be appended to an existing ticket when Exchange
 authenticated the sender's address *and* that address matches the ticket's

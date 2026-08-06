@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { escalationEmail } from '../src/render/escalation.js';
-import { FALLBACK_ESCALATION_RECIPIENTS, escalationRecipients } from '../src/escalation.js';
+import { FALLBACK_ESCALATION_RECIPIENTS, escalationAudience, escalationRecipients } from '../src/escalation.js';
 import type { CommentRow, TicketWithRequester } from '../src/types.js';
 import type { Env } from '../src/types.js';
 
@@ -145,5 +145,49 @@ describe('escalationRecipients', () => {
     for (const value of ['', '   ', 'not-an-address']) {
       expect(escalationRecipients({ ESCALATION_RECIPIENTS: value } as Env)).toEqual(FALLBACK_ESCALATION_RECIPIENTS);
     }
+  });
+});
+
+describe('escalationAudience', () => {
+  it('puts the allocated engineer first', () => {
+    // The list is several people and only one of them owns it. Leading with
+    // the owner is the difference between "somebody should look at this" and
+    // "this is yours".
+    expect(escalationAudience({ ESCALATION_RECIPIENTS: 'team@example.com' } as Env, 'l3@example.com')).toEqual([
+      'l3@example.com',
+      'team@example.com',
+    ]);
+  });
+
+  it('tells nobody twice, whatever the casing', () => {
+    // The L3 address is almost certainly on the escalation list too, and two
+    // copies of the same handover is how a person learns to skim them.
+    expect(escalationAudience({ ESCALATION_RECIPIENTS: 'L3@Example.com, team@example.com' } as Env, 'l3@example.com')).toEqual([
+      'l3@example.com',
+      'team@example.com',
+    ]);
+  });
+
+  it('still tells the team when nothing is allocated', () => {
+    expect(escalationAudience({ ESCALATION_RECIPIENTS: 'team@example.com' } as Env, null)).toEqual(['team@example.com']);
+  });
+});
+
+describe('the escalation email and allocation', () => {
+  it('names the owner and says a reply by email reaches the requester', () => {
+    // The reply the engineer is most likely to write is a reply to this
+    // message, from a phone. Whether that works is exactly the thing they
+    // cannot find out by guessing.
+    const { html } = escalationEmail({ ...base, assignedTo: 'l3@example.com' });
+    expect(html).toContain('Allocated to l3@example.com');
+    expect(html).toContain('someone@example.com');
+    expect(html).toContain('HAM-31');
+    expect(html).toContain('close this ticket');
+  });
+
+  it('says plainly when nobody owns it and why', () => {
+    const { html } = escalationEmail({ ...base, assignedTo: null });
+    expect(html).toContain('Not allocated to anyone');
+    expect(html).toContain('L3_ENGINEER_EMAIL');
   });
 });

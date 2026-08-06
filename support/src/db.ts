@@ -122,6 +122,80 @@ export async function listQueue(db: D1Database, filters: QueueFilters): Promise<
   return result.results;
 }
 
+/**
+ * Gives a ticket an owner, or takes the owner away when `email` is null.
+ *
+ * `onlyIfUnassigned` is what the escalation path uses, and it is the whole
+ * reason this returns a boolean rather than void. Escalation fires on a
+ * transition, but a ticket can be escalated once, picked up by a person who
+ * assigns it to themselves, and then reopened by the requester and escalated
+ * again. Overwriting there would quietly take the ticket off the person
+ * actually holding it and give it back to the default. So the automatic path
+ * only ever fills an empty slot, and a person's decision outranks it.
+ *
+ * The caller checks `mayBeAssigned` before getting here. This function does
+ * not, because it is also how a ticket is unassigned, and because a check
+ * that some callers need and some do not is a check that gets skipped by the
+ * one that needed it. See assignment.ts for what is at stake.
+ */
+export async function assignTicket(
+  db: D1Database,
+  id: number,
+  email: string | null,
+  opts: { onlyIfUnassigned?: boolean } = {},
+): Promise<boolean> {
+  const guard = opts.onlyIfUnassigned ? ` AND (assigned_to IS NULL OR trim(assigned_to) = '')` : '';
+  const result = await db
+    .prepare(
+      `UPDATE tickets SET assigned_to = ?2, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+       WHERE id = ?1${guard}`,
+    )
+    .bind(id, email ? email.trim().toLowerCase() : null)
+    .run();
+  return (result.meta.changes ?? 0) > 0;
+}
+
+/**
+ * Open tickets nobody owns, worst first.
+ *
+ * "Open" here means anything not resolved and not closed, which is the only
+ * reading that matches what the sweep is for: a resolved ticket with no
+ * assignee is a ticket the assistant finished, and chasing somebody about it
+ * would train them to ignore the email.
+ *
+ * Bounded, and the caller is told when the bound bit. A digest listing fifty
+ * tickets is already a digest nobody reads to the end, and silently showing
+ * the first fifty of two hundred would misreport the size of the problem,
+ * which is the one number the email exists to carry.
+ */
+export async function listUnassignedTickets(db: D1Database, limit = 50): Promise<TicketWithRequester[]> {
+  const result = await db
+    .prepare(
+      `SELECT t.*, r.email AS requester_email, r.name AS requester_name
+       FROM tickets t JOIN requesters r ON r.id = t.requester_id
+       WHERE (t.assigned_to IS NULL OR trim(t.assigned_to) = '')
+         AND t.status NOT IN ('resolved', 'closed')
+       ORDER BY
+         CASE t.priority WHEN 'P1' THEN 0 WHEN 'P2' THEN 1 WHEN 'P3' THEN 2 ELSE 3 END,
+         t.created_at ASC
+       LIMIT ?1`,
+    )
+    .bind(limit)
+    .all<TicketWithRequester>();
+  return result.results;
+}
+
+export async function countUnassignedTickets(db: D1Database): Promise<number> {
+  const row = await db
+    .prepare(
+      `SELECT COUNT(*) AS n FROM tickets
+       WHERE (assigned_to IS NULL OR trim(assigned_to) = '')
+         AND status NOT IN ('resolved', 'closed')`,
+    )
+    .first<{ n: number }>();
+  return row?.n ?? 0;
+}
+
 export async function addComment(
   db: D1Database,
   ticketId: number,

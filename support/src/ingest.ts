@@ -6,12 +6,13 @@ import { cleanSubject, planInbound, sameAddress, ticketIdFromSubject, type Known
 import { consumeRateLimit, mayEmailRecipient, meteringSubject } from './rateLimit.js';
 import { senderIsAuthenticated } from './authResults.js';
 import { unmeteredRecipients } from './escalation.js';
+import { mayBeAssigned } from './assignment.js';
 import { detectLocale, strings } from './i18n.js';
 import { HEARTBEAT_KEY } from './heartbeat.js';
 import { composeAssistantReplyLive, ASSISTANT_NAME } from './assistantReply.js';
 import { requestedClosure } from './agentPolicy.js';
-import { notifyEscalation } from './escalation.js';
-import { ackEmail } from './render/email.js';
+import { notifyAssignedAgent, notifyEscalation } from './escalation.js';
+import { ackEmail, agentReplyEmail } from './render/email.js';
 import { assistantWrittenEmail } from './render/agentEmail.js';
 import {
   addComment,
@@ -23,6 +24,7 @@ import {
   getTicketById,
   listComments,
   clearInboundFailure,
+  markFirstResponse,
   markOutboundFailed,
   markOutboundSent,
   recordInboundFailure,
@@ -180,11 +182,83 @@ async function replyWithAssistant(env: Env, ticketId: number): Promise<void> {
   });
 }
 
-/** The ticket a candidate id names, with the one fact routing needs about it. */
+/**
+ * An agent's reply, arriving by email instead of through the console.
+ *
+ * This is the other half of allocating a ticket. Escalation puts a name on it
+ * and emails that person the whole conversation; without this, the only thing
+ * they could do with that email is read it, and answering meant finding a
+ * laptop and signing in through Access. Now the reply they were going to
+ * write anyway is the reply the requester receives.
+ *
+ * Three things it deliberately does not do. It does not run the assistant:
+ * the ticket has a person on it, and a machine answering an engineer's
+ * message would be both useless and confusing. It does not count an assistant
+ * turn, for the same reason. And it does not go through the junk or
+ * per-sender suppression that guards replies to strangers, because this
+ * sender is not a stranger: they are an address from the configured list,
+ * authenticated by Exchange, writing on a ticket the desk gave them.
+ */
+async function handleAgentReply(env: Env, ticketId: number, agentEmail: string, body: string, fromJunk: boolean): Promise<void> {
+  const ticket = await getTicketById(env.DB, ticketId);
+  if (!ticket) return;
+
+  const commentId = await addComment(env.DB, ticketId, 'agent', agentEmail, body);
+  await markFirstResponse(env.DB, ticketId);
+  if (ticket.status === 'new' || ticket.status === 'pending') await updateTicketStatus(env.DB, ticketId, 'open');
+  if (fromJunk) {
+    // Worth recording rather than silently overriding. The message was
+    // authenticated and came from the ticket's own assignee, so answering it
+    // is right, and the spam filter having disagreed is still a fact somebody
+    // may want when the engineer's mail starts going missing.
+    await addComment(env.DB, ticketId, 'system', null, 'That reply was found in the junk folder. It was relayed anyway, because it was authenticated and came from this ticket\'s assignee.');
+  }
+
+  const rendered = agentReplyEmail({ ticketId, subject: ticket.subject, agentName: agentEmail, message: body });
+  await queueAndSend(env, {
+    ticketId,
+    commentId,
+    kind: 'agent_reply',
+    toEmail: ticket.requester_email,
+    subject: rendered.subject,
+    bodyHtml: rendered.html,
+    inReplyToMessageId: ticket.last_inbound_message_id,
+  });
+
+  // Same rule the requester's path has, applied to the person who actually
+  // gets to decide. An engineer writing "close this ticket" from their phone
+  // means the ticket closes, not that the desk agrees in prose and leaves it
+  // open. The relay above has already gone, so the requester sees the words
+  // that closed it.
+  if (requestedClosure(body)) {
+    await updateTicketStatus(env.DB, ticketId, 'closed');
+    await addComment(env.DB, ticketId, 'system', null, `Closed by ${agentEmail} from email.`);
+  }
+}
+
+/**
+ * The ticket a candidate id names, with the facts routing needs about it.
+ *
+ * The assignee is passed on only while that address is still configured. A
+ * stored `assigned_to` is a record of who was given the ticket; the right to
+ * answer as the desk should be the intersection of that and the current list,
+ * checked now rather than when the row was written. Otherwise taking somebody
+ * out of `L3_ENGINEER_EMAIL` or `ADMIN_EMAILS` would revoke the console and
+ * leave the mailbox open to them on every ticket they ever held, which is the
+ * kind of half-revocation nobody discovers until they go looking.
+ *
+ * The console still shows them as the owner, because that is what happened.
+ */
 async function knownThread(env: Env, id: number | null): Promise<KnownThread | null> {
   if (id === null) return null;
   const ticket = await getTicketById(env.DB, id);
-  return ticket ? { id: ticket.id, requesterEmail: ticket.requester_email } : null;
+  if (!ticket) return null;
+  const assignee = ticket.assigned_to?.trim();
+  return {
+    id: ticket.id,
+    requesterEmail: ticket.requester_email,
+    assignedTo: assignee && mayBeAssigned(assignee, env) ? assignee : null,
+  };
 }
 
 async function handleMessage(env: Env, message: InboundMessage): Promise<'created' | 'appended' | 'skipped'> {
@@ -203,8 +277,17 @@ async function handleMessage(env: Env, message: InboundMessage): Promise<'create
   // the answer: when some existing thread would otherwise accept this
   // message. Everything else opens a new ticket, where the From address is
   // recorded rather than believed and proving it establishes nothing.
+  //
+  // The assignee counts as claiming a thread too. Leaving them out of this
+  // test would have been a quiet way to break the feature it belongs to:
+  // `senderAuthenticated` would stay false, `planInbound` would refuse the
+  // append, and an escalated engineer replying to their own handover email
+  // would silently open a second ticket.
   const claimsAThread = [taggedTicket, conversationTicket].some(
-    (thread) => thread && sameAddress(thread.requesterEmail, message.fromEmail),
+    (thread) =>
+      thread &&
+      (sameAddress(thread.requesterEmail, message.fromEmail) ||
+        (thread.assignedTo ? sameAddress(thread.assignedTo, message.fromEmail) : false)),
   );
   let senderAuthenticated = false;
   if (claimsAThread) {
@@ -256,6 +339,29 @@ async function handleMessage(env: Env, message: InboundMessage): Promise<'create
   // automatic, and if it turns out to be a real customer a human replies and
   // the thread works normally from there.
   const fromJunk = message.folder === 'junk';
+
+  // The assignee's own reply, handled before anything meters or suppresses
+  // it. Those guards exist to bound what a stranger can make the desk send;
+  // this is the person the desk handed the ticket to, and running their reply
+  // through the stranger path would mean an engineer's twenty-first message
+  // in an hour is filed and never delivered, with the requester waiting on it.
+  //
+  // `last_inbound_message_id` is deliberately left alone. It exists so mail to
+  // the requester threads into the conversation the requester is reading, and
+  // pointing it at an internal message from the engineer would thread the
+  // desk's next reply to a message the requester has never seen.
+  if (plan.action === 'append' && plan.as === 'agent') {
+    await recordInbound(env.DB, {
+      internetMessageId: message.internetMessageId,
+      conversationId: message.conversationId,
+      ticketId: plan.ticketId,
+      fromEmail: message.fromEmail,
+      subject: message.subject,
+    });
+    await handleAgentReply(env, plan.ticketId, message.fromEmail, plan.body, fromJunk);
+    return 'appended';
+  }
+
   const quiet = fromJunk || !(await automatedRepliesAllowed(env, message.fromEmail));
 
   if (plan.action === 'append') {
@@ -279,8 +385,16 @@ async function handleMessage(env: Env, message: InboundMessage): Promise<'create
       return 'appended';
     }
 
-    if (quiet) await noteSuppressed(env, plan.ticketId, fromJunk);
-    else await replyWithAssistant(env, plan.ticketId);
+    if (quiet) {
+      await noteSuppressed(env, plan.ticketId, fromJunk);
+    } else {
+      // The owner hears about it first, before the assistant says anything.
+      // On an allocated ticket the assistant's contribution is a holding
+      // reply; the message that matters is the one that reaches the person
+      // whose ticket this is.
+      await notifyAssignedAgent(env, plan.ticketId, plan.body, 'email');
+      await replyWithAssistant(env, plan.ticketId);
+    }
     return 'appended';
   }
 

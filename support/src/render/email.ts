@@ -73,15 +73,33 @@ export function requesterReplyNotification(opts: {
   requesterEmail: string;
   message: string;
   adminUrl: string;
+  /** Where the reply came from. Defaults to the portal, which is where this started. */
+  via?: 'portal' | 'email';
+  /**
+   * Set when this is going to the one person who owns the ticket rather than
+   * to the desk's shared mailbox.
+   *
+   * It changes what the email is for. To the mailbox it is a heads-up that
+   * somebody should look; to the assignee it is their ticket moving, and the
+   * useful thing to tell them is that they can answer by replying here rather
+   * than by finding a laptop.
+   */
+  toAssignee?: boolean;
 }): { subject: string; html: string } {
   const publicId = ticketPublicId(opts.ticketId);
   const who = opts.requesterName ? `${opts.requesterName} (${opts.requesterEmail})` : opts.requesterEmail;
+  const where = opts.via === 'email' ? 'by email' : 'on the portal';
+  const howToAnswer = opts.toAssignee
+    ? `<p style="font-size:0.9rem;color:#574A38">This ticket is allocated to you. Replying to this email answers
+${escapeHtml(opts.requesterEmail)} directly, as long as <strong>${escapeHtml(publicId)}</strong> stays in the subject line.</p>`
+    : '';
   const html = `${WRAP_OPEN}
-<p><strong>${escapeHtml(who)}</strong> replied on the portal to
+<p><strong>${escapeHtml(who)}</strong> replied ${where} to
 <strong>${escapeHtml(publicId)}</strong> &middot; ${escapeHtml(opts.subject)}</p>
 <blockquote style="margin:1rem 0;padding-left:1rem;border-left:3px solid #E8B04B;color:#574A38">
 ${textToSafeHtml(opts.message)}
 </blockquote>
+${howToAnswer}
 <p><a href="${opts.adminUrl}" style="color:#D07B3F">Open ${escapeHtml(publicId)} in the console</a></p>
 ${RULE}
 ${FOOTER}

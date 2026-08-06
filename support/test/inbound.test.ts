@@ -397,3 +397,93 @@ describe('planInbound and an unauthenticated sender', () => {
     expect(plan).toMatchObject({ action: 'create' });
   });
 });
+
+// The assignee's own reply, which is the other half of allocating a ticket.
+//
+// Escalation puts one named engineer on a ticket and emails them the whole
+// conversation. Without a way to answer from that email, the allocation buys
+// nothing: replying meant finding a laptop and signing in through Access, and
+// a reply sent anyway would have opened a second ticket with the engineer as
+// its requester.
+//
+// The bar is the same bar as for a requester, not a softer one. Exchange must
+// have authenticated the address, and it must match what the desk itself
+// wrote into `assigned_to`, which only ever holds an address from the
+// configured list in assignment.ts.
+describe('planInbound and the ticket assignee', () => {
+  const ENGINEER = 'engineer@example.com';
+
+  it('lets the assignee write on the ticket, as an agent', () => {
+    const plan = planInbound(
+      message({ subject: 'RE: [HAM-9] Verse will not load', fromEmail: ENGINEER }),
+      known({ taggedTicket: { id: 9, requesterEmail: OWNER, assignedTo: ENGINEER }, senderAuthenticated: true }),
+    );
+    expect(plan).toMatchObject({ action: 'append', ticketId: 9, as: 'agent' });
+  });
+
+  it('marks the requester as the requester, not as an agent', () => {
+    // The two roles do nearly opposite things downstream: a requester's words
+    // are a question the assistant may answer, an agent's are an answer the
+    // desk emails onward. Getting this backwards would mail somebody their
+    // own message.
+    const plan = planInbound(
+      message({ subject: 'RE: [HAM-9] thing' }),
+      known({ taggedTicket: { id: 9, requesterEmail: OWNER, assignedTo: ENGINEER }, senderAuthenticated: true }),
+    );
+    expect(plan).toMatchObject({ action: 'append', ticketId: 9, as: 'requester' });
+  });
+
+  it('reads an assignee who is also the requester as the requester', () => {
+    // Otherwise the desk would email a person their own words back.
+    const plan = planInbound(
+      message({ subject: 'RE: [HAM-9] thing' }),
+      known({ taggedTicket: { id: 9, requesterEmail: OWNER, assignedTo: OWNER }, senderAuthenticated: true }),
+    );
+    expect(plan).toMatchObject({ as: 'requester' });
+  });
+
+  it('refuses that address when Exchange did not authenticate it', () => {
+    // The address is printed in every escalation email, so without this the
+    // allocation would turn a known address into a password.
+    const plan = planInbound(
+      message({ subject: 'RE: [HAM-9] thing', fromEmail: ENGINEER }),
+      known({ taggedTicket: { id: 9, requesterEmail: OWNER, assignedTo: ENGINEER }, senderAuthenticated: false }),
+    );
+    expect(plan).toMatchObject({ action: 'create' });
+  });
+
+  it('gives an unassigned ticket no agent to speak for it', () => {
+    const plan = planInbound(
+      message({ subject: 'RE: [HAM-9] thing', fromEmail: ENGINEER }),
+      known({ taggedTicket: { id: 9, requesterEmail: OWNER, assignedTo: null }, senderAuthenticated: true }),
+    );
+    expect(plan).toMatchObject({ action: 'create' });
+  });
+
+  it('does not let the engineer on one ticket write on another', () => {
+    // Ticket ids are sequential and printed in every email the desk sends, so
+    // the tag is a guess, not a credential. Being somebody's engineer is not
+    // being everybody's.
+    const plan = planInbound(
+      message({ subject: 'RE: [HAM-12] someone else', fromEmail: ENGINEER }),
+      known({ taggedTicket: { id: 12, requesterEmail: 'other@example.com', assignedTo: 'someone.else@example.com' }, senderAuthenticated: true }),
+    );
+    expect(plan).toMatchObject({ action: 'create' });
+  });
+
+  it('applies the same rule on the conversation id path', () => {
+    const plan = planInbound(
+      message({ fromEmail: ENGINEER }),
+      known({ conversationTicket: { id: 3, requesterEmail: OWNER, assignedTo: ENGINEER }, senderAuthenticated: true }),
+    );
+    expect(plan).toMatchObject({ action: 'append', ticketId: 3, as: 'agent' });
+  });
+
+  it('ignores case and surrounding whitespace in the stored address', () => {
+    const plan = planInbound(
+      message({ subject: 'RE: [HAM-9] thing', fromEmail: ENGINEER }),
+      known({ taggedTicket: { id: 9, requesterEmail: OWNER, assignedTo: '  Engineer@Example.com ' }, senderAuthenticated: true }),
+    );
+    expect(plan).toMatchObject({ action: 'append', as: 'agent' });
+  });
+});

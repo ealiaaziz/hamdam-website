@@ -1013,3 +1013,132 @@ result is worth.
 * **Mailbox capacity is Exchange's problem and nobody has looked at it.**
   Nothing in this system limits how much mail can be *sent to*
   developer@hamdam.com.au, and a full mailbox is a deaf desk.
+
+## Ownership, 2026-08-06
+
+Two changes, and they are one change. Escalation now allocates, and a
+scheduled sweep reports what is still allocated to nobody.
+
+### The handover had no name on it
+
+`assigned_to` has been in the schema since the first migration and nothing
+ever wrote to it. Escalation was an alert to a list, which is to say it was
+addressed to whoever felt like it, and `escalation.ts` said as much in its own
+header: the requester was told "a person will pick this up" and that was,
+strictly, a hope.
+
+`notifyEscalation` now allocates the ticket to `L3_ENGINEER_EMAIL` before it
+sends anything, names that person in the email, and writes a system note
+saying it happened. Only into an empty slot: a ticket somebody has already
+taken stays theirs, because a requester can reopen a handled ticket and
+escalate it a second time, and overwriting there would quietly take the work
+off the person holding it.
+
+`L3_ENGINEER_EMAIL` unset is a configured state, not a failure. Escalations
+still alert and still go to `ESCALATION_RECIPIENTS`; they are simply not
+allocated, the console carries a banner on every page while that is true, and
+the tickets land on the sweep below. The same shape as `ADMIN_EMAILS`: refuse
+quietly to nobody and loudly to everybody.
+
+There is no default in the source. Two personal addresses were published from
+this repository once already (see "Two personal addresses were published",
+2026-08-02) and the fix was to move the list into a secret. Writing one back
+into `assignment.ts` as a fallback would have undone that fix while quoting
+it.
+
+### An allocated ticket can be worked from a phone
+
+Allocation on its own would have been a label. The engineer receives the whole
+conversation by email and, until now, the only thing they could do with it was
+read it: answering meant finding a laptop and signing in through Access, and
+replying to the handover would have opened a second ticket with the engineer
+as its requester.
+
+So `planInbound` gained a second writer. A message may now be appended to a
+ticket as an **agent** when Exchange authenticated the sender and that address
+matches the ticket's `assigned_to`. Their words are added under their own
+name, emailed on to the requester, and "close this ticket" closes it. The
+assistant does not run on an agent's message: the ticket has a person on it.
+
+The bar is the same bar, not a softer one, and the reason to be careful here
+is the reason from 2026-08-02: the `[HAM-N]` tag is a routing hint printed in
+every email the desk sends, never a credential. What makes this an authority
+rather than a claim is that `assigned_to` can only ever hold an address from
+`assignableAddresses`, which is `L3_ENGINEER_EMAIL` plus `ADMIN_EMAILS`.
+Nothing arriving in a request can put an address there. The console's assign
+route checks `mayBeAssigned` before writing, and the one address it accepts
+outside that list is the agent's own verified Access identity, which is not a
+submitted field.
+
+The comparison stays literal, like `sameAddress` and the `ADMIN_EMAILS` check
+and unlike `meteringSubject`. Folding widens a set. That is right for counting
+mail and wrong for deciding who somebody is.
+
+One consequence worth stating: the L3 address can now answer as the desk, to
+requesters, over this domain. It is a credential in everything but name, and
+rotating who holds it is a permission change rather than a config edit.
+
+### The sweep, and when it stays quiet
+
+A second cron, `0 */2 * * *`, counts open tickets with no assignee and emails
+`UNASSIGNED_ALERT_RECIPIENTS`. Cloudflare invokes `scheduled` once per matching
+expression, so the two-hourly pass arrives as its own invocation and
+`event.cron` picks the job. Anything unrecognised reads the inbox: the sweep is
+a report and can miss a cycle, the inbox pass is why people get answered.
+
+The query was never the hard part. When to send was, and it is a pure function
+with tests on it. Nothing unassigned sends nothing, because an "all clear"
+heartbeat every two hours is the fastest way to teach two people to filter
+this sender, and the one email that mattered goes with it. A ticket that was
+not in the last digest sends immediately. Everything else waits for the daily
+reminder, so a backlog that has stopped changing is mentioned once a day
+rather than twelve times, and never not at all.
+
+`sentAt` advances only when Graph accepted a copy, so a mail outage retries in
+two hours instead of recording an alert nobody received. The id list is
+rewritten every pass either way, which is what makes a ticket that is assigned
+and later unassigned count as new again.
+
+### Smaller
+
+* The queue table has an "Assigned to" column. The question that table is
+  opened to answer is what is not being dealt with, and it could not
+  distinguish a ticket with an engineer on it from one nobody had looked at.
+* The ticket page has an assignment control, with the email consequence
+  written next to it. Somebody granting that authority should be able to see
+  that they are granting it.
+* The owner is emailed when their requester replies, on both the portal and
+  the email path. Without it, allocation is a one-off announcement and every
+  message after it is visible only in the console the engineer was
+  specifically given a way to avoid. Not metered at the recipient, for the
+  same reason the handover is not; what bounds it is the caller's own reply
+  limit upstream.
+* `last_inbound_message_id` is deliberately not moved by an agent's inbound
+  message. It exists so mail to the requester threads into the conversation
+  the requester is reading.
+
+Removing an address from `L3_ENGINEER_EMAIL` or `ADMIN_EMAILS` revokes this
+everywhere at once. `knownThread` passes the assignee to the router only while
+that address is still on the configured list, so authority is the intersection
+of "was given this ticket" and "is still on the list", evaluated now rather
+than when the row was written. Without that, taking somebody off the list
+would close the console to them and leave the mailbox open on every ticket
+they ever held. The console still shows them as the owner, because that is
+what happened.
+
+### Open
+
+* **The unassigned digest is not metered.** It goes to a configured list on a
+  fixed schedule, so the exposure is bounded by the schedule rather than by a
+  counter. Same reasoning as the escalation exemption, and the same residual
+  risk: a flood of tickets is a flood of listed rows, though only one email
+  every two hours.
+* **Every open ticket with no assignee is listed, including ones the
+  assistant is handling perfectly well.** That is the literal reading of
+  "unassigned" and it is the safe one, but on a busy week the digest is long.
+  If it becomes noise, the fix is an age floor rather than a heuristic about
+  whether the assistant seems to be coping.
+* **An agent's inbound reply is relayed without review.** It is the same trade
+  the desk already makes for its own assistant replies on the email path, and
+  the sender here is a named colleague rather than a model. Worth knowing that
+  a mistyped reply reaches the requester with no step in between.

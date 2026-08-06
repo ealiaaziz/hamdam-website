@@ -53,6 +53,23 @@ function allowlistNotice(configured: boolean): string {
   Set it with <code>npx wrangler secret put ADMIN_EMAILS</code> and redeploy.</div>`;
 }
 
+/**
+ * Says out loud when escalations have nowhere to go.
+ *
+ * Unset, the desk still escalates and still emails the escalation list. What
+ * it cannot do is allocate, so every handed-over ticket lands back on the
+ * unassigned sweep and the whole point of the escalation, that one named
+ * person now owns this, quietly does not happen. That is a configuration
+ * state, not a bug, and the difference between the two is only visible if
+ * something says so where somebody is looking.
+ */
+function l3Notice(configured: boolean): string {
+  if (configured) return '';
+  return `<div class="notice notice--error">No L3 engineer is configured: <code>L3_ENGINEER_EMAIL</code> is unset,
+  so escalated tickets are alerted but not allocated to anybody. Set it with
+  <code>npx wrangler secret put L3_ENGINEER_EMAIL</code> and redeploy.</div>`;
+}
+
 export function adminQueuePage(opts: {
   tickets: TicketWithRequester[];
   filterStatus?: TicketStatus;
@@ -60,6 +77,8 @@ export function adminQueuePage(opts: {
   agentEmail: string;
   /** Whether ADMIN_EMAILS is set. False means the console's second lock is off. */
   allowlistConfigured: boolean;
+  /** Whether L3_ENGINEER_EMAIL is set. False means escalations allocate to nobody. */
+  l3Configured?: boolean;
   /** When the desk last successfully read its mailbox. */
   ingest: Heartbeat;
 }): string {
@@ -73,11 +92,17 @@ export function adminQueuePage(opts: {
   const rows = opts.tickets
     .map((t) => {
       const overdue = isOverdue(t.sla_first_response_due, t.first_response_at) && !t.first_response_at;
+      // Ownership belongs in the list, not only on the ticket page. The
+      // question this table is opened to answer is "what is not being dealt
+      // with", and until now it could not distinguish a ticket with an
+      // engineer on it from one nobody had looked at.
+      const owner = t.assigned_to?.trim();
       return `<tr>
   <td>${priorityBadge(t.priority)}</td>
   <td><a class="subject" href="/admin/tickets/${t.id}">${escapeHtml(t.subject)}</a><br>
       <span style="font-size:0.78rem;color:var(--text-soft)">${ticketPublicId(t.id)} &middot; ${escapeHtml(t.requester_email)}</span></td>
   <td>${statusBadge(t.status)}</td>
+  <td>${owner ? escapeHtml(owner) : '<span style="color:var(--text-soft)">Unassigned</span>'}</td>
   <td>${overdue ? '<span class="badge badge--breach">Overdue</span>' : formatDateTime(t.sla_first_response_due)}</td>
   <td>${formatDateTime(t.updated_at)}</td>
 </tr>`;
@@ -87,6 +112,7 @@ export function adminQueuePage(opts: {
   const body = `
 ${ingestNotice(opts.ingest)}
 ${allowlistNotice(opts.allowlistConfigured)}
+${l3Notice(opts.l3Configured ?? true)}
 <div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:0.5rem">
   <h1>Support queue</h1>
   <p class="lede" style="margin:0">Signed in as ${escapeHtml(opts.agentEmail)}</p>
@@ -102,8 +128,8 @@ ${allowlistNotice(opts.allowlistConfigured)}
 </div>
 <div class="card">
   <table class="queue">
-    <thead><tr><th>Priority</th><th>Ticket</th><th>Status</th><th>First response due</th><th>Updated</th></tr></thead>
-    <tbody>${rows || `<tr><td colspan="5" style="color:var(--text-soft)">Nothing here.</td></tr>`}</tbody>
+    <thead><tr><th>Priority</th><th>Ticket</th><th>Status</th><th>Assigned to</th><th>First response due</th><th>Updated</th></tr></thead>
+    <tbody>${rows || `<tr><td colspan="6" style="color:var(--text-soft)">Nothing here.</td></tr>`}</tbody>
   </table>
 </div>
 `;
@@ -148,12 +174,55 @@ function draftsBlock(drafts: DraftRow[], ticketId: number): string {
     .join('\n');
 }
 
+/**
+ * Who owns this ticket, and the controls to change that.
+ *
+ * The hint about email is the part that earns its space. Assigning is not
+ * only a label: the assignee can reply to the desk by email and have it reach
+ * the requester, which is the whole point of allocating an escalation to
+ * somebody who is not at a desk. Somebody granting that should be able to see
+ * that they are granting it.
+ */
+function assignmentBlock(ticket: TicketWithRequester, agentEmail: string, assignable: readonly string[]): string {
+  const owner = ticket.assigned_to?.trim() ?? '';
+  const me = agentEmail.trim().toLowerCase();
+  // The agent's own address always offered, whether or not the allowlist
+  // names it: they are signed in through Access and already able to reply on
+  // this ticket, so refusing to let them put their name on it would be a lock
+  // on the wrong door.
+  const options = [me, ...assignable.filter((address) => address !== me)];
+
+  return `<h2 style="margin-top:1.5rem">Assignment</h2>
+<p class="lede" style="margin:0 0 0.6rem 0">${owner ? `Assigned to <strong>${escapeHtml(owner)}</strong>` : 'Unassigned. This ticket is on the unassigned sweep.'}</p>
+<form method="post" action="/admin/tickets/${ticket.id}/assign">
+  <div class="field">
+    <label for="assignee">Owner</label>
+    <select id="assignee" name="assignee">
+      <option value="">Nobody (unassigned)</option>
+      ${options
+        .map(
+          (address) =>
+            `<option value="${escapeHtml(address)}" ${address === owner.toLowerCase() ? 'selected' : ''}>${escapeHtml(address)}${address === me ? ' (you)' : ''}</option>`,
+        )
+        .join('')}
+    </select>
+  </div>
+  <button class="btn btn--ghost" type="submit">Save owner</button>
+  <p class="hint">The owner can also work this ticket by email: a reply from
+  their address, with the ticket reference in the subject, is added here and
+  sent on to the requester.</p>
+</form>`;
+}
+
 export function adminTicketPage(opts: {
   ticket: TicketWithRequester;
   comments: CommentRow[];
   agentEmail: string;
   drafts?: DraftRow[];
   allowlistConfigured: boolean;
+  l3Configured?: boolean;
+  /** Addresses this ticket may be handed to. See assignment.ts. */
+  assignable?: readonly string[];
 }): string {
   const { ticket, comments } = opts;
   const publicId = ticketPublicId(ticket.id);
@@ -176,6 +245,7 @@ export function adminTicketPage(opts: {
 
   const body = `
 ${allowlistNotice(opts.allowlistConfigured)}
+${l3Notice(opts.l3Configured ?? true)}
 <p class="lede"><a href="/admin">&larr; Queue</a></p>
 <h1>${escapeHtml(ticket.subject)}</h1>
 <p class="lede">${publicId} &middot; ${escapeHtml(ticket.requester_name ?? ticket.requester_email)} &lt;${escapeHtml(ticket.requester_email)}&gt;
@@ -225,6 +295,7 @@ ${allowlistNotice(opts.allowlistConfigured)}
       </div>
       <button class="btn btn--ghost" type="submit">Save</button>
     </form>
+    ${assignmentBlock(ticket, opts.agentEmail, opts.assignable ?? [])}
     <p class="hint" style="margin-top:1rem">Marking resolved emails the requester automatically. Signed in as ${escapeHtml(opts.agentEmail)}.</p>
   </div>
 </div>

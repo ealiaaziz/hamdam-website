@@ -126,6 +126,24 @@ export interface Env {
    */
   ESCALATION_RECIPIENTS?: string;
   /**
+   * The L3 engineer escalated tickets are allocated to. A secret, not a var:
+   * wrangler.jsonc is public, and this is one named person's address next to
+   * a sentence saying they answer the escalations.
+   *
+   * It is also an authority, which is the part to keep in mind before
+   * changing it. Whatever address is here can write on any ticket allocated
+   * to it by replying to the desk, and have those words emailed to the
+   * requester. See assignment.ts and inbound.ts.
+   */
+  L3_ENGINEER_EMAIL?: string;
+  /**
+   * Who is emailed when tickets are sitting with no assignee, comma
+   * separated. A secret for the same reason. Unset falls back to the desk's
+   * own mailbox rather than to nobody, because a sweep that reports to no one
+   * is worse than no sweep: it looks like coverage.
+   */
+  UNASSIGNED_ALERT_RECIPIENTS?: string;
+  /**
    * Comma-separated addresses allowed into the console, checked in the Worker
    * as well as by Cloudflare Access. A secret, not a var: wrangler.jsonc is
    * public and this is a list of accounts worth phishing. Unset means the

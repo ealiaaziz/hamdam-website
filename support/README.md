@@ -402,6 +402,88 @@ silently never fires and 301s your dev server to production. The redirect
 keys off the presence of Cloudflare's `CF-Ray` header instead, which the
 edge always sets and overwrites, and which wrangler dev never sends.
 
+## Escalation, allocation, and working a ticket from a phone
+
+When the assistant hands a ticket over, three things happen in one step
+(`notifyEscalation` in `src/escalation.ts`):
+
+1. The ticket is **allocated** to the L3 engineer in `L3_ENGINEER_EMAIL`, but
+   only if nobody owns it already. A person who has taken a ticket keeps it;
+   the automatic path only ever fills an empty slot.
+2. The handover email goes to that engineer **and** to `ESCALATION_RECIPIENTS`,
+   with the owner named in the body and nobody mailed twice.
+3. A system note on the ticket records the allocation and what triggered it.
+
+The assistant escalates on the rules it always has, in `src/agentPolicy.ts`:
+any P1 or P2, a requester asking for a person, three assistant turns without
+resolving, no knowledge base article matching, and any Hamdam question the
+model could not source. Those are checked in code before the model is
+consulted, which is why escalation is a fact rather than a judgement.
+
+**The allocated engineer can then work the ticket by email.** A reply from
+their address, with the `[HAM-N]` tag still in the subject, is added to the
+ticket as their own message and sent on to the requester. Writing "close this
+ticket" closes it. They are also emailed whenever the requester writes again,
+so the ticket can be run to completion without opening the console.
+
+Two things make that safe rather than reckless, and neither is the subject
+tag, which is a routing hint and never a credential:
+
+* Exchange must have authenticated the sender, per `src/authResults.ts`. The
+  same bar a requester has to clear to write on their own ticket.
+* The address must match the ticket's `assigned_to`, which only ever holds an
+  address from `assignableAddresses` in `src/assignment.ts`: the L3 engineer
+  plus `ADMIN_EMAILS`. Nothing arriving in a request can put an address there.
+
+Fail either and nothing is lost or errored: the message becomes its own
+ticket, in front of a person.
+
+Unset `L3_ENGINEER_EMAIL` is not an outage. Escalations still alert, they are
+simply not allocated, every page of the console says so, and the tickets show
+up in the sweep below.
+
+## Tickets nobody has picked up
+
+A second cron, `0 */2 * * *`, runs `sweepUnassigned` in `src/sweep.ts`: every
+two hours it counts open tickets with no assignee and emails
+`UNASSIGNED_ALERT_RECIPIENTS` a digest of them, worst priority first, with the
+age of each and a link straight to it.
+
+When it sends is the part with the judgement in it, and it is a pure function
+(`decideAlert`) with tests next to it:
+
+* Nothing unassigned, no email. There is no "all clear" heartbeat, because
+  that is the fastest way to teach somebody to filter this sender.
+* A ticket that was not in the last digest, send. New work with no owner is
+  the event this exists to report.
+* Otherwise send once a day. The same three tickets every two hours is a
+  digest that gets filtered; total silence on a backlog that has stopped
+  changing is the failure the sweep was written to end.
+
+The state lives in `sync_state` under `unassigned_alert`, and `sentAt` moves
+only when Graph accepted at least one copy, so a mail outage means the next
+pass tries again rather than recording an alert nobody received.
+
+Assigning a ticket in the console takes it off the list. So does the L3
+allocation on escalation, which is why the two features are one change.
+
+## Secrets this desk needs
+
+Ownership and alerting are configured, never hard coded. This repository is
+public, and a file naming the people who read the escalations is a
+spearphishing target assembled for free.
+
+```
+npx wrangler secret put L3_ENGINEER_EMAIL          # one address
+npx wrangler secret put UNASSIGNED_ALERT_RECIPIENTS # comma-separated
+npx wrangler secret put ESCALATION_RECIPIENTS       # comma-separated
+npx wrangler secret put ADMIN_EMAILS                # comma-separated
+```
+
+`L3_ENGINEER_EMAIL` is an authority, not a label: whatever address is in it
+can answer tickets allocated to it by email, over this domain. Changing it is
+a permission change.
+
 ## Agent console authentication
 
 `/admin/*` verifies the **signed** Cloudflare Access assertion
