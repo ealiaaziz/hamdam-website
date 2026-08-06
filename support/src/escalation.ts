@@ -1,7 +1,7 @@
 import type { Env } from './types.js';
 import { escalationEmail } from './render/escalation.js';
 import { requesterReplyNotification } from './render/email.js';
-import { sendMail } from './mailer.js';
+import { sendMail, SENDER } from './mailer.js';
 import { l3Engineer, unassignedAlertRecipients } from './assignment.js';
 import { addComment, assignTicket, getAgentState, getTicketById, listComments, markOutboundFailed, markOutboundSent, queueOutboundEmail } from './db.js';
 
@@ -104,6 +104,13 @@ export async function notifyAssignedAgent(
     const ticket = await getTicketById(env.DB, ticketId);
     const assignee = ticket?.assigned_to?.trim();
     if (!ticket || !assignee) return;
+
+    // A ticket assigned to the desk's own mailbox needs nothing from here. On
+    // the portal path that mailbox already receives the "requester replied"
+    // notice, and on the email path the requester's message is literally
+    // sitting in it. Either way a second copy is the same information twice,
+    // addressed to the same inbox.
+    if (assignee.toLowerCase() === SENDER.toLowerCase()) return;
 
     const rendered = requesterReplyNotification({
       ticketId,

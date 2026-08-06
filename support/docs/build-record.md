@@ -1126,6 +1126,22 @@ would close the console to them and leave the mailbox open on every ticket
 they ever held. The console still shows them as the owner, because that is
 what happened.
 
+### Two things the audit changed
+
+The sweep compared ticket ids and nothing else. The list is capped at
+twenty-five and ordered worst first, so on a queue longer than that the new
+arrivals sit below the cut: every visible id would look familiar and the digest
+would go quiet exactly when the backlog was growing fastest. The stored state
+carries the total now, and a total that has grown is its own reason to send. A
+state row written before that field existed reads its total as the number of
+ids rather than as zero, so the first pass after an upgrade does not report a
+jump that did not happen.
+
+And `notifyAssignedAgent` returns early when the assignee is the desk's own
+mailbox. On the portal path that mailbox already gets the "requester replied"
+notice; on the email path the requester's message is sitting in it. Either way
+the second copy is the same information addressed to the same inbox.
+
 ### Open
 
 * **The unassigned digest is not metered.** It goes to a configured list on a
@@ -1138,6 +1154,20 @@ what happened.
   "unassigned" and it is the safe one, but on a busy week the digest is long.
   If it becomes noise, the fix is an age floor rather than a heuristic about
   whether the assistant seems to be coping.
+* **The exemption from the recipient ceiling now covers more addresses.**
+  `unmeteredRecipients` gained the L3 address and the sweep's recipients. It
+  has no effect today, because every path that mails them sends directly
+  rather than through `queueAndSend`, and it is there so that a future path
+  which does go through it cannot quietly mute the people who have to act.
+  The cost is that if one of those people files a ticket themselves, the
+  ten-an-hour ceiling no longer protects their address. Two other limits
+  still do: five ticket creations an hour per recipient, and twenty inbound
+  messages an hour per sender.
+* **A requester closing an allocated ticket does not notify its owner.** The
+  closure path returns before the notification, deliberately: the work is
+  over, no action is needed, and the console shows it. Named here because
+  "allocated to you" could reasonably be read as meaning you hear about
+  everything that happens to it.
 * **An agent's inbound reply is relayed without review.** It is the same trade
   the desk already makes for its own assistant replies on the email path, and
   the sender here is a named colleague rather than a model. Worth knowing that

@@ -10,7 +10,7 @@ import type { TicketWithRequester } from '../src/types.js';
 const now = new Date('2026-08-06T08:00:00Z');
 
 describe('decideAlert', () => {
-  const quiet = { ids: [] as number[], sentAt: null };
+  const quiet = { ids: [] as number[], total: 0, sentAt: null };
 
   it('says nothing when nothing is unassigned', () => {
     // No "all clear" heartbeat. That is the fastest way to teach somebody to
@@ -23,21 +23,21 @@ describe('decideAlert', () => {
   });
 
   it('sends when a ticket appears that was not in the last alert', () => {
-    const state = { ids: [7], sentAt: '2026-08-06T07:00:00Z' };
+    const state = { ids: [7], total: 1, sentAt: '2026-08-06T07:00:00Z' };
     expect(decideAlert(state, [7, 8], now.getTime())).toMatchObject({ send: true });
   });
 
   it('stays quiet when the same tickets are still sitting there', () => {
     // Every two hours with the same three tickets in it is a digest nobody
     // reads, and then this file has made things worse rather than better.
-    const state = { ids: [7, 8], sentAt: '2026-08-06T07:00:00Z' };
+    const state = { ids: [7, 8], total: 2, sentAt: '2026-08-06T07:00:00Z' };
     expect(decideAlert(state, [7, 8], now.getTime()).send).toBe(false);
   });
 
   it('stays quiet when the list only shrank', () => {
     // Somebody assigned one. That is the outcome being asked for, and
     // congratulating them by email is noise.
-    const state = { ids: [7, 8], sentAt: '2026-08-06T07:00:00Z' };
+    const state = { ids: [7, 8], total: 2, sentAt: '2026-08-06T07:00:00Z' };
     expect(decideAlert(state, [7], now.getTime()).send).toBe(false);
   });
 
@@ -45,26 +45,46 @@ describe('decideAlert', () => {
     // Without this, a backlog that stops changing goes permanently silent,
     // which is indistinguishable from an empty queue: the exact failure this
     // sweep exists to end.
-    const state = { ids: [7], sentAt: new Date(now.getTime() - UNASSIGNED_REMINDER_MS - 1000).toISOString() };
+    const state = { ids: [7], total: 1, sentAt: new Date(now.getTime() - UNASSIGNED_REMINDER_MS - 1000).toISOString() };
     expect(decideAlert(state, [7], now.getTime())).toMatchObject({ send: true });
   });
 
   it('treats a ticket that was assigned and unassigned again as new', () => {
     // The stored ids are rewritten every pass, whether or not anything was
     // sent, which is what makes this true.
-    const state = { ids: [], sentAt: '2026-08-06T07:30:00Z' };
+    const state = { ids: [], total: 0, sentAt: '2026-08-06T07:30:00Z' };
     expect(decideAlert(state, [7], now.getTime()).send).toBe(true);
   });
 
+
+  it('sends when the backlog grew but every visible ticket is familiar', () => {
+    // The digest lists the worst twenty-five, oldest first, so on a queue
+    // longer than that the new arrivals are underneath the cut. Comparing ids
+    // alone would go quiet exactly when the backlog is growing fastest.
+    const state = { ids: [1, 2], total: 2, sentAt: '2026-08-06T07:00:00Z' };
+    expect(decideAlert(state, [1, 2], now.getTime(), 9)).toMatchObject({ send: true });
+  });
+
+  it('stays quiet when the total is unchanged and so are the ids', () => {
+    const state = { ids: [1, 2], total: 30, sentAt: '2026-08-06T07:00:00Z' };
+    expect(decideAlert(state, [1, 2], now.getTime(), 30).send).toBe(false);
+  });
+
+  it('stays quiet when the backlog only shrank behind the cut', () => {
+    const state = { ids: [1, 2], total: 30, sentAt: '2026-08-06T07:00:00Z' };
+    expect(decideAlert(state, [1, 2], now.getTime(), 28).send).toBe(false);
+  });
+
   it('sends rather than swallowing an unreadable last-sent time', () => {
-    expect(decideAlert({ ids: [7], sentAt: 'not a date' }, [7], now.getTime()).send).toBe(true);
+    expect(decideAlert({ ids: [7], total: 1, sentAt: 'not a date' }, [7], now.getTime()).send).toBe(true);
   });
 });
 
 describe('readAlertState', () => {
   it('reads what the sweep wrote', () => {
-    expect(readAlertState('{"ids":[1,2],"sentAt":"2026-08-06T07:00:00Z"}')).toEqual({
+    expect(readAlertState('{"ids":[1,2],"total":2,"sentAt":"2026-08-06T07:00:00Z"}')).toEqual({
       ids: [1, 2],
+      total: 2,
       sentAt: '2026-08-06T07:00:00Z',
     });
   });
@@ -79,6 +99,13 @@ describe('readAlertState', () => {
 
   it('drops ids that are not numbers', () => {
     expect(readAlertState('{"ids":[1,"2",null,3]}').ids).toEqual([1, 3]);
+  });
+
+  it('reads a row written before the total was recorded as its own length', () => {
+    // Not as zero. Zero would make the first pass after an upgrade report a
+    // jump from nothing to the whole backlog, which is a false alarm dressed
+    // as the exact alarm this sends.
+    expect(readAlertState('{"ids":[1,2,3],"sentAt":null}').total).toBe(3);
   });
 });
 

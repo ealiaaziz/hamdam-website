@@ -46,18 +46,35 @@ export const UNASSIGNED_LIST_LIMIT = 25;
 export interface UnassignedAlertState {
   /** Ticket ids that were unassigned when the sweep last looked. */
   ids: number[];
+  /**
+   * How many there were in total, which is not always `ids.length`.
+   *
+   * The id list stops at `UNASSIGNED_LIST_LIMIT`, and it is ordered worst
+   * first, so on a queue with more than that outstanding the newest arrivals
+   * fall below the cut. Comparing ids alone would then miss exactly the event
+   * this sweep exists to report, on exactly the day it matters most. The total
+   * is the signal that still moves when the visible list does not.
+   */
+  total: number;
   /** When an alert was last actually delivered, not when one was considered. */
   sentAt: string | null;
 }
 
-const EMPTY_STATE: UnassignedAlertState = { ids: [], sentAt: null };
+const EMPTY_STATE: UnassignedAlertState = { ids: [], total: 0, sentAt: null };
 
 export function readAlertState(raw: string | null): UnassignedAlertState {
   if (!raw) return EMPTY_STATE;
   try {
     const parsed = JSON.parse(raw) as Partial<UnassignedAlertState>;
     const ids = Array.isArray(parsed.ids) ? parsed.ids.filter((id): id is number => Number.isInteger(id)) : [];
-    return { ids, sentAt: typeof parsed.sentAt === 'string' ? parsed.sentAt : null };
+    return {
+      ids,
+      // Older rows predate this field. Reading a missing total as the number
+      // of ids, rather than as zero, keeps the first pass after an upgrade
+      // from reporting a jump that did not happen.
+      total: Number.isInteger(parsed.total) ? (parsed.total as number) : ids.length,
+      sentAt: typeof parsed.sentAt === 'string' ? parsed.sentAt : null,
+    };
   } catch {
     // Unparseable reads as "nothing known", which sends. The alternative is a
     // corrupt row silently suppressing every future alert, and of the two ways
@@ -82,16 +99,30 @@ export type AlertDecision = { send: boolean; reason: string };
  *    teach two people to filter this sender.
  *  - A ticket that was not in the last alert means send. New work with no
  *    owner is the event this exists to report.
+ *  - So does a total that has grown, even when every visible id is familiar.
+ *    That is the case a list capped at `UNASSIGNED_LIST_LIMIT` cannot see: the
+ *    digest shows the worst twenty-five, new arrivals queue up underneath, and
+ *    an id comparison would go quiet precisely when the backlog is growing
+ *    fastest.
  *  - Otherwise send only if the last one was a day ago. A backlog that is not
  *    growing still deserves a mention; it does not deserve twelve.
  */
-export function decideAlert(state: UnassignedAlertState, currentIds: readonly number[], nowMs: number): AlertDecision {
-  if (currentIds.length === 0) return { send: false, reason: 'nothing unassigned' };
+export function decideAlert(
+  state: UnassignedAlertState,
+  currentIds: readonly number[],
+  nowMs: number,
+  total: number = currentIds.length,
+): AlertDecision {
+  if (total === 0) return { send: false, reason: 'nothing unassigned' };
 
   const known = new Set(state.ids);
   const fresh = currentIds.filter((id) => !known.has(id));
   if (fresh.length > 0) {
     return { send: true, reason: `${fresh.length} newly unassigned ticket(s)` };
+  }
+
+  if (total > state.total) {
+    return { send: true, reason: `the backlog grew from ${state.total} to ${total}` };
   }
 
   if (!state.sentAt) return { send: true, reason: 'no alert has been sent yet' };
@@ -144,11 +175,11 @@ export async function sweepUnassigned(env: Env, now: Date = new Date()): Promise
     // more", and the honest reading of a truncated list is that the newest
     // arrivals below the cut are represented by the count, not by their ids.
     const ids = tickets.map((t) => t.id);
-    const decision = decideAlert(state, ids, now.getTime());
+    const decision = decideAlert(state, ids, now.getTime(), total);
     summary.reason = decision.reason;
 
     if (!decision.send) {
-      await setSyncState(env.DB, UNASSIGNED_ALERT_KEY, JSON.stringify({ ids, sentAt: state.sentAt }));
+      await setSyncState(env.DB, UNASSIGNED_ALERT_KEY, JSON.stringify({ ids, total, sentAt: state.sentAt }));
       return summary;
     }
 
@@ -175,7 +206,7 @@ export async function sweepUnassigned(env: Env, now: Date = new Date()): Promise
     await setSyncState(
       env.DB,
       UNASSIGNED_ALERT_KEY,
-      JSON.stringify({ ids, sentAt: summary.alerted ? now.toISOString() : state.sentAt }),
+      JSON.stringify({ ids, total, sentAt: summary.alerted ? now.toISOString() : state.sentAt }),
     );
     return summary;
   } catch (error) {
