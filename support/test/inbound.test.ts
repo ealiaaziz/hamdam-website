@@ -487,3 +487,62 @@ describe('planInbound and the ticket assignee', () => {
     expect(plan).toMatchObject({ action: 'append', as: 'agent' });
   });
 });
+
+// The requester allowlist, which is what turns this desk into an internal
+// one. Hamdam sets nothing and keeps taking mail from the public; a desk run
+// for one business takes mail from that business and files the rest.
+describe('planInbound and the requester allowlist', () => {
+  it('opens a ticket for anyone when no allowlist is configured', () => {
+    // Absent means absent, not empty. Hamdam depends on this.
+    expect(planInbound(message({ fromEmail: 'stranger@anywhere.example' }), known())).toMatchObject({ action: 'create' });
+  });
+
+  it('opens a ticket for a sender the allowlist permits', () => {
+    const plan = planInbound(message({ fromEmail: 'tim@circuitenergy.org' }), known({ requesterAllowed: true }));
+    expect(plan).toMatchObject({ action: 'create' });
+  });
+
+  it('files and ignores a sender it does not', () => {
+    // Skipped rather than refused: the message stays in the mailbox and is
+    // recorded, and nothing goes back. Replying would confirm a live mailbox
+    // to whoever sent it, which is the one thing an unsolicited sender learns.
+    const plan = planInbound(message({ fromEmail: 'stranger@anywhere.example' }), known({ requesterAllowed: false }));
+    expect(plan).toMatchObject({ action: 'skip' });
+    expect(plan).toMatchObject({ reason: 'sender is not on the requester allowlist' });
+  });
+
+  it('still lets the ticket owner reply, allowlist or not', () => {
+    // They passed the check when the ticket was created. Re-checking here
+    // would orphan the open tickets of somebody who has since left, on a
+    // conversation the desk has already been writing to them about.
+    const plan = planInbound(
+      message({ subject: 'RE: [HAM-9] thing' }),
+      known({ taggedTicket: { id: 9, requesterEmail: OWNER }, senderAuthenticated: true, requesterAllowed: false }),
+    );
+    expect(plan).toMatchObject({ action: 'append', ticketId: 9, as: 'requester' });
+  });
+
+  it('still lets the assigned engineer work the ticket from outside the domain', () => {
+    // The whole point of allocation: the L3 engineer is not staff at the
+    // customer, so the allowlist must not lock them out of their own ticket.
+    const plan = planInbound(
+      message({ subject: 'RE: [HAM-9] thing', fromEmail: 'engineer@elsewhere.example' }),
+      known({
+        taggedTicket: { id: 9, requesterEmail: OWNER, assignedTo: 'engineer@elsewhere.example' },
+        senderAuthenticated: true,
+        requesterAllowed: false,
+      }),
+    );
+    expect(plan).toMatchObject({ action: 'append', ticketId: 9, as: 'agent' });
+  });
+
+  it('does not let a stranger reach a ticket by quoting its number', () => {
+    // The tag is not a credential, and being refused the append must not fall
+    // through into creating a ticket either.
+    const plan = planInbound(
+      message({ subject: 'RE: [HAM-9] thing', fromEmail: 'stranger@anywhere.example' }),
+      known({ taggedTicket: { id: 9, requesterEmail: OWNER }, senderAuthenticated: true, requesterAllowed: false }),
+    );
+    expect(plan).toMatchObject({ action: 'skip' });
+  });
+});

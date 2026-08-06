@@ -1,15 +1,19 @@
 // Human-facing ticket IDs are derived from the D1 autoincrement key, never
 // stored separately (see migrations/0001_init.sql for why).
+//
+// The prefix comes from the deployment rather than from here, so a desk run
+// for another business does not label its tickets HAM. See identity.ts; unset
+// it is still 'HAM-'.
 
-const PREFIX = 'HAM-';
+import { identity, ticketPrefixPattern } from './identity.js';
 
 export function ticketPublicId(id: number): string {
-  return `${PREFIX}${id}`;
+  return `${identity().ticketPrefix}${id}`;
 }
 
-/** Returns null (not a throw) for anything that isn't a well-formed HAM-<n>. */
+/** Returns null (not a throw) for anything that isn't a well-formed <prefix><n>. */
 export function parseTicketPublicId(publicId: string): number | null {
-  const match = /^HAM-(\d+)$/.exec(publicId.trim());
+  const match = new RegExp(`^${ticketPrefixPattern()}(\\d+)$`).exec(publicId.trim());
   if (!match) return null;
   const id = Number(match[1]);
   return Number.isSafeInteger(id) && id > 0 ? id : null;

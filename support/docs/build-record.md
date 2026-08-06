@@ -1172,3 +1172,85 @@ the second copy is the same information addressed to the same inbox.
   the desk already makes for its own assistant replies on the email path, and
   the sender here is a named colleague rather than a model. Worth knowing that
   a mistyped reply reaches the requester with no step in between.
+
+
+## A second desk, 2026-08-06
+
+Two changes that together let this code run for somebody other than Hamdam,
+one Worker per customer, without forking the source.
+
+### The requester allowlist
+
+`REQUESTER_ALLOWLIST` decides who may open a ticket. Unset means anyone, which
+is Hamdam and is correct here: a person who bought the app has no account and
+needs none, and every control on that surface is deliberately a rate rather
+than an identity. Set to a domain or an address it means an internal desk,
+where five named people may write in and everybody else is noise.
+
+The gate is on ticket creation, and on every path to it. That last part was a
+real bug for about ten minutes: the first version checked only the final
+fallthrough, so a stranger who guessed a ticket number was refused the append
+and then handed a brand new ticket by the next line. A test asked the question
+and the answer was wrong. Creation now goes through one function that either
+creates or skips, and there is no other way to reach `create`.
+
+Appending is deliberately not gated. It is only reachable as the ticket's
+requester or its assignee, and nobody becomes a requester without passing the
+check first, so there is no path onto a ticket that avoids it. Re-checking on
+append would orphan the open tickets of somebody who has left the company, on
+a conversation the desk has already been writing to them about.
+
+On the mailbox path a refused sender is skipped, not answered: the message is
+recorded, marked read and left alone. Replying would confirm a live mailbox to
+whoever sent it, which on an internal desk is exactly what an unsolicited
+sender is trying to learn. On the portal it is refused visibly instead,
+because somebody is sitting there and the overwhelming likelihood is a
+personal address or a typo rather than an intruder.
+
+The assignee is exempt by construction rather than by exception. The L3
+engineer is not staff at the customer, so an allowlist that covered the append
+paths would have locked them out of the tickets the escalation had just given
+them.
+
+### The desk stopped asserting it is Hamdam
+
+The mailbox, the public address, the `HAM-` prefix and the name in an email
+footer were literals across seven files. A second deployment would have had to
+fork the source to change them, and a fork is where two desks quietly stop
+being the same product. They come from `identity.ts` now, with Hamdam's values
+as the defaults, so a deployment that configures nothing is the desk that was
+already running.
+
+It is module state rather than a threaded parameter, and that is a deliberate
+trade. `ticketPublicId` is called from twenty-six places, most of them
+renderers that never see an `Env`; threading it would have been a large diff
+across the whole surface of a live desk to change one string. One Worker is
+one desk, so there is no second tenant's value for module state to leak to,
+and it has the same lifetime as the cached Graph token that has held fine.
+
+Two regressions came out of doing this and both were caught by looking at the
+rendered page rather than at the tests, which passed throughout. Overriding
+the page chrome unconditionally retitled the Persian portal in English,
+because the Persian chrome is its own string and not a translation of an
+English brand. And the wordmark lost the styled span it renders through. The
+chrome now uses the locale table unless a deployment has actually named
+itself, which is what `brandConfigured` is for.
+
+One change to Hamdam's own footer survives on purpose: it now links the
+mailbox rather than hamdam.com.au, because the mailbox is the actionable
+thing and it is the value that varies per deployment.
+
+### Open
+
+* **Portal body copy is still Hamdam's.** The chrome, the emails and the
+  ticket ids follow the deployment; the words on the submit form talk about a
+  Hamdam ticket. Fine for a first tenant whose staff are being told what the
+  desk is; not fine for a self-serve one.
+* **The knowledge base is per deployment and nothing enforces that.** A tenant
+  copies `kb-templates/general-it` into its own `kb/` and adds reference files
+  from its intake. Nothing stops somebody adding a customer-specific article
+  to the shared templates, and the first time that happens one business starts
+  answering another's questions.
+* **`ALLOWED_COUNTRIES` still defaults to Hamdam's seven.** A customer whose
+  staff travel outside them cannot reach the portal, though email is never
+  geo-restricted so they can still raise a ticket.

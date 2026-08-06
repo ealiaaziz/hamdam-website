@@ -1,5 +1,6 @@
 import type { Env } from './types.js';
 import type { MessageHeader } from './authResults.js';
+import { identity } from './identity.js';
 
 // Sending mail from the Worker, immediately.
 //
@@ -22,11 +23,19 @@ import type { MessageHeader } from './authResults.js';
 // can send as anyone. `Mail.Send` scoped to one mailbox is the smaller
 // thing to be wrong about.
 
-/** The one mailbox this desk sends from. */
-export const SENDER = 'developer@hamdam.com.au';
+/**
+ * The one mailbox this desk sends from.
+ *
+ * A function rather than a constant because a second deployment answers as a
+ * different mailbox, and every Graph URL below is built from it. See
+ * identity.ts; unset, this is developer@hamdam.com.au exactly as before.
+ */
+export function sender(): string {
+  return identity().mailbox;
+}
 
 const TOKEN_ENDPOINT = (tenant: string) => `https://login.microsoftonline.com/${tenant}/oauth2/v2.0/token`;
-const SEND_ENDPOINT = `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(SENDER)}/sendMail`;
+const mailboxPath = () => `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(sender())}`;
 
 export interface MailToSend {
   toEmail: string;
@@ -99,7 +108,7 @@ export async function sendMail(env: Env, mail: MailToSend, now = Date.now()): Pr
 
   try {
     const token = await accessToken(env, now);
-    const response = await fetch(SEND_ENDPOINT, {
+    const response = await fetch(`${mailboxPath()}/sendMail`, {
       method: 'POST',
       headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
       body: JSON.stringify({
@@ -186,7 +195,7 @@ async function fetchFolder(env: Env, folder: MailFolder, since: string, limit: n
   });
 
   const response = await fetch(
-    `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(SENDER)}/mailFolders/${FOLDER_PATH[folder]}/messages?${query}`,
+    `${mailboxPath()}/mailFolders/${FOLDER_PATH[folder]}/messages?${query}`,
     { headers: { authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(15_000) },
   );
 
@@ -277,7 +286,7 @@ export async function fetchMessageHeaders(env: Env, messageId: string, now = Dat
   try {
     const token = await accessToken(env, now);
     const response = await fetch(
-      `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(SENDER)}/messages/${encodeURIComponent(messageId)}?$select=internetMessageHeaders`,
+      `${mailboxPath()}/messages/${encodeURIComponent(messageId)}?$select=internetMessageHeaders`,
       { headers: { authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(10_000) },
     );
     if (response.status === 401) cachedToken = null;
@@ -318,7 +327,7 @@ export async function markRead(env: Env, messageId: string, now = Date.now()): P
   try {
     const token = await accessToken(env, now);
     const response = await fetch(
-      `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(SENDER)}/messages/${encodeURIComponent(messageId)}`,
+      `${mailboxPath()}/messages/${encodeURIComponent(messageId)}`,
       {
         method: 'PATCH',
         headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },

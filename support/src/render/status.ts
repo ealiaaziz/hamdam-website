@@ -3,6 +3,7 @@ import { escapeHtml, textToSafeHtml, ticketPublicId } from '../ids.js';
 import { SLA_POLICY } from '../itil.js';
 import { localePath, parseLocale, strings } from '../i18n.js';
 import type { CommentRow, TicketWithRequester } from '../types.js';
+import { identity } from '../identity.js';
 
 export function ticketStatusPage(opts: {
   ticket: TicketWithRequester;
@@ -27,7 +28,7 @@ export function ticketStatusPage(opts: {
       const roleClass = c.author_type === 'requester' ? 'msg--requester' : c.author_type === 'agent' ? 'msg--agent' : 'msg--system';
       const who =
         c.author_type === 'agent'
-          ? escapeHtml(c.author_name ?? t.supportAuthor)
+          ? escapeHtml(c.author_name ?? (identity().brandConfigured ? identity().brandName : t.supportAuthor))
           : c.author_type === 'system'
             ? escapeHtml(t.systemAuthor)
             : escapeHtml(t.you);

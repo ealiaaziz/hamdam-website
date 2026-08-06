@@ -2,7 +2,8 @@ import type { Priority } from '../itil.js';
 import { PRIORITY_LABEL } from '../itil.js';
 import type { TicketStatus } from '../types.js';
 import { escapeHtml } from '../ids.js';
-import { direction, localePath, strings, type Locale } from '../i18n.js';
+import { direction, localePath, strings, type Locale, type Strings } from '../i18n.js';
+import { identity } from '../identity.js';
 
 export interface LayoutOptions {
   title: string;
@@ -11,6 +12,18 @@ export interface LayoutOptions {
   bodyClass?: string;
   /** Defaults to English. The console is always English; the portal is not. */
   locale?: Locale;
+}
+
+/**
+ * What to call this desk in the page chrome.
+ *
+ * A configured deployment uses its own name. Hamdam does not configure one and
+ * keeps the bilingual pair it already had, because the Persian chrome is its
+ * own string rather than a translation of an English brand: overriding it
+ * unconditionally retitled the Persian portal in English.
+ */
+function brand(t: Strings): string {
+  return identity().brandConfigured ? escapeHtml(identity().brandName) : `Hamdam ${escapeHtml(t.brandSupport)}`;
 }
 
 export function page(opts: LayoutOptions, bodyHtml: string): string {
@@ -24,20 +37,20 @@ export function page(opts: LayoutOptions, bodyHtml: string): string {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>${escapeHtml(opts.title)} · Hamdam ${escapeHtml(t.brandSupport)}</title>
+<title>${escapeHtml(opts.title)} · ${brand(t)}</title>
 <link rel="stylesheet" href="/static/app.css">
 <meta name="robots" content="noindex">
 </head>
 <body${opts.bodyClass ? ` class="${opts.bodyClass}"` : ''}>
 <div class="shell${opts.wide ? ' shell--wide' : ''}">
 <header class="brand">
-  <a class="wordmark" href="${home}">Hamdam <span>${escapeHtml(t.brandSupport)}</span></a>
+  <a class="wordmark" href="${home}">${identity().brandConfigured ? escapeHtml(identity().brandName) : `Hamdam <span>${escapeHtml(t.brandSupport)}</span>`}</a>
   <nav>${(opts.nav ?? []).map((n) => `<a href="${n.href}">${escapeHtml(n.label)}</a>`).join('')}<a href="${t.otherLanguageHref}" lang="${locale === 'fa' ? 'en' : 'fa'}">${escapeHtml(t.otherLanguage)}</a></nav>
 </header>
 ${bodyHtml}
 <footer class="meta">
-  ${t.footer} ·
-  <a href="https://hamdam.com.au">hamdam.com.au</a>
+  ${brand(t)} &middot; ${t.footer}
+  <a href="mailto:${escapeHtml(identity().mailbox)}">${escapeHtml(identity().mailbox)}</a>
 </footer>
 </div>
 </body>

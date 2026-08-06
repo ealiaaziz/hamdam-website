@@ -58,6 +58,22 @@
     // Email is never restricted, so anyone outside this list still reaches
     // the desk at developer@hamdam.com.au.
     "ALLOWED_COUNTRIES": "AU,NZ,IR,AE,GB,US,NL"
+
+    // Deliberately not set here, and that is what makes this deployment
+    // Hamdam's. A desk run for another business sets them in its own copy of
+    // this file and shares the source rather than forking it:
+    //
+    //   "SUPPORT_MAILBOX":     the mailbox it sends from and reads
+    //   "TICKET_PREFIX":       "CE" gives CE-1 instead of HAM-1
+    //   "BRAND_NAME":          email footers, page chrome, digest subjects
+    //   "PUBLIC_BASE_URL":     links in mail that no request context reaches
+    //   "REQUESTER_ALLOWLIST": who may open a ticket, e.g. "circuitenergy.org"
+    //
+    // The last one is the difference between a public desk and an internal
+    // one. Unset means anyone may write in, which is correct here: a person
+    // who bought Hamdam has no account and needs none. On a desk that serves
+    // one business's staff, unset would mean a mailbox that opens tickets and
+    // spends a model budget for anybody who finds the address.
   },
   // Cloudflare Workers AI: the assistant's writing, on the free daily
   // allocation that comes with this Workers plan (10,000 neurons, reset at

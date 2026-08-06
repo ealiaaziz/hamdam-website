@@ -3,6 +3,7 @@ import { countUnassignedTickets, getSyncState, listUnassignedTickets, setSyncSta
 import { unassignedAlertRecipients } from './assignment.js';
 import { unassignedDigestEmail } from './render/unassigned.js';
 import { sendMail } from './mailer.js';
+import { identity } from './identity.js';
 
 // A scheduled look for work nobody has picked up.
 //
@@ -186,7 +187,7 @@ export async function sweepUnassigned(env: Env, now: Date = new Date()): Promise
     const rendered = unassignedDigestEmail({
       tickets,
       total,
-      adminBaseUrl: 'https://support.hamdam.com.au',
+      adminBaseUrl: identity().baseUrl,
       now,
     });
 

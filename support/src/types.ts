@@ -126,6 +126,28 @@ export interface Env {
    */
   ESCALATION_RECIPIENTS?: string;
   /**
+   * Who this deployment is, as plain config in wrangler.jsonc rather than
+   * secrets: none of it is sensitive, and which mailbox a desk answers as is
+   * an operational fact that belongs in a diff. All four are optional and all
+   * four default to Hamdam's values, so the deployment that sets none of them
+   * is the desk that runs today. See identity.ts.
+   */
+  SUPPORT_MAILBOX?: string;
+  TICKET_PREFIX?: string;
+  BRAND_NAME?: string;
+  PUBLIC_BASE_URL?: string;
+  /**
+   * Who may open a ticket, comma-separated. Accepts `example.org`,
+   * `@example.org` and `person@example.org`.
+   *
+   * Unset means anyone, which is Hamdam's desk and is correct there: somebody
+   * who bought the app has no account and needs none. Set means an internal
+   * desk where only that business's staff may raise a ticket, and everything
+   * else arriving at the mailbox is filed and ignored rather than answered.
+   * See requesterAccess.ts.
+   */
+  REQUESTER_ALLOWLIST?: string;
+  /**
    * The L3 engineer escalated tickets are allocated to. A secret, not a var:
    * wrangler.jsonc is public, and this is one named person's address next to
    * a sentence saying they answer the escalations.

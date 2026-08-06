@@ -24,6 +24,8 @@ import { detectLocale, localePath, parseLocale, type Locale } from './i18n.js';
 import { ingestInbox } from './ingest.js';
 import { notifyAssignedAgent, notifyEscalation, unmeteredRecipients } from './escalation.js';
 import { assignableAddresses, l3Engineer, mayBeAssigned } from './assignment.js';
+import { describeRequesterAccess, isAllowedRequester } from './requesterAccess.js';
+import { applyIdentity, identity } from './identity.js';
 import { sweepUnassigned, UNASSIGNED_SWEEP_CRON } from './sweep.js';
 import { requestedClosure } from './agentPolicy.js';
 
@@ -60,7 +62,7 @@ import { strings } from './i18n.js';
 // The desk's own mailbox. Notifications about ticket activity go here, and
 // the routine must ignore inbound mail from this address so the desk does
 // not ingest its own outgoing email as requester replies.
-const SUPPORT_INBOX = 'developer@hamdam.com.au';
+const supportInbox = () => identity().mailbox;
 
 /** The Hono context this app actually builds, so helpers can accept one. */
 type DeskEnv = { Bindings: Env; Variables: { agentEmail: string } };
@@ -378,6 +380,16 @@ app.post('/tickets', async (c) => {
   // deliver a stranger's subject line to a stranger's inbox.
   if (!isValidEmail(email)) return invalid(strings(requestLocale(c)).errorEmail);
 
+  // On a desk that serves one business's staff, an address outside that
+  // business is not a requester. Refused rather than silently dropped, unlike
+  // the mailbox path: somebody is sitting here having typed it, and the most
+  // likely cause by far is a personal address or a typo in the domain rather
+  // than an intruder. Telling them which address to use costs nothing an
+  // attacker did not already know from the allowlist being a domain.
+  if (!isAllowedRequester(email, c.env)) {
+    return invalid(strings(requestLocale(c)).errorNotAllowed);
+  }
+
   // Counted per recipient as well as per caller. A caller with a pool of
   // addresses can defeat the IP limit; they cannot defeat both, and what
   // needs bounding is how much mail one person can be sent.
@@ -621,7 +633,7 @@ app.post('/tickets/:id/reply', async (c) => {
       ticketId: id,
       commentId,
       kind: 'requester_reply',
-      toEmail: SUPPORT_INBOX,
+      toEmail: supportInbox(),
       subject: rendered.subject,
       bodyHtml: rendered.html,
       inReplyToMessageId: null,
@@ -800,6 +812,7 @@ app.get('/admin', async (c) => {
       agentEmail,
       allowlistConfigured: adminAllowlist(c.env).length > 0,
       l3Configured: l3Engineer(c.env) !== null,
+      requesterAccess: describeRequesterAccess(c.env),
       ingest: readHeartbeat(await getSyncState(c.env.DB, HEARTBEAT_KEY)),
     }),
   );
@@ -1129,9 +1142,14 @@ function withLocalePrefix(request: Request): Request {
 
 export default {
   fetch(request: Request, env: Env, ctx: ExecutionContext) {
+    // Before anything reads a ticket id, a mailbox or a public URL. One
+    // Worker is one desk, so this is a per-deployment constant being loaded
+    // rather than per-request state being carried.
+    applyIdentity(env);
     return app.fetch(withLocalePrefix(request), env, ctx);
   },
   async scheduled(event: ScheduledController, env: Env, ctx: ExecutionContext): Promise<void> {
+    applyIdentity(env);
     // Two schedules, one handler. Cloudflare invokes this once per matching
     // cron expression, so at the top of an even hour both fire as separate
     // invocations rather than as one that has to do both jobs.

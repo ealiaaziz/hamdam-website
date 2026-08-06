@@ -1,6 +1,7 @@
 import { escapeHtml, ticketPublicId } from '../ids.js';
 import { PRIORITY_LABEL, type Priority } from '../itil.js';
 import type { TicketWithRequester } from '../types.js';
+import { identity } from '../identity.js';
 
 // The email nobody wants to receive, which is the point.
 //
@@ -75,8 +76,8 @@ ${RULE}
 <p style="margin:0 0 0.4rem 0">
   <a href="${input.adminBaseUrl}/admin" style="display:inline-block;padding:0.5rem 0.9rem;background:#241E15;color:#fff;text-decoration:none;border-radius:0.25rem;font-size:0.9rem">Open the queue</a>
 </p>
-<p style="font-size:0.78rem;color:#8A7A63">Hamdam Support &middot; assigning a ticket in the console takes it off this list.</p>
+<p style="font-size:0.78rem;color:#8A7A63">${escapeHtml(identity().brandName)} &middot; assigning a ticket in the console takes it off this list.</p>
 </div>`;
 
-  return { subject: `[Hamdam Support] ${input.total} unassigned ticket${input.total === 1 ? '' : 's'}`, html };
+  return { subject: `[${identity().brandName}] ${input.total} unassigned ticket${input.total === 1 ? '' : 's'}`, html };
 }

@@ -1,12 +1,14 @@
 import type { Env } from './types.js';
 import { classifyTicket, slaDueDates } from './itil.js';
 import { generateTrackingToken } from './ids.js';
-import { fetchInbox, fetchMessageHeaders, markRead, sendMail, canSendDirectly, SENDER, type InboundMessage } from './mailer.js';
+import { fetchInbox, fetchMessageHeaders, markRead, sendMail, canSendDirectly, sender, type InboundMessage } from './mailer.js';
 import { cleanSubject, planInbound, sameAddress, ticketIdFromSubject, type KnownThread } from './inbound.js';
 import { consumeRateLimit, mayEmailRecipient, meteringSubject } from './rateLimit.js';
 import { senderIsAuthenticated } from './authResults.js';
 import { unmeteredRecipients } from './escalation.js';
 import { mayBeAssigned } from './assignment.js';
+import { isAllowedRequester } from './requesterAccess.js';
+import { identity } from './identity.js';
 import { detectLocale, strings } from './i18n.js';
 import { HEARTBEAT_KEY } from './heartbeat.js';
 import { composeAssistantReplyLive, ASSISTANT_NAME } from './assistantReply.js';
@@ -103,7 +105,7 @@ async function queueAndSend(env: Env, email: NewOutboundEmail): Promise<void> {
 }
 
 function ticketUrl(ticketId: number, token: string): string {
-  return `https://support.hamdam.com.au/tickets/${ticketId}?token=${encodeURIComponent(token)}`;
+  return `${identity().baseUrl}/tickets/${ticketId}?token=${encodeURIComponent(token)}`;
 }
 
 /**
@@ -306,6 +308,7 @@ async function handleMessage(env: Env, message: InboundMessage): Promise<'create
     taggedTicket,
     conversationTicket,
     senderAuthenticated,
+    requesterAllowed: isAllowedRequester(message.fromEmail, env),
   });
 
   if (plan.action === 'skip') {
@@ -616,4 +619,4 @@ export async function ingestInbox(env: Env): Promise<IngestSummary> {
   return summary;
 }
 
-export { SENDER };
+export { sender };

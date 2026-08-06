@@ -1,6 +1,7 @@
 import { escapeHtml, textToSafeHtml, ticketPublicId } from '../ids.js';
 import { renderSteps } from './agentSuggestion.js';
 import type { KbArticle } from '../kb.js';
+import { identity } from '../identity.js';
 
 // Emails the assistant drafts. Inline-styled for the same reason as the
 // rest of render/email.ts: mail clients ignore external stylesheets.
@@ -14,7 +15,8 @@ import type { KbArticle } from '../kb.js';
 const WRAP_OPEN = `<div style="font-family:Georgia,'Times New Roman',serif;color:#241E15;max-width:34rem;margin:0 auto;line-height:1.55">`;
 const WRAP_CLOSE = `</div>`;
 const RULE = `<hr style="border:none;border-top:1px solid #241E15;opacity:0.15;margin:1.25rem 0">`;
-const FOOTER = `<p style="font-size:0.8rem;color:#574A38">Hamdam Support &middot; developer@hamdam.com.au &middot; hamdam.com.au</p>`;
+const footer = () =>
+  `<p style="font-size:0.8rem;color:#574A38">${escapeHtml(identity().brandName)} &middot; ${escapeHtml(identity().mailbox)}</p>`;
 
 function greeting(name: string | null): string {
   return name ? `Hi ${escapeHtml(name.split(' ')[0])},` : 'Hi,';
@@ -37,7 +39,7 @@ ${renderSteps(opts.article.steps)}
 you tried, and we will take it from there.</p>
 <p><a href="${opts.trackingUrl}" style="color:#D07B3F">Track ${escapeHtml(publicId)}</a></p>
 ${RULE}
-${FOOTER}
+${footer()}
 ${WRAP_CLOSE}`;
   return { subject: `[${publicId}] ${opts.subject}`, html };
 }
@@ -69,7 +71,7 @@ export function assistantWrittenEmail(opts: {
 you tried, and we will take it from there.</p>
 <p><a href="${opts.trackingUrl}" style="color:#D07B3F">Track ${escapeHtml(publicId)}</a></p>
 ${RULE}
-${FOOTER}
+${footer()}
 ${WRAP_CLOSE}`;
   return { subject: `[${publicId}] ${opts.subject}`, html };
 }
@@ -89,7 +91,7 @@ export function assistantClarifyingEmail(opts: {
 <p>Reply whenever suits and we will pick it up from there.</p>
 <p><a href="${opts.trackingUrl}" style="color:#D07B3F">Track ${escapeHtml(publicId)}</a></p>
 ${RULE}
-${FOOTER}
+${footer()}
 ${WRAP_CLOSE}`;
   return { subject: `[${publicId}] ${opts.subject}`, html };
 }

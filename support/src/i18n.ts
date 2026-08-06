@@ -77,6 +77,7 @@ export interface Strings {
   submitButton: string;
   errorAllFields: string;
   errorEmail: string;
+  errorNotAllowed: string;
   trackLink: string;
 
   trackTitle: string;
@@ -99,6 +100,7 @@ export interface Strings {
   emailMeHint: string;
   closedNotice: string;
   you: string;
+  /** Fallback author label. Prefixed by the deployment's brand at render time. */
   supportAuthor: string;
   systemAuthor: string;
   overdue: string;
@@ -116,6 +118,7 @@ export interface Strings {
   ackPortalFast: string;
   priorityLine: (priority: string, first: string, resolve: string) => string;
 
+  /** Footer tail. The deployment's name and mailbox are prepended at render time. */
   footer: string;
 
   // What the desk says when the model is unavailable, over budget, or
@@ -156,6 +159,7 @@ const EN: Strings = {
   submitButton: 'Submit ticket',
   errorAllFields: 'Please fill in every field.',
   errorEmail: 'That email address does not look right. We send your ticket and every reply to it, so it has to be one that works.',
+  errorNotAllowed: 'This desk only takes requests from your work email address. Use that one, or email the support address directly if you think this is wrong.',
   trackLink: 'Already have a ticket?',
 
   trackTitle: 'Find your ticket',
@@ -196,7 +200,7 @@ const EN: Strings = {
   priorityLine: (priority, first, resolve) =>
     `Priority: ${priority}. Our target is to make first contact within ${first} and to resolve within ${resolve}.`,
 
-  footer: 'Hamdam Support &middot; every ticket is emailed to and from developer@hamdam.com.au',
+  footer: 'every ticket is emailed to and from',
 
   replySolutionIntro: 'Thanks for the extra detail. This looks like it might be the one:',
   replySolutionOutro: 'If that does not do it, say so and I will pass this to one of the team.',
@@ -240,6 +244,7 @@ const FA: Strings = {
   submitButton: 'ثبت درخواست',
   errorAllFields: 'لطفاً همه‌ی بخش‌ها را پر کنید.',
   errorEmail: 'نشانی ایمیل درست به نظر نمی‌رسد. درخواست و همه‌ی پاسخ‌ها به همین نشانی فرستاده می‌شود.',
+  errorNotAllowed: 'این میز پشتیبانی تنها درخواست‌های ارسال‌شده از نشانی ایمیل کاری شما را می‌پذیرد.',
   trackLink: 'از قبل درخواستی دارید؟',
 
   trackTitle: 'پیگیری درخواست',
@@ -280,7 +285,7 @@ const FA: Strings = {
   priorityLine: (priority, first, resolve) =>
     `اولویت: ${priority}. هدف ما این است که ظرف ${first} نخستین پاسخ را بدهیم و ظرف ${resolve} مشکل را حل کنیم.`,
 
-  footer: 'پشتیبانی همدم &middot; هر درخواست از نشانی developer@hamdam.com.au فرستاده و دریافت می‌شود',
+  footer: 'هر درخواست از این نشانی فرستاده و دریافت می‌شود:',
 
   replySolutionIntro: 'ممنون از توضیح بیشتر. به نظر می‌رسد این مورد باشد:',
   replySolutionOutro: 'اگر این مشکل را حل نکرد، بگویید تا درخواست را به یکی از همکاران بسپارم.',

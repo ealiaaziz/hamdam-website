@@ -7,11 +7,13 @@
 import { PRIORITY_LABEL, SLA_POLICY, type Priority } from '../itil.js';
 import { escapeHtml, textToSafeHtml, ticketPublicId } from '../ids.js';
 import { direction, strings, type Locale } from '../i18n.js';
+import { identity } from '../identity.js';
 
 const WRAP_OPEN = `<div style="font-family:Georgia,'Times New Roman',serif;color:#241E15;max-width:34rem;margin:0 auto;line-height:1.55">`;
 const WRAP_CLOSE = `</div>`;
 const RULE = `<hr style="border:none;border-top:1px solid #241E15;opacity:0.15;margin:1.25rem 0">`;
-const FOOTER = `<p style="font-size:0.8rem;color:#574A38">Hamdam Support &middot; developer@hamdam.com.au &middot; hamdam.com.au</p>`;
+const footer = () =>
+  `<p style="font-size:0.8rem;color:#574A38">${escapeHtml(identity().brandName)} &middot; ${escapeHtml(identity().mailbox)}</p>`;
 
 export function ackEmail(opts: {
   ticketId: number;
@@ -36,7 +38,7 @@ export function ackEmail(opts: {
 <p>${escapeHtml(t.ackOrReply)}</p>
 <p>${escapeHtml(t.ackPortalFast)}</p>
 ${RULE}
-${FOOTER}
+${footer()}
 ${WRAP_CLOSE}</div>`;
   return { subject: `[${publicId}] ${opts.subject}`, html };
 }
@@ -51,8 +53,8 @@ export function agentReplyEmail(opts: {
   const html = `${WRAP_OPEN}
 <p>${textToSafeHtml(opts.message)}</p>
 ${RULE}
-<p style="font-size:0.85rem;color:#574A38">${escapeHtml(opts.agentName)}, Hamdam Support (${escapeHtml(publicId)})</p>
-${FOOTER}
+<p style="font-size:0.85rem;color:#574A38">${escapeHtml(opts.agentName)}, ${escapeHtml(identity().brandName)} (${escapeHtml(publicId)})</p>
+${footer()}
 ${WRAP_CLOSE}`;
   return { subject: `[${publicId}] ${opts.subject}`, html };
 }
@@ -102,7 +104,7 @@ ${textToSafeHtml(opts.message)}
 ${howToAnswer}
 <p><a href="${opts.adminUrl}" style="color:#D07B3F">Open ${escapeHtml(publicId)} in the console</a></p>
 ${RULE}
-${FOOTER}
+${footer()}
 ${WRAP_CLOSE}`;
   return { subject: `[${publicId}] Requester replied: ${opts.subject}`, html };
 }
@@ -114,7 +116,7 @@ export function resolvedEmail(opts: { ticketId: number; subject: string; trackin
 <p>If that's not quite right, just reply to this email (or use the link below) and we'll reopen it.</p>
 <p><a href="${opts.trackingUrl}" style="color:#D07B3F">${escapeHtml(opts.trackingUrl)}</a></p>
 ${RULE}
-${FOOTER}
+${footer()}
 ${WRAP_CLOSE}`;
   return { subject: `[${publicId}] Resolved: ${opts.subject}`, html };
 }
@@ -163,7 +165,7 @@ export function conversationSummaryEmail(opts: {
   const thread = opts.turns
     .map(
       (t) => `<div style="margin:0 0 1rem 0;padding:0 0 0 0.85rem;border-left:2px solid ${t.who === 'you' ? '#D07B3F' : '#C9BBA6'}">
-  <p style="margin:0 0 0.3rem 0;font-size:0.78rem;letter-spacing:0.04em;text-transform:uppercase;color:#574A38">${t.who === 'you' ? 'You' : 'Hamdam Support'}</p>
+  <p style="margin:0 0 0.3rem 0;font-size:0.78rem;letter-spacing:0.04em;text-transform:uppercase;color:#574A38">${t.who === 'you' ? 'You' : escapeHtml(identity().brandName)}</p>
   <p style="margin:0">${textToSafeHtml(t.body)}</p>
 </div>`,
     )
@@ -178,7 +180,7 @@ ${thread}
 ${RULE}
 <p>${closing}</p>
 <p><a href="${opts.trackingUrl}" style="color:#D07B3F">Open ${escapeHtml(publicId)}</a></p>
-${FOOTER}
+${footer()}
 ${WRAP_CLOSE}`;
 
   const prefix = { resolved: 'Resolved', with_a_person: 'Update', in_progress: 'Update' }[opts.status];

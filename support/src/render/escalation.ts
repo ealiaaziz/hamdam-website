@@ -1,6 +1,7 @@
 import { escapeHtml, textToSafeHtml, ticketPublicId } from '../ids.js';
 import { PRIORITY_LABEL, SLA_POLICY, type Priority, type Topic } from '../itil.js';
 import type { CommentRow, TicketWithRequester } from '../types.js';
+import { identity } from '../identity.js';
 
 // The handover email, to the people who will actually pick the ticket up.
 //
@@ -150,7 +151,7 @@ ${RULE}
 </p>
 <p style="margin:0 0 0.8rem 0;font-size:0.84rem;color:#574A38">Replying in the console emails ${escapeHtml(ticket.requester_email)} directly.
 The requester's own view is <a href="${input.trackingUrl}" style="color:#D07B3F">here</a>.</p>
-<p style="font-size:0.78rem;color:#8A7A63">Hamdam Support &middot; this is an internal handover, the requester has not seen it.</p>
+<p style="font-size:0.78rem;color:#8A7A63">${escapeHtml(identity().brandName)} &middot; this is an internal handover, the requester has not seen it.</p>
 </div>`;
 
   const urgency = ticket.priority === 'P1' || ticket.priority === 'P2' ? `${ticket.priority} ` : '';

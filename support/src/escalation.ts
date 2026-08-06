@@ -1,7 +1,8 @@
 import type { Env } from './types.js';
 import { escalationEmail } from './render/escalation.js';
 import { requesterReplyNotification } from './render/email.js';
-import { sendMail, SENDER } from './mailer.js';
+import { sendMail } from './mailer.js';
+import { identity } from './identity.js';
 import { l3Engineer, unassignedAlertRecipients } from './assignment.js';
 import { addComment, assignTicket, getAgentState, getTicketById, listComments, markOutboundFailed, markOutboundSent, queueOutboundEmail } from './db.js';
 
@@ -60,7 +61,7 @@ export function unmeteredRecipients(env: Env): string[] {
     // busy hour silence the thing that says the hour is busy.
     ...(l3 ? [l3] : []),
     ...unassignedAlertRecipients(env),
-    'developer@hamdam.com.au',
+    identity().mailbox,
   ];
 }
 
@@ -110,7 +111,7 @@ export async function notifyAssignedAgent(
     // notice, and on the email path the requester's message is literally
     // sitting in it. Either way a second copy is the same information twice,
     // addressed to the same inbox.
-    if (assignee.toLowerCase() === SENDER.toLowerCase()) return;
+    if (assignee.toLowerCase() === identity().mailbox.toLowerCase()) return;
 
     const rendered = requesterReplyNotification({
       ticketId,
@@ -118,7 +119,7 @@ export async function notifyAssignedAgent(
       requesterName: ticket.requester_name,
       requesterEmail: ticket.requester_email,
       message,
-      adminUrl: `https://support.hamdam.com.au/admin/tickets/${ticketId}`,
+      adminUrl: `${identity().baseUrl}/admin/tickets/${ticketId}`,
       via,
       toAssignee: true,
     });
@@ -205,7 +206,7 @@ export async function notifyEscalation(env: Env, ticketId: number, reason: strin
     }
 
     const [comments, state] = await Promise.all([listComments(env.DB, ticketId), getAgentState(env.DB, ticketId)]);
-    const base = 'https://support.hamdam.com.au';
+    const base = identity().baseUrl;
 
     const rendered = escalationEmail({
       ticket: { ...ticket, assigned_to: assignedTo },

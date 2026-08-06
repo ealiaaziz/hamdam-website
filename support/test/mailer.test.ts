@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { canSendDirectly, markRead, resetTokenCache, sendMail, SENDER } from '../src/mailer.js';
+import { canSendDirectly, markRead, resetTokenCache, sendMail, sender } from '../src/mailer.js';
 import type { Env } from '../src/types.js';
 
 // Sending is the one thing here with no undo. These cover the parts that
@@ -56,7 +56,7 @@ describe('sendMail', () => {
     expect(await sendMail(env, mail)).toEqual({ sent: true });
 
     const [sendUrl, sendInit] = fetchMock.mock.calls[1];
-    expect(String(sendUrl)).toContain(encodeURIComponent(SENDER));
+    expect(String(sendUrl)).toContain(encodeURIComponent(sender()));
     const body = JSON.parse(String(sendInit.body));
     expect(body.saveToSentItems).toBe(true);
     expect(body.message.toRecipients[0].emailAddress.address).toBe('someone@example.com');
@@ -166,7 +166,7 @@ describe('markRead', () => {
     expect(await markRead(env, 'AAMkAGabc')).toEqual({ sent: true });
 
     const [url, init] = fetchMock.mock.calls[1];
-    expect(String(url)).toContain(encodeURIComponent(SENDER));
+    expect(String(url)).toContain(encodeURIComponent(sender()));
     expect(String(url)).toContain('AAMkAGabc');
     expect(init.method).toBe('PATCH');
     expect(JSON.parse(String(init.body))).toEqual({ isRead: true });

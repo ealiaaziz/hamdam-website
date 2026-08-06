@@ -1,5 +1,6 @@
 import { stripHtml, parseTicketPublicId } from './ids.js';
-import { SENDER, type InboundMessage } from './mailer.js';
+import { identity, ticketPrefixPattern } from './identity.js';
+import { type InboundMessage } from './mailer.js';
 
 // Turning an email into a ticket, or into a reply on one.
 //
@@ -17,7 +18,7 @@ import { SENDER, type InboundMessage } from './mailer.js';
 
 /** The desk's own address, in every form it might appear. */
 export function isFromTheDesk(fromEmail: string): boolean {
-  return fromEmail.trim().toLowerCase() === SENDER.toLowerCase();
+  return fromEmail.trim().toLowerCase() === identity().mailbox.toLowerCase();
 }
 
 /**
@@ -77,8 +78,8 @@ export function isAutomatedMail(fromEmail: string, subject: string): boolean {
  * someone forwards the mail or replies from a different client.
  */
 export function ticketIdFromSubject(subject: string): number | null {
-  const match = /\bHAM-(\d+)\b/i.exec(subject);
-  return match ? parseTicketPublicId(`HAM-${match[1]}`) : null;
+  const match = new RegExp(`\\b${ticketPrefixPattern()}(\\d+)\\b`, 'i').exec(subject);
+  return match ? parseTicketPublicId(`${identity().ticketPrefix}${match[1]}`) : null;
 }
 
 /**
@@ -217,6 +218,14 @@ export function planInbound(
      * type is what stops that being an easy thing to forget.
      */
     senderAuthenticated: boolean;
+    /**
+     * Whether this sender may open a ticket on this desk at all.
+     *
+     * Optional, and absent means yes: that is the public desk Hamdam runs, and
+     * a caller that has not configured a restriction has not asked for one.
+     * See requesterAccess.ts.
+     */
+    requesterAllowed?: boolean;
   },
 ): InboundPlan {
   // The desk's own outgoing mail, and its own notifications to itself. Left
@@ -293,13 +302,36 @@ export function planInbound(
     return null;
   };
 
+  // Opening a ticket is the one thing a stranger can do on a desk that runs
+  // for one business's staff, so it is the one thing the allowlist gates. It
+  // has to gate *every* path to a new ticket, not the last one: refusing a
+  // stranger the append and then falling through to create would have handed
+  // them the ticket anyway, which is what an early version of this did until
+  // a test asked.
+  //
+  // Skipped, not refused. The message stays in the mailbox, is recorded in the
+  // ledger and is marked read, and nothing goes back to the sender. Replying
+  // would confirm a live mailbox to whoever sent it, which on an internal desk
+  // is the whole of what an unsolicited sender is trying to learn.
+  //
+  // Appending is deliberately not gated. It is only reachable as the ticket's
+  // requester or its assignee, and nobody becomes a requester without passing
+  // this check first, so there is no path onto a ticket that does not cross
+  // this line. Re-checking on append would instead orphan the open tickets of
+  // somebody who has left the company, on a conversation the desk has already
+  // been writing to them about.
+  const createOrSkip = (): InboundPlan =>
+    known.requesterAllowed === false
+      ? { action: 'skip', reason: 'sender is not on the requester allowlist' }
+      : { action: 'create', body };
+
   const tagged = ticketIdFromSubject(message.subject);
   if (tagged !== null && known.taggedTicket && known.taggedTicket.id === tagged) {
     const writer = writerFor(known.taggedTicket);
     if (writer) {
       return { action: 'append', ticketId: tagged, body, as: writer };
     }
-    return { action: 'create', body };
+    return createOrSkip();
   }
 
   // The conversation id is Exchange's own thread key and is not printed
@@ -314,14 +346,14 @@ export function planInbound(
     }
   }
 
-  return { action: 'create', body };
+  return createOrSkip();
 }
 
 /** Subject with any [HAM-N] tag removed, for a ticket created from email. */
 export function cleanSubject(subject: string): string {
   return (
     subject
-      .replace(/\[?\bHAM-\d+\b\]?/gi, '')
+      .replace(new RegExp(`\\[?\\b${ticketPrefixPattern()}\\d+\\b\\]?`, 'gi'), '')
       .replace(/^\s*(re|fw|fwd)\s*:\s*/gi, '')
       .trim() || '(no subject)'
   );

@@ -70,6 +70,20 @@ function l3Notice(configured: boolean): string {
   <code>npx wrangler secret put L3_ENGINEER_EMAIL</code> and redeploy.</div>`;
 }
 
+/**
+ * Who may raise a ticket here, stated rather than left to be inferred.
+ *
+ * Not a warning in either direction. An open desk is correct for a product
+ * whose requesters are the public, and a restricted one is correct for a desk
+ * that serves one business's staff; the failure is only ever running the mode
+ * you did not intend. So it reports, in the same place the other two controls
+ * report, and neither state shouts.
+ */
+function requesterAccessNotice(description: string | undefined): string {
+  if (!description) return '';
+  return `<p class="lede" style="margin:0 0 1rem 0">Requesters: ${escapeHtml(description)}</p>`;
+}
+
 export function adminQueuePage(opts: {
   tickets: TicketWithRequester[];
   filterStatus?: TicketStatus;
@@ -79,6 +93,8 @@ export function adminQueuePage(opts: {
   allowlistConfigured: boolean;
   /** Whether L3_ENGINEER_EMAIL is set. False means escalations allocate to nobody. */
   l3Configured?: boolean;
+  /** One line saying who may raise a ticket on this deployment. */
+  requesterAccess?: string;
   /** When the desk last successfully read its mailbox. */
   ingest: Heartbeat;
 }): string {
@@ -117,6 +133,7 @@ ${l3Notice(opts.l3Configured ?? true)}
   <h1>Support queue</h1>
   <p class="lede" style="margin:0">Signed in as ${escapeHtml(opts.agentEmail)}</p>
 </div>
+${requesterAccessNotice(opts.requesterAccess)}
 <div class="filters">
   <a class="${!opts.filterPriority ? 'active' : ''}" href="/admin?${statusQuery}">All priorities</a>
   ${priorities

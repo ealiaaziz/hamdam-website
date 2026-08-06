@@ -1,7 +1,7 @@
 import type { Env } from './types.js';
 import { adminAllowlist } from './adminAccess.js';
 import { isValidEmail } from './validation.js';
-import { SENDER } from './mailer.js';
+import { identity } from './identity.js';
 
 // Who owns a ticket, and who is told when nobody does.
 //
@@ -95,5 +95,5 @@ export function unassignedAlertRecipients(env: Env): string[] {
     .split(',')
     .map((address) => address.trim())
     .filter((address) => isValidEmail(address));
-  return configured.length > 0 ? configured : [SENDER];
+  return configured.length > 0 ? configured : [identity().mailbox];
 }
