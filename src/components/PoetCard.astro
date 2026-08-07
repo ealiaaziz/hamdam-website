@@ -10,10 +10,17 @@ interface Props {
   portrait: ImageMetadata;
   /** True for the desktop centre card (page spec §4 item 3: "centre card slightly larger"). */
   emphasized?: boolean;
+  /** The poet's own page. Added 2026-08-07 with the poet cluster: the card
+   *  itself stays non-interactive per page spec §4 item 10 ("no conversion
+   *  action, this section builds authority"), so only the transliteration
+   *  becomes a link. That keeps the band's behaviour as designed while giving
+   *  the five new pages a crawlable route in from the homepage, which they
+   *  otherwise would not have. */
+  href?: string | null;
   class?: string;
 }
 
-const { persianName, transliteration, description, lang, portrait, emphasized = false, class: className = '' } = Astro.props;
+const { persianName, transliteration, description, lang, portrait, emphasized = false, href = null, class: className = '' } = Astro.props;
 
 const portraitAlt =
   lang === 'fa'
@@ -47,11 +54,26 @@ const portraitAlt =
       <h3 dir="rtl" class="poet-card__name font-farsi">{persianName}</h3>
     </div>
   </div>
-  <p class="poet-card__translit">{transliteration}</p>
+  <p class="poet-card__translit">
+    {href ? <a class="poet-card__link" href={href}>{transliteration}</a> : transliteration}
+  </p>
   <p class="poet-card__description font-serif italic">{description}</p>
 </div>
 
 <style>
+  .poet-card__link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    color: inherit;
+    text-underline-offset: 0.2em;
+  }
+  .poet-card__link:hover,
+  .poet-card__link:focus-visible {
+    text-decoration: underline;
+    color: var(--hamdam-night-gold);
+  }
+
   .poet-card {
     width: 220px;
     display: flex;

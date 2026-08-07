@@ -1,6 +1,17 @@
 ---
 import PoetCard from './PoetCard.astro';
 import { poets } from '../data/poets';
+import { POET_PAGES } from '../data/poetPages';
+
+// Looked up by poetIndex rather than by position. POET_PAGES happens to be in
+// the same order as `poets` today, and indexing by i would silently point
+// every card at the wrong poet the first time either array is reordered.
+const pageForPoet = new Map(POET_PAGES.map((p) => [p.poetIndex, p]));
+const hrefForPoet = (i: number, lang: 'en' | 'fa') => {
+  const page = pageForPoet.get(i);
+  if (!page) return null;
+  return lang === 'fa' ? `/fa/poets/${page.slug}/` : `/poets/${page.slug}/`;
+};
 
 interface Props {
   lang: 'en' | 'fa';
@@ -41,6 +52,7 @@ const carouselLabel = lang === 'fa' ? 'پنج شاعر' : 'The five poets';
         description={lang === 'fa' ? poet.descriptionFa : poet.description}
         portrait={poet.portrait}
         emphasized={i === 2}
+        href={hrefForPoet(i, lang)}
       />
     ))}
   </div>

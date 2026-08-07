@@ -1,0 +1,313 @@
+---
+import { Image } from 'astro:assets';
+import { POET_PAGES, POET_PAGE_BY_SLUG, poetFor } from '../data/poetPages';
+import { verses } from '../data/verses';
+import { MOMENT_UI } from '../data/momentContent';
+import { APP_STORE, appStoreUrl } from '../lib/appStore';
+
+// One page body for the five poet pages, EN and FA.
+//
+// The asymmetry between the locales is deliberate and is the same one the
+// moment pages carry: the Farsi side renders everything for which approved
+// Farsi exists (the poet's Persian name, the approved one-line description in
+// poets.ts, the portrait, the Persian verse) and omits the biography, because
+// authoring Persian is Ealia's and a machine-written biography is exactly what
+// this repo's rules exist to prevent. The English biography is marked in
+// poetPages.ts as pending her sign-off.
+//
+// Every verse prints where its English came from. See the header of
+// poetPages.ts for why that line exists and what it takes to change a verse
+// from `machine` to a cited public domain rendering.
+
+interface Props {
+  lang: 'en' | 'fa';
+  slug: string;
+}
+
+const { lang, slug } = Astro.props;
+const page = POET_PAGE_BY_SLUG[slug];
+if (!page) throw new Error(`PoetArticle: unknown poet slug "${slug}"`);
+const poet = poetFor(page);
+const verse = page.verseId ? verses.find((v) => v.id === page.verseId) : null;
+
+const name = lang === 'fa' ? poet.persianName : poet.transliteration;
+const description = lang === 'fa' ? poet.descriptionFa : poet.description;
+
+const siblings = POET_PAGES.filter((p) => p.slug !== slug).map((p) => {
+  const other = poetFor(p);
+  return {
+    name: lang === 'fa' ? other.persianName : other.transliteration,
+    href: lang === 'fa' ? `/fa/poets/${p.slug}/` : `/poets/${p.slug}/`,
+  };
+});
+
+const homeHref = lang === 'fa' ? '/fa/' : '/';
+const homeLabel = MOMENT_UI.home[lang];
+const ctaLabel = MOMENT_UI.cta[lang];
+
+// Translation provenance, printed under every verse. The Farsi line is the
+// poet's own name plus Latin-script proper nouns, so it needs no new Persian:
+// a Farsi reader is looking at the Persian original anyway and the note is
+// about the English beneath it.
+const provenance =
+  page.translation.kind === 'publicDomain'
+    ? {
+        text: `English: ${page.translation.translator}, ${page.translation.work} (${page.translation.year}).`,
+        href: page.translation.url,
+      }
+    : {
+        text:
+          lang === 'fa'
+            ? 'English translation: machine-generated, pending replacement.'
+            : 'English translation: machine-generated, pending replacement with a cited public domain rendering.',
+        href: null,
+      };
+---
+
+<article class="poet">
+  <div class="poet__inner">
+    <p class="poet__crumb"><a href={homeHref}>{homeLabel}</a></p>
+
+    <div class="poet__head">
+      <div class="poet__portrait">
+        <Image
+          src={poet.portrait}
+          alt=""
+          width={poet.portrait.width}
+          height={poet.portrait.height}
+          widths={[240, 480]}
+          sizes="180px"
+          quality={78}
+          loading="eager"
+          fetchpriority="high"
+          class="poet__portrait-img"
+        />
+      </div>
+      <div class="poet__titles">
+        <h1 class="poet__name text-balance">{name}</h1>
+        <p class="poet__lifespan" lang="en" dir="ltr">{page.lifespan}</p>
+      </div>
+    </div>
+
+    <p class="poet__description text-balance">{description}</p>
+
+    {
+      /* English only, by design. See the note at the top of this file. */
+      lang === 'en' && (
+        <div class="poet__bio">
+          {page.biographyEn.map((paragraph) => (
+            <p>{paragraph}</p>
+          ))}
+        </div>
+      )
+    }
+
+    {
+      verse && (
+        <figure class="poet__verse">
+          <p class="poet__verse-fa" lang="fa" dir="rtl" set:html={verse.persian.replace(/\n/g, '<br />')} />
+          <p class="poet__verse-en" lang="en" dir="ltr">{verse.english}</p>
+          <figcaption class="poet__verse-meta" lang="en" dir="ltr">
+            <span>{verse.source}</span>
+            <span class="poet__verse-provenance">
+              {provenance.href ? <a href={provenance.href} rel="nofollow">{provenance.text}</a> : provenance.text}
+            </span>
+          </figcaption>
+        </figure>
+      )
+    }
+
+    <p class="poet__ganjoor">
+      <a href={page.ganjoor} rel="noopener">{`Ganjoor: ${poet.transliteration}`}</a>
+    </p>
+
+    {
+      APP_STORE.RELEASED && (
+        <p class="poet__cta-row">
+          <a class="poet__cta" href={appStoreUrl(lang, null, 'poet')} data-store-cta>
+            {ctaLabel}
+          </a>
+        </p>
+      )
+    }
+
+    <ul class="poet__siblings">
+      {siblings.map((s) => (
+        <li><a href={s.href}>{s.name}</a></li>
+      ))}
+    </ul>
+  </div>
+</article>
+
+<style>
+  .poet {
+    padding-block: 6rem 5rem;
+    padding-inline: 1.5rem;
+    background-color: var(--surface-firstlight);
+    color: var(--text-on-night);
+  }
+  @media (min-width: 640px) {
+    .poet { padding-block: 7.5rem 6rem; }
+  }
+
+  .poet__inner {
+    max-width: var(--container-reading);
+    margin-inline: auto;
+  }
+
+  .poet__crumb {
+    font-family: var(--font-sans);
+    font-size: var(--text-meta);
+    color: var(--text-on-night-muted);
+  }
+  :global([lang='fa']) .poet__crumb { font-family: var(--font-farsi); }
+  .poet__crumb a { color: inherit; text-decoration: underline; text-underline-offset: 0.25em; }
+  .poet__crumb a:hover { color: var(--text-on-night); }
+
+  .poet__head {
+    margin-top: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+  }
+
+  /* Fixed box with a reserved ratio, so the portrait cannot shift the name. */
+  .poet__portrait {
+    flex: none;
+    width: 120px;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    overflow: hidden;
+    background: linear-gradient(160deg, var(--surface-dusk), var(--surface-night));
+  }
+  @media (min-width: 640px) {
+    .poet__portrait { width: 180px; }
+  }
+  .poet__portrait-img { width: 100%; height: 100%; object-fit: cover; }
+
+  .poet__titles { flex: 1 1 12rem; }
+
+  .poet__name {
+    font-family: var(--font-serif);
+    font-size: var(--text-display);
+    font-weight: 600;
+    line-height: 1.1;
+  }
+  :global([lang='fa']) .poet__name {
+    font-family: var(--font-farsi);
+    font-size: var(--text-display-fa);
+    font-weight: 500;
+    line-height: 1.3;
+  }
+
+  .poet__lifespan {
+    margin-top: 0.5rem;
+    font-family: var(--font-sans);
+    font-size: var(--text-meta);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--hamdam-night-gold);
+  }
+  :global([lang='fa']) .poet__lifespan { text-align: right; }
+
+  .poet__description {
+    margin-top: 2rem;
+    font-family: var(--font-serif);
+    font-size: var(--text-h3);
+    line-height: 1.6;
+  }
+  :global([lang='fa']) .poet__description { font-family: var(--font-farsi); }
+
+  .poet__bio {
+    margin-top: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    font-family: var(--font-serif);
+    font-size: var(--text-body);
+    line-height: 1.7;
+    color: var(--text-on-night);
+  }
+
+  .poet__verse {
+    margin-top: 2.5rem;
+    padding: 1.5rem;
+    border-radius: var(--radius-card);
+    background: rgb(244 237 216 / 0.04);
+    border: 1px solid var(--hamdam-night-gold);
+  }
+  .poet__verse-fa {
+    font-family: var(--font-farsi);
+    font-size: var(--text-verse-fa);
+    line-height: 2;
+    text-align: right;
+  }
+  .poet__verse-en {
+    margin-top: 1rem;
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: var(--text-verse-en);
+    line-height: 1.7;
+  }
+  .poet__verse-meta {
+    margin-top: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    font-family: var(--font-sans);
+    font-size: var(--text-meta);
+    color: var(--text-on-night-muted);
+  }
+  .poet__verse-provenance a { color: inherit; text-decoration: underline; text-underline-offset: 0.25em; }
+
+  .poet__ganjoor {
+    margin-top: 2rem;
+    font-family: var(--font-sans);
+    font-size: var(--text-meta);
+  }
+  .poet__ganjoor a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    color: var(--hamdam-night-gold);
+    text-decoration: underline;
+    text-underline-offset: 0.25em;
+  }
+  .poet__ganjoor a:hover { color: var(--text-on-night); }
+
+  .poet__cta-row { margin-top: 1rem; }
+  .poet__cta {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding-inline: 1.5rem;
+    border-radius: var(--radius-button);
+    background: var(--hamdam-night-gold);
+    color: var(--surface-night);
+    font-family: var(--font-sans);
+    font-weight: 600;
+  }
+  :global([lang='fa']) .poet__cta { font-family: var(--font-farsi); }
+  .poet__cta:hover { filter: brightness(1.06); }
+
+  .poet__siblings {
+    margin-top: 3.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid rgb(244 237 216 / 0.16);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem 1.5rem;
+    font-family: var(--font-serif);
+  }
+  :global([lang='fa']) .poet__siblings { font-family: var(--font-farsi); }
+  .poet__siblings a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    color: var(--hamdam-night-gold);
+    text-decoration: underline;
+    text-underline-offset: 0.25em;
+  }
+  .poet__siblings a:hover { color: var(--text-on-night); }
+</style>

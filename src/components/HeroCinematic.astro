@@ -539,12 +539,29 @@ const deviceAlt =
     let scene3d = null;
     const canvas = hero.querySelector<HTMLCanvasElement>('.hero__scene3d');
     if (canvas) {
-      initHeroScene3d(canvas).then((controller) => {
-        if (!controller) return;
-        scene3d = controller;
-        hero.classList.add('hero--scene3d-active');
-        scene3d.setProgress(lastProgress);
-      });
+      // Deferred to idle, 2026-08-07. Creating the GL context and compiling the
+      // shaders is a one-off cost, but it landed inside the load window and
+      // showed up as run-to-run swings in Total Blocking Time (445ms on a cold
+      // run against 13ms on a warm one). Nothing above the fold depends on it:
+      // the flat SVG star field is already painted and stays until this
+      // resolves, so waiting for the main thread to be free costs the visitor
+      // nothing and takes the work off the critical path.
+      //
+      // The 1500ms timeout is the ceiling, not the target, and the setTimeout
+      // is for Safari, which still has no requestIdleCallback.
+      const startScene3d = () => {
+        initHeroScene3d(canvas).then((controller) => {
+          if (!controller) return;
+          scene3d = controller;
+          hero.classList.add('hero--scene3d-active');
+          scene3d.setProgress(lastProgress);
+        });
+      };
+      if ('requestIdleCallback' in window) {
+        window.requestIdleCallback(startScene3d, { timeout: 1500 });
+      } else {
+        setTimeout(startScene3d, 300);
+      }
     }
 
     const apply = (p) => {

@@ -1,0 +1,46 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import PoetArticle from '../../../components/PoetArticle.astro';
+import Footer from '../../../components/Footer.astro';
+import { POET_PAGES, POET_PAGE_BY_SLUG, poetFor } from '../../../data/poetPages';
+import { MOMENT_UI } from '../../../data/momentContent';
+import { poetPageSchema } from '../../../lib/schema';
+
+// Farsi half of the poet cluster. No Persian is authored here: the title is
+// the poet's own Persian name plus the site name, and the description is the
+// approved descriptionFa from poets.ts verbatim.
+export function getStaticPaths() {
+  return POET_PAGES.map((p) => ({ params: { poet: p.slug }, props: { slug: p.slug } }));
+}
+
+const { slug } = Astro.props;
+const page = POET_PAGE_BY_SLUG[slug];
+const poet = poetFor(page);
+const path = `/fa/poets/${slug}/`;
+
+const description = poet.descriptionFa;
+const title = `${poet.persianName} | ${MOMENT_UI.home.fa}`;
+
+const jsonLd = poetPageSchema({
+  lang: 'fa',
+  name: poet.persianName,
+  alternateName: poet.transliteration,
+  description,
+  url: new URL(path, Astro.site).href,
+  breadcrumbHome: MOMENT_UI.home.fa,
+  homeUrl: new URL('/fa/', Astro.site).href,
+  sameAs: page.ganjoor,
+});
+---
+
+<BaseLayout
+  title={title}
+  description={description}
+  lang="fa"
+  path={path}
+  jsonLd={jsonLd}
+  navOverDarkHero={true}
+>
+  <PoetArticle lang="fa" slug={slug} />
+  <Footer lang="fa" />
+</BaseLayout>

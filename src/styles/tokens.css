@@ -44,7 +44,13 @@
   --surface-dawn: #C77E4E;
   --surface-morning: #F4EDD8;
   --text-on-night: rgb(244 237 216 / 92%);
-  --text-on-night-muted: rgb(244 237 216 / 68%);
+  /* 75%, raised from 68% on 2026-08-07. At 68% this token measured 4.49:1 over
+     the lightened card surface (rgb(244 237 216 / 0.04) on --surface-firstlight,
+     which resolves to #604150), just under the 4.5:1 floor for normal text, and
+     axe failed the poet pages on it. It passed on the plain section background
+     because that is darker; the card was always the worst case and every card
+     using this token shared the defect. 75% measures 4.95:1 there. */
+  --text-on-night-muted: rgb(244 237 216 / 75%);
   --glow-warm: rgb(240 200 120 / 24%);
   /* 0 = night (top of page), 1 = morning (arc resolved). Set by scroll
      choreography in Phase 4; unconsumed until then. */

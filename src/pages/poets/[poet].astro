@@ -1,0 +1,46 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PoetArticle from '../../components/PoetArticle.astro';
+import Footer from '../../components/Footer.astro';
+import { POET_PAGES, POET_PAGE_BY_SLUG, poetFor } from '../../data/poetPages';
+import { poetPageSchema } from '../../lib/schema';
+
+// English half of the poet cluster, built 2026-08-07. The Farsi half is
+// src/pages/fa/poets/[poet].astro, same component and same data.
+export function getStaticPaths() {
+  return POET_PAGES.map((p) => ({ params: { poet: p.slug }, props: { slug: p.slug } }));
+}
+
+const { slug } = Astro.props;
+const page = POET_PAGE_BY_SLUG[slug];
+const poet = poetFor(page);
+const path = `/poets/${slug}/`;
+
+// The description is the approved one-liner from poets.ts plus the life dates,
+// which keeps the snippet unique per page and asserts nothing new.
+const description = `${poet.description} ${poet.transliteration}, ${page.lifespan}. Read in Hamdam, a daily Persian poetry and reflection app for iPhone.`;
+const title = `${poet.transliteration} (${poet.persianName}): poems and daily verses | Hamdam`;
+
+const jsonLd = poetPageSchema({
+  lang: 'en',
+  name: poet.transliteration,
+  alternateName: poet.persianName,
+  description,
+  url: new URL(path, Astro.site).href,
+  breadcrumbHome: 'Hamdam',
+  homeUrl: new URL('/', Astro.site).href,
+  sameAs: page.ganjoor,
+});
+---
+
+<BaseLayout
+  title={title}
+  description={description}
+  lang="en"
+  path={path}
+  jsonLd={jsonLd}
+  navOverDarkHero={true}
+>
+  <PoetArticle lang="en" slug={slug} />
+  <Footer lang="en" />
+</BaseLayout>

@@ -150,6 +150,58 @@ export function homepageSchema({ lang, name, description, url, downloadUrl, scre
  * @param {string} options.breadcrumbHome  Localised name of the homepage crumb.
  * @param {string} options.homeUrl
  */
+/**
+ * A poet page. The entity described is a Person, which is what schema.org has
+ * for a poet and what lets `sameAs` point at Ganjoor's page for the same
+ * person. No birthDate/deathDate: several of the five have only approximate
+ * dates ("c. 1325"), and schema.org Date wants an exact one, so the lifespan
+ * stays prose on the page rather than becoming a precise claim in metadata.
+ *
+ * @param {object} options
+ * @param {'en' | 'fa'} options.lang
+ * @param {string} options.name
+ * @param {string} options.alternateName  The name in the other script.
+ * @param {string} options.description
+ * @param {string} options.url
+ * @param {string} options.breadcrumbHome
+ * @param {string} options.homeUrl
+ * @param {string} options.sameAs  Ganjoor's page for this poet.
+ */
+export function poetPageSchema({
+  lang, name, alternateName, description, url, breadcrumbHome, homeUrl, sameAs,
+}) {
+  return {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'WebPage',
+        '@id': url,
+        name,
+        description,
+        url,
+        inLanguage: lang,
+        isPartOf: { '@id': APPLICATION_ID },
+        publisher: { '@id': ORGANIZATION_ID },
+        about: {
+          '@type': 'Person',
+          name,
+          alternateName,
+          description,
+          sameAs,
+        },
+      },
+      {
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: breadcrumbHome, item: homeUrl },
+          { '@type': 'ListItem', position: 2, name, item: url },
+        ],
+      },
+      organizationSchema,
+    ],
+  };
+}
+
 export function momentPageSchema({ lang, name, description, url, breadcrumbHome, homeUrl }) {
   return {
     '@context': 'https://schema.org',
