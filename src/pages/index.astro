@@ -170,7 +170,13 @@ const jsonLd = {
         until you ask for it.
       </p>
     </div>
-    <div class="mx-auto mt-14 flex max-w-2xl flex-wrap justify-center gap-x-10 gap-y-8">
+    {
+      /* Grid, not flex-wrap (2026-08-07): eight items in a centred wrapping flex
+         row broke 6 + 2, leaving two orphans centred under six and reading as a
+         mistake. Four columns divides eight evenly at every width this grid is
+         used at, and two columns holds the 320px floor. */
+    }
+    <div class="mx-auto mt-14 grid max-w-2xl grid-cols-2 justify-items-center gap-x-6 gap-y-9 sm:grid-cols-4 sm:gap-x-10">
       <FeatureIcon name="siri" label="Siri" />
       <FeatureIcon name="widget" label="Widgets" />
       <FeatureIcon name="watch" label="Watch" />

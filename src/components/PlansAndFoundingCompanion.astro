@@ -148,20 +148,36 @@ const copy =
     gap: 1.5rem;
   }
 
+  /* Given material 2026-08-07. These were two flat translucent rectangles with a
+     hairline border and no elevation, so the tier that matters had no more presence
+     than the one that does not. They are panels resting on the dawn surface now:
+     lit along the top edge, casting a real shadow, and the recommended tier resting
+     higher than the free one. The backplates only ever got MORE opaque, so every
+     contrast measurement in the Phase 11/12 audit still holds or improves. */
   .plans__panel {
     flex: 1;
     border-radius: var(--radius-panel);
     padding: 2rem;
     text-align: start;
-    background: rgb(244 237 216 / 0.35);
+    background-image: linear-gradient(
+      160deg,
+      rgb(248 242 226 / 0.62),
+      rgb(244 237 216 / 0.42)
+    );
     border: 1px solid rgb(36 30 21 / 0.1);
+    box-shadow: var(--elev-1), var(--edge-lit);
   }
   .plans__panel--plus {
-    background: rgb(244 237 216 / 0.6);
+    background-image: linear-gradient(
+      160deg,
+      rgb(252 247 236 / 0.92),
+      rgb(244 237 216 / 0.72)
+    );
     /* --color-saffron-ink is tuned for cream; against this section's
        --surface-dawn (visible along the panel's outer edge) it measures
        1.81:1 (Phase 11/12 contrast audit). --hamdam-text gives 5.13:1. */
     border-color: var(--hamdam-text);
+    box-shadow: var(--elev-3), var(--edge-lit);
   }
 
   .plans__panel-title {
@@ -194,6 +210,13 @@ const copy =
     background-color: var(--hamdam-saffron);
     color: var(--hamdam-night-deep);
     overflow: hidden;
+    /* The single strongest offer on the page, so it sits highest off the surface.
+       The inset pair gives the gold a struck-metal edge rather than a printed one:
+       lit along the top, its own shade along the bottom. */
+    box-shadow:
+      var(--elev-3),
+      inset 0 1px 0 rgb(255 250 235 / 0.55),
+      inset 0 -2px 4px rgb(var(--shade) / 0.16);
   }
 
   .plans__founding-bg {

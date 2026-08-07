@@ -16,6 +16,20 @@ const STAR_COUNT = 40;
 const STAR_SEED = 43; // deliberately different from cinematic.js's seed 42 (SVG fallback field)
                         // so the two are visibly distinct if both ever render at once mid-init.
 
+// Near dust layer, added 2026-08-07. The scene had real depth values but only one
+// layer of them, and a single layer of points cannot show parallax -- there is
+// nothing for it to move against. These motes sit between the camera and the stars,
+// so the same camera nudge slides them visibly further than the star field behind
+// them, which is the actual perceptual cue for depth rather than a simulation of one.
+//
+// They also do the opposite of the stars in time: stars fade as night ends, motes
+// only appear once there is light to catch them. That is what dust in air does, and
+// it means the sky is doing something across the whole arc rather than only at the
+// start of it.
+const DUST_COUNT = 26;
+const DUST_SEED = 44;
+const DUST_MAX_OPACITY = 0.5;
+
 function mulberry32(seed) {
   let s = seed >>> 0;
   return () => {
@@ -98,6 +112,46 @@ export async function initHeroScene3d(canvas) {
   const points = new THREE.Points(geometry, material);
   scene.add(points);
 
+  // Near dust layer. Same construction as the stars, at a depth much closer to the
+  // camera (z 0.5..2.5 against the stars' -1.5..-8.5) and in the dawn's own warm gold
+  // rather than cream, because these are lit by the sun rather than being sources.
+  const dust = deterministicStars(DUST_COUNT, DUST_SEED).map((d) => ({
+    ...d,
+    y: 0.5 + ((d.y - 1.5) / 6.5) * 7, // spread lower than the stars: motes hang in the
+                                       // air across the whole sky, not only its top
+    z: 0.5 + ((d.z + 8.5) / 7) * 2, // remap the generator's far range onto a near one
+  }));
+  const dustPositions = new Float32Array(dust.length * 3);
+  const dustColors = new Float32Array(dust.length * 3);
+  const dustBase = new THREE.Color('#F0C878');
+  dust.forEach((d, i) => {
+    dustPositions[i * 3] = d.x;
+    dustPositions[i * 3 + 1] = d.y;
+    dustPositions[i * 3 + 2] = d.z;
+    dustColors[i * 3] = dustBase.r * d.brightness;
+    dustColors[i * 3 + 1] = dustBase.g * d.brightness;
+    dustColors[i * 3 + 2] = dustBase.b * d.brightness;
+  });
+
+  const dustGeometry = new THREE.BufferGeometry();
+  dustGeometry.setAttribute('position', new THREE.BufferAttribute(dustPositions, 3));
+  dustGeometry.setAttribute('color', new THREE.BufferAttribute(dustColors, 3));
+
+  const dustMaterial = new THREE.PointsMaterial({
+    // Smaller in world units than the stars, but far nearer the camera, so size
+    // attenuation renders them larger on screen -- which is exactly the read we
+    // want: near, soft, out of focus.
+    size: 0.03,
+    sizeAttenuation: true,
+    vertexColors: true,
+    transparent: true,
+    opacity: 0,
+    depthWrite: false,
+  });
+
+  const dustPoints = new THREE.Points(dustGeometry, dustMaterial);
+  scene.add(dustPoints);
+
   const resize = () => {
     const { clientWidth: w, clientHeight: h } = canvas.parentElement;
     renderer.setSize(w, h, false);
@@ -159,6 +213,9 @@ export async function initHeroScene3d(canvas) {
     setProgress(p) {
       const c = Math.max(0, Math.min(1, p));
       material.opacity = 1 - Math.min(1, c / 0.4);
+      // Motes come up as the stars go down, over the second half of the arc: there
+      // has to be light in the air before dust in it can be seen.
+      dustMaterial.opacity = Math.max(0, Math.min(1, (c - 0.35) / 0.45)) * DUST_MAX_OPACITY;
     },
     destroy() {
       running = false;
@@ -169,6 +226,8 @@ export async function initHeroScene3d(canvas) {
       pointerTarget.removeEventListener('pointermove', onPointerMove);
       geometry.dispose();
       material.dispose();
+      dustGeometry.dispose();
+      dustMaterial.dispose();
       renderer.dispose();
     },
   };

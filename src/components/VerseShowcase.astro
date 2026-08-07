@@ -22,24 +22,98 @@ const showcaseVerses = showcaseIds
   .filter((v): v is (typeof verses)[number] => v !== undefined);
 ---
 
-<section class="relative px-6 py-[var(--spacing-section-mobile)] sm:py-[var(--spacing-section-desktop)]">
+<section class="verse-showcase" data-verse-showcase>
   {sceneImage && <SceneBackground image={sceneImage} />}
-  <div class="relative mx-auto grid max-w-6xl grid-cols-1 gap-8 lg:grid-cols-3" data-reveal-group>
-    {showcaseVerses.map((verse) => (
+  {
+    /* Staged rather than stacked (2026-08-07). Three equal cards in a row is the
+       generic-three-card-row this brand explicitly avoids; three sheets laid on a
+       table at slightly different depths is the same content read as a scene. The
+       centre sheet sits nearest the viewer and the outer two settle back, so the
+       row has a focal point instead of three competing ones. Desktop only: at one
+       column there is no depth relationship to express. */
+  }
+  <div class="verse-showcase__stage" data-reveal-group>
+    {showcaseVerses.map((verse, i) => (
       <VerseCard
         persian={verse.persian}
         translation={verse.english}
         poet={lang === 'fa' ? verse.poetFa : verse.poetEn}
+        class={i === 1 ? 'verse-card--near' : 'verse-card--far'}
       />
     ))}
   </div>
   <p
     class:list={[
-      'mx-auto mt-12 max-w-md text-center',
-      lang === 'fa' ? 'font-farsi text-lg leading-[1.9]' : 'font-serif italic',
-      'text-indigo/70',
+      'verse-showcase__intro',
+      lang === 'fa' ? 'font-farsi verse-showcase__intro--fa' : 'font-serif italic',
     ]}
   >
     {intro}
   </p>
 </section>
+
+<style>
+  .verse-showcase {
+    position: relative;
+    padding-inline: 1.5rem;
+    padding-block: var(--spacing-section-mobile);
+  }
+  @media (min-width: 640px) {
+    .verse-showcase {
+      padding-block: var(--spacing-section-desktop);
+    }
+  }
+
+  .verse-showcase__stage {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2rem;
+    max-width: 72rem;
+    margin-inline: auto;
+  }
+
+  @media (min-width: 1024px) {
+    .verse-showcase__stage {
+      grid-template-columns: repeat(3, 1fr);
+      /* One shared camera for the row, so the three sheets sit in a single
+         scene. Without this each card gets its own perspective origin and the
+         depth offsets below read as three unrelated scale changes. */
+      perspective: 1600px;
+      gap: 1.75rem;
+    }
+    /* :global() because the element carrying these modifiers is VerseCard's own
+       <figure> -- it carries VerseCard's scope hash, not this component's, so an
+       unscoped selector here would never match it. */
+    .verse-showcase__stage > :global(.verse-card--near) {
+      transform: translateZ(56px);
+      z-index: 1;
+    }
+    .verse-showcase__stage > :global(.verse-card--far) {
+      transform: translateZ(-40px);
+    }
+  }
+
+  .verse-showcase__intro {
+    max-width: 28rem;
+    margin-inline: auto;
+    margin-top: 3.5rem;
+    text-align: center;
+    color: rgb(27 27 58 / 0.7);
+  }
+  .verse-showcase__intro--fa {
+    font-size: 1.125rem;
+    line-height: 1.9;
+  }
+</style>
+
+<script>
+  import { initCardTilt } from '../lib/cardTilt';
+
+  // Scoped to this section rather than the document: the tilt belongs to the verse
+  // sheets, and a later section adopting .verse-card would otherwise inherit a
+  // behaviour nobody wired for it.
+  for (const section of document.querySelectorAll('[data-verse-showcase]')) {
+    initCardTilt(section, '.verse-card__sheet');
+  }
+</script>

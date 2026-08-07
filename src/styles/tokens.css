@@ -56,6 +56,75 @@
      without a second focus mechanism. */
   --focus-color-light: #7F6029; /* matches --color-saffron-ink in global.css @theme */
   --focus-color-dark: var(--hamdam-night-gold);
+
+  /* ---------------------------------------------------------------------
+     Depth and light (added 2026-08-07).
+
+     The hero already renders a real light source: .hero__sun sits at
+     inset-inline-start: 10%, i.e. upper-LEFT in English and upper-RIGHT in
+     Farsi, because that offset is logical rather than physical. Below the
+     fold the page used to forget it -- every shadow was a symmetric,
+     cold rgba(20 20 48) drop, which is the single biggest reason the
+     sections read flat next to the hero.
+
+     These tokens make one light source govern the whole page:
+
+     1. --sun-dx carries the sun's horizontal direction, and flips sign
+        under RTL (below) so shadows fall away from the sun in both
+        locales, exactly as the hero's own sun does.
+     2. Shadows are warm (a deep amber-brown), not indigo. A saffron sun
+        cannot cast a blue shadow, and the cold ones were quietly fighting
+        every warm surface they sat on.
+     3. Each elevation is three stacked layers -- contact, mid, ambient --
+        rather than one blur. That layering is what reads as a real object
+        above a real surface; a single blur reads as a sticker.
+
+     --shadow-card / --shadow-rest / --shadow-lift above are kept and now
+     resolve through this system, so every existing consumer inherits the
+     warmth without a per-component edit. */
+  --sun-dx: -1px;
+  --shade: 58 38 18; /* warm brown; the shadow a dawn sun actually casts */
+
+  --elev-1:
+    0 1px 2px rgb(var(--shade) / 0.06),
+    calc(var(--sun-dx) * 1) 2px 6px rgb(var(--shade) / 0.07);
+  --elev-2:
+    0 1px 2px rgb(var(--shade) / 0.05),
+    calc(var(--sun-dx) * 2) 4px 12px rgb(var(--shade) / 0.08),
+    calc(var(--sun-dx) * 3) 10px 28px rgb(var(--shade) / 0.07);
+  --elev-3:
+    0 2px 4px rgb(var(--shade) / 0.06),
+    calc(var(--sun-dx) * 4) 10px 24px rgb(var(--shade) / 0.10),
+    calc(var(--sun-dx) * 8) 24px 56px rgb(var(--shade) / 0.10);
+
+  /* The two edges every lit object has: the one facing the sun picks up a
+     highlight, the one facing away sits in its own shade. Applied as
+     insets so they cost no layout and never shift anything. */
+  --edge-lit: inset 0 1px 0 rgb(255 250 240 / 0.75);
+  --edge-shade: inset 0 -1px 0 rgb(var(--shade) / 0.07);
+
+  /* Night surfaces (poets band, roots) need the same direction but a
+     deeper, less warm shade -- warm-tinted shadow on a dark plum surface
+     turns muddy rather than deep. */
+  --elev-night-2:
+    calc(var(--sun-dx) * 2) 4px 14px rgb(8 6 16 / 0.34),
+    calc(var(--sun-dx) * 4) 12px 32px rgb(8 6 16 / 0.30);
+  --elev-night-3:
+    calc(var(--sun-dx) * 3) 8px 20px rgb(8 6 16 / 0.40),
+    calc(var(--sun-dx) * 8) 28px 64px rgb(8 6 16 / 0.36);
+  --edge-lit-night: inset 0 1px 0 rgb(240 200 120 / 0.20);
+
+  /* Shared perspective depth for the tilt surfaces (verse cards, poet
+     portraits). One value so every 3D surface on the page belongs to the
+     same room rather than each inventing its own camera. */
+  --depth-perspective: 900px;
+}
+
+/* The sun is on the other side in Farsi (its own offset is logical), so
+   every shadow it casts has to be too. Without this the whole page is lit
+   from the left while the hero is lit from the right. */
+[dir='rtl'] {
+  --sun-dx: 1px;
 }
 
 /* No OS-dark-mode variant: removed 2026-07-20, a real bug, not a stale no-op.

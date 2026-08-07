@@ -10,10 +10,16 @@ interface Props {
   portrait: ImageMetadata;
   /** True for the desktop centre card (page spec §4 item 3: "centre card slightly larger"). */
   emphasized?: boolean;
+  /**
+   * Distance from the centre of the band, 0 (nearest the viewer) upward. Drives the
+   * desktop depth staging below; ignored on mobile, where the band is a horizontal
+   * scroller and there is no row to stage.
+   */
+  depth?: 0 | 1 | 2;
   class?: string;
 }
 
-const { persianName, transliteration, description, lang, portrait, emphasized = false, class: className = '' } = Astro.props;
+const { persianName, transliteration, description, lang, portrait, emphasized = false, depth = 0, class: className = '' } = Astro.props;
 
 const portraitAlt =
   lang === 'fa'
@@ -26,6 +32,7 @@ const portraitAlt =
   class:list={[
     'poet-card group shrink-0 snap-center',
     emphasized && 'poet-card--emphasized',
+    `poet-card--depth-${depth}`,
     className,
   ]}
 >
@@ -70,14 +77,56 @@ const portraitAlt =
     }
   }
 
+  /* Desktop depth staging (2026-08-07). Five portraits in a flat row read as five
+     competing subjects; the same five staged at three distances read as a gallery
+     wall, with the centre voice nearest. The vertical stagger that was already here
+     looked like a misalignment because nothing explained it -- given real depth it
+     becomes the reason for itself. Mobile is a scroll-snap carousel with one card in
+     view at a time, so there is no row to stage and this stays desktop-only. */
+  @media (min-width: 1024px) {
+    .poet-card {
+      transition: transform 300ms var(--ease-settle);
+    }
+    .poet-card--depth-1 {
+      transform: translateZ(-55px);
+    }
+    .poet-card--depth-2 {
+      transform: translateZ(-110px);
+    }
+    /* Aerial perspective: the further a thing is through air, the less contrast it
+       holds and the more it takes the colour of what it is seen through -- here the
+       band's own dusk. Kept shallow so every portrait stays clearly readable; this
+       is depth, not de-emphasis. */
+    .poet-card--depth-1 .poet-card__portrait-img {
+      filter: brightness(0.93) saturate(0.94);
+    }
+    .poet-card--depth-2 .poet-card__portrait-img {
+      filter: brightness(0.87) saturate(0.88);
+    }
+    /* Hovering brings a portrait forward out of the wall, so a visitor can pull any
+       of the five to the front rather than only being offered the centre. */
+    .poet-card:hover,
+    .poet-card:focus-within {
+      transform: translateZ(0);
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .poet-card {
+        transition: none;
+      }
+    }
+  }
+
   .poet-card__portrait {
     position: relative;
     aspect-ratio: 2 / 3;
     border-radius: var(--radius-card);
     background: linear-gradient(160deg, var(--surface-dusk), var(--surface-firstlight));
-    box-shadow: var(--shadow-rest);
+    box-shadow: var(--elev-night-2);
     overflow: hidden;
     transition: box-shadow 150ms var(--ease-cross), transform 150ms var(--ease-cross);
+  }
+  .poet-card__portrait-img {
+    transition: filter 300ms var(--ease-cross);
   }
   .poet-card__portrait-img {
     position: absolute;
@@ -90,7 +139,10 @@ const portraitAlt =
   .group:hover .poet-card__portrait,
   .group:focus-within .poet-card__portrait {
     transform: translateY(-4px);
-    box-shadow: 0 0 48px var(--glow-warm), var(--shadow-lift);
+    /* --shadow-lift is the warm daylight elevation and all but disappears against
+       this band's dusk surface; the night scale carries the same direction in a
+       shade that actually reads here. */
+    box-shadow: 0 0 48px var(--glow-warm), var(--elev-night-3);
   }
   @media (prefers-reduced-motion: reduce) {
     .poet-card__portrait {

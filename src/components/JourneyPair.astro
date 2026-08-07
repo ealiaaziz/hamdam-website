@@ -237,30 +237,48 @@ const copy =
       overflow: visible;
       justify-content: center;
       padding-block-end: 0;
+      /* Real depth for the pair (2026-08-07). The two frames overlapped at the
+         same apparent distance, so the overlap read as a collision -- one phone
+         clipped by another -- rather than as one phone standing behind another.
+         A shared camera plus a genuine Z separation is what turns the same two
+         PNGs into a scene. Rotating a flat plane in 3D is geometrically honest
+         here: these ARE flat planes, so the perspective foreshortening a browser
+         applies is exactly what a real angled phone would show. */
+      perspective: 1500px;
+      perspective-origin: 50% 45%;
     }
     .journey__frame {
       width: 240px;
       position: relative;
-      transition: transform 150ms var(--ease-cross), box-shadow 150ms var(--ease-cross);
+      /* Flipped under RTL so the pair angles away from the sun on the same side
+         it does in English -- the section's light comes from the hero's sun,
+         which is itself mirrored by its logical offset. */
+      --frame-yaw: -7deg;
+      transform: translateZ(-55px) rotateY(var(--frame-yaw));
+      transition:
+        transform 260ms var(--ease-settle),
+        box-shadow 260ms var(--ease-cross),
+        filter 260ms var(--ease-cross);
+      /* Standing further back in the same light: slightly less contrast, the way
+         distance actually behaves. Small enough that the screenshot stays legible. */
+      filter: brightness(0.94) saturate(0.96);
+    }
+    :global([dir='rtl']) .journey__frame {
+      --frame-yaw: 7deg;
     }
     .journey__frame--reflect {
       margin-inline-end: -60px;
     }
     .journey__frame--front {
       z-index: 2;
-      box-shadow: var(--shadow-lift);
+      box-shadow: var(--elev-3);
+      transform: translateZ(45px) rotateY(0deg);
+      filter: none;
     }
-    .journey__frames:not(:hover) .journey__frame--front,
-    .journey__frame--front:hover {
-      transform: scale(1.03);
-    }
+
     @media (prefers-reduced-motion: reduce) {
       .journey__frame {
         transition: none;
-      }
-      .journey__frames:not(:hover) .journey__frame--front,
-      .journey__frame--front:hover {
-        transform: none;
       }
     }
   }

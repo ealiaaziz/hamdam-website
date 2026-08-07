@@ -8,8 +8,16 @@ interface Props {
 const { name, label, lang = 'en' } = Astro.props;
 ---
 
-<div class="flex flex-col items-center gap-3">
-  <span class="flex h-14 w-14 items-center justify-center rounded-full bg-cream text-indigo/70 shadow-card">
+{
+  /* Rebuilt 2026-08-07. These were flat cream discs with one symmetric shadow --
+     eight identical stickers, and the flattest moment on the page. A medallion is
+     a convex object: the surface curves toward the light, so the sun-facing side
+     is brighter than the far side, the rim catches a highlight, and it casts a
+     real shadow onto the section behind it. All of that is material, none of it
+     is animation, so it survives prefers-reduced-motion untouched. */
+}
+<div class="feature-icon">
+  <span class="feature-icon__medallion">
     {name === 'siri' && (
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
         <g stroke="currentColor" stroke-width="2" stroke-linecap="round">
@@ -89,10 +97,92 @@ const { name, label, lang = 'en' } = Astro.props;
   </span>
   <span
     class:list={[
-      'text-xs font-medium text-indigo/60',
-      lang === 'fa' ? 'font-farsi' : 'uppercase tracking-wide',
+      'feature-icon__label',
+      lang === 'fa' ? 'font-farsi' : 'feature-icon__label--en',
     ]}
   >
     {label}
   </span>
 </div>
+
+<style>
+  .feature-icon {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .feature-icon__medallion {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 4rem;
+    height: 4rem;
+    border-radius: 50%;
+    color: rgb(27 27 58 / 0.72);
+    /* 32% 26% puts the bright pole up and toward the sun's side. The far edge
+       settles into the warm mid-tone rather than staying flat cream, which is
+       the whole difference between a disc and a dome. */
+    background-image: radial-gradient(
+      circle at 32% 26%,
+      #FFFDF7 0%,
+      #F7EFDD 52%,
+      #EADCC0 100%
+    );
+    box-shadow:
+      var(--elev-2),
+      inset 0 1px 1px rgb(255 255 255 / 0.9),
+      inset 0 -2px 3px rgb(var(--shade) / 0.10);
+    transition:
+      transform 200ms var(--ease-settle),
+      box-shadow 200ms var(--ease-cross);
+  }
+
+  :global([dir='rtl']) .feature-icon__medallion {
+    background-image: radial-gradient(
+      circle at 68% 26%,
+      #FFFDF7 0%,
+      #F7EFDD 52%,
+      #EADCC0 100%
+    );
+  }
+
+  /* Lifting toward the light: it rises, its shadow lengthens, and the icon
+     inside darkens slightly as the face turns up. */
+  .feature-icon:hover .feature-icon__medallion {
+    transform: translateY(-3px);
+    box-shadow:
+      var(--elev-3),
+      inset 0 1px 1px rgb(255 255 255 / 0.95),
+      inset 0 -2px 3px rgb(var(--shade) / 0.12);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .feature-icon__medallion {
+      transition: none;
+    }
+    .feature-icon:hover .feature-icon__medallion {
+      transform: none;
+    }
+  }
+
+  @media (prefers-contrast: more) {
+    .feature-icon__medallion {
+      background-image: none;
+      background-color: #FFFDF7;
+      border: 2px solid currentColor;
+    }
+  }
+
+  .feature-icon__label {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: rgb(27 27 58 / 0.62);
+    text-align: center;
+  }
+  .feature-icon__label--en {
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+  }
+</style>

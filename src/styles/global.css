@@ -79,12 +79,14 @@
   --page-padding-mobile: 20px;
   --page-padding-desktop: 48px;
 
-  /* Shadows */
-  --shadow-card: 0 4px 24px rgba(27, 27, 58, 0.08);
-  /* Two-elevation system (design-system.md §11). Additive; --shadow-card
-     above stays the in-use card shadow until sections migrate. */
-  --shadow-rest: 0 2px 8px rgba(20, 20, 48, 0.10);
-  --shadow-lift: 0 8px 28px rgba(20, 20, 48, 0.18);
+  /* Shadows. Re-pointed 2026-08-07 at the directional warm-light system in
+     tokens.css (see the "Depth and light" block there for why). These three
+     names and every consumer of them are unchanged; only what they resolve
+     to moved, so the whole page picks up one consistent sun at once. */
+  --shadow-card: var(--elev-2);
+  /* Two-elevation system (design-system.md §11). */
+  --shadow-rest: var(--elev-1);
+  --shadow-lift: var(--elev-3);
 
   /* Radius */
   --radius-card: 16px;

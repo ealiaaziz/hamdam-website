@@ -41,6 +41,7 @@ const carouselLabel = lang === 'fa' ? 'پنج شاعر' : 'The five poets';
         description={lang === 'fa' ? poet.descriptionFa : poet.description}
         portrait={poet.portrait}
         emphasized={i === 2}
+        depth={Math.abs(i - Math.floor(poets.length / 2)) as 0 | 1 | 2}
       />
     ))}
   </div>
@@ -94,7 +95,15 @@ const carouselLabel = lang === 'fa' ? 'پنج شاعر' : 'The five poets';
     .poets-band__track {
       justify-content: center;
       overflow-x: visible;
-      align-items: flex-end;
+      /* Centre, not flex-end: the depth staging in PoetCard now supplies the
+         vertical variation that flex-end used to fake, and hanging five cards of
+         different heights off a shared bottom edge fights the perspective. */
+      align-items: center;
+      /* One camera for the whole wall. Origin above centre so the row is read
+         slightly from above, the natural angle for looking at hung portraits. */
+      perspective: 1800px;
+      perspective-origin: 50% 40%;
+      gap: 1.75rem;
     }
   }
 

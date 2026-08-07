@@ -9,24 +9,197 @@ interface Props {
 const { persian, translation, poet, class: className = '' } = Astro.props;
 ---
 
+{
+  /* Rebuilt 2026-08-07. This was a flat fill with one symmetric drop shadow, which
+     made the emotional centre of the page -- the verse itself -- the least
+     dimensional thing on it. It is now a lit sheet of paper: the surface carries a
+     gradient away from the sun, the sun-facing edge picks up a highlight, and a
+     specular sheen tracks the pointer as the sheet turns toward it.
+
+     The tilt is an outer/inner pair on purpose. The outer element owns the
+     perspective and the shadow (which must NOT rotate -- a shadow that tilts with
+     its object is the classic tell that the depth is fake), the inner one owns the
+     rotation. */
+}
 <figure
   data-reveal
-  class:list={[
-    'flex h-full flex-col rounded-[var(--radius-card)] bg-card p-6 sm:p-8 shadow-card backdrop-blur-sm',
-    className,
-  ]}
+  class:list={['verse-card', className]}
 >
-  <blockquote lang="fa" dir="rtl" class="grow">
-    <p class="font-farsi-verse text-[length:var(--text-verse-fa)] font-medium leading-[1.9] text-start text-indigo whitespace-pre-line [text-wrap:pretty]">
-      {persian}
-    </p>
-  </blockquote>
-  <p lang="en" dir="ltr" class="mt-6 font-serif italic leading-[1.7] text-[var(--hamdam-text-soft)]">
-    {translation}
-  </p>
-  <figcaption class="mt-6">
-    <cite class="text-sm font-medium not-italic tracking-[0.08em] text-saffron-ink [font-variant:small-caps]">
-      {poet}
-    </cite>
-  </figcaption>
+  <div class="verse-card__sheet">
+    <div class="verse-card__sheen" aria-hidden="true"></div>
+    <blockquote lang="fa" dir="rtl" class="verse-card__quote">
+      <p class="verse-card__persian font-farsi-verse">{persian}</p>
+    </blockquote>
+    <p lang="en" dir="ltr" class="verse-card__translation">{translation}</p>
+    <figcaption class="verse-card__caption">
+      <cite class="verse-card__poet">{poet}</cite>
+    </figcaption>
+  </div>
 </figure>
+
+<style>
+  .verse-card {
+    display: flex;
+    height: 100%;
+    perspective: var(--depth-perspective);
+    /* Neutral defaults so the sheet is correct before (and without) the script.
+       Every one of these is overwritten via the CSSOM by cardTilt.js; none of
+       them is required for the card to look finished. */
+    --tilt-x: 0deg;
+    --tilt-y: 0deg;
+    --sheen-x: 50%;
+    --sheen-y: 0%;
+    --sheen-o: 0;
+  }
+
+  .verse-card__sheet {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    padding: 1.5rem;
+    border-radius: var(--radius-card);
+    /* Warm paper with the light falling across it, rather than one flat fill.
+       115deg puts the bright corner on the sun's side in LTR; the RTL rule
+       below mirrors it, because the hero's sun mirrors too. */
+    background-image: linear-gradient(
+      115deg,
+      rgb(255 253 248 / 0.92) 0%,
+      rgb(252 246 234 / 0.82) 46%,
+      rgb(243 232 212 / 0.78) 100%
+    );
+    box-shadow: var(--elev-2), var(--edge-lit), var(--edge-shade);
+    transform: rotateX(var(--tilt-x)) rotateY(var(--tilt-y));
+    transform-style: preserve-3d;
+    transition:
+      box-shadow 300ms var(--ease-cross),
+      transform 500ms var(--ease-settle);
+    overflow: hidden;
+  }
+
+  :global([dir='rtl']) .verse-card__sheet {
+    background-image: linear-gradient(
+      245deg,
+      rgb(255 253 248 / 0.92) 0%,
+      rgb(252 246 234 / 0.82) 46%,
+      rgb(243 232 212 / 0.78) 100%
+    );
+  }
+
+  /* While the pointer is actually driving the sheet, the transform must follow it
+     frame by frame with no easing of its own -- the damping in cardTilt.js already
+     IS the easing, and a CSS transition on top of it lags visibly. The 500ms
+     transition above is only for the release back to rest. */
+  .verse-card__sheet:where(.is-tilting) {
+    transition:
+      box-shadow 300ms var(--ease-cross),
+      transform 0s;
+    /* Only while the pointer is actually driving it. Left on permanently this would
+       hold a composited layer for every verse sheet on the page for the whole
+       session, to no benefit -- the hint is worth paying for during the interaction
+       and not outside it. */
+    will-change: transform;
+  }
+
+  @media (min-width: 640px) {
+    .verse-card__sheet {
+      padding: 2rem;
+    }
+  }
+
+  /* The specular highlight. Hidden until the pointer is on the card, so a card at
+     rest is a clean sheet rather than one with a permanent bright blob on it. */
+  .verse-card__sheen {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    background: radial-gradient(
+      circle at var(--sheen-x) var(--sheen-y),
+      rgb(255 249 235 / 0.85),
+      rgb(255 244 220 / 0.28) 32%,
+      transparent 62%
+    );
+    opacity: var(--sheen-o);
+    transition: opacity 320ms var(--ease-cross);
+  }
+
+  .verse-card:hover,
+  .verse-card:focus-within {
+    --sheen-o: 0.55;
+  }
+  .verse-card:hover .verse-card__sheet,
+  .verse-card:focus-within .verse-card__sheet {
+    box-shadow: var(--elev-3), var(--edge-lit), var(--edge-shade);
+  }
+
+  /* Set by VerseShowcase's staging. The sheet that sits further from the viewer
+     casts a shorter shadow, because it is nearer the surface it rests on -- the
+     depth offset alone is only a scale change, and it is the shadow that makes
+     the scale read as distance. Desktop only, matching where the staging applies. */
+  @media (min-width: 1024px) {
+    .verse-card--far .verse-card__sheet {
+      box-shadow: var(--elev-1), var(--edge-lit), var(--edge-shade);
+    }
+  }
+
+  .verse-card__quote {
+    flex-grow: 1;
+  }
+
+  .verse-card__persian {
+    font-size: var(--text-verse-fa);
+    font-weight: 500;
+    line-height: 1.9;
+    text-align: start;
+    color: var(--color-indigo, #1B1B3A);
+    white-space: pre-line;
+    text-wrap: pretty;
+  }
+
+  .verse-card__translation {
+    margin-top: 1.5rem;
+    font-family: var(--font-serif);
+    font-style: italic;
+    line-height: 1.7;
+    color: var(--hamdam-text-soft);
+  }
+
+  .verse-card__caption {
+    margin-top: 1.5rem;
+  }
+
+  .verse-card__poet {
+    font-size: 0.875rem;
+    font-weight: 500;
+    font-style: normal;
+    letter-spacing: 0.08em;
+    font-variant: small-caps;
+    color: var(--color-saffron-ink, #7F6029);
+  }
+
+  /* Reduced motion keeps the depth (it is material, not movement) and drops every
+     moving part: no tilt, no travelling highlight. */
+  @media (prefers-reduced-motion: reduce) {
+    .verse-card__sheet {
+      transform: none;
+      transition: none;
+      will-change: auto;
+    }
+    .verse-card__sheen {
+      display: none;
+    }
+  }
+
+  /* Structure has to survive a forced-colours mode that strips the backplate. */
+  @media (prefers-contrast: more) {
+    .verse-card__sheet {
+      background-image: none;
+      background-color: #FFFDF8;
+      border: 2px solid currentColor;
+    }
+    .verse-card__sheen {
+      display: none;
+    }
+  }
+</style>
