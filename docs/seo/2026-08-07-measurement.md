@@ -37,32 +37,48 @@ that policy first, which is Ealia's call: aggregate cookieless page counts, no
 cookie, no cross-site tracking, no identification. The same section rules out
 Firebase, Mixpanel, Amplitude and Google Analytics by name.
 
-## Turning it on: pick exactly one path
+## Turning it on: one edit, then push
 
-**Do not do both.** Two beacons means every page view is counted twice.
+The token is committed rather than kept in an environment variable, because it
+is not a secret: it ships in the HTML of every page and identifies a zone, not
+an account. That removes the Workers Builds variable this document previously
+asked for.
 
-### Path A, the repository (recommended here)
+**It is not set yet.** `PRODUCTION_BEACON_TOKEN` in `src/lib/analytics.js` is
+`null`, because reading or creating the token goes through Cloudflare's
+`rum/site_info` API and the API token this repository deploys with is refused
+there with a 403: it carries Workers and Zone scope but not Account Analytics.
+
+To finish it:
 
 1. Cloudflare dashboard, Web Analytics, add a site for `hamdam.com.au`.
-2. Copy the **site token** (32 hex characters) from the snippet it shows. Ignore
-   the snippet itself; the tag is already in the layout.
-3. Workers Builds settings for the `hamdam-website` Worker, add a **build**
-   environment variable `PUBLIC_CF_BEACON_TOKEN` with that value. It has to be a
-   build variable, not a runtime secret: Astro inlines `PUBLIC_*` at build time.
-4. Push anything, or re-run the build. Verify:
-   `curl -sS https://hamdam.com.au/ | grep -c cloudflareinsights` should return 1.
+2. Copy the 32-hex value out of the snippet's `data-cf-beacon` attribute. Ignore
+   the rest of the snippet; the tag is already in the layout.
+3. Replace the `null` in `src/lib/analytics.js` with that string, and push.
+4. Confirm from the Workers Builds log, which prints one line per build:
+   `analytics: beacon enabled (token ...abc123)`.
+5. Then from the outside:
+   `curl -sS https://hamdam.com.au/ | grep -c cloudflareinsights` returns 1.
 
-The token is not a secret. It ships in the HTML of every page and is per-zone.
-It is in an environment variable because it is environment-specific, so local
-builds and previews write nothing into the production dataset.
+### The WORKERS_CI gate
 
-### Path B, the dashboard toggle
+The committed token only applies when `WORKERS_CI` is set, which Cloudflare
+injects into every Workers Builds run. Every push to this repository deploys, so
+a CI build is a production build; a build on a laptop is not and must not write
+page views into the production dataset. `PUBLIC_CF_BEACON_TOKEN` still overrides
+everything, which is the escape hatch for testing the tag locally.
+
+All four combinations are covered by tests and were verified against real
+builds: no token off CI, no token on CI, token off CI, token on CI. Only the
+last emits a tag, and it emits one on all 23 pages.
+
+### Do not also enable the dashboard toggle
 
 Cloudflare Web Analytics can inject the beacon itself by rewriting HTML in
-transit. That is reliable for Pages and for a proxied origin. This site is a
+transit. That is reliable for Pages and for a proxied origin; this site is a
 Worker serving static assets, where that rewrite is not something to depend on,
-which is why Path A exists. If you use Path B, leave `PUBLIC_CF_BEACON_TOKEN`
-unset and the tag never renders.
+which is why the tag is in the layout. Enabling both counts every page view
+twice.
 
 ## Performance cost: not measured, and why
 

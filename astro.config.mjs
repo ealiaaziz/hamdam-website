@@ -3,6 +3,14 @@ import { defineConfig } from 'astro/config';
 import tailwindcss from '@tailwindcss/vite';
 import sitemap from '@astrojs/sitemap';
 
+import { describeBeaconDecision } from './src/lib/analytics.js';
+
+// One line, at config load, so the Workers Builds log says plainly whether the
+// analytics beacon shipped. The failure mode this guards is silent: a renamed
+// CI variable or an uncommitted token still builds and still renders, and the
+// only symptom is a dashboard that stays empty.
+console.log(describeBeaconDecision());
+
 // https://astro.build/config
 export default defineConfig({
   site: 'https://hamdam.com.au',
