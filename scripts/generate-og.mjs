@@ -93,9 +93,14 @@ for (const v of variants) {
 rmSync(work, { recursive: true, force: true });
 
 // Manifest icons from the app icon, when the source copy exists.
+//
+// 48 is not a manifest size. It is the wordmark mark in NavBar and Footer,
+// which renders at 20 or 24 CSS px and was being served icon-192.png: a 60KB,
+// 192px image for a 20px slot, on every page. 48 covers that slot at 2x DPR.
+// Added 2026-08-07 after Lighthouse's image-delivery insight flagged it.
 const iconSource = join(root, 'public/icons/icon-source-1024.png');
 if (existsSync(iconSource)) {
-  for (const size of [512, 192]) {
+  for (const size of [512, 192, 48]) {
     await sharp(iconSource).resize(size, size).png().toFile(join(root, `public/icons/icon-${size}.png`));
     console.log(`wrote public/icons/icon-${size}.png`);
   }

@@ -9,7 +9,8 @@ const { lang } = Astro.props;
 // Pre-release: suppressed entirely, not just hidden (conversion spec §2);
 // a sticky "coming soon" would be noise without a conversion to serve.
 const label = lang === 'fa' ? 'دریافت همدم' : 'Get Hamdam';
-const ariaLabel = lang === 'fa' ? 'دانلود همدم از اپ‌استور' : 'Download Hamdam on the App Store';
+// aria-label removed 2026-08-07 for WCAG 2.5.3 Label in Name; see the note in
+// NavBar.astro, which had the identical defect.
 ---
 
 {
@@ -17,7 +18,6 @@ const ariaLabel = lang === 'fa' ? 'دانلود همدم از اپ‌استور'
     <a
       data-sticky-cta
       href={appStoreUrl(lang, null, 'sticky')}
-      aria-label={ariaLabel}
       class="sticky-cta fixed inset-x-0 bottom-[max(1rem,env(safe-area-inset-bottom))] z-30 mx-auto flex min-h-[44px] w-fit items-center rounded-[var(--radius-pill)] bg-[var(--hamdam-night-gold)] px-6 text-sm font-semibold text-indigo shadow-[var(--shadow-lift)] md:hidden"
     >
       {label}

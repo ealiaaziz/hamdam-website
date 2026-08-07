@@ -24,10 +24,11 @@
     "@fontsource/vazirmatn": "^5.2.8",
     "@tailwindcss/vite": "^4.3.2",
     "astro": "^7.0.5",
-    "tailwindcss": "^4.3.2",
-    "three": "^0.185.1"
+    "tailwindcss": "^4.3.2"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.12.1",
+    "lighthouse": "^13.4.1",
     "sharp": "^0.35.3",
     "vitest": "^4.1.10",
     "wrangler": "^4.114.0"

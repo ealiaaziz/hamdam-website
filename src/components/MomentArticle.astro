@@ -76,7 +76,6 @@ const bridge = MOMENT_UI.bridge[lang];
 const homeHref = lang === 'fa' ? '/fa/' : '/';
 const homeLabel = MOMENT_UI.home[lang];
 const ctaLabel = MOMENT_UI.cta[lang];
-const ctaAriaLabel = MOMENT_UI.ctaAria[lang];
 ---
 
 <article class="moment">
@@ -96,6 +95,8 @@ const ctaAriaLabel = MOMENT_UI.ctaAria[lang];
         widths={[480, 800, 1200]}
         sizes="(min-width: 900px) 800px, 100vw"
         quality={78}
+        loading="eager"
+        fetchpriority="high"
         class="moment__figure-img"
       />
     </div>
@@ -129,7 +130,6 @@ const ctaAriaLabel = MOMENT_UI.ctaAria[lang];
           <a
             class="moment__cta"
             href={appStoreUrl(lang, null, 'moment')}
-            aria-label={ctaAriaLabel}
             data-store-cta
           >
             {ctaLabel}

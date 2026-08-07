@@ -22,7 +22,18 @@ const { lang, overDarkHero = false, heroDarknessIsMotionDependent = false } = As
 // Pre-release the bar carries no CTA at all (page spec §1 item 10); the
 // coming-soon state lives in the hero only.
 const ctaLabel = lang === 'fa' ? 'دریافت همدم' : 'Get Hamdam';
-const ctaAriaLabel = lang === 'fa' ? 'دانلود همدم از اپ‌استور' : 'Download Hamdam on the App Store';
+// No aria-label here, deliberately, since 2026-08-07. It used to read "Download
+// Hamdam on the App Store" over visible text of "Get Hamdam", which fails WCAG
+// 2.5.3 Label in Name: the accessible name has to contain the visible label, or
+// a speech-input user saying "click Get Hamdam" hits nothing. Lighthouse
+// flagged it as label-content-name-mismatch on every page.
+//
+// Removing the label rather than rewriting it, because the fix has to hold in
+// both languages and this repo bars authoring the Persian half. The visible
+// text is a perfectly good accessible name in both, and the href is an
+// apps.apple.com URL, so nothing is lost. AppStoreBadge keeps its aria-label:
+// its link contains an image and no visible text, so there is no name to
+// conflict with.
 ---
 
 <header
@@ -45,7 +56,6 @@ const ctaAriaLabel = lang === 'fa' ? 'دانلود همدم از اپ‌استو
           <a
             data-nav-cta
             href={appStoreUrl(lang, null, 'nav')}
-            aria-label={ctaAriaLabel}
             class="nav-bar__cta inline-flex min-h-[44px] items-center rounded-[var(--radius-pill)] bg-[var(--hamdam-night-gold)] px-5 text-sm font-semibold text-indigo"
           >
             {ctaLabel}
