@@ -25,9 +25,26 @@ interface Props {
    * not_found_handling), so this is defense-in-depth, not the primary
    * signal. */
   noindex?: boolean;
+  /** Override for routes whose first screen is a night/dusk surface rather
+   * than cream. Added 2026-08-07 for the moment pages, which open on
+   * --surface-firstlight: the route check below only knew about the two
+   * homepages, so those pages rendered the dark-text nav variant on a dark
+   * background and the wordmark was barely legible. A prop rather than a
+   * longer path list, because what the nav needs to know is what colour the
+   * page starts on, which is the page's business and not this file's. */
+  navOverDarkHero?: boolean;
 }
 
-const { title, description, lang, path, jsonLd, preloadFarsiVerse = false, noindex = false } = Astro.props;
+const {
+  title,
+  description,
+  lang,
+  path,
+  jsonLd,
+  preloadFarsiVerse = false,
+  noindex = false,
+  navOverDarkHero: navOverDarkHeroProp,
+} = Astro.props;
 const dir = LOCALE_META[lang].dir;
 // Phase 4 restores the night-start scroll arc for motion-OK visitors on
 // the homepage, so the transparent nav is back to needing cream text
@@ -35,7 +52,15 @@ const dir = LOCALE_META[lang].dir;
 // item 8) even on the homepage, so the shared script below forces the
 // light (dark-text) nav variant back on for them at runtime -- this Astro-
 // time value can only account for the route, not the media query.
-const navOverDarkHero = path === '/' || path === '/fa/';
+const navOverDarkHero = navOverDarkHeroProp ?? (path === '/' || path === '/fa/');
+// True only for the two homepages, whose hero opens on night for motion-OK
+// visitors but on first-light for reduced-motion ones. Their nav variant
+// therefore depends on a media query this Astro-time value cannot see, and the
+// script below flips it at runtime. A page that is dark at the top whatever
+// the motion preference (the moment pages) must not be flipped, or it gets the
+// dark-text nav on a dark surface for exactly the visitors least able to cope
+// with it.
+const heroDarknessIsMotionDependent = navOverDarkHeroProp === undefined && navOverDarkHero;
 const canonicalURL = new URL(path, Astro.site);
 const enPath = switchLocalePath(path, LOCALES.EN);
 const faPath = switchLocalePath(path, LOCALES.FA);
@@ -111,7 +136,11 @@ const ogImage = new URL(
 
     <SkySurface />
 
-    <NavBar lang={lang} overDarkHero={navOverDarkHero} />
+    <NavBar
+      lang={lang}
+      overDarkHero={navOverDarkHero}
+      heroDarknessIsMotionDependent={heroDarknessIsMotionDependent}
+    />
 
     {
       /* relative + isolate + bg-cream: an explicit opaque background and
@@ -182,7 +211,12 @@ const ogImage = new URL(
       // night (page spec §2 item 8), even though overDarkHero was computed
       // at build time from the route alone. Force the light nav variant
       // back on here, the one place that can see the media query.
-      if (navBar && prefersReducedMotion()) {
+      //
+      // Only where the hero's darkness actually depends on the media query,
+      // which is the two homepages. This used to run on every page, so any
+      // other route opening on a dark surface got dark text on it for
+      // reduced-motion visitors alone. See BaseLayout's frontmatter.
+      if (navBar && navBar.hasAttribute('data-hero-motion-dependent') && prefersReducedMotion()) {
         navBar.classList.add('nav-bar--on-light');
       }
 

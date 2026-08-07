@@ -12,9 +12,13 @@ interface Props {
    * legible on a night/dusk surface). Once scrolled past the threshold the
    * backing is always solid night, so text is always cream from then on. */
   overDarkHero?: boolean;
+  /** True only where overDarkHero depends on prefers-reduced-motion, i.e. the
+   * two homepages. Emitted as an attribute so BaseLayout's script knows which
+   * pages it may flip back to the light variant. */
+  heroDarknessIsMotionDependent?: boolean;
 }
 
-const { lang, overDarkHero = false } = Astro.props;
+const { lang, overDarkHero = false, heroDarknessIsMotionDependent = false } = Astro.props;
 // Pre-release the bar carries no CTA at all (page spec §1 item 10); the
 // coming-soon state lives in the hero only.
 const ctaLabel = lang === 'fa' ? 'دریافت همدم' : 'Get Hamdam';
@@ -23,6 +27,7 @@ const ctaAriaLabel = lang === 'fa' ? 'دانلود همدم از اپ‌استو
 
 <header
   data-nav-bar
+  data-hero-motion-dependent={heroDarknessIsMotionDependent ? '' : undefined}
   class:list={['nav-bar fixed inset-x-0 top-0 z-40', !overDarkHero && 'nav-bar--on-light']}
 >
   <div class="mx-auto flex h-14 max-w-[1200px] items-center justify-between px-5 sm:px-12">

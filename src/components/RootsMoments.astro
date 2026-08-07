@@ -4,6 +4,11 @@ import type { ImageMetadata } from 'astro:assets';
 import { getBrisbaneToday } from '../lib/countdown';
 import { upcomingRootsMoments, matchesHeritageAndRegion, countryForRegion } from '../lib/rootsMoments';
 import { ROOTS_MOMENTS, ROOTS_LABELS, HERITAGE_COUNTRIES, ROADMAP_COUNTRIES, AU_REGIONS } from '../data/rootsMoments';
+// Moved out of this file 2026-08-07 so the moment pages (/moments/<slug>/)
+// and this section read one copy of the approved text and one countdown
+// implementation, rather than each keeping their own.
+import { MOMENT_ALT as CARD_ALT, MOMENT_COPY as CARD_COPY, MOMENT_SLUGS } from '../data/momentContent';
+import { countdownText, formatMomentDate } from '../lib/momentText';
 import momentYalda from '../assets/website-redesign/moment-yalda.png';
 import momentNorooz from '../assets/website-redesign/moment-norooz.png';
 import momentChaharshanbeSuri from '../assets/website-redesign/moment-chaharshanbe-suri.png';
@@ -15,12 +20,6 @@ const CARD_IMAGE: Record<string, ImageMetadata> = {
   yalda: momentYalda,
   norooz: momentNorooz,
   chaharshanbeSuri: momentChaharshanbeSuri,
-};
-
-const CARD_ALT: Record<string, { en: string; fa: string }> = {
-  yalda: { en: 'Pomegranates and candlelight for Yalda night', fa: 'انار و شمع برای شب یلدا' },
-  norooz: { en: 'Spring blossoms in morning light for Norooz', fa: 'شکوفه‌های بهاری در نور صبح برای نوروز' },
-  chaharshanbeSuri: { en: 'Fire glow at dusk for Chaharshanbe Suri', fa: 'شعله‌ی آتش در غروب برای چهارشنبه‌سوری' },
 };
 
 interface Props {
@@ -55,49 +54,6 @@ const DEFAULT_HERITAGE = 'IR';
 const DEFAULT_REGION = 'AU-QLD';
 const MAX_VISIBLE = 4;
 
-const formatDate = (date: { year: number; month: number; day: number }) =>
-  new Intl.DateTimeFormat(lang === 'fa' ? 'fa-IR' : 'en-AU', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-    timeZone: 'UTC',
-  }).format(Date.UTC(date.year, date.month - 1, date.day, 12));
-
-function countdownText(daysUntil: number, name: string): string {
-  if (lang === 'fa') {
-    if (daysUntil === 0) return `${name} امروز می‌رسد.`;
-    if (daysUntil === 1) return `${name} فردا می‌رسد.`;
-    return `${name} تا ${daysUntil.toLocaleString('fa-IR')} روز دیگر می‌رسد.`;
-  }
-  if (daysUntil === 0) return `${name} arrives today.`;
-  if (daysUntil === 1) return `${name} arrives tomorrow.`;
-  return `${name} arrives in ${daysUntil} days.`;
-}
-
-// EN/FA sentence pairs reused byte-exact from the shipped app's
-// momentMeaning(id:_:) in Localization.swift (Roots MomentDetailSheet) --
-// EN authored per Ealia's spec, FA authored by Claude with a
-// SIMA-review-pending flag already carried in the app itself; that same
-// pending status applies here, not a new gap this phase introduces.
-//
-// Only these three have an approved sentence. Mehregan, Sizdah Bedar, Tirgan
-// and Sepandarmazgan deliberately render as name plus countdown rather than
-// carrying invented copy, per the handoff's content rules.
-const CARD_COPY: Record<string, { sentenceEn: string; sentenceFa: string }> = {
-  yalda: {
-    sentenceEn: 'The longest night of the year, when families gather to read Hafez, share pomegranates and watermelon, and welcome the return of the sun.',
-    sentenceFa: 'طولانی‌ترین شب سال، وقتی خانواده‌ها دور هم جمع می‌شوند تا حافظ بخوانند، انار و هندوانه به اشتراک بگذارند، و بازگشت خورشید را خوش‌آمد بگویند.',
-  },
-  norooz: {
-    sentenceEn: 'The first day of spring, marking renewal, rebirth, and the balance of light and dark.',
-    sentenceFa: 'نخستین روز بهار، نشانه‌ی تجدید، تولدی دوباره، و توازن روشنایی و تاریکی.',
-  },
-  chaharshanbeSuri: {
-    sentenceEn: "The last Tuesday night before Norooz, when people leap over small fires whispering 'give me your redness, take my paleness.'",
-    sentenceFa: 'شب سه‌شنبه‌ی آخر پیش از نوروز، وقتی مردم از روی آتش‌های کوچک می‌پرند و زمزمه می‌کنند «سرخی تو از من، زردی من از تو».',
-  },
-};
-
 const defaultSelection = {
   heritages: [DEFAULT_HERITAGE],
   homeRegion: DEFAULT_REGION,
@@ -119,9 +75,15 @@ function rowsFor(source: 'culturalHeritage' | 'governmentPublic') {
         visible,
         withinCap,
         featured: withinCap && shown === 1,
-        date: formatDate(entry.date),
-        countdown: countdownText(entry.daysUntil, name),
+        date: formatMomentDate(lang, entry.date),
+        countdown: countdownText(lang, entry.daysUntil, name),
         sentence: lang === 'fa' ? CARD_COPY[entry.moment.id]?.sentenceFa : CARD_COPY[entry.moment.id]?.sentenceEn,
+        // Set only for the three moments that have a page. Added 2026-08-07:
+        // the cluster is worth little if the homepage does not link into it,
+        // and this is the site's only internal link to those pages.
+        href: MOMENT_SLUGS[entry.moment.id]
+          ? (lang === 'fa' ? `/fa/moments/${MOMENT_SLUGS[entry.moment.id]}/` : `/moments/${MOMENT_SLUGS[entry.moment.id]}/`)
+          : null,
       };
     });
 }
@@ -233,7 +195,9 @@ const copy =
                     />
                   </div>
                 )}
-                <p class="roots__row-name">{row.name}</p>
+                <p class="roots__row-name">
+                  {row.href ? <a class="roots__row-link" href={row.href}>{row.name}</a> : row.name}
+                </p>
                 {regionLabelFor(row.moment.regions) && (
                   <p class="roots__row-region" lang="en" dir="ltr">{regionLabelFor(row.moment.regions)}</p>
                 )}
@@ -545,6 +509,22 @@ const copy =
     font-size: var(--text-h3);
     font-weight: 600;
     color: var(--text-on-night);
+  }
+
+  /* Only the three moments with a page are links. Underlined on hover and
+     focus rather than always, so the list keeps reading as a list of days
+     rather than a menu, but the target is the full 44px row height. */
+  .roots__row-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    color: inherit;
+    text-underline-offset: 0.2em;
+  }
+  .roots__row-link:hover,
+  .roots__row-link:focus-visible {
+    text-decoration: underline;
+    color: var(--hamdam-night-gold);
   }
   :global([lang='fa']) .roots__row-name {
     font-family: var(--font-farsi);

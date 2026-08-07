@@ -131,3 +131,48 @@ export function homepageSchema({ lang, name, description, url, downloadUrl, scre
     '@graph': [application, organizationSchema],
   };
 }
+
+/**
+ * A cultural moment page (/moments/<slug>/ and its Farsi pair).
+ *
+ * Deliberately modest: a WebPage, a BreadcrumbList and a reference to the
+ * publisher. Not schema.org/Event, which wants a start date, an end date and
+ * somewhere it happens, and would be claiming that Yalda is an event Hamdam is
+ * running rather than a night people observe. Not FAQPage either, since there
+ * is no question and answer copy on the page to mark up, and marking up copy
+ * that is not there is how a rich result turns into a manual action.
+ *
+ * @param {object} options
+ * @param {'en' | 'fa'} options.lang
+ * @param {string} options.name
+ * @param {string} options.description  The approved sentence, verbatim.
+ * @param {string} options.url
+ * @param {string} options.breadcrumbHome  Localised name of the homepage crumb.
+ * @param {string} options.homeUrl
+ */
+export function momentPageSchema({ lang, name, description, url, breadcrumbHome, homeUrl }) {
+  return {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'WebPage',
+        '@id': url,
+        name,
+        description,
+        url,
+        inLanguage: lang,
+        isPartOf: { '@id': APPLICATION_ID },
+        publisher: { '@id': ORGANIZATION_ID },
+        about: { '@type': 'Thing', name },
+      },
+      {
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: breadcrumbHome, item: homeUrl },
+          { '@type': 'ListItem', position: 2, name, item: url },
+        ],
+      },
+      organizationSchema,
+    ],
+  };
+}

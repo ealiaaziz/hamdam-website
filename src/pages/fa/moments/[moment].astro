@@ -1,0 +1,52 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import MomentArticle from '../../../components/MomentArticle.astro';
+import Footer from '../../../components/Footer.astro';
+import { ROOTS_MOMENTS } from '../../../data/rootsMoments';
+import { MOMENT_COPY, MOMENT_PAGE_IDS, MOMENT_SLUGS, MOMENT_UI } from '../../../data/momentContent';
+import { momentPageSchema } from '../../../lib/schema';
+
+// The Farsi half of the cluster. Same component, same data, same slugs as
+// src/pages/moments/[moment].astro.
+//
+// No Persian is authored here. The title is the moment's own Farsi name and
+// the site name, both of which already exist; the description is the approved
+// Farsi sentence verbatim. There is no Farsi title tail, because the English
+// one was authored and its Persian equivalent is Ealia's to write. That is the
+// only asymmetry between the two locales, and it is confined to the <title>.
+export function getStaticPaths() {
+  return MOMENT_PAGE_IDS.map((id) => ({
+    params: { moment: MOMENT_SLUGS[id] },
+    props: { momentId: id },
+  }));
+}
+
+const { momentId } = Astro.props;
+const moment = ROOTS_MOMENTS.find((m) => m.id === momentId)!;
+const path = `/fa/moments/${MOMENT_SLUGS[momentId]}/`;
+const name = moment.nameFa ?? moment.nameEn;
+
+const description = MOMENT_COPY[momentId].sentenceFa;
+const title = `${name} | ${MOMENT_UI.home.fa}`;
+
+const jsonLd = momentPageSchema({
+  lang: 'fa',
+  name,
+  description,
+  url: new URL(path, Astro.site).href,
+  breadcrumbHome: MOMENT_UI.home.fa,
+  homeUrl: new URL('/fa/', Astro.site).href,
+});
+---
+
+<BaseLayout
+  title={title}
+  description={description}
+  lang="fa"
+  path={path}
+  jsonLd={jsonLd}
+  navOverDarkHero={true}
+>
+  <MomentArticle lang="fa" momentId={momentId} />
+  <Footer lang="fa" />
+</BaseLayout>
