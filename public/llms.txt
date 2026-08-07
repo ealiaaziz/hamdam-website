@@ -1,0 +1,39 @@
+# Hamdam
+
+> Hamdam is a daily Persian poetry, reflection and journal app for iPhone, made in Brisbane, Australia. Each day it offers a verse from Hafez, Rumi, Saadi, Khayyam or Parvin Etesami, in the original Persian beside an English translation, with a reflection chosen by how the day feels on a five point mood slider. Free tier with 15 reflections per month; Hamdam Plus subscription and a one time Founding Companion purchase. Available on the Australian App Store (App Store ID 6784461990). No accounts, no sign up, no tracking; the private journal syncs only through the user's own iCloud, opt in.
+
+Every claim in this file is drawn from the site itself. Verses are sourced from
+Ganjoor.net and credited on every page. The site is bilingual: English pages at
+the root, Farsi (RTL) pages under /fa/.
+
+## Product
+
+- [Homepage](https://hamdam.com.au/): what the app does, how a reflection is chosen, plans and pricing structure
+- [Farsi homepage](https://hamdam.com.au/fa/): the same, in Persian
+- [App Store listing](https://apps.apple.com/au/app/id6784461990): download page for iPhone
+
+## The five poets
+
+- [Hafez](https://hamdam.com.au/poets/hafez/): the Divan, Shiraz, c. 1325 to 1390
+- [Rumi](https://hamdam.com.au/poets/rumi/): the Masnavi and the Divan-e Shams, 1207 to 1273
+- [Saadi](https://hamdam.com.au/poets/saadi/): the Bustan and the Golestan, c. 1210 to c. 1291
+- [Khayyam](https://hamdam.com.au/poets/khayyam/): the quatrains, mathematician and astronomer, 1048 to 1131
+- [Parvin Etesami](https://hamdam.com.au/poets/parvin-etesami/): debate poems, 1907 to 1941
+
+## Cultural moments
+
+The app keeps a cultural calendar of Iranian, Afghan and Tajik moments plus
+Australian public holidays by state. These pages carry the next dates:
+
+- [Yalda](https://hamdam.com.au/moments/yalda/): the longest night of the year
+- [Norooz](https://hamdam.com.au/moments/norooz/): the first day of spring
+- [Chaharshanbe Suri](https://hamdam.com.au/moments/chaharshanbe-suri/): the fire jumping night before Norooz
+
+## Policies
+
+- [Privacy policy](https://hamdam.com.au/privacy/): what the app accesses, what it never collects, how iCloud sync works
+- [Terms of service](https://hamdam.com.au/terms/)
+
+## Contact
+
+- Support: developer@hamdam.com.au
