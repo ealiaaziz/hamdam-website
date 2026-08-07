@@ -35,6 +35,34 @@ export function parsePriority(value: string | undefined | null): Priority | unde
   return value && (PRIORITIES as readonly string[]).includes(value) ? (value as Priority) : undefined;
 }
 
+export const IMPACTS: readonly Impact[] = ['high', 'medium', 'low'];
+export const URGENCIES: readonly Urgency[] = ['high', 'medium', 'low'];
+
+/**
+ * Validate an impact or urgency from the portal form (added 2026-08-07,
+ * security review).
+ *
+ * These two were the only enums on the desk reaching storage through a bare
+ * `as` cast rather than a whitelist, which is precisely what parsePriority's
+ * comment above and parseTicketStatus's in types.ts already argue against. The
+ * consequence was one frame later: classifyFromMatrix does
+ * IMPACT_URGENCY_MATRIX[impact][urgency], so `impact=x` on the public form
+ * threw on property access and answered a malformed body with a 500 instead of
+ * the 400 it is. `impact=constructor` was worse in a quieter way, resolving to
+ * the string "Object" and travelling on as a priority.
+ *
+ * Unknown values fall back to 'medium' rather than rejecting: this is a
+ * severity hint from a picker, not an assertion, and the keyword pass plus the
+ * P3 floor for anything about the app do the real classifying anyway.
+ */
+export function parseImpact(value: unknown): Impact {
+  return typeof value === 'string' && (IMPACTS as readonly string[]).includes(value) ? (value as Impact) : 'medium';
+}
+
+export function parseUrgency(value: unknown): Urgency {
+  return typeof value === 'string' && (URGENCIES as readonly string[]).includes(value) ? (value as Urgency) : 'medium';
+}
+
 export const PRIORITY_LABEL: Record<Priority, string> = {
   P1: 'P1 -- Critical',
   P2: 'P2 -- High',

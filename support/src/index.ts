@@ -4,7 +4,7 @@ import { APP_CSS } from './render/styles.js';
 import { outOfRegionPage, submitFormPage, trackLookupPage } from './render/portal.js';
 import { ticketStatusPage } from './render/status.js';
 import { adminQueuePage, adminTicketPage } from './render/admin.js';
-import { classifyTicket, parsePriority, slaDueDates, type Impact, type Urgency } from './itil.js';
+import { classifyTicket, parseImpact, parsePriority, parseUrgency, slaDueDates } from './itil.js';
 import { ackEmail, agentReplyEmail, conversationSummaryEmail, requesterReplyNotification, resolvedEmail } from './render/email.js';
 import { assistantWrittenEmail } from './render/agentEmail.js';
 import { generateTrackingToken, parseTicketPublicId, stripHtml, ticketPublicId, tokensMatch } from './ids.js';
@@ -383,8 +383,11 @@ app.post('/tickets', async (c) => {
   const email = cleanLine(form.get('email'), 254);
   const subject = cleanLine(form.get('subject'), MAX_SUBJECT_CHARS);
   const description = cleanText(form.get('description'), MAX_BODY_CHARS);
-  const impact = (String(form.get('impact') ?? 'medium') as Impact) || 'medium';
-  const urgency = (String(form.get('urgency') ?? 'medium') as Urgency) || 'medium';
+  // parseImpact/parseUrgency, not a cast: see their comment in itil.ts. A cast
+  // told the type checker these were valid and told the matrix lookup nothing,
+  // so a malformed body answered 500 instead of 400.
+  const impact = parseImpact(form.get('impact'));
+  const urgency = parseUrgency(form.get('urgency'));
 
   const invalid = (error: string) =>
     c.html(

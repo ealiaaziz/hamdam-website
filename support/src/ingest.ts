@@ -38,6 +38,14 @@ import {
   wasProcessed,
   type NewOutboundEmail,
 } from './db.js';
+// The same cleaners the portal applies to a stranger's form input. Email is
+// also a stranger's input, and until 2026-08-07 it reached storage without
+// them: nothing under inbound.ts or ingest.ts imported validation.ts, so a
+// subject or a display name arriving by mail kept its control characters, its
+// bidi overrides and its unbounded length. The build record's bidi note
+// described the portal only, and email is the channel that is not
+// geo-restricted and needs no browser.
+import { cleanLine, cleanText, MAX_BODY_CHARS, MAX_NAME_CHARS, MAX_SUBJECT_CHARS } from './validation.js';
 
 // The inbox, read by the Worker on a schedule it controls.
 //
@@ -259,7 +267,16 @@ async function handleMessage(env: Env, message: InboundMessage): Promise<'create
   const quiet = fromJunk || !(await automatedRepliesAllowed(env, message.fromEmail));
 
   if (plan.action === 'append') {
-    await addComment(env.DB, plan.ticketId, 'requester', message.fromName, plan.body);
+    // Cleaned on this path too. An append has already proved the sender is the
+    // ticket's owner, but ownership is not a reason to trust the bytes: the
+    // comment is rendered in the console and quoted back into email.
+    await addComment(
+      env.DB,
+      plan.ticketId,
+      'requester',
+      cleanLine(message.fromName, MAX_NAME_CHARS) || null,
+      cleanText(plan.body, MAX_BODY_CHARS),
+    );
     await setLastInboundMessageId(env.DB, plan.ticketId, message.internetMessageId);
     await recordInbound(env.DB, {
       internetMessageId: message.internetMessageId,
@@ -314,9 +331,15 @@ async function noteSuppressed(env: Env, ticketId: number, fromJunk = false): Pro
   await addComment(env.DB, ticketId, 'system', null, reason);
 }
 
-async function handleAsNew(env: Env, message: InboundMessage, body: string, quiet = false, fromJunk = false): Promise<'created'> {
-  const subject = cleanSubject(message.subject);
-  const requester = await upsertRequester(env.DB, message.fromEmail, message.fromName);
+async function handleAsNew(env: Env, message: InboundMessage, rawBody: string, quiet = false, fromJunk = false): Promise<'created'> {
+  // cleanSubject strips the [HAM-N] tag and the Re:/Fwd: prefix; cleanLine is
+  // what makes the result safe to display, and the display is the point: the
+  // subject and the sender's name are what an agent reads in the console queue
+  // and in the escalation email when deciding what a ticket is.
+  const subject = cleanLine(cleanSubject(message.subject), MAX_SUBJECT_CHARS) || '(no subject)';
+  const fromName = cleanLine(message.fromName, MAX_NAME_CHARS) || null;
+  const body = cleanText(rawBody, MAX_BODY_CHARS);
+  const requester = await upsertRequester(env.DB, message.fromEmail, fromName);
 
   // Email carries no impact/urgency picker, so the matrix gets the neutral
   // reading and the keywords do the rest. A Hamdam ticket still cannot fall
@@ -348,7 +371,7 @@ async function handleAsNew(env: Env, message: InboundMessage, body: string, quie
     slaResolveDue: resolveDue,
   });
 
-  await addComment(env.DB, ticketId, 'requester', message.fromName, body);
+  await addComment(env.DB, ticketId, 'requester', fromName, body);
   await recordInbound(env.DB, {
     internetMessageId: message.internetMessageId,
     conversationId: message.conversationId,

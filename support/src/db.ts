@@ -12,12 +12,38 @@ import type { Impact, Priority, Topic, Urgency } from './itil.js';
 import type { Locale } from './i18n.js';
 import type { Channel } from './types.js';
 
+/**
+ * Fill a requester's name in, never overwrite it (changed 2026-08-07, security
+ * review).
+ *
+ * The conflict clause used to read `COALESCE(excluded.name, requesters.name)`,
+ * which prefers the incoming value: every new ticket naming an existing address
+ * rewrote that address's stored name. Nothing gated it. Anyone could post the
+ * portal form with a stranger's address and a chosen name, or send mail with a
+ * forged `From` display name, and the name attached to *all* of that person's
+ * tickets, past ones included, changed to whatever they picked. That name is
+ * what the console queue and the "Who is waiting" line of the escalation email
+ * show, which is what a person reads when deciding what a ticket is and who
+ * they are answering.
+ *
+ * The email route made it worse rather than better: `planInbound`'s
+ * authentication check only runs on the path that would *append* to an existing
+ * ticket, so a forged sender that falls through to a new ticket reaches here
+ * having proved nothing, and it does so before the junk check, so even a
+ * spam-foldered message landed the write.
+ *
+ * The operands are swapped, so an existing name wins and a null one is filled.
+ * This is the same asymmetry `sameAddress` and `ADMIN_EMAILS` are built on:
+ * widening a set is fine for counting and wrong for deciding who somebody is.
+ * A requester who genuinely wants their name changed is a support request, and
+ * an agent can do it; a stranger cannot.
+ */
 export async function upsertRequester(db: D1Database, email: string, name: string | null): Promise<RequesterRow> {
   const normalizedEmail = email.trim().toLowerCase();
   await db
     .prepare(
       `INSERT INTO requesters (email, name) VALUES (?1, ?2)
-       ON CONFLICT(email) DO UPDATE SET name = COALESCE(excluded.name, requesters.name)`,
+       ON CONFLICT(email) DO UPDATE SET name = COALESCE(requesters.name, excluded.name)`,
     )
     .bind(normalizedEmail, name)
     .run();
