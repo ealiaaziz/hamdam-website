@@ -336,7 +336,14 @@ async function handleAsNew(env: Env, message: InboundMessage, rawBody: string, q
   // what makes the result safe to display, and the display is the point: the
   // subject and the sender's name are what an agent reads in the console queue
   // and in the escalation email when deciding what a ticket is.
-  const subject = cleanLine(cleanSubject(message.subject), MAX_SUBJECT_CHARS) || '(no subject)';
+  // Clean first, strip the tag second. The other order has a trap: a zero-width
+  // character inside a "[HAM-42]" tag breaks cleanSubject's \bHAM-\d+\b match so
+  // the tag survives, and cleanLine then removes the zero-width, leaving a
+  // stored subject that reads "[HAM-42]" on a ticket with no relation to
+  // HAM-42. Cosmetic rather than a routing bug, because ticketIdFromSubject
+  // always parses the live inbound header and never a stored subject, but it
+  // puts a false tag in front of the agent reading the queue.
+  const subject = cleanSubject(cleanLine(message.subject, MAX_SUBJECT_CHARS));
   const fromName = cleanLine(message.fromName, MAX_NAME_CHARS) || null;
   const body = cleanText(rawBody, MAX_BODY_CHARS);
   const requester = await upsertRequester(env.DB, message.fromEmail, fromName);

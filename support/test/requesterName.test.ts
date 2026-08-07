@@ -100,7 +100,7 @@ describe('the inbound email path cleans what it stores', () => {
   });
 
   it('caps the subject, the name and the body at the shared limits', () => {
-    expect(source).toMatch(/cleanLine\(cleanSubject\(message\.subject\), MAX_SUBJECT_CHARS\)/);
+    expect(source).toMatch(/cleanSubject\(cleanLine\(message\.subject, MAX_SUBJECT_CHARS\)\)/);
     expect(source).toMatch(/cleanLine\(message\.fromName, MAX_NAME_CHARS\)/);
     expect(source).toMatch(/cleanText\((?:rawBody|plan\.body), MAX_BODY_CHARS\)/);
   });
