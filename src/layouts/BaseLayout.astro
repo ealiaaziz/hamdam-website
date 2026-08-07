@@ -4,6 +4,7 @@ import StickyDownloadAction from '../components/StickyDownloadAction.astro';
 import SkySurface from '../components/SkySurface.astro';
 import { LOCALES, LOCALE_META, switchLocalePath } from '../lib/locale';
 import { APP_STORE } from '../lib/appStore';
+import { CF_BEACON_TOKEN, beaconConfig } from '../lib/analytics';
 import '../styles/global.css';
 // Hashed URLs for the two above-the-fold font files per locale, so preloads
 // stay in lockstep with the @fontsource-bundled @font-face sources.
@@ -124,6 +125,22 @@ const ogImage = new URL(
     <meta name="twitter:image" content={ogImage} />
 
     {jsonLd && <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />}
+
+    {
+      /* Cloudflare Web Analytics: aggregate, cookieless page counts, which is
+         exactly and only what the privacy policy (§2.1) says this site does.
+         Omitted entirely when PUBLIC_CF_BEACON_TOKEN is unset or malformed, so
+         local builds and previews never write into the production dataset.
+         `defer` keeps it off the critical path; the CSP already allows both the
+         script host and the host it reports to. See src/lib/analytics.js before
+         changing any of this, including the warning about not enabling the
+         dashboard's automatic injection at the same time. */
+    }
+    {
+      CF_BEACON_TOKEN && (
+        <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon={beaconConfig(CF_BEACON_TOKEN)} />
+      )
+    }
 
   </head>
   <body class:list={['bg-cream text-indigo antialiased', lang === 'fa' ? 'font-farsi' : 'font-sans']}>
