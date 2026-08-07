@@ -1,10 +1,53 @@
+# Hamdam. https://hamdam.com.au
+#
+# Policy, decided 2026-08-07: retrieval yes, training no.
+#
+# This file used to Disallow: / for GPTBot, ChatGPT-User, CCBot, anthropic-ai
+# and Claude-Web without distinguishing between them, and two of those five are
+# not training crawlers at all. ChatGPT-User is the fetch an assistant makes
+# *because a person asked it a question*; blocking it means an assistant that
+# has been asked "what is a good Persian poetry app" cannot read this site to
+# answer, which is the one organic channel a niche app most needs. That was a
+# self-inflicted block, not a policy.
+#
+# So the list below splits on purpose rather than on vendor:
+#
+#   Blocked: crawlers whose stated use is training corpora. The English
+#              translations in the app are being replaced with cited public
+#              domain sources (Nicholson, Whinfield, Bell); until that ships,
+#              nothing here should be absorbed into a model's weights.
+#   Allowed: search indexes and user-triggered retrieval, which read a page
+#              to cite or answer and link back.
+#
+# Two limits worth knowing before trusting this file:
+#
+#   1. robots.txt is a request, not a control. Everything here is voluntary.
+#   2. Cloudflare's managed AI-crawler block sits in FRONT of this file and
+#      returns a 403 before robots.txt is ever consulted. While that rule is
+#      on, the Allow lines below have no effect. It is a dashboard setting
+#      (Security -> Bots -> AI Scrapers and Crawlers), not a repository one,
+#      and must be turned off or narrowed to training-only for this policy to
+#      actually take effect. See docs/seo/2026-08-07-ai-crawler-policy.md.
+
+# --- Machine-readable content signals ---------------------------------------
+# Cloudflare's Content Signals Policy. Declares intent for operators that honour
+# it, independently of the per-agent rules below.
+#   search=yes    building a search index and linking back is fine
+#   ai-input=yes  reading this page to ground an answer is fine
+#   ai-train=no   using it as model training data is not
+User-agent: *
+Content-Signal: search=yes, ai-input=yes, ai-train=no
+Allow: /
+
+# --- Training crawlers: blocked ---------------------------------------------
+
+# OpenAI, model training corpus.
 User-agent: GPTBot
 Disallow: /
 
-User-agent: ChatGPT-User
-Disallow: /
-
-User-agent: CCBot
+# Anthropic, model training corpus (current agent, and two retired names that
+# some deployed stacks still send).
+User-agent: ClaudeBot
 Disallow: /
 
 User-agent: anthropic-ai
@@ -13,7 +56,61 @@ Disallow: /
 User-agent: Claude-Web
 Disallow: /
 
-User-agent: *
+# Common Crawl. Not itself a model builder, but its archive is the single most
+# widely reused training corpus on the web, so it is blocked with the rest.
+User-agent: CCBot
+Disallow: /
+
+# Apple Intelligence training. Note this is Applebot-EXTENDED; plain Applebot is
+# allowed below and is the one that feeds Siri and Spotlight, which matter to an
+# iPhone app.
+User-agent: Applebot-Extended
+Disallow: /
+
+# Meta AI training.
+User-agent: meta-externalagent
+Disallow: /
+
+# ByteDance training.
+User-agent: Bytespider
+Disallow: /
+
+# --- Retrieval and search: allowed ------------------------------------------
+
+# OpenAI. OAI-SearchBot builds the index behind ChatGPT search; ChatGPT-User is
+# a live fetch made on behalf of someone who asked a question. Neither trains.
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+# Anthropic, same split: search index and user-triggered fetch.
+User-agent: Claude-SearchBot
+Allow: /
+
+User-agent: Claude-User
+Allow: /
+
+# Perplexity, index and user-triggered fetch.
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Perplexity-User
+Allow: /
+
+# Apple. Feeds Siri Suggestions and Spotlight, which is how iOS surfaces an app
+# in response to a spoken or typed query on the device it runs on.
+User-agent: Applebot
+Allow: /
+
+# Google-Extended is a deliberate exception to the split above: it is the one
+# control that governs BOTH Gemini grounding and Gemini training, with no way to
+# separate them. Allowing it accepts training in exchange for being answerable
+# in Gemini and eligible for grounded citation. That trade was taken knowingly
+# on 2026-08-07 because absence from the answer engines is the larger cost here.
+# Reverse it by moving this block into the training section above.
+User-agent: Google-Extended
 Allow: /
 
 Sitemap: https://hamdam.com.au/sitemap-index.xml

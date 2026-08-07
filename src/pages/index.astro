@@ -15,6 +15,17 @@ import Footer from '../components/Footer.astro';
 import SceneBackground from '../components/SceneBackground.astro';
 import quietGarden from '../assets/scenes/quiet-garden-section.jpg';
 import dawn from '../assets/scenes/dawn-section.jpg';
+import { getImage } from 'astro:assets';
+import { homepageSchema } from '../lib/schema';
+import { appStoreUrl } from '../lib/appStore';
+// Real in-app screenshots, the same files the page already renders in its
+// device frames -- schema.org/screenshot must point at the actual app, not at
+// the OG artwork.
+import heroShot from '../assets/website-redesign/screenshots/EN/01-hero-en.png';
+import reflectShot from '../assets/website-redesign/screenshots/EN/02-reflect-en.png';
+import wisdomShot from '../assets/website-redesign/screenshots/EN/03-wisdom-en.png';
+import rootsShot from '../assets/website-redesign/screenshots/EN/04-roots-en.png';
+import journeyShot from '../assets/website-redesign/screenshots/EN/05-journey-en.png';
 
 // Restructured 2026-07-25 from thirteen stacked sections to seven. Two things
 // were wrong with the old page: it was too long, and it took several screens to
@@ -40,33 +51,29 @@ import dawn from '../assets/scenes/dawn-section.jpg';
 const description =
   "Hamdam reflects your heart and your sky. A daily verse from Hafez, Rumi, Saadi, Khayyam or Parvin Etesami, with a reflection chosen for how your day feels. Available now on iPhone.";
 
-const jsonLd = {
-  '@context': 'https://schema.org',
-  '@type': 'SoftwareApplication',
+// Structured data moved to src/lib/schema.js on 2026-08-07 (SEO audit): both
+// homepages hand-maintained the same object and both published
+// `operatingSystem: 'iOS 26+'`, the accidental deployment target. Read that
+// file's header before changing the OS string or adding a rating.
+// getImage rather than the raw `.src`: referencing the import directly makes
+// Astro emit the untouched PNGs alongside the webp the page already renders,
+// which added 22MB to dist for five images nobody downloads. These resolve to
+// the optimised assets instead.
+const screenshots = await Promise.all(
+  [heroShot, reflectShot, wisdomShot, rootsShot, journeyShot].map(async (image) => {
+    const optimised = await getImage({ src: image, width: 578, format: 'webp', quality: 80 });
+    return new URL(optimised.src, Astro.site).href;
+  })
+);
+
+const jsonLd = homepageSchema({
+  lang: 'en',
   name: 'Hamdam',
-  alternateName: 'Hamdam: Daily Persian Poetry',
   description,
-  operatingSystem: 'iOS 26+',
-  applicationCategory: 'LifestyleApplication',
   url: 'https://hamdam.com.au/',
-  inLanguage: ['en', 'fa'],
-  publisher: {
-    '@type': 'Organization',
-    name: 'Hamdam',
-  },
-  // Paid-tier prices intentionally not published (decision 2026-07-02).
-  offers: {
-    '@type': 'Offer',
-    price: '0',
-    priceCurrency: 'AUD',
-    description: 'Free with in-app purchases',
-  },
-  contactPoint: {
-    '@type': 'ContactPoint',
-    email: 'developer@hamdam.com.au',
-    contactType: 'customer support',
-  },
-};
+  downloadUrl: appStoreUrl('en', null, 'schema'),
+  screenshots,
+});
 ---
 
 <BaseLayout

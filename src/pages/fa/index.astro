@@ -16,6 +16,15 @@ import HamdamLogotype from '../../components/HamdamLogotype.astro';
 import SceneBackground from '../../components/SceneBackground.astro';
 import quietGarden from '../../assets/scenes/quiet-garden-section.jpg';
 import dawn from '../../assets/scenes/dawn-section.jpg';
+import { getImage } from 'astro:assets';
+import { homepageSchema } from '../../lib/schema';
+import { appStoreUrl } from '../../lib/appStore';
+// The Farsi in-app screenshots, matching the EN page's use of the English set.
+import heroShot from '../../assets/website-redesign/screenshots/FA/01-hero-fa.png';
+import reflectShot from '../../assets/website-redesign/screenshots/FA/02-reflect-fa.png';
+import wisdomShot from '../../assets/website-redesign/screenshots/FA/03-wisdom-fa.png';
+import rootsShot from '../../assets/website-redesign/screenshots/FA/04-roots-fa.png';
+import journeyShot from '../../assets/website-redesign/screenshots/FA/05-journey-fa.png';
 
 // Mirrors index.astro's 2026-07-25 restructure to seven sections. Structure
 // only: not one Farsi string is authored, rewritten or translated here.
@@ -37,32 +46,27 @@ const description =
 // offers.description is left in English deliberately -- not user-visible
 // marketing copy, and this repo's rule bars Claude from authoring or
 // translating new Persian copy without Ealia's sign-off.
-const jsonLd = {
-  '@context': 'https://schema.org',
-  '@type': 'SoftwareApplication',
+// Shared builder since 2026-08-07 -- see src/lib/schema.js. `name` and
+// `description` still come from this page, so no Persian is authored or
+// translated by the move; the machine-readable English fields (featureList,
+// offers.description) follow the call already recorded above for
+// offers.description.
+// getImage, not the raw `.src` -- see the note on index.astro's copy of this.
+const screenshots = await Promise.all(
+  [heroShot, reflectShot, wisdomShot, rootsShot, journeyShot].map(async (image) => {
+    const optimised = await getImage({ src: image, width: 578, format: 'webp', quality: 80 });
+    return new URL(optimised.src, Astro.site).href;
+  })
+);
+
+const jsonLd = homepageSchema({
+  lang: 'fa',
   name: 'همدم',
-  alternateName: 'Hamdam: Daily Persian Poetry',
   description,
-  operatingSystem: 'iOS 26+',
-  applicationCategory: 'LifestyleApplication',
   url: 'https://hamdam.com.au/fa/',
-  inLanguage: ['fa', 'en'],
-  publisher: {
-    '@type': 'Organization',
-    name: 'Hamdam',
-  },
-  offers: {
-    '@type': 'Offer',
-    price: '0',
-    priceCurrency: 'AUD',
-    description: 'Free with in-app purchases',
-  },
-  contactPoint: {
-    '@type': 'ContactPoint',
-    email: 'developer@hamdam.com.au',
-    contactType: 'customer support',
-  },
-};
+  downloadUrl: appStoreUrl('fa', null, 'schema'),
+  screenshots,
+});
 ---
 
 <BaseLayout

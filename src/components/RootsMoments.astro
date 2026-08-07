@@ -130,6 +130,26 @@ const heritageRows = rowsFor('culturalHeritage');
 const regionRows = rowsFor('governmentPublic');
 
 const label = (key: keyof typeof ROOTS_LABELS) => ROOTS_LABELS[key][lang];
+
+// Region qualifier on region-gated rows, added 2026-08-07 after an SEO audit.
+//
+// The whole catalogue renders into the DOM and the switcher only toggles a
+// class, which is what keeps the control CSP-safe and working without a
+// re-render -- but it also means a crawler reads every row, not the four a
+// visitor sees. Eight states each have their own Labour Day and King's
+// Birthday, so the homepage was serving "King's Birthday" six times, "Labour
+// Day" five and "ANZAC Day" three, as bare repeated text with nothing to tell
+// them apart. Naming the state makes each row a distinct, true statement, and
+// it is better for a reader too: it says at a glance that this is a state
+// holiday rather than a national one, which is the same thing the Ekka note
+// below has always had to explain in prose.
+//
+// English-only, deliberately, and consistent with AU_REGIONS' own comment: the
+// app's regionDisplayName localises only the country name, and no approved
+// Farsi exists for the state names. National moments get no qualifier.
+const REGION_NAMES = new Map(AU_REGIONS.map((region) => [region.code, region.nameEn]));
+const regionLabelFor = (regions: string[] | null) =>
+  regions?.length ? regions.map((code) => REGION_NAMES.get(code) ?? code).join(' · ') : null;
 const placeName = (place: { nameEn: string; nameFa?: string }) =>
   (lang === 'fa' && place.nameFa) || place.nameEn;
 
@@ -214,6 +234,9 @@ const copy =
                   </div>
                 )}
                 <p class="roots__row-name">{row.name}</p>
+                {regionLabelFor(row.moment.regions) && (
+                  <p class="roots__row-region" lang="en" dir="ltr">{regionLabelFor(row.moment.regions)}</p>
+                )}
                 <p class="roots__row-date">{row.date}</p>
                 {row.sentence && <p class="roots__row-sentence">{row.sentence}</p>}
                 <p class="roots__row-countdown">{row.countdown}</p>
@@ -264,6 +287,9 @@ const copy =
                 data-regions={row.moment.regions ? row.moment.regions.join(' ') : null}
               >
                 <p class="roots__row-name">{row.name}</p>
+                {regionLabelFor(row.moment.regions) && (
+                  <p class="roots__row-region" lang="en" dir="ltr">{regionLabelFor(row.moment.regions)}</p>
+                )}
                 <p class="roots__row-date">{row.date}</p>
                 <p class="roots__row-countdown">{row.countdown}</p>
               </li>
@@ -467,6 +493,7 @@ const copy =
     overflow: hidden;
   }
   .roots__row--featured .roots__row-name,
+  .roots__row--featured .roots__row-region,
   .roots__row--featured .roots__row-date,
   .roots__row--featured .roots__row-sentence,
   .roots__row--featured .roots__row-countdown {
@@ -522,6 +549,19 @@ const copy =
   :global([lang='fa']) .roots__row-name {
     font-family: var(--font-farsi);
     font-weight: 500;
+  }
+
+  /* Quieter than the date: this identifies the row, it does not compete with
+     it. Stays LTR on the Farsi page because the state names are Latin script
+     (see the regionLabelFor comment in the frontmatter). */
+  .roots__row-region {
+    margin-top: 0.25rem;
+    font-family: var(--font-sans);
+    font-size: var(--text-meta);
+    color: var(--text-on-night-muted);
+  }
+  :global([lang='fa']) .roots__row-region {
+    text-align: right;
   }
 
   .roots__row-date {
