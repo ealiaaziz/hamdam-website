@@ -596,6 +596,19 @@ policy URL and fetch it directly, and no MTA consults robots.txt -- and a test
 asserts the policy path still serves, because that is the one way this change
 could have been expensive.
 
+Deployed and verified live 2026-08-08. `mta-sts.hamdam.com.au/robots.txt` is
+200 with `User-agent: * / Disallow: /`; the policy path is 200 and byte-
+identical (`testing`, both MX entries, `max_age: 604800`), which is the check
+that mattered, because that file is the mail path; `/`, `/admin`, `/tickets/1`,
+`/fa` and `/.well-known/security.txt` are all still 404 on that host; the
+support desk answers 200 on `/`, `/fa` and `/health`. One trap: the first
+probe after `wrangler deploy` still returned the old 404 for `/robots.txt`.
+That was propagation, not a failed deploy -- re-check before concluding
+anything from a check run seconds after an upload.
+
+Search Console will clear the report itself at the next crawl of that host.
+"Validate Fix" in the indexing report asks for it sooner.
+
 Worth knowing for the next hostname: `support.hamdam.com.au` also has no
 robots.txt and also 404s it. Google had not crawled it as of 2026-08-08 ("URL
 is unknown to Google"), but it has a certificate, so it will be found the same
