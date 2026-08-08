@@ -37,6 +37,8 @@
 // violation and the exact kind of invented claim this repo's rules exist to
 // prevent.
 
+import { APP_STORE } from './appStore.js';
+
 const SITE = 'https://hamdam.com.au';
 
 /** Stable @id for the publisher node, referenced from the app node. */
@@ -111,8 +113,9 @@ export function homepageSchema({ lang, name, description, url, downloadUrl, scre
     alternateName: 'Hamdam: Daily Persian Poetry',
     description,
     url,
-    // VERIFIED minimum, not a guess. Read the header before changing it.
-    operatingSystem: 'iOS 26.5+',
+    // VERIFIED minimum, not a guess, and derived rather than retyped so it
+    // cannot drift from the requirement line under the store badge.
+    operatingSystem: `iOS ${APP_STORE.MINIMUM_IOS}+`,
     applicationCategory: 'LifestyleApplication',
     availableOnDevice: 'iPhone',
     downloadUrl,

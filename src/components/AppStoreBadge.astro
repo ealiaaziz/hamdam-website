@@ -7,9 +7,30 @@ interface Props {
   class?: string;
   /** Placement token for the App Store `ct` campaign parameter (E2). */
   placement?: string;
+  /**
+   * Print the minimum iOS under the badge. Added 2026-08-07, approved by
+   * Ealia, once the floor was confirmed as a real requirement rather than a
+   * suspected build mistake.
+   *
+   * Opt-in rather than always-on, and set only on the closing CTA.
+   *
+   * It was on the hero too until the contrast was measured. The English title
+   * runs four lines where the Farsi runs three, so the English badge sits lower
+   * and the line landed on the dark horizon silhouette: 1.35:1 against a 4.5:1
+   * floor for 14px text, while the same element on the Farsi page measured
+   * 11:1 on open sky. The hero's --title-shadow-o cannot rescue it, because the
+   * failure is dark text on a dark photograph rather than light text on a busy
+   * one. FinalCeremony renders on --surface-morning with no photograph
+   * underneath, so the same element is legible there by construction.
+   *
+   * If this is ever wanted on the hero, it needs its own scrim, and that is a
+   * design decision about a deliberately restrained surface rather than a CSS
+   * fix.
+   */
+  showRequirement?: boolean;
 }
 
-const { lang = 'en', class: className = '', placement = 'badge' } = Astro.props;
+const { lang = 'en', class: className = '', placement = 'badge', showRequirement = false } = Astro.props;
 // Kept, not dead code: `APP_STORE.RELEASED` is a switch, not a one-way launch-day
 // flip. Flipping it back is the only way to take the store CTAs down if the listing
 // is ever pulled or a release is held, and Apple's badge guidelines only permit the
@@ -17,23 +38,47 @@ const { lang = 'en', class: className = '', placement = 'badge' } = Astro.props;
 // mean re-authoring the pre-release pill, including its Farsi, under time pressure.
 const eyebrow = lang === 'fa' ? 'به‌زودی' : 'Coming soon';
 const headline = lang === 'fa' ? 'برای آیفون' : 'to iPhone';
+
+// "iOS 26.5+" rather than a sentence, and identical in both locales.
+//
+// A sentence would need a Farsi half, and this repo bars authoring that. The
+// alternative pattern used elsewhere here is to omit the element on the Farsi
+// page, which is right for decoration and wrong for a requirement: a Farsi
+// reader has exactly the same phone problem as an English one, and telling only
+// half the audience is worse than the compact form telling both. Latin script
+// and numerals, the convention every app listing already uses, so it needs no
+// verb and carries no asymmetry. Marked lang/dir so a screen reader announces
+// it in the right language and bidi never reorders the digits.
+const requirement = `iOS ${APP_STORE.MINIMUM_IOS}+`;
+
+// The wrapper below centres on the cross axis rather than aligning to start.
+// It is inline-flex, so it shrinks to the badge's own width, which means
+// centring inside it puts the line under the badge wherever the badge itself
+// sits: left, centred or right. That also removes any start/end asymmetry
+// between the two locales, which an items-start wrapper introduced (the line
+// hugged the left edge in English and the right edge in Farsi).
 ---
 
 {
   APP_STORE.RELEASED ? (
-    <a
-      href={appStoreUrl(lang, null, placement)}
-      class:list={['inline-flex min-h-[44px] min-w-[44px] items-center', className]}
-      aria-label="Download Hamdam on the App Store"
-    >
-      <img
-        src="/badges/app-store-badge.svg"
-        alt="Download on the App Store"
-        width="180"
-        height="60"
-        class="h-[60px] w-auto"
-      />
-    </a>
+    <span class:list={['inline-flex flex-col items-center gap-1.5', className]}>
+      <a
+        href={appStoreUrl(lang, null, placement)}
+        class="inline-flex min-h-[44px] min-w-[44px] items-center"
+        aria-label="Download Hamdam on the App Store"
+      >
+        <img
+          src="/badges/app-store-badge.svg"
+          alt="Download on the App Store"
+          width="180"
+          height="60"
+          class="h-[60px] w-auto"
+        />
+      </a>
+      {showRequirement && (
+        <span class="app-store-badge__requirement" lang="en" dir="ltr">{requirement}</span>
+      )}
+    </span>
   ) : (
     <div
       class:list={[
@@ -51,3 +96,15 @@ const headline = lang === 'fa' ? 'برای آیفون' : 'to iPhone';
     </div>
   )
 }
+
+<style>
+  /* Quiet by design: a requirement, not a warning. Inherits colour from the
+     surface it sits on, so it reads on the hero's night sky and on the cream
+     closing section without either needing a variant. */
+  .app-store-badge__requirement {
+    font-family: var(--font-sans);
+    font-size: var(--text-meta);
+    color: currentColor;
+    opacity: 0.72;
+  }
+</style>

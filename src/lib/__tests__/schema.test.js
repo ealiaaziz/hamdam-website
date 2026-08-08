@@ -6,6 +6,7 @@ import {
   ORGANIZATION_ID,
   APPLICATION_ID,
 } from '../schema.js';
+import { APP_STORE } from '../appStore.js';
 
 const build = (overrides = {}) =>
   homepageSchema({
@@ -126,5 +127,21 @@ describe('organizationSchema', () => {
     expect(organizationSchema.logo.url).toBe('https://hamdam.com.au/icons/icon-512.png');
     expect(organizationSchema.email).toBe('developer@hamdam.com.au');
     expect(organizationSchema).not.toHaveProperty('sameAs');
+  });
+});
+
+// Added 2026-08-07 with the visible requirement line under the store badge.
+// The floor now has two consumers, the structured data and that line, and two
+// hand-maintained copies of one number is exactly how both homepages came to
+// publish an unverified `iOS 26+`. This binds them to APP_STORE.MINIMUM_IOS.
+describe('the iOS floor has one source', () => {
+  it('derives operatingSystem from APP_STORE.MINIMUM_IOS', () => {
+    expect(appNode(build()).operatingSystem).toBe(`iOS ${APP_STORE.MINIMUM_IOS}+`);
+  });
+
+  it('keeps MINIMUM_IOS a bare version, not a prefixed or suffixed string', () => {
+    // The consumers add "iOS " and "+"; if the constant carried them too the
+    // rendered result would read "iOS iOS 26.5++" and still typecheck.
+    expect(APP_STORE.MINIMUM_IOS).toMatch(/^\d+(\.\d+)*$/);
   });
 });

@@ -7,6 +7,15 @@ export const APP_STORE = Object.freeze({
   ID: '6784461990',
   RELEASED: true,
   COUNTRY: 'au',
+  /**
+   * Minimum iOS, VERIFIED in FACTS.md on 2026-08-07 (Ealia). Lives here rather
+   * than in either consumer because it has two: the structured data in
+   * schema.js and the requirement line under the store badge. Those were about
+   * to be two hand-maintained copies of one number, which is exactly how both
+   * homepages came to publish an unverified `iOS 26+` in the first place.
+   * Change it in FACTS.md first, here second, and nowhere else.
+   */
+  MINIMUM_IOS: '26.5',
 });
 
 // The App Store Connect provider token, read from the build environment
