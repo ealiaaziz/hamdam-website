@@ -19,6 +19,22 @@ export function switchLocalePath(currentPath, target) {
     : stripped;
 }
 
+/**
+ * The home path for a locale.
+ *
+ * Used where a page has no counterpart in the other locale, so switchLocalePath
+ * would name a route that does not exist. That is not hypothetical: the 404
+ * document is deliberately bilingual in a single file (see 404.astro), so
+ * `/fa/404/` was being advertised for a page that was never built, and Google
+ * Search Console reported the 404 it found there on 2026-08-08.
+ *
+ * @param {'en' | 'fa'} locale
+ * @returns {string}
+ */
+export function localeHomePath(locale) {
+  return locale === LOCALES.FA ? '/fa/' : '/';
+}
+
 export function detectPreferredLocale(navigatorLanguages) {
   if (!navigatorLanguages?.length) return LOCALES.EN;
   for (const lang of navigatorLanguages) {

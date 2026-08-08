@@ -6,11 +6,18 @@ interface Props {
   /** True when rendered inside NavBar.astro: position and colour come from
    * the nav bar's own layout/colour context instead of floating standalone. */
   inNav?: boolean;
+  /**
+   * Explicit target, for routes where this page has no counterpart in the other
+   * locale and the derived path would therefore name a route that was never
+   * built. Only the 404 document needs this today: it is bilingual in one file,
+   * so `/fa/404/` does not exist.
+   */
+  href?: string;
 }
 
-const { lang, inNav = false } = Astro.props;
+const { lang, inNav = false, href: hrefOverride } = Astro.props;
 const target = lang === 'fa' ? LOCALES.EN : LOCALES.FA;
-const href = switchLocalePath(Astro.url.pathname, target);
+const href = hrefOverride ?? switchLocalePath(Astro.url.pathname, target);
 // Sanity: the computed target path must resolve to the target locale.
 if (resolveLocaleFromPath(href) !== target) {
   throw new Error(`LanguageToggle: ${Astro.url.pathname} -> ${href} does not resolve to ${target}`);

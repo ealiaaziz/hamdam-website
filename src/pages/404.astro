@@ -1,6 +1,14 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import PersianShamseh from '../components/PersianShamseh.astro';
+
+// localized={false} below: this route is ONE bilingual document rather than one
+// page per locale (see the note beside the Persian block), so there is no
+// /fa/404/ to declare an alternate for or to link the nav toggle at. Without it
+// the page advertised hreflang="fa" for a URL that was never built, and since
+// /404 is served with a 200 (it is a real asset; not_found_handling only reuses
+// it as the body for unmatched paths) Googlebot crawled it as an ordinary page,
+// followed the alternate, and reported the 404 on 2026-08-08.
 ---
 
 <BaseLayout
@@ -9,6 +17,7 @@ import PersianShamseh from '../components/PersianShamseh.astro';
   lang="en"
   path="/404"
   noindex={true}
+  localized={false}
 >
   <section class="flex min-h-screen flex-col items-center justify-center px-6 text-center">
     <PersianShamseh size={48} />

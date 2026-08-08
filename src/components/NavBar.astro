@@ -12,9 +12,11 @@ interface Props {
    * legible on a night/dusk surface). Once scrolled past the threshold the
    * backing is always solid night, so text is always cream from then on. */
   overDarkHero?: boolean;
+  /** Passed straight to LanguageToggle; see its own `href` prop for why. */
+  localeHref?: string;
 }
 
-const { lang, overDarkHero = false } = Astro.props;
+const { lang, overDarkHero = false, localeHref } = Astro.props;
 // Pre-release the bar carries no CTA at all (page spec §1 item 10); the
 // coming-soon state lives in the hero only.
 const ctaLabel = lang === 'fa' ? 'دریافت همدم' : 'Get Hamdam';
@@ -34,7 +36,7 @@ const ctaAriaLabel = lang === 'fa' ? 'دانلود همدم از اپ‌استو
       <HamdamLogotype lang={lang} size={24} />
     </a>
     <div class="flex items-center gap-3">
-      <LanguageToggle lang={lang} inNav />
+      <LanguageToggle lang={lang} inNav href={localeHref} />
       {
         APP_STORE.RELEASED && (
           <a

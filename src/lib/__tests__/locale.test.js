@@ -4,6 +4,7 @@ import {
   LOCALE_META,
   resolveLocaleFromPath,
   switchLocalePath,
+  localeHomePath,
   detectPreferredLocale,
 } from '../locale.js';
 
@@ -112,5 +113,26 @@ describe('LOCALE_META', () => {
   it('declares RTL for fa and LTR for en', () => {
     expect(LOCALE_META.fa.dir).toBe('rtl');
     expect(LOCALE_META.en.dir).toBe('ltr');
+  });
+});
+
+describe('localeHomePath', () => {
+  it('returns each locale\'s home', () => {
+    expect(localeHomePath(LOCALES.EN)).toBe('/');
+    expect(localeHomePath(LOCALES.FA)).toBe('/fa/');
+  });
+
+  it('returns a path that resolves back to the locale it was asked for', () => {
+    for (const locale of [LOCALES.EN, LOCALES.FA]) {
+      expect(resolveLocaleFromPath(localeHomePath(locale))).toBe(locale);
+    }
+  });
+
+  it('returns a route the site actually builds, unlike switchLocalePath on an unlocalized path', () => {
+    // The regression this exists for: /404 has no per-locale variant, so
+    // switchLocalePath happily names /fa/404, which was never built and 404s.
+    // Google Search Console reported exactly that on 2026-08-08.
+    expect(switchLocalePath('/404', LOCALES.FA)).toBe('/fa/404');
+    expect(localeHomePath(LOCALES.FA)).toBe('/fa/');
   });
 });

@@ -2,7 +2,7 @@
 import NavBar from '../components/NavBar.astro';
 import StickyDownloadAction from '../components/StickyDownloadAction.astro';
 import SkySurface from '../components/SkySurface.astro';
-import { LOCALES, LOCALE_META, switchLocalePath } from '../lib/locale';
+import { LOCALES, LOCALE_META, switchLocalePath, localeHomePath } from '../lib/locale';
 import { APP_STORE } from '../lib/appStore';
 import '../styles/global.css';
 // Hashed URLs for the two above-the-fold font files per locale, so preloads
@@ -25,9 +25,32 @@ interface Props {
    * not_found_handling), so this is defense-in-depth, not the primary
    * signal. */
   noindex?: boolean;
+  /**
+   * False for a route that exists in one document rather than one per locale.
+   * Such a page has no hreflang alternates to declare, because the translation
+   * it would point at was never built.
+   *
+   * Added 2026-08-08 after Google Search Console reported "Not found (404)".
+   * The 404 document is served at /404 with a 200 (it is a real asset; the
+   * not-found handling only uses it as the BODY for unmatched paths), so
+   * Googlebot crawls it as an ordinary page and reads its hreflang. It was
+   * declaring hreflang="fa" for /fa/404, which was never built and 404s. An
+   * hreflang alternate is a direct instruction to go and crawl that URL, so
+   * this was not a link Google happened to follow -- it was the site asking.
+   */
+  localized?: boolean;
 }
 
-const { title, description, lang, path, jsonLd, preloadFarsiVerse = false, noindex = false } = Astro.props;
+const {
+  title,
+  description,
+  lang,
+  path,
+  jsonLd,
+  preloadFarsiVerse = false,
+  noindex = false,
+  localized = true,
+} = Astro.props;
 const dir = LOCALE_META[lang].dir;
 // Phase 4 restores the night-start scroll arc for motion-OK visitors on
 // the homepage, so the transparent nav is back to needing cream text
@@ -39,6 +62,13 @@ const navOverDarkHero = path === '/' || path === '/fa/';
 const canonicalURL = new URL(path, Astro.site);
 const enPath = switchLocalePath(path, LOCALES.EN);
 const faPath = switchLocalePath(path, LOCALES.FA);
+// On an unlocalized route the derived counterpart does not exist, so the nav's
+// language toggle would offer a link straight into a 404. It goes to the other
+// locale's home instead, which is the useful destination anyway for someone who
+// has just landed somewhere that is not a page.
+const navLocaleHref = localized
+  ? undefined
+  : localeHomePath(lang === LOCALES.FA ? LOCALES.EN : LOCALES.FA);
 const ogImage = new URL(
   lang === 'fa' ? '/og/hamdam-dawn-fa-1200x630.jpg' : '/og/hamdam-dawn-1200x630.jpg',
   Astro.site
@@ -76,9 +106,15 @@ const ogImage = new URL(
     {noindex && <meta name="robots" content="noindex" />}
     <link rel="canonical" href={canonicalURL} />
     <link rel="manifest" href="/site.webmanifest" />
-    <link rel="alternate" hreflang="en" href={new URL(enPath, Astro.site)} />
-    <link rel="alternate" hreflang="fa" href={new URL(faPath, Astro.site)} />
-    <link rel="alternate" hreflang="x-default" href={new URL(enPath, Astro.site)} />
+    {
+      localized && (
+        <>
+          <link rel="alternate" hreflang="en" href={new URL(enPath, Astro.site)} />
+          <link rel="alternate" hreflang="fa" href={new URL(faPath, Astro.site)} />
+          <link rel="alternate" hreflang="x-default" href={new URL(enPath, Astro.site)} />
+        </>
+      )
+    }
 
     <!-- Open Graph -->
     <meta property="og:type" content="website" />
@@ -111,7 +147,7 @@ const ogImage = new URL(
 
     <SkySurface />
 
-    <NavBar lang={lang} overDarkHero={navOverDarkHero} />
+    <NavBar lang={lang} overDarkHero={navOverDarkHero} localeHref={navLocaleHref} />
 
     {
       /* relative + isolate + bg-cream: an explicit opaque background and
