@@ -13,6 +13,23 @@ export interface LayoutOptions {
   locale?: Locale;
 }
 
+/**
+ * Every interpolated attribute goes through `escapeHtml`, including the two
+ * that did not.
+ *
+ * `opts.bodyClass` and each `nav[].href` were written straight into a
+ * double-quoted attribute. Both are supplied by callers in this repository and
+ * every current value is a constant, so neither was exploitable the day it was
+ * found. That is a fact about the callers and not about this function, and it
+ * is exactly the property that stops being true quietly: the first caller to
+ * build a nav href out of a query parameter or a ticket subject would close
+ * the attribute with a `"` and open an event handler, and nothing in the type
+ * signature would object. A renderer is the last place that can still refuse,
+ * and it is cheap for it to refuse uniformly rather than case by case.
+ *
+ * `bodyClass` is unused today and kept rather than deleted because it costs a
+ * function call and removes the question.
+ */
 export function page(opts: LayoutOptions, bodyHtml: string): string {
   const locale = opts.locale ?? 'en';
   const t = strings(locale);
@@ -28,11 +45,11 @@ export function page(opts: LayoutOptions, bodyHtml: string): string {
 <link rel="stylesheet" href="/static/app.css">
 <meta name="robots" content="noindex">
 </head>
-<body${opts.bodyClass ? ` class="${opts.bodyClass}"` : ''}>
+<body${opts.bodyClass ? ` class="${escapeHtml(opts.bodyClass)}"` : ''}>
 <div class="shell${opts.wide ? ' shell--wide' : ''}">
 <header class="brand">
   <a class="wordmark" href="${home}">Hamdam <span>${escapeHtml(t.brandSupport)}</span></a>
-  <nav>${(opts.nav ?? []).map((n) => `<a href="${n.href}">${escapeHtml(n.label)}</a>`).join('')}<a href="${t.otherLanguageHref}" lang="${locale === 'fa' ? 'en' : 'fa'}">${escapeHtml(t.otherLanguage)}</a></nav>
+  <nav>${(opts.nav ?? []).map((n) => `<a href="${escapeHtml(n.href)}">${escapeHtml(n.label)}</a>`).join('')}<a href="${t.otherLanguageHref}" lang="${locale === 'fa' ? 'en' : 'fa'}">${escapeHtml(t.otherLanguage)}</a></nav>
 </header>
 ${bodyHtml}
 <footer class="meta">

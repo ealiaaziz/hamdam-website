@@ -31,6 +31,7 @@ ${opts.error ? `<div class="notice notice--error">${escapeHtml(opts.error)}</div
   <div class="field">
     <label for="description">${escapeHtml(t.fieldDescription)}</label>
     <textarea id="description" name="description" required>${val('description')}</textarea>
+    <p class="hint">${escapeHtml(t.submitAiNotice)}</p>
   </div>
   <div class="grid-2">
     <div class="field">

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { RATE_LIMITS, callerKey, consumeRateLimit, meteringSubject, networkKey } from '../src/rateLimit.js';
+import { RATE_LIMITS, callerKey, consumeRateLimit, mayEmailRecipient, meteringSubject, networkKey } from '../src/rateLimit.js';
 
 // The counter, against a stand-in for D1 that implements exactly the one
 // statement it runs. Not a mock that agrees with whatever was asked: it keeps
@@ -182,5 +182,49 @@ describe('networkKey', () => {
 
   it('ignores a zone index', () => {
     expect(networkKey('fe80::1%eth0')).toBe(networkKey('fe80::2'));
+  });
+});
+
+// Failing open here is a decision, not an oversight, and this pins it so the
+// next person to reach for "surely sending should fail closed" finds the
+// reason before they change it.
+//
+// Failing closed was written on 2026-08-08 and reverted the same day. A
+// refusal in this function is not a delay, because nothing in the Worker ever
+// re-reads an outbound row once it is marked failed: the scheduled handler
+// runs purgeRateLimits and ingestInbox and nothing else, and the hourly
+// Routine that used to drain the queue was retired on 2026-08-02. So a D1
+// wobble of a few seconds silently destroyed every acknowledgement and reply
+// in that window, and the requester never learned the desk had heard them.
+// Once a drain pass exists for rows left pending, this flips.
+describe('mayEmailRecipient', () => {
+  it('lets the mail through when D1 cannot answer, because a refusal here is permanent', async () => {
+    const outcome = await mayEmailRecipient(fakeDb(new Map(), true), 'someone@example.com', []);
+    expect(outcome.allowed).toBe(true);
+    // The fail-open signature from consumeRateLimit's catch block: allowed,
+    // with nothing counted, because there was no counter to count with.
+    expect(outcome.count).toBe(0);
+  });
+
+  it('still sends normally while the counter works', async () => {
+    const outcome = await mayEmailRecipient(fakeDb(), 'someone@example.com', []);
+    expect(outcome.allowed).toBe(true);
+    expect(outcome.count).toBe(1);
+  });
+
+  it('keeps the escalation exemption, which does not touch the counter at all', async () => {
+    // The exemption is checked before the bucket, so a broken D1 cannot
+    // silence the alert that tells a person something needs them. That is the
+    // one message whose whole purpose is to arrive.
+    const outcome = await mayEmailRecipient(fakeDb(new Map(), true), 'dev@hamdam.com.au', ['dev@hamdam.com.au']);
+    expect(outcome.allowed).toBe(true);
+  });
+
+  it('folds the address before counting, so plus-tags are not fresh buckets', async () => {
+    const rows = new Map();
+    const db = fakeDb(rows);
+    await mayEmailRecipient(db, 'victim+1@gmail.com', []);
+    const second = await mayEmailRecipient(db, 'victim+2@gmail.com', []);
+    expect(second.count).toBe(2);
   });
 });

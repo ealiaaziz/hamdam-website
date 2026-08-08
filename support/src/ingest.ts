@@ -2,7 +2,7 @@ import type { Env } from './types.js';
 import { classifyTicket, slaDueDates } from './itil.js';
 import { generateTrackingToken } from './ids.js';
 import { fetchInbox, fetchMessageHeaders, markRead, sendMail, canSendDirectly, SENDER, type InboundMessage } from './mailer.js';
-import { cleanSubject, planInbound, sameAddress, ticketIdFromSubject, type KnownThread } from './inbound.js';
+import { cleanSubject, planInbound, ticketIdFromSubject, type KnownThread } from './inbound.js';
 import { consumeRateLimit, mayEmailRecipient, meteringSubject } from './rateLimit.js';
 import { senderIsAuthenticated } from './authResults.js';
 import { unmeteredRecipients } from './escalation.js';
@@ -14,9 +14,11 @@ import { notifyEscalation } from './escalation.js';
 import { ackEmail } from './render/email.js';
 import { assistantWrittenEmail } from './render/agentEmail.js';
 import {
+  acquireIngestLock,
   addComment,
   claimModelCall,
   createTicket,
+  releaseIngestLock,
   DEFAULT_DAILY_CALL_LIMIT,
   getAgentState,
   getCheckpoint,
@@ -73,6 +75,23 @@ export interface IngestSummary {
   unread: number;
   /** Failed too many times and given up on, so the rest of the queue can move. */
   abandoned: number;
+  /**
+   * Filed, but answered by nobody: junk, an unauthenticated sender, or a
+   * ceiling reached.
+   *
+   * Counted because the alternative was a `console.warn` and a comment on a
+   * ticket, and neither of those adds up to a number anyone will ever look at.
+   * Suppression is the quietest thing this desk does, and the sender
+   * authentication gate added on 2026-08-08 can raise it without any other
+   * symptom: the mailbox looks normal, the queue fills normally, and the only
+   * visible difference is that requesters stop being answered. That is the
+   * exact shape of the failures `heartbeat.ts` exists to make visible, so it
+   * gets a counter, and the counter lands in `last_ingest_summary` where the
+   * console already reads it.
+   */
+  suppressed: number;
+  /** Of those, the ones the sending domain could not be authenticated for. */
+  unauthenticated: number;
 }
 
 /**
@@ -153,7 +172,14 @@ async function replyWithAssistant(env: Env, ticketId: number): Promise<void> {
       turns: comments
         .filter((m) => m.author_type === 'requester' || m.author_type === 'agent')
         .map((m) => ({ author: m.author_type === 'requester' ? ('requester' as const) : ('assistant' as const), body: m.body })),
-      claim: () => claimModelCall(env.DB, dailyCallLimit(env)),
+      // Same pair as the portal path, and it matters more here: the caller is
+      // an email address nobody has to prove they own, so without a
+      // per-ticket bound one thread is an unbounded claim on a shared daily
+      // budget. Per-ticket first, so a ticket over its own limit does not
+      // also spend a call off the day's to discover that.
+      claim: async () =>
+        (await consumeRateLimit(env.DB, 'model_call_ticket', String(ticketId))).allowed &&
+        (await claimModelCall(env.DB, dailyCallLimit(env))),
     },
   );
 
@@ -195,7 +221,7 @@ async function knownThread(env: Env, id: number | null): Promise<KnownThread | n
   return ticket ? { id: ticket.id, requesterEmail: ticket.requester_email } : null;
 }
 
-async function handleMessage(env: Env, message: InboundMessage): Promise<'created' | 'appended' | 'skipped'> {
+async function handleMessage(env: Env, message: InboundMessage, summary: IngestSummary): Promise<'created' | 'appended' | 'skipped'> {
   // Both candidate threads are resolved for real before routing, rather than
   // assumed and re-checked afterwards. planInbound needs to know who owns
   // each one to decide whether this sender may write to it, and a lookup that
@@ -207,20 +233,54 @@ async function handleMessage(env: Env, message: InboundMessage): Promise<'create
     knownThread(env, await ticketIdForConversation(env.DB, message.conversationId)),
   ]);
 
-  // Authentication costs a Graph call, so it is only paid where it changes
-  // the answer: when some existing thread would otherwise accept this
-  // message. Everything else opens a new ticket, where the From address is
-  // recorded rather than believed and proving it establishes nothing.
-  const claimsAThread = [taggedTicket, conversationTicket].some(
-    (thread) => thread && sameAddress(thread.requesterEmail, message.fromEmail),
-  );
-  let senderAuthenticated = false;
-  if (claimsAThread) {
-    const verdict = senderIsAuthenticated(await fetchMessageHeaders(env, message.id), message.fromEmail);
-    senderAuthenticated = verdict.authenticated;
-    if (!verdict.authenticated) {
-      console.warn(`inbound ${message.internetMessageId}: not appending, sender unauthenticated (${verdict.reason})`);
-    }
+  // Every message pays for the verdict now, not only the ones that claim an
+  // existing thread.
+  //
+  // The old rule paid for it when some thread would otherwise accept the
+  // message, on the reasoning that a new ticket merely *records* the From
+  // address rather than believing it, so proving it establishes nothing. That
+  // reasoning was true about filing and wrong about everything the desk does
+  // next. A brand new ticket also produces an acknowledgement and, straight
+  // after it, a model-written reply, and both are sent automatically to
+  // whatever address the From header names, from developer@hamdam.com.au,
+  // over a connection that DKIM-signs them as this domain. So anyone able to
+  // write a From line could point two pieces of mail this domain vouches for
+  // at an inbox of their choosing, and have a language model compose the
+  // second one. The From address was not believed; it was replied to, which
+  // is the same thing with a stamp on it.
+  //
+  // One extra Graph call per message is a small price against that, and the
+  // verdict is wanted on both paths anyway: appending needs it to decide
+  // ownership, and creating needs it to decide whether to answer.
+  //
+  // "Exchange says no" and "we could not ask Exchange" are different answers,
+  // and this used to conflate them. `fetchMessageHeaders` returns an empty
+  // array on a 401, a 429, a timeout or any other throw; it never raises. Fed
+  // straight into `senderIsAuthenticated` that reads as "no
+  // Authentication-Results", which reads as unauthenticated, which suppressed
+  // the reply and wrote a note on the ticket stating as fact that the sending
+  // domain had failed authentication. On a ten second Graph timeout that
+  // sentence is simply untrue, and it is untrue permanently, on a ticket an
+  // agent will read and repeat to a customer.
+  //
+  // So an empty header list is treated as a transient failure of this pass
+  // rather than as a verdict about the sender. It is raised below, once the
+  // cheap skips have run, and the existing three-attempt retry loop deals with
+  // it: three passes is three minutes, which comfortably outlasts a Graph
+  // blip. A message that never yields headers is abandoned loudly into
+  // `inbound_failures` with the reason attached, which is this file's
+  // preference throughout: give up in a way somebody notices, rather than
+  // carry on in a way nobody does.
+  const headers = await fetchMessageHeaders(env, message.id);
+  const headersAvailable = headers.length > 0;
+  const verdict = headersAvailable
+    ? senderIsAuthenticated(headers, message.fromEmail)
+    : { authenticated: false, reason: 'Graph returned no headers for this message' };
+  const senderAuthenticated = verdict.authenticated;
+  if (!senderAuthenticated && headersAvailable) {
+    console.warn(
+      `inbound ${message.internetMessageId}: sender unauthenticated (${verdict.reason}); filing without an automated reply`,
+    );
   }
 
   const plan = planInbound(message, {
@@ -244,6 +304,26 @@ async function handleMessage(env: Env, message: InboundMessage): Promise<'create
     return 'skipped';
   }
 
+  // Raised here and not thirty lines earlier, deliberately.
+  //
+  // A great deal of what arrives never needed a verdict at all: the desk's own
+  // outbound mail bouncing back into the inbox, delivery notifications, and
+  // messages the ledger has already seen. Throwing before the skip would put
+  // every one of those into `inbound_failures`, retry each three times, and
+  // leave the mailbox filling with unread machine mail, which would be a new
+  // failure invented to protect against an old one. Skipping is the right
+  // answer for them whether or not Graph was reachable.
+  //
+  // Nothing has been written for this message at this point, so raising here
+  // costs the pass and nothing else. The Graph call itself has already been
+  // paid for, which is the one piece of waste in this ordering and is the
+  // price of `planInbound` needing the verdict to decide routing.
+  if (!headersAvailable) {
+    throw new Error(
+      `could not read Authentication-Results for ${message.internetMessageId}: Graph returned no headers, so whether the sender is authentic is unknown`,
+    );
+  }
+
   // Everything below files the message either way. What this decides is
   // whether the desk also answers by itself, which is the part that costs a
   // model call and puts mail in somebody's inbox.
@@ -263,8 +343,16 @@ async function handleMessage(env: Env, message: InboundMessage): Promise<'create
   // person can see and act on in the console, the requester gets nothing
   // automatic, and if it turns out to be a real customer a human replies and
   // the thread works normally from there.
+  //
+  // A sender the domain could not authenticate gets the same treatment, and
+  // for a closely related reason. The desk's automatic mail is signed as
+  // hamdam.com.au and arrives with this domain's reputation behind it, so
+  // sending it to an address nobody has proved control of is lending that
+  // reputation to a stranger's choice of recipient. Filing costs nothing and
+  // loses nothing; replying is the part that has to be earned.
   const fromJunk = message.folder === 'junk';
-  const quiet = fromJunk || !(await automatedRepliesAllowed(env, message.fromEmail));
+  const quiet = fromJunk || !senderAuthenticated || !(await automatedRepliesAllowed(env, message.fromEmail));
+  const suppression: SuppressionReason = fromJunk ? 'junk' : !senderAuthenticated ? 'unauthenticated' : 'rate';
 
   if (plan.action === 'append') {
     // Cleaned on this path too. An append has already proved the sender is the
@@ -296,12 +384,12 @@ async function handleMessage(env: Env, message: InboundMessage): Promise<'create
       return 'appended';
     }
 
-    if (quiet) await noteSuppressed(env, plan.ticketId, fromJunk);
+    if (quiet) await noteSuppressed(env, plan.ticketId, summary, suppression, verdict.reason);
     else await replyWithAssistant(env, plan.ticketId);
     return 'appended';
   }
 
-  return handleAsNew(env, message, plan.body, quiet, fromJunk);
+  return handleAsNew(env, message, plan.body, summary, quiet, suppression, verdict.reason);
 }
 
 /**
@@ -311,11 +399,67 @@ async function handleMessage(env: Env, message: InboundMessage): Promise<'create
  * still in the queue, and still in the mailbox. All that stops is the desk
  * generating outbound mail in response, which is the only part an unmetered
  * sender can turn into volume.
+ *
+ * Both buckets have to agree, and the global one is the load-bearing half.
+ *
+ * The per-sender ceiling reads like the real control and is not one. Its key
+ * is `meteringSubject(fromEmail)`, and `fromEmail` here is an unauthenticated
+ * `From` header: a line of text the sending client writes, which an attacker
+ * changes between messages at no cost. Twenty per sender is therefore twenty
+ * multiplied by however many addresses somebody feels like typing, which is
+ * not a ceiling, it is a unit of measurement. Every per-key limit on an
+ * attacker-chosen key has this shape, and the only fix is a limit with no
+ * key in it.
+ *
+ * So the global bucket bounds the desk's automated mail as a whole, and the
+ * per-sender one stays because it still does the job it was written for:
+ * stopping one genuine, correctly-authenticated correspondent in a loop from
+ * consuming the global allowance that everybody else shares.
+ *
+ * The global one is consumed first and deliberately so. Both are consumed on
+ * every call whatever the outcome, which is the same "refused attempts still
+ * count" rule the rest of the limiter follows, and it is what stops a caller
+ * already over the line from resetting a window by continuing to hammer it.
+ *
+ * Worth knowing when reading the counters back: this is not called at all for
+ * a message from the junk folder or from a sender Exchange could not
+ * authenticate, because the caller short-circuits before it. Those are
+ * suppressed without spending anything, so `automated_reply_global` counts the
+ * messages the desk was willing to answer rather than every message it
+ * declined to. `summary.suppressed` is the number that counts all of them.
  */
 async function automatedRepliesAllowed(env: Env, fromEmail: string): Promise<boolean> {
-  const outcome = await consumeRateLimit(env.DB, 'inbound_sender', meteringSubject(fromEmail));
-  return outcome.allowed;
+  const global = await consumeRateLimit(env.DB, 'automated_reply_global', 'desk');
+  const sender = await consumeRateLimit(env.DB, 'inbound_sender', meteringSubject(fromEmail));
+  if (!global.allowed) {
+    console.warn(`ingest: automated replies paused, the desk is over its hourly ceiling (${global.count})`);
+  }
+  return global.allowed && sender.allowed;
 }
+
+/** Why the desk filed a message without answering it. */
+type SuppressionReason = 'junk' | 'unauthenticated' | 'rate';
+
+/**
+ * The note itself, as a function of what actually happened.
+ *
+ * The unauthenticated one takes Exchange's own words rather than paraphrasing
+ * them, and that is a correction rather than a flourish. It used to state
+ * flatly that "there was no aligned SPF or DKIM result on it", which is one
+ * of several things that can be true when the verdict comes back negative and
+ * is not true at all when it came back `dmarc=fail` or `unaligned or failing:
+ * dkim=fail spf=softfail`. An agent reads this note and repeats it to a
+ * customer, so it has to say what happened rather than the most likely thing
+ * that happened.
+ */
+const SUPPRESSION_NOTES: Record<SuppressionReason, (detail: string) => string> = {
+  junk: () =>
+    'This arrived in the junk folder, so the desk filed it without replying. That is deliberate: answering a message the spam filter rejected would confirm this mailbox to whoever sent it. If it is a real request, replying here works normally and the thread continues as usual.',
+  unauthenticated: (detail) =>
+    `Exchange could not confirm that this message really came from the address in its From line, so the desk filed the ticket and deliberately did not reply automatically. Its verdict was: ${detail}. The reason the desk stays quiet is that an automatic reply is signed as hamdam.com.au and would be going to an address a stranger could have chosen. Replying here by hand works normally and the thread continues as usual.`,
+  rate: () =>
+    'Automatic replies are paused: more mail arrived in the last hour than the desk answers by itself, either from this sender or across the desk as a whole. Nothing has been lost, and a person replying here works normally.',
+};
 
 /**
  * Records, on the ticket, that the desk deliberately said nothing.
@@ -324,14 +468,32 @@ async function automatedRepliesAllowed(env: Env, fromEmail: string): Promise<boo
  * is a ticket that looks like the assistant simply failed. Whoever opens it
  * needs to know the silence was a decision and roughly why.
  */
-async function noteSuppressed(env: Env, ticketId: number, fromJunk = false): Promise<void> {
-  const reason = fromJunk
-    ? 'This arrived in the junk folder, so the desk filed it without replying. That is deliberate: answering a message the spam filter rejected would confirm this mailbox to whoever sent it. If it is a real request, replying here works normally and the thread continues as usual.'
-    : 'Automatic replies are paused for this sender: more messages arrived in the last hour than the desk answers by itself. Nothing has been lost, and a person replying here works normally.';
-  await addComment(env.DB, ticketId, 'system', null, reason);
+async function noteSuppressed(
+  env: Env,
+  ticketId: number,
+  summary: IngestSummary,
+  reason: SuppressionReason = 'rate',
+  detail = '',
+): Promise<void> {
+  // Counted here rather than where `quiet` is decided, so the counter and the
+  // note cannot disagree. Deciding to be quiet is not the same as being quiet:
+  // an appended message asking the desk to close the ticket is answered with
+  // `replyClosed` and never reaches this function, so counting it at the
+  // decision would have reported a suppression that visibly did not happen.
+  summary.suppressed++;
+  if (reason === 'unauthenticated') summary.unauthenticated++;
+  await addComment(env.DB, ticketId, 'system', null, SUPPRESSION_NOTES[reason](detail));
 }
 
-async function handleAsNew(env: Env, message: InboundMessage, rawBody: string, quiet = false, fromJunk = false): Promise<'created'> {
+async function handleAsNew(
+  env: Env,
+  message: InboundMessage,
+  rawBody: string,
+  summary: IngestSummary,
+  quiet = false,
+  suppression: SuppressionReason = 'rate',
+  suppressionDetail = '',
+): Promise<'created'> {
   // cleanSubject strips the [HAM-N] tag and the Re:/Fwd: prefix; cleanLine is
   // what makes the result safe to display, and the display is the point: the
   // subject and the sender's name are what an agent reads in the console queue
@@ -378,7 +540,18 @@ async function handleAsNew(env: Env, message: InboundMessage, rawBody: string, q
     slaResolveDue: resolveDue,
   });
 
-  await addComment(env.DB, ticketId, 'requester', fromName, body);
+  // The ledger row goes in the moment the ticket exists, before anything
+  // else on this path can throw.
+  //
+  // It used to be written after the first comment, which reads as tidier and
+  // is the wrong order. `wasProcessed` at the top of handleMessage is what
+  // stops a message being handled twice, and it only knows what the ledger
+  // has been told. A crash anywhere between createTicket and the write left
+  // a real ticket in the database and no ledger row against it, so the retry
+  // loop saw a fresh message, made a second ticket, and on the third attempt
+  // a third: one email, three tickets, and the requester's history split
+  // across them. Recording first means a retry appends nothing and skips,
+  // which is the outcome a duplicate should have.
   await recordInbound(env.DB, {
     internetMessageId: message.internetMessageId,
     conversationId: message.conversationId,
@@ -387,8 +560,10 @@ async function handleAsNew(env: Env, message: InboundMessage, rawBody: string, q
     subject: message.subject,
   });
 
+  await addComment(env.DB, ticketId, 'requester', fromName, body);
+
   if (quiet) {
-    await noteSuppressed(env, ticketId, fromJunk);
+    await noteSuppressed(env, ticketId, summary, suppression, suppressionDetail);
     return 'created';
   }
 
@@ -423,11 +598,49 @@ async function handleAsNew(env: Env, message: InboundMessage, rawBody: string, q
  * goes unnoticed until someone asks why they were ignored.
  *
  * One message failing does not stop the others, for the same reason.
+ *
+ * One pass at a time, too. The cron fires every sixty seconds and a full
+ * batch takes minutes, so without the lock the normal case is several passes
+ * running at once over the same checkpoint, duplicating tickets,
+ * acknowledgements, model calls and outbound mail. See `acquireIngestLock`
+ * for why it expires rather than being held.
  */
 export async function ingestInbox(env: Env): Promise<IngestSummary> {
-  const summary: IngestSummary = { fetched: 0, created: 0, appended: 0, skipped: 0, failed: 0, unread: 0, abandoned: 0 };
+  const summary: IngestSummary = {
+    fetched: 0,
+    created: 0,
+    appended: 0,
+    skipped: 0,
+    failed: 0,
+    unread: 0,
+    abandoned: 0,
+    suppressed: 0,
+    unauthenticated: 0,
+  };
   if (!canSendDirectly(env)) return summary;
 
+  // Losing the race is a normal outcome, not an error. The mail is still
+  // there, the pass that holds the lock is reading it, and if that pass dies
+  // the lock expires and the next cron takes over. So: the empty summary and
+  // nothing written anywhere that would make a healthy desk look broken. An
+  // acquire that fails because D1 could not answer is a different thing and
+  // does write `last_ingest_error`; that happens inside `acquireIngestLock`,
+  // which is the only place that can tell the two apart.
+  const holding = await acquireIngestLock(env.DB);
+  if (!holding) return summary;
+
+  try {
+    return await ingestPass(env, summary);
+  } finally {
+    // Handing the holding back is what makes this a release rather than a
+    // clear. A pass that overran its TTL no longer owns the lock, and must
+    // not free the one the next cron is holding.
+    await releaseIngestLock(env.DB, holding);
+  }
+}
+
+/** The pass itself, with the lock already held. */
+async function ingestPass(env: Env, summary: IngestSummary): Promise<IngestSummary> {
   const since = await getCheckpoint(env.DB);
 
   // Why a run failed is written to the database, not only to the log.
@@ -464,7 +677,7 @@ export async function ingestInbox(env: Env): Promise<IngestSummary> {
   let highWater = since;
   for (const message of messages) {
     try {
-      const outcome = await handleMessage(env, message);
+      const outcome = await handleMessage(env, message, summary);
       summary[outcome === 'created' ? 'created' : outcome === 'appended' ? 'appended' : 'skipped']++;
       await clearInboundFailure(env.DB, message.internetMessageId);
       if (message.receivedAt > highWater) highWater = message.receivedAt;

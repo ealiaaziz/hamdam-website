@@ -106,3 +106,33 @@ describe('and still converts real HTML', () => {
     expect(out.length).toBeLessThan(64 * 1024);
   });
 });
+
+// Order of operations inside stripHtml, which was wrong.
+//
+// Tags were stripped first and entities decoded second, so an encoded tag
+// walked past the strip as inert text and had its brackets handed back to it
+// on the way out. What this function returns is treated as plain text by every
+// caller: it becomes a ticket comment, it goes into the console, into the
+// model's context, and into the body of an email the desk sends. The one
+// function whose job is to remove markup was, on that input, manufacturing it.
+describe('stripHtml and encoded markup', () => {
+  it('does not re-materialise a tag that arrived encoded', () => {
+    const out = stripHtml('<p>hello &lt;img src=x onerror=alert(1)&gt; world</p>');
+    expect(out).not.toContain('<img');
+    expect(out).not.toContain('onerror');
+    expect(out).toContain('hello');
+    expect(out).toContain('world');
+  });
+
+  it('does not re-materialise one that arrived double-encoded either', () => {
+    // &amp;lt; decodes to &lt; on the first pass, which is the same problem
+    // arriving one layer further down.
+    const out = stripHtml('<p>a &amp;lt;script&amp;gt;alert(1)&amp;lt;/script&amp;gt; b</p>');
+    expect(out).not.toContain('<script');
+    expect(out).not.toContain('</script');
+  });
+
+  it('leaves ordinary decoded punctuation alone', () => {
+    expect(stripHtml('<p>Tom &amp; Jerry said &quot;hi&quot;</p>')).toBe('Tom & Jerry said "hi"');
+  });
+});

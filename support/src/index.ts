@@ -9,7 +9,7 @@ import { ackEmail, agentReplyEmail, conversationSummaryEmail, requesterReplyNoti
 import { assistantWrittenEmail } from './render/agentEmail.js';
 import { generateTrackingToken, parseTicketPublicId, stripHtml, ticketPublicId, tokensMatch } from './ids.js';
 import { cleanLine, cleanText, isOversizedBody, isValidEmail, MAX_BODY_CHARS, MAX_NAME_CHARS, MAX_SUBJECT_CHARS } from './validation.js';
-import { callerKey, consumeRateLimit, mayEmailRecipient, purgeRateLimits, type RateLimitBucket } from './rateLimit.js';
+import { callerKey, consumeRateLimit, mayEmailRecipient, meteringSubject, purgeRateLimits, type RateLimitBucket } from './rateLimit.js';
 import { httpsRedirectTarget, isCrossSiteRequest, isLocalHost, localePrefixTarget, trackingUrl } from './urls.js';
 import { extractAccessToken, fetchAccessKeys, verifyAccessJwt } from './access.js';
 import { KB_ARTICLES } from './kb.js';
@@ -185,9 +185,17 @@ async function queueAndSend(c: DeskContext, email: NewOutboundEmail): Promise<nu
     else await markOutboundFailed(c.env.DB, id, result.reason);
   };
 
-  // Marked failed, not left pending, so the reason is visible. The Routine
-  // retries failed rows too; a row with no explanation is the thing that
-  // wastes an afternoon.
+  // Marked failed, not left pending, so the reason is visible in the console
+  // rather than the row sitting there looking like it is still on its way.
+  //
+  // Corrected 2026-08-08. This used to say "the Routine retries failed rows
+  // too", and it has not been true since the hourly Routine was retired on
+  // 2026-08-02. Nothing in this Worker re-reads a `failed` or a `pending`
+  // outbound row: the scheduled handler runs `purgeRateLimits` and
+  // `ingestInbox`, and that is the whole of it. So `failed` here means a
+  // person has to notice it and resend, which is exactly why
+  // `mayEmailRecipient` fails open rather than closed, and why a drain pass
+  // belongs on the list of things this desk still needs.
   c.executionCtx.waitUntil(deliver());
   return id;
 }
@@ -227,29 +235,31 @@ async function overRateLimit(c: DeskContext, bucket: RateLimitBucket, subject?: 
 
 const app = new Hono<DeskEnv>();
 
-// Redirect http to https before anything else runs, and never serve a
-// ticket over plaintext.
-//
-// Cloudflare's "Always Use HTTPS" zone setting should catch this at the
-// edge (README covers turning it on) and Universal SSL provisions the
-// certificate automatically, but a zone setting is one dashboard toggle
-// away from being off. This Worker is the last thing that can still
-// refuse, and the stakes here are higher than on the marketing site: the
-// tracking token in /tickets/:id?token=... is the only credential guarding
-// a ticket, so one plaintext request leaks a working credential.
-//
-// HSTS below is not a substitute. Browsers ignore a Strict-Transport-Security
-// header delivered over plaintext http, and it does nothing on a first-ever
-// visit -- the redirect is what makes that first request safe.
-//
-// CF-Ray, not the hostname, is what tells us this is a real edge request:
-// `wrangler dev` reports the custom domain as the Host, so a hostname check
-// would 301 local development to production. See httpsRedirectTarget.
-app.use('*', async (c, next) => {
-  const target = httpsRedirectTarget(c.req.url, viaCloudflareEdge(c.req.raw.headers));
-  if (target) return c.redirect(target, 301);
-
-  await next();
+/**
+ * The security headers, as a function, so the two responses that never got
+ * them can have them too.
+ *
+ * These used to be set inline in the middleware below, after `await next()`,
+ * which quietly meant they were applied to exactly the responses that come
+ * back *through* that await and to nothing else. Two do not:
+ *
+ *  - The HTTPS redirect returns before `next()` is ever called, so the one
+ *    response in this Worker that is definitely being served over plaintext,
+ *    to a browser that has not yet been told to use TLS, was the only one
+ *    with no HSTS on it. That is the response HSTS exists for. A browser
+ *    following the 301 does get the header from the https response that
+ *    follows, so this was a narrow miss rather than an open door, and it is
+ *    still the wrong way round.
+ *  - `onError` produces its 500 outside the middleware chain, so the response
+ *    served when something has already gone wrong, which is when the
+ *    behaviour of the page is least predictable, was the one served with no
+ *    CSP, no nosniff and no frame-ancestors.
+ *
+ * A named function applied in all three places, rather than three copies of
+ * the list, because the failure this is fixing is a list that existed in one
+ * place and was not reached from two others.
+ */
+function applySecurityHeaders(c: Context<DeskEnv>): void {
   c.header('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'");
   c.header('X-Frame-Options', 'DENY');
   c.header('X-Content-Type-Options', 'nosniff');
@@ -272,6 +282,41 @@ app.use('*', async (c, next) => {
   if (!c.res.headers.has('cache-control')) {
     c.header('Cache-Control', 'private, no-store, max-age=0');
   }
+}
+
+// Redirect http to https before anything else runs, and never serve a
+// ticket over plaintext.
+//
+// Cloudflare's "Always Use HTTPS" zone setting should catch this at the
+// edge (README covers turning it on) and Universal SSL provisions the
+// certificate automatically, but a zone setting is one dashboard toggle
+// away from being off. This Worker is the last thing that can still
+// refuse, and the stakes here are higher than on the marketing site: the
+// tracking token in /tickets/:id?token=... is the only credential guarding
+// a ticket, so one plaintext request leaks a working credential.
+//
+// HSTS is not a substitute, even now that the redirect carries it too.
+// Browsers ignore a Strict-Transport-Security header delivered over plaintext
+// http, and it does nothing on a first-ever visit -- the redirect is what
+// makes that first request safe. Setting it on the 301 as well is belt and
+// braces for the browsers that do keep it, not a replacement for redirecting.
+//
+// CF-Ray, not the hostname, is what tells us this is a real edge request:
+// `wrangler dev` reports the custom domain as the Host, so a hostname check
+// would 301 local development to production. See httpsRedirectTarget.
+app.use('*', async (c, next) => {
+  const target = httpsRedirectTarget(c.req.url, viaCloudflareEdge(c.req.raw.headers));
+  if (target) {
+    // Set on the redirect itself, not only on what it redirects to. This is
+    // the plaintext response, so it is the one that most needs to tell the
+    // browser never to try plaintext again.
+    c.res = c.redirect(target, 301);
+    applySecurityHeaders(c);
+    return c.res;
+  }
+
+  await next();
+  applySecurityHeaders(c);
 });
 
 // The MTA-STS policy, served before anything else looks at the request.
@@ -402,10 +447,43 @@ app.post('/tickets', async (c) => {
   // deliver a stranger's subject line to a stranger's inbox.
   if (!isValidEmail(email)) return invalid(strings(requestLocale(c)).errorEmail);
 
+  // The exemption from the outbound ceiling is not a public form field.
+  //
+  // `unmeteredRecipients` exempts developer@hamdam.com.au and the escalation
+  // list from `outbound_recipient`, and that exemption is right: an alert to
+  // the team is the one message whose entire purpose is to arrive, and
+  // metering it would let a busy hour silence the thing announcing the hour
+  // is busy. What nothing checked is that those addresses are also just
+  // strings a stranger can type into this form. Doing so opens a ticket whose
+  // requester is a team address, so the acknowledgement, the assistant's
+  // reply and every summary afterwards all go to that address with the one
+  // ceiling that bounds outbound mail turned off, and they arrive at the
+  // inbox the desk itself reads. That is an unbounded mail amplifier aimed at
+  // the team, and it is also a way to fill the mailbox the cron is trying to
+  // work through.
+  //
+  // Folded through `meteringSubject` for the same reason the exemption check
+  // is: an exemption that can be dodged by spelling an address differently is
+  // not one, and this guard has to fold exactly the way the thing it guards
+  // does or it will disagree with it.
+  const meteredEmail = meteringSubject(email);
+  if (unmeteredRecipients(c.env).some((address) => meteringSubject(address) === meteredEmail)) {
+    // The same generic error the shape check gives. Confirming which
+    // addresses are special would tell a stranger who the team are and which
+    // of their addresses this desk treats differently, and there is no honest
+    // message to show here anyway: a real person at one of those addresses
+    // does not need the public form.
+    return invalid(strings(requestLocale(c)).errorEmail);
+  }
+
   // Counted per recipient as well as per caller. A caller with a pool of
   // addresses can defeat the IP limit; they cannot defeat both, and what
   // needs bounding is how much mail one person can be sent.
-  const emailLimited = await overRateLimit(c, 'ticket_create_email', email.toLowerCase());
+  //
+  // Folded rather than merely lowercased. `victim+1@gmail.com` and
+  // `victim+2@gmail.com` are one inbox and were two buckets, so the ceiling
+  // this line exists to enforce was a suggestion to anyone who had noticed.
+  const emailLimited = await overRateLimit(c, 'ticket_create_email', meteredEmail);
   if (emailLimited) return emailLimited;
 
   const requester = await upsertRequester(c.env.DB, email, name);
@@ -550,6 +628,10 @@ app.post('/tickets/:id/feedback', async (c) => {
   const ticket = await getTicketById(c.env.DB, id);
   if (!ticket || !tokensMatch(ticket.tracking_token, token)) return c.notFound();
 
+  // Read before metering, because which bucket applies depends on which
+  // button was pressed, and the two buttons cost the desk entirely different
+  // things. Reading a form on a request that has already produced a valid
+  // tracking token is not the expensive part of anything.
   const form = await readForm(c);
   if (!form) return c.text('Expected a form submission.', 400);
   const outcome = String(form.get('outcome') ?? '');
@@ -560,12 +642,59 @@ app.post('/tickets/:id/feedback', async (c) => {
   const articleId = KB_ARTICLES.some((a) => a.id === submitted) ? submitted : '';
 
   if (outcome === 'solved') {
-    await addComment(c.env.DB, id, 'system', null, `Requester reported that the suggested article "${articleId}" resolved this.`);
-    await updateTicketStatus(c.env.DB, id, 'resolved');
-    // They have agreed it is fixed. That is the settled state worth putting
-    // in their inbox, and the only thing in it is what they already read.
-    await queueConversationSummary(c, ticket, await listComments(c.env.DB, id), 'resolved');
+    // Metered on the same bucket as /summary, and after the token check for
+    // the same reason it is there: a caller guessing ticket numbers must not
+    // be able to spend a real requester's allowance.
+    //
+    // This route was not metered at all, which made it the cheaper of the two
+    // doors to the same action. Pressing "this solved it" resolves the ticket
+    // and emails the whole conversation, so anyone holding one tracking token,
+    // including the requester's own mail client following a link, could ask
+    // the desk for unlimited outbound mail while the button beside it was
+    // capped at ten an hour. Sharing the bucket rather than adding a new one
+    // is deliberate: what is being bounded is mail to this person, not presses
+    // of a particular button.
+    const limited = await overRateLimit(c, 'ticket_summary');
+    if (limited) return limited;
+
+    // Idempotent on the feedback, not on the ticket's status, and the
+    // difference is not academic.
+    //
+    // Keying on `status !== 'resolved'` looked like the same thing and was
+    // strictly worse: it also swallowed the press when an agent had already
+    // resolved the ticket in the console. A requester who then opens their
+    // tracking link, reads the suggestion and presses "this solved it" is
+    // telling the desk something it does not know yet, namely that the
+    // article was the thing that helped, and the whole route exists to
+    // capture that. They got no comment recorded, no summary, and a redirect
+    // that looked exactly like success.
+    //
+    // So the guard asks the question actually being asked: has this ticket
+    // already had a "solved" press recorded on it? A second press then means
+    // nothing at all, which is what a reload or a replayed POST should mean,
+    // and a first press still counts however the ticket got to where it is.
+    const comments = await listComments(c.env.DB, id);
+    if (!alreadyReportedSolved(comments)) {
+      await addComment(c.env.DB, id, 'system', null, solvedNote(articleId));
+      if (ticket.status !== 'resolved') await updateTicketStatus(c.env.DB, id, 'resolved');
+      // They have agreed it is fixed. That is the settled state worth putting
+      // in their inbox, and the only thing in it is what they already read.
+      await queueConversationSummary(c, ticket, await listComments(c.env.DB, id), 'resolved');
+    }
   } else if (outcome === 'unresolved') {
+    // A different bucket, because this is a different cost.
+    //
+    // "This did not help" sends no mail at all: it writes a comment, records
+    // a rejection and moves the ticket off `new`. Metering it against
+    // `ticket_summary` put a storage-only action behind the desk's outbound
+    // mail ceiling, so a requester who had emailed themselves the
+    // conversation ten times that hour could no longer tell the desk an
+    // article was wrong. That signal is the most valuable thing this route
+    // collects, and it was the one being dropped. `ticket_reply` is the
+    // bucket for a press that stores something, which is what this is.
+    const limited = await overRateLimit(c, 'ticket_reply');
+    if (limited) return limited;
+
     await addComment(c.env.DB, id, 'system', null, `Requester reported that the suggested article "${articleId}" did not help. Needs a person.`);
     // Remember it, so nothing offers this article again on this ticket.
     if (articleId) await recordRejectedArticle(c.env.DB, id, articleId);
@@ -574,6 +703,31 @@ app.post('/tickets/:id/feedback', async (c) => {
 
   return c.redirect(`/tickets/${id}?token=${encodeURIComponent(token)}`, 303);
 });
+
+/** The system note a "this solved it" press leaves behind. */
+function solvedNote(articleId: string): string {
+  return `Requester reported that the suggested article "${articleId}" resolved this.`;
+}
+
+/**
+ * Whether a "this solved it" press has already been recorded on this ticket.
+ *
+ * Reads the note back rather than keeping a column for it, because the note is
+ * already the record: it is written on the same path, in the same transaction
+ * order, and it is the thing an agent reads to know what happened. A second
+ * source of truth for "did this fire" is a second thing that can disagree.
+ *
+ * Matched on both ends of the sentence so it cannot collide with the
+ * "did not help" note, which shares its opening words.
+ */
+function alreadyReportedSolved(comments: readonly { author_type: string; body: string }[]): boolean {
+  return comments.some(
+    (comment) =>
+      comment.author_type === 'system' &&
+      comment.body.startsWith('Requester reported that the suggested article') &&
+      comment.body.endsWith('resolved this.'),
+  );
+}
 
 // "Email me where this got to."
 //
@@ -693,7 +847,17 @@ app.post('/tickets/:id/reply', async (c) => {
         ai: c.env.AI,
         ticketSubject: ticket.subject,
         turns: threadTurns(allComments),
-        claim: () => claimModelCall(c.env.DB, dailyCallLimit(c.env)),
+        // Two budgets, and both have to say yes. The daily one caps what the
+        // desk spends; the per-ticket one caps how much of that any single
+        // conversation may take, which the daily one on its own cannot do. A
+        // global counter with no per-ticket bound means one tracking token is
+        // enough to empty the day's assistant for every other requester.
+        //
+        // Ordered per-ticket first so a ticket that has already used its six
+        // does not also spend a call off the daily budget being told so.
+        claim: async () =>
+          (await consumeRateLimit(c.env.DB, 'model_call_ticket', String(id))).allowed &&
+          (await claimModelCall(c.env.DB, dailyCallLimit(c.env))),
       },
     );
     await addComment(c.env.DB, id, 'agent', ASSISTANT_NAME, reply.body);
@@ -1020,7 +1184,12 @@ app.notFound((c) => c.text('Not found', 404));
  */
 app.onError((error, c) => {
   console.error(`unhandled ${c.req.method} ${new URL(c.req.url).pathname}:`, error instanceof Error ? error.stack ?? error.message : String(error));
-  return c.text('Something went wrong. Please try again, or email developer@hamdam.com.au.', 500);
+  // Hono runs this outside the middleware chain, so nothing above has set a
+  // header on it. The response served when something has already gone wrong
+  // is the last one that should be the unprotected one.
+  c.res = c.text('Something went wrong. Please try again, or email developer@hamdam.com.au.', 500);
+  applySecurityHeaders(c);
+  return c.res;
 });
 
 /**

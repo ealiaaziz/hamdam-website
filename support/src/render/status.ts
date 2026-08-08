@@ -22,15 +22,27 @@ export function ticketStatusPage(opts: {
   const policy = SLA_POLICY[ticket.priority];
   const overdue = isOverdue(ticket.sla_first_response_due, ticket.first_response_at) && !ticket.first_response_at;
 
+  // System notes are the desk talking to itself, and this page is not where
+  // that conversation belongs.
+  //
+  // They read as internal bookkeeping and some of them are worse than that.
+  // "someone@hamdam.com.au discarded a suggested reply" puts an agent's
+  // Cloudflare Access address on a page reachable by anyone holding a
+  // tracking token, which includes anyone the requester ever forwarded one of
+  // the desk's emails to. The assistant's declined reasons are the same shape
+  // of leak in the other direction: "model answered a Hamdam question from
+  // general knowledge; refused" describes how the desk's guards work to the
+  // one audience with a reason to probe them.
+  //
+  // The same filter `queueConversationSummary` already applies before mailing
+  // a thread, which is the same content going to the same person. Having the
+  // page and the email disagree about what the requester may see was the
+  // actual bug: one of them was wrong and it was not the email.
   const thread = comments
+    .filter((c) => c.author_type === 'requester' || c.author_type === 'agent')
     .map((c) => {
-      const roleClass = c.author_type === 'requester' ? 'msg--requester' : c.author_type === 'agent' ? 'msg--agent' : 'msg--system';
-      const who =
-        c.author_type === 'agent'
-          ? escapeHtml(c.author_name ?? t.supportAuthor)
-          : c.author_type === 'system'
-            ? escapeHtml(t.systemAuthor)
-            : escapeHtml(t.you);
+      const roleClass = c.author_type === 'requester' ? 'msg--requester' : 'msg--agent';
+      const who = c.author_type === 'agent' ? escapeHtml(c.author_name ?? t.supportAuthor) : escapeHtml(t.you);
       return `<div class="msg ${roleClass}">
   <div class="meta"><span>${who}</span><span>${formatDateTime(c.created_at)}</span></div>
   <div class="body">${textToSafeHtml(c.body)}</div>
@@ -46,7 +58,7 @@ ${opts.justEmailed ? `<div class="notice notice--ok">${escapeHtml(t.statusNotice
 <p class="lede">${escapeHtml(publicId)} &middot; ${escapeHtml(t.openedAt)} ${formatDateTime(ticket.created_at)}</p>
 ${opts.suggestion ?? ''}
 <div class="card">
-  <div style="display:flex;gap:0.5rem;align-items:center;margin-bottom:1rem">
+  <div class="badge-row">
     ${priorityBadge(ticket.priority)}
     ${statusBadge(ticket.status, locale)}
     ${overdue ? `<span class="badge badge--breach">${escapeHtml(t.overdue)}</span>` : ''}

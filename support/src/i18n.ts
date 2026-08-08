@@ -66,6 +66,24 @@ export interface Strings {
   fieldEmail: string;
   fieldSubject: string;
   fieldDescription: string;
+  /**
+   * The line under the description box saying what happens to what they type.
+   *
+   * Added 2026-08-08. The desk sends the subject, the description and every
+   * later message on the thread to Cloudflare Workers AI so the assistant can
+   * draft a reply, and until this line existed the only place that was written
+   * down was a design document nobody submitting a ticket has read. Telling
+   * somebody after the fact that a third party processed the paragraph they
+   * just wrote about their problem is not a disclosure, it is an apology.
+   *
+   * Placed under the field rather than in the lede at the top, because the
+   * moment it is useful is the moment they are deciding what to type, and it
+   * says what to do about it rather than only what happens: leave the part out
+   * and say so. It also says a person reads every ticket regardless, because
+   * without that the notice reads as "a robot will handle this", which is both
+   * discouraging and untrue.
+   */
+  submitAiNotice: string;
   fieldImpact: string;
   fieldUrgency: string;
   impactLow: string;
@@ -145,6 +163,8 @@ const EN: Strings = {
   fieldEmail: 'Your email',
   fieldSubject: 'Subject',
   fieldDescription: 'What is happening?',
+  submitAiNotice:
+    'An automated assistant reads what you write here so it can answer you straight away, and it runs on Cloudflare Workers AI. Please leave out anything you would not want processed that way. A person on the team reads every ticket either way.',
   fieldImpact: 'Who is affected?',
   fieldUrgency: 'How urgent is it?',
   impactLow: 'Just me',
@@ -229,6 +249,8 @@ const FA: Strings = {
   fieldEmail: 'ایمیل شما',
   fieldSubject: 'موضوع',
   fieldDescription: 'چه اتفاقی افتاده است؟',
+  submitAiNotice:
+    'یک دستیار خودکار آنچه را اینجا می‌نویسید می‌خواند تا بتواند بی‌درنگ پاسخ بدهد، و این دستیار روی Cloudflare Workers AI اجرا می‌شود. لطفاً چیزی را که نمی‌خواهید به این شکل پردازش شود ننویسید. در هر حال یک نفر از تیم همه‌ی درخواست‌ها را می‌خواند.',
   fieldImpact: 'چه کسانی درگیر شده‌اند؟',
   fieldUrgency: 'چقدر فوری است؟',
   impactLow: 'فقط خودم',
