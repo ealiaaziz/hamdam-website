@@ -609,12 +609,31 @@ anything from a check run seconds after an upload.
 Search Console will clear the report itself at the next crawl of that host.
 "Validate Fix" in the indexing report asks for it sooner.
 
-Worth knowing for the next hostname: `support.hamdam.com.au` also has no
-robots.txt and also 404s it. Google had not crawled it as of 2026-08-08 ("URL
-is unknown to Google"), but it has a certificate, so it will be found the same
-way. Unlike the MTA-STS host it answers 200 on `/` and `/fa`, so the outcome
-there is not a 404 report -- it is the public ticket form being indexed. That
-is a product decision rather than a bug, and it has not been made.
+**And the desk itself, decided the same day.** `support.hamdam.com.au` had the
+same gap: no robots.txt, 404 on it, and a certificate, so Google would have
+found it the same way it found the MTA-STS host. Unlike that host it answers
+200 on `/` and `/fa`, so the outcome would not have been a 404 report -- it
+would have been the portal, and anything reachable from it, in the index.
+
+The decision is none of it: `Disallow: /` for the whole desk. Nothing here
+wants to be a search result -- the portal is reached from the app and from
+hamdam.com.au, not from a query -- and one route makes it more than a
+preference. `/tickets/:id` carries its tracking token in the query string.
+That route already refuses without a token that matches the row, checked with
+`tokensMatch`, so robots.txt is not what keeps a ticket private and nothing
+here relies on it being obeyed. It is what stops a token-bearing URL becoming
+a search result if one ever leaks into a crawlable page.
+
+It is served above the country check, and that is the point rather than a
+convenience: Google documents 4xx on robots.txt, 403 explicitly included, as
+meaning no robots.txt exists and therefore no restrictions. A crawler arriving
+from outside `ALLOWED_COUNTRIES` would have taken the out-of-region 403 as
+permission for everything. `/health` and the MTA-STS policy sit above that
+check for their own reasons; this is a third.
+
+The body lives in `src/robots.ts` rather than inline, so it is testable: no
+route in `index.ts` has unit tests, and an `Allow:` line slipped in later
+would carve a hole in exactly the subtree that must not be re-opened.
 
 **Still open.**
 

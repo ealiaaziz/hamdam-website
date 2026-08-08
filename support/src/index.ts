@@ -17,6 +17,7 @@ import { suggestionBlock } from './render/agentSuggestion.js';
 import { canSendDirectly, sendMail } from './mailer.js';
 import { isAllowedCountry, parseAllowedCountries } from './geo.js';
 import { mtaStsResponseFor } from './mtaSts.js';
+import { SUPPORT_ROBOTS_BODY } from './robots.js';
 import { viaCloudflareEdge } from './edge.js';
 import { HEARTBEAT_KEY, readHeartbeat } from './heartbeat.js';
 import { adminAllowlist, isAllowedAgent } from './adminAccess.js';
@@ -326,6 +327,21 @@ app.get('/health', async (c) => {
     'cache-control': 'public, max-age=30',
   });
 });
+
+// Keep the desk out of search results entirely. See src/robots.ts for what is
+// being protected and why none of it depends on this file.
+//
+// Above the country check, and that placement is the whole point rather than a
+// convenience: Google documents a 4xx on robots.txt -- 403 included -- as
+// meaning no robots.txt exists, i.e. no restrictions. A crawler arriving from
+// outside ALLOWED_COUNTRIES would get the out-of-region 403 here and conclude
+// the desk was entirely open to it, which is the opposite of what this says.
+app.get('/robots.txt', (c) =>
+  c.text(SUPPORT_ROBOTS_BODY, 200, {
+    'content-type': 'text/plain; charset=utf-8',
+    'cache-control': 'public, max-age=3600',
+  }),
+);
 
 // Serve only where Hamdam is sold.
 //
