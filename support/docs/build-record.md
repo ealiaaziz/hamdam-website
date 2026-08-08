@@ -573,6 +573,36 @@ Verified live after deploying: the policy serves over HTTPS with a valid
 certificate, every other path on that hostname 404s, and the support portal
 and its own `.well-known` are unaffected.
 
+**A hostname is public the moment it has a certificate (2026-08-08).** Six
+days after this shipped, Google Search Console reported "Not found (404)"
+against `hamdam.com.au`. The URL was `https://mta-sts.hamdam.com.au/`, crawled
+2026-08-06, and the chain is worth recording because nothing linked to it and
+nothing had to.
+
+Certificates are logged to Certificate Transparency, Google reads those logs,
+so issuing a cert for a hostname *is* publishing that hostname. Googlebot
+tried `/robots.txt`, got the same deliberate 404 as everything else, and a 404
+on `/robots.txt` means "no restrictions" -- the opposite of what this host
+wants to say. So it crawled `/`, got the deliberate 404, and reported it. The
+Search Console property is `sc-domain:hamdam.com.au`, a *domain* property, so
+it covers every subdomain and the mail-plumbing host's 404 was filed as a
+problem with the marketing site.
+
+The 404 is correct and stays. What was missing was the instruction not to ask:
+`mta-sts.hamdam.com.au/robots.txt` now serves `User-agent: * / Disallow: /`.
+That is the second file this hostname serves, and the only exception to the
+"one file" rule above. It cannot affect mail -- RFC 8461 senders construct the
+policy URL and fetch it directly, and no MTA consults robots.txt -- and a test
+asserts the policy path still serves, because that is the one way this change
+could have been expensive.
+
+Worth knowing for the next hostname: `support.hamdam.com.au` also has no
+robots.txt and also 404s it. Google had not crawled it as of 2026-08-08 ("URL
+is unknown to Google"), but it has a certificate, so it will be found the same
+way. Unlike the MTA-STS host it answers 200 on `/` and `/fa`, so the outcome
+there is not a 404 report -- it is the public ticket form being indexed. That
+is a product decision rather than a bug, and it has not been made.
+
 **Still open.**
 
 * **Zone SSL mode is `full`, not `full (strict)`.** Attempted on 2026-08-02

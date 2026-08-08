@@ -38,6 +38,32 @@ export const MTA_STS_HOSTNAME = 'mta-sts.hamdam.com.au';
 export const MTA_STS_PATH = '/.well-known/mta-sts.txt';
 
 /**
+ * The one exception to "one file", added 2026-08-08.
+ *
+ * This hostname is not a website, but nothing told the crawlers that. It is a
+ * real host with a real certificate, and a certificate is public: Google reads
+ * Certificate Transparency logs, so a hostname is discovered the moment it is
+ * issued one, with no link to it anywhere. Googlebot found this host that way,
+ * requested `/`, got the deliberate 404 below, and Search Console reported
+ * "Not found (404)" against the whole hamdam.com.au domain property on
+ * 2026-08-08. Confirmed by URL inspection: crawled 2026-08-06 as MOBILE,
+ * pageFetchState NOT_FOUND, robotsTxtState ALLOWED -- allowed because a 404 on
+ * /robots.txt means "no restrictions", which is the opposite of what this host
+ * wants to say.
+ *
+ * The 404 itself is correct and stays. What was missing is the instruction not
+ * to ask in the first place.
+ *
+ * This cannot affect mail. RFC 8461 senders construct the policy URL and fetch
+ * it directly; robots.txt is a crawler convention that no MTA consults. The
+ * policy path keeps serving exactly as before, which the tests assert.
+ */
+export const MTA_STS_ROBOTS_PATH = '/robots.txt';
+
+/** Disallow everything: there is nothing here for a search engine. */
+export const MTA_STS_ROBOTS_BODY = 'User-agent: *\nDisallow: /\n';
+
+/**
  * The mail exchangers a sender is permitted to deliver to.
  *
  * Both the exact host from the zone's MX record and Microsoft's wildcard.
@@ -119,6 +145,9 @@ export type MtaStsResponse = { status: 200; body: string } | { status: 404 };
  * hostname exists for one file. Letting it fall through to the portal would
  * publish the ticket form, and eventually the console, on an address that was
  * added for mail plumbing and that nobody would think to check.
+ *
+ * Two files now: the policy, and a robots.txt that says do not crawl any of
+ * this. See MTA_STS_ROBOTS_PATH for why that stopped being optional.
  */
 export function mtaStsResponseFor(requestUrl: string): MtaStsResponse | null {
   let url: URL;
@@ -128,6 +157,7 @@ export function mtaStsResponseFor(requestUrl: string): MtaStsResponse | null {
     return null;
   }
   if (url.hostname.toLowerCase() !== MTA_STS_HOSTNAME) return null;
-  if (url.pathname !== MTA_STS_PATH) return { status: 404 };
-  return { status: 200, body: mtaStsPolicy() };
+  if (url.pathname === MTA_STS_PATH) return { status: 200, body: mtaStsPolicy() };
+  if (url.pathname === MTA_STS_ROBOTS_PATH) return { status: 200, body: MTA_STS_ROBOTS_BODY };
+  return { status: 404 };
 }

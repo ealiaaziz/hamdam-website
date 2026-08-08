@@ -9,6 +9,8 @@ import {
   mtaStsDnsRecord,
   mtaStsPolicy,
   mtaStsResponseFor,
+  MTA_STS_ROBOTS_PATH,
+  MTA_STS_ROBOTS_BODY,
 } from '../src/mtaSts.js';
 
 // This file is read by other people's mail servers, and the failure it can
@@ -90,6 +92,39 @@ describe('what gets served, and where', () => {
     // plumbing that nobody would think to audit.
     for (const path of ['/', '/tickets/1', '/admin', '/fa', '/.well-known/security.txt']) {
       expect(mtaStsResponseFor(`https://${MTA_STS_HOSTNAME}${path}`), path).toEqual({ status: 404 });
+    }
+  });
+
+  it('serves a disallow-everything robots.txt', () => {
+    // Without this the host answered 404 for /robots.txt, which a crawler
+    // reads as "no restrictions". Googlebot found the hostname through
+    // Certificate Transparency (a cert is public the moment it is issued, so
+    // no link to the host is needed), requested /, and Search Console
+    // reported the 404 against the whole hamdam.com.au domain property.
+    expect(mtaStsResponseFor(`https://${MTA_STS_HOSTNAME}${MTA_STS_ROBOTS_PATH}`)).toEqual({
+      status: 200,
+      body: MTA_STS_ROBOTS_BODY,
+    });
+  });
+
+  it('disallows every crawler and every path', () => {
+    expect(MTA_STS_ROBOTS_BODY).toMatch(/^User-agent: \*$/m);
+    expect(MTA_STS_ROBOTS_BODY).toMatch(/^Disallow: \/$/m);
+  });
+
+  it('still serves the policy, which is the one thing robots.txt must not have broken', () => {
+    // Mail servers construct the policy URL and fetch it directly; no MTA
+    // consults robots.txt. If this ever fails, inbound mail is at risk and the
+    // robots.txt change is the thing to revert.
+    expect(mtaStsResponseFor(`https://${MTA_STS_HOSTNAME}${MTA_STS_PATH}`)).toEqual({
+      status: 200,
+      body: mtaStsPolicy(),
+    });
+  });
+
+  it('does not serve robots.txt on any other hostname', () => {
+    for (const host of ['hamdam.com.au', 'support.hamdam.com.au', 'www.hamdam.com.au']) {
+      expect(mtaStsResponseFor(`https://${host}${MTA_STS_ROBOTS_PATH}`), host).toBeNull();
     }
   });
 
