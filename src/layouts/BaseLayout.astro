@@ -1,6 +1,5 @@
 ---
 import NavBar from '../components/NavBar.astro';
-import StickyDownloadAction from '../components/StickyDownloadAction.astro';
 import SkySurface from '../components/SkySurface.astro';
 import { LOCALES, LOCALE_META, switchLocalePath, localeHomePath } from '../lib/locale';
 import { APP_STORE } from '../lib/appStore';
@@ -161,8 +160,6 @@ const ogImage = new URL(
       <slot />
     </main>
 
-    <StickyDownloadAction lang={lang} />
-
     <script>
       import { REVEAL, staggerDelayMs, prefersReducedMotion } from '../lib/reveal';
       import { observeCtaLandmarks, shouldShowFloatingCta, isPastScrollThreshold } from '../lib/stickyCta';
@@ -258,16 +255,25 @@ const ogImage = new URL(
         applyScrollEffects();
       }
 
-      // Floating CTA (nav compact pill + sticky mobile pill): exactly one
-      // App Store action visible at a time, driven by [data-store-cta]
-      // landmark visibility, not scroll percentage.
+      // Floating CTA: exactly one App Store action visible at a time, driven
+      // by [data-store-cta] landmark visibility, not scroll percentage.
+      //
+      // The nav bar's pill is now that one action at every width. There used
+      // to be a second, a sticky pill at the bottom of the viewport on mobile,
+      // toggled by this same boolean -- so on a phone BOTH appeared together,
+      // which is the thing "exactly one" was written to prevent (verified at
+      // 393px: two on screen; at 1440px: one, because the sticky one was
+      // md:hidden). The bottom pill was also the one that floated over the
+      // page: measured at 393px it crossed 118 elements while scrolling,
+      // including the mood demo's "There is more waiting for you in the app"
+      // link, which it covered by ~4800px2 and made untappable at that scroll
+      // position. Removing it fixes the duplicate and the overlap in one move,
+      // and costs no reach: the nav is fixed, so its pill is on screen in
+      // exactly the same states this one was.
       const navCta = document.querySelector<HTMLElement>('[data-nav-cta]');
-      const stickyCta = document.querySelector<HTMLElement>('[data-sticky-cta]');
-      if (navCta || stickyCta) {
+      if (navCta) {
         observeCtaLandmarks((state) => {
-          const show = shouldShowFloatingCta(state);
-          navCta?.toggleAttribute('data-visible', show);
-          stickyCta?.toggleAttribute('data-visible', show);
+          navCta.toggleAttribute('data-visible', shouldShowFloatingCta(state));
         });
       }
 

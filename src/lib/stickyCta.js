@@ -1,9 +1,17 @@
-// Pure state machine for the floating CTA (nav compact pill on desktop, the
-// sticky mobile pill) plus the nav-backing scroll threshold. Exactly one
-// App Store action is ever visible at once (15-conversion-specification.md
-// §1, §2): the floating CTA shows only when none of hero/mid/ceremony's own
-// CTA is currently in the viewport, and it also stays hidden across the
-// footer (added post-launch, 2026-07-19 -- see computeCtaState).
+// Pure state machine for the floating CTA (the nav bar's pill, at every
+// width) plus the nav-backing scroll threshold. Exactly one App Store action
+// is ever visible at once (15-conversion-specification.md §1, §2): the
+// floating CTA shows only when none of hero/mid/ceremony's own CTA is
+// currently in the viewport, and it also stays hidden across the footer
+// (added post-launch, 2026-07-19 -- see computeCtaState).
+//
+// There was a second consumer until 2026-08-08: StickyDownloadAction, a pill
+// fixed to the bottom of the viewport on mobile, toggled by this same
+// boolean. Since it was md:hidden and the nav pill was not, a phone showed
+// both at once -- the exact thing "exactly one" exists to prevent -- and the
+// bottom one floated over the page, crossing 118 elements at 393px including
+// an in-page link it made untappable. It was removed rather than restyled;
+// the nav is fixed, so its pill is on screen in all the same states.
 //
 // Sections register themselves with a `data-store-cta="hero|mid|ceremony|
 // footer"` landmark as each one ships (Phase 3 for hero, Phase 7 for mid,
