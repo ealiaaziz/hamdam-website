@@ -5,6 +5,7 @@ import { getBrisbaneToday } from '../lib/countdown';
 import { countdownText, formatMomentDate, upcomingOccurrences } from '../lib/momentText';
 import { ROOTS_MOMENTS } from '../data/rootsMoments';
 import { MOMENT_ALT, MOMENT_COPY, MOMENT_SLUGS, MOMENT_PAGE_IDS, MOMENT_UI } from '../data/momentContent';
+import { FAL_HAFEZ } from '../data/falHafez';
 import { APP_STORE, appStoreUrl } from '../lib/appStore';
 import momentYalda from '../assets/website-redesign/moment-yalda.png';
 import momentNorooz from '../assets/website-redesign/moment-norooz.png';
@@ -73,6 +74,15 @@ const siblings = MOMENT_PAGE_IDS.filter((id) => id !== momentId).map((id) => {
 // Every string below comes from MOMENT_UI, which holds them byte-exact from
 // the components that already owned them. Nothing is typed here.
 const bridge = MOMENT_UI.bridge[lang];
+// Yalda is the night the Divan comes out, so its page points at the practice.
+// The other two moments have no such association and get no such link.
+if (momentId === 'yalda') {
+  siblings.unshift({
+    name: lang === 'fa' ? FAL_HAFEZ.titleFa : FAL_HAFEZ.titleEn,
+    href: lang === 'fa' ? `/fa/${FAL_HAFEZ.slug}/` : `/${FAL_HAFEZ.slug}/`,
+  });
+}
+
 const homeHref = lang === 'fa' ? '/fa/' : '/';
 const homeLabel = MOMENT_UI.home[lang];
 const ctaLabel = MOMENT_UI.cta[lang];

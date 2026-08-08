@@ -1,0 +1,268 @@
+---
+import { Image } from 'astro:assets';
+import { FAL_HAFEZ, FAL_HAFEZ_BODY_EN } from '../data/falHafez';
+import { verses } from '../data/verses';
+import { poets } from '../data/poets';
+import { MOMENT_UI, MOMENT_SLUGS } from '../data/momentContent';
+import { APP_STORE, appStoreUrl } from '../lib/appStore';
+import portraitHafez from '../assets/website-redesign/poet-hafez.png';
+
+// The Fal-e Hafez page body, EN and FA. Same surface and the same rules as the
+// poet and moment pages: the English side carries the explanation, the Farsi
+// side carries everything for which approved Farsi exists and omits the rest
+// rather than inventing it, and the verse prints where its English came from.
+
+interface Props {
+  lang: 'en' | 'fa';
+}
+
+const { lang } = Astro.props;
+
+const title = lang === 'fa' ? FAL_HAFEZ.titleFa : FAL_HAFEZ.titleEn;
+const tagline = lang === 'fa' ? FAL_HAFEZ.taglineFa : FAL_HAFEZ.taglineEn;
+const verse = verses.find((v) => v.id === FAL_HAFEZ.verseId);
+const hafez = poets[0];
+
+// The two pages this one belongs between: the poet whose book it is, and the
+// night it is most often done on. Both already exist and both link back.
+const related = [
+  {
+    name: lang === 'fa' ? hafez.persianName : hafez.transliteration,
+    href: lang === 'fa' ? '/fa/poets/hafez/' : '/poets/hafez/',
+  },
+  {
+    name: lang === 'fa' ? 'یلدا' : 'Yalda',
+    href: lang === 'fa' ? `/fa/moments/${MOMENT_SLUGS.yalda}/` : `/moments/${MOMENT_SLUGS.yalda}/`,
+  },
+];
+
+const homeHref = lang === 'fa' ? '/fa/' : '/';
+const homeLabel = MOMENT_UI.home[lang];
+const ctaLabel = MOMENT_UI.cta[lang];
+
+// Identical wording to the poet pages, and for the identical reason: the
+// English on this verse is machine-generated, the public domain renderings
+// exist but index by English title rather than by the Divan number this verse
+// cites, and a wrong pairing is worse than an honest label. See the header of
+// src/data/poetPages.ts.
+const provenance =
+  lang === 'fa'
+    ? 'English translation: machine-generated, pending replacement.'
+    : 'English translation: machine-generated, pending replacement with a cited public domain rendering.';
+---
+
+<article class="fal">
+  <div class="fal__inner">
+    <p class="fal__crumb"><a href={homeHref}>{homeLabel}</a></p>
+
+    <div class="fal__head">
+      <div class="fal__portrait">
+        <Image
+          src={portraitHafez}
+          alt=""
+          width={portraitHafez.width}
+          height={portraitHafez.height}
+          widths={[240, 480]}
+          sizes="180px"
+          quality={78}
+          loading="eager"
+          fetchpriority="high"
+          class="fal__portrait-img"
+        />
+      </div>
+      <div class="fal__titles">
+        <h1 class="fal__title text-balance">{title}</h1>
+        <p class="fal__tagline text-balance">{tagline}</p>
+      </div>
+    </div>
+
+    {
+      /* English only, deliberately. See the note on FAL_HAFEZ_BODY_EN. */
+      lang === 'en' && (
+        <div class="fal__body">
+          {FAL_HAFEZ_BODY_EN.map((paragraph) => (
+            <p>{paragraph}</p>
+          ))}
+        </div>
+      )
+    }
+
+    {
+      verse && (
+        <figure class="fal__verse">
+          <p class="fal__verse-fa" lang="fa" dir="rtl" set:html={verse.persian.replace(/\n/g, '<br />')} />
+          <p class="fal__verse-en" lang="en" dir="ltr">{verse.english}</p>
+          <figcaption class="fal__verse-meta" lang="en" dir="ltr">
+            <span>{verse.source}</span>
+            <span>{provenance}</span>
+          </figcaption>
+        </figure>
+      )
+    }
+
+    {
+      APP_STORE.RELEASED && (
+        <p class="fal__cta-row">
+          <a class="fal__cta" href={appStoreUrl(lang, null, 'fal')} data-store-cta>
+            {ctaLabel}
+          </a>
+        </p>
+      )
+    }
+
+    <ul class="fal__related">
+      {related.map((r) => (
+        <li><a href={r.href}>{r.name}</a></li>
+      ))}
+    </ul>
+  </div>
+</article>
+
+<style>
+  .fal {
+    padding-block: 6rem 5rem;
+    padding-inline: 1.5rem;
+    background-color: var(--surface-firstlight);
+    color: var(--text-on-night);
+  }
+  @media (min-width: 640px) {
+    .fal { padding-block: 7.5rem 6rem; }
+  }
+
+  .fal__inner {
+    max-width: var(--container-reading);
+    margin-inline: auto;
+  }
+
+  .fal__crumb {
+    font-family: var(--font-sans);
+    font-size: var(--text-meta);
+    color: var(--text-on-night-muted);
+  }
+  :global([lang='fa']) .fal__crumb { font-family: var(--font-farsi); }
+  .fal__crumb a { color: inherit; text-decoration: underline; text-underline-offset: 0.25em; }
+  .fal__crumb a:hover { color: var(--text-on-night); }
+
+  .fal__head {
+    margin-top: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+  }
+
+  .fal__portrait {
+    flex: none;
+    width: 120px;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    overflow: hidden;
+    background: linear-gradient(160deg, var(--surface-dusk), var(--surface-night));
+  }
+  @media (min-width: 640px) {
+    .fal__portrait { width: 180px; }
+  }
+  .fal__portrait-img { width: 100%; height: 100%; object-fit: cover; }
+
+  .fal__titles { flex: 1 1 12rem; }
+
+  .fal__title {
+    font-family: var(--font-serif);
+    font-size: var(--text-display);
+    font-weight: 600;
+    line-height: 1.1;
+  }
+  :global([lang='fa']) .fal__title {
+    font-family: var(--font-farsi);
+    font-size: var(--text-display-fa);
+    font-weight: 500;
+    line-height: 1.3;
+  }
+
+  .fal__tagline {
+    margin-top: 0.75rem;
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: var(--text-h3);
+    color: var(--hamdam-night-gold);
+  }
+  :global([lang='fa']) .fal__tagline {
+    font-family: var(--font-farsi);
+    font-style: normal;
+  }
+
+  .fal__body {
+    margin-top: 2.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    font-family: var(--font-serif);
+    font-size: var(--text-body);
+    line-height: 1.7;
+  }
+
+  .fal__verse {
+    margin-top: 2.5rem;
+    padding: 1.5rem;
+    border-radius: var(--radius-card);
+    background: rgb(244 237 216 / 0.04);
+    border: 1px solid var(--hamdam-night-gold);
+  }
+  .fal__verse-fa {
+    font-family: var(--font-farsi);
+    font-size: var(--text-verse-fa);
+    line-height: 2;
+    text-align: right;
+  }
+  .fal__verse-en {
+    margin-top: 1rem;
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: var(--text-verse-en);
+    line-height: 1.7;
+  }
+  .fal__verse-meta {
+    margin-top: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    font-family: var(--font-sans);
+    font-size: var(--text-meta);
+    color: var(--text-on-night-muted);
+  }
+
+  .fal__cta-row { margin-top: 2rem; }
+  .fal__cta {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding-inline: 1.5rem;
+    border-radius: var(--radius-button);
+    background: var(--hamdam-night-gold);
+    color: var(--surface-night);
+    font-family: var(--font-sans);
+    font-weight: 600;
+  }
+  :global([lang='fa']) .fal__cta { font-family: var(--font-farsi); }
+  .fal__cta:hover { filter: brightness(1.06); }
+
+  .fal__related {
+    margin-top: 3.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid rgb(244 237 216 / 0.16);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem 1.5rem;
+    font-family: var(--font-serif);
+  }
+  :global([lang='fa']) .fal__related { font-family: var(--font-farsi); }
+  .fal__related a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    color: var(--hamdam-night-gold);
+    text-decoration: underline;
+    text-underline-offset: 0.25em;
+  }
+  .fal__related a:hover { color: var(--text-on-night); }
+</style>

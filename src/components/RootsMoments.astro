@@ -8,6 +8,7 @@ import { ROOTS_MOMENTS, ROOTS_LABELS, HERITAGE_COUNTRIES, ROADMAP_COUNTRIES, AU_
 // and this section read one copy of the approved text and one countdown
 // implementation, rather than each keeping their own.
 import { MOMENT_ALT as CARD_ALT, MOMENT_COPY as CARD_COPY, MOMENT_SLUGS } from '../data/momentContent';
+import { FAL_HAFEZ } from '../data/falHafez';
 import { countdownText, formatMomentDate } from '../lib/momentText';
 import momentYalda from '../assets/website-redesign/moment-yalda.png';
 import momentNorooz from '../assets/website-redesign/moment-norooz.png';
@@ -265,7 +266,15 @@ const copy =
 
       <p class="roots__closing">{copy.closing}</p>
       {copy.note && <p class="roots__note">{copy.note}</p>}
-      <p class="roots__fal">{copy.falHafez}</p>
+      {
+        /* The approved Fal-e Hafez line was already sitting here as plain text.
+           Making it the link into /fal-e-hafez/ costs no new copy and gives that
+           page a route in from the highest-authority page on the site, which is
+           the difference between a content cluster and an orphan. */
+      }
+      <p class="roots__fal">
+        <a href={lang === 'fa' ? `/fa/${FAL_HAFEZ.slug}/` : `/${FAL_HAFEZ.slug}/`}>{copy.falHafez}</a>
+      </p>
     </div>
 
     {
@@ -609,6 +618,16 @@ const copy =
     text-align: center;
     font-size: var(--text-meta);
     color: var(--text-on-night-muted);
+  }
+
+  .roots__fal a {
+    color: inherit;
+    text-underline-offset: 0.2em;
+  }
+  .roots__fal a:hover,
+  .roots__fal a:focus-visible {
+    text-decoration: underline;
+    color: var(--hamdam-night-gold);
   }
 
   .roots__fal {

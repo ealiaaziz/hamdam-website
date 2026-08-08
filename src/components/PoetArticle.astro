@@ -3,6 +3,7 @@ import { Image } from 'astro:assets';
 import { POET_PAGES, POET_PAGE_BY_SLUG, poetFor } from '../data/poetPages';
 import { verses } from '../data/verses';
 import { MOMENT_UI } from '../data/momentContent';
+import { FAL_HAFEZ } from '../data/falHafez';
 import { APP_STORE, appStoreUrl } from '../lib/appStore';
 
 // One page body for the five poet pages, EN and FA.
@@ -40,6 +41,17 @@ const siblings = POET_PAGES.filter((p) => p.slug !== slug).map((p) => {
     href: lang === 'fa' ? `/fa/poets/${p.slug}/` : `/poets/${p.slug}/`,
   };
 });
+
+// Hafez alone gets one more: the fal is his book being opened, so the page
+// about the practice belongs next to the page about the poet. Nothing else in
+// POET_PAGES has an equivalent, which is why this is a special case rather
+// than a field.
+if (slug === 'hafez') {
+  siblings.unshift({
+    name: lang === 'fa' ? FAL_HAFEZ.titleFa : FAL_HAFEZ.titleEn,
+    href: lang === 'fa' ? `/fa/${FAL_HAFEZ.slug}/` : `/${FAL_HAFEZ.slug}/`,
+  });
+}
 
 const homeHref = lang === 'fa' ? '/fa/' : '/';
 const homeLabel = MOMENT_UI.home[lang];

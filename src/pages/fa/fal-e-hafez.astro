@@ -1,0 +1,36 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import FalHafezArticle from '../../components/FalHafezArticle.astro';
+import Footer from '../../components/Footer.astro';
+import { FAL_HAFEZ } from '../../data/falHafez';
+import { MOMENT_UI } from '../../data/momentContent';
+import { momentPageSchema } from '../../lib/schema';
+
+// The Farsi pair. No Persian is authored here: the title is the proper noun
+// lifted from approved copy, and the description is the approved tagline, which
+// is already live on the homepage.
+const path = '/fa/fal-e-hafez/';
+const description = FAL_HAFEZ.taglineFa;
+const title = `${FAL_HAFEZ.titleFa} | ${MOMENT_UI.home.fa}`;
+
+const jsonLd = momentPageSchema({
+  lang: 'fa',
+  name: FAL_HAFEZ.titleFa,
+  description,
+  url: new URL(path, Astro.site).href,
+  breadcrumbHome: MOMENT_UI.home.fa,
+  homeUrl: new URL('/fa/', Astro.site).href,
+});
+---
+
+<BaseLayout
+  title={title}
+  description={description}
+  lang="fa"
+  path={path}
+  jsonLd={jsonLd}
+  navOverDarkHero={true}
+>
+  <FalHafezArticle lang="fa" />
+  <Footer lang="fa" />
+</BaseLayout>

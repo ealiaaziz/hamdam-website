@@ -1,0 +1,41 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import FalHafezArticle from '../components/FalHafezArticle.astro';
+import Footer from '../components/Footer.astro';
+import { FAL_HAFEZ } from '../data/falHafez';
+import { momentPageSchema } from '../lib/schema';
+
+// The English Fal-e Hafez page. The Farsi pair is src/pages/fa/fal-e-hafez.astro.
+//
+// A static route rather than a dynamic one: there is exactly one of these, and
+// getStaticPaths over a single-element array would be ceremony.
+const path = '/fal-e-hafez/';
+
+// The description leads with the definition, because the query behind this page
+// is often literally "what is fal-e hafez". Long enough to be a real snippet,
+// short enough not to be truncated.
+const description =
+  'Fal-e Hafez is a question put to a book: hold the question, open the Divan of Hafez at random, and read the ghazal you land on. Read at Yalda and Norooz. Hamdam does it on your iPhone, in Persian beside English.';
+const title = 'Fal-e Hafez: the Divan of Hafez, opened at random | Hamdam';
+
+const jsonLd = momentPageSchema({
+  lang: 'en',
+  name: FAL_HAFEZ.titleEn,
+  description,
+  url: new URL(path, Astro.site).href,
+  breadcrumbHome: 'Hamdam',
+  homeUrl: new URL('/', Astro.site).href,
+});
+---
+
+<BaseLayout
+  title={title}
+  description={description}
+  lang="en"
+  path={path}
+  jsonLd={jsonLd}
+  navOverDarkHero={true}
+>
+  <FalHafezArticle lang="en" />
+  <Footer lang="en" />
+</BaseLayout>
