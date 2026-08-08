@@ -245,6 +245,12 @@ const ctaLabel = MOMENT_UI.cta[lang];
   .moment__date--next {
     border-color: var(--hamdam-night-gold);
   }
+  /* Set by the script below when a date has passed and the page has not been
+     rebuilt since. Explicit because [hidden] loses to a flex item's display. */
+  .moment__date[hidden],
+  .moment__dates[hidden] {
+    display: none;
+  }
 
   .moment__date-value {
     display: block;
@@ -327,3 +333,68 @@ const ctaLabel = MOMENT_UI.cta[lang];
     color: var(--text-on-night);
   }
 </style>
+
+<script>
+  // Self-healing countdowns.
+  //
+  // The dates and the "arrives in N days" line are both computed at build time,
+  // which is correct the day it builds and drifts every day after. That matters
+  // here more than anywhere else on the site: these pages exist for seasonal
+  // search, so the moment they finally earn traffic (Yalda in December, Norooz
+  // in March) is the moment they are most likely to be months stale, telling a
+  // visitor a confidently wrong number.
+  //
+  // The alternative considered was a scheduled rebuild. It was rejected for two
+  // reasons. The CI workflow's own header states that CI does not deploy and
+  // must never deploy, and a cron that pushes to trigger Workers Builds depends
+  // on webhook behaviour that cannot be verified from a development machine, so
+  // its failure mode is silent and indistinguishable from the bug it fixes.
+  // This runs in the visitor's browser, needs no credentials and no
+  // infrastructure, and is testable now by moving the clock.
+  //
+  // It reuses the same two pure functions the server rendered with, so the
+  // client can never word the sentence differently from the build, and no new
+  // Persian is introduced: countdownText owns both languages already.
+  import { getBrisbaneToday, daysBetween } from '../lib/countdown';
+  import { countdownText } from '../lib/momentText';
+
+  const list = document.querySelector<HTMLElement>('.moment__dates');
+  const rows = [...document.querySelectorAll<HTMLElement>('.moment__date')];
+
+  if (list && rows.length) {
+    const lang = document.documentElement.lang === 'fa' ? 'fa' : 'en';
+    // The h1 is the moment's name in the page's own language, which is exactly
+    // the string the server passed to countdownText.
+    const name = document.querySelector('.moment__title')?.textContent?.trim() ?? '';
+    const today = getBrisbaneToday();
+    let seenUpcoming = false;
+
+    for (const row of rows) {
+      const iso = row.querySelector('time')?.getAttribute('datetime');
+      if (!iso) continue;
+      const [year, month, day] = iso.split('-').map(Number);
+      if (!year || !month || !day) continue;
+
+      const daysUntil = daysBetween(today, { year, month, day });
+
+      if (daysUntil < 0) {
+        // Already happened, and the page has not been rebuilt since.
+        row.hidden = true;
+        row.classList.remove('moment__date--next');
+        continue;
+      }
+
+      row.hidden = false;
+      const countdown = row.querySelector('.moment__date-countdown');
+      if (countdown && name) countdown.textContent = countdownText(lang, daysUntil, name);
+      // The gold border belongs to the nearest date still ahead, which is not
+      // the one the build chose once the build's choice has passed.
+      row.classList.toggle('moment__date--next', !seenUpcoming);
+      seenUpcoming = true;
+    }
+
+    // Every banked date has passed. Showing nothing beats showing a list of
+    // dates that are all in the past; the rest of the page still stands.
+    list.hidden = !seenUpcoming;
+  }
+</script>
