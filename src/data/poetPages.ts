@@ -95,11 +95,7 @@ export const POET_PAGES: readonly PoetPage[] = [
   {
     poetIndex: 3,
     slug: 'khayyam',
-    // No Khayyam verse is banked in src/data/verses.ts (it carries Hafez,
-    // Rumi, Saadi and two Parvin). The page renders without a verse rather
-    // than borrowing one or having a Persian bayt typed in here, which this
-    // repo forbids outright. Add the id once the bank is re-extracted with one.
-    verseId: null,
+    verseId: 'khayyam-002',
     translation: { kind: 'machine' },
     lifespan: '1048 to 1131, Nishapur',
     biographyEn: [

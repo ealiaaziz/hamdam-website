@@ -1,6 +1,22 @@
 // Verses for the landing pages, extracted byte-exact from the iOS app's
 // bundled verse bank (Hamdam/Content/Verses/*.json) — Ganjoor-sourced and
 // already validated. Do not hand-edit the Persian; re-extract instead.
+//
+// khayyam-002 added 2026-08-07. Not re-extracted from the app, because the iOS
+// repository is not reachable from this session; lifted by script from
+// social/verse-queue.json, which is in this repository and carries the same
+// corpus in the same schema.
+//
+// That equivalence was proved rather than assumed. For all five verses this
+// file already had, the queue's `persian` is byte-identical, which is the field
+// that must never be typed by hand. Their `english` differs in one way only:
+// this file keeps the em dashes the app ships, and the queue has them replaced
+// with commas, because scripts/check-dashes.mjs excludes this file and not that
+// one. The entry below therefore carries the queue's de-dashed English, which
+// is the same sentence.
+//
+// If the verse bank is ever re-extracted properly, this entry should be
+// replaced by the extraction rather than merged with it.
 
 export interface Verse {
   id: string;
@@ -12,6 +28,14 @@ export interface Verse {
 }
 
 export const verses: readonly Verse[] = [
+  {
+    id: "khayyam-002",
+    persian: "چون عهده نمي‌شود كسي فردا را\nحالي خوش دار اين دلِ پر سودا را\nمِي نوش به ماهتاب اي ماه كه ماه\nبسيار بتابد و نيابد ما را",
+    english: "Since none can guarantee tomorrow, keep this restless heart content today / Drink wine by moonlight — the moon will shine long after we are gone.",
+    poetEn: "Khayyam",
+    poetFa: "خیام",
+    source: "Rubaiyat of Khayyam, Rubai 2",
+  },
   {
     id: "hafez-016",
     persian: "غنچه گو تنگ‌دل از كارِ فروبسته مَباش\nكز دَمِ صبح مدد يابي و انفاسِ نسيم",
