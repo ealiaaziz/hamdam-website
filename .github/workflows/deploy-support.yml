@@ -6,24 +6,17 @@
 # the deliberate exception, and it is narrow on purpose.
 #
 # It only ever runs when somebody asks for it by name. There is no `push`
-# trigger and there must never be one. What it buys is that deploying the desk
-# stops requiring a particular laptop with a particular wrangler login, and
-# starts being a thing that runs the tests first, records who asked, and leaves
-# a log. Before this, the only gate between a change and the mailbox that talks
-# to customers was a person remembering to run `npm test`.
+# trigger and there must never be one.
 #
 # The credential never leaves GitHub. CLOUDFLARE_API_TOKEN is a repository
-# secret, scoped in the Cloudflare dashboard to Workers Scripts and this zone's
-# Workers Routes, and nothing else.
+# secret and nothing in this repository ever holds its value.
 #
 # It must be a USER API token, created at My Profile then API Tokens, not an
-# account-owned one from Manage Account. Two deploys failed on 2026-08-08 with
-# `Authentication error [code: 10000]` against an account-owned token: the
-# "Edit Cloudflare Workers" template includes User Details Read and User
-# Memberships Read, and user-scoped permissions cannot exist on an
-# account-owned token at all. Account-owned tokens are the better idea in
-# principle, since they do not die with one person's login. They are not what
-# wrangler deploy accepts.
+# account-owned one from Manage Account. `wrangler whoami` tells you which you
+# have: an account-owned token prints "an Account API Token". The "Edit
+# Cloudflare Workers" template includes User Details Read and User Memberships
+# Read, and user-scoped permissions cannot exist on an account-owned token at
+# all, so no amount of widening an account token fixes it.
 name: Deploy support desk
 
 on:
@@ -38,27 +31,17 @@ on:
         required: true
         default: ''
 
-# Read-only. The deploy credential is a secret, not this token, and nothing
-# here writes to the repository.
 permissions:
   contents: read
 
-# One deploy at a time, and never cancel one in flight. A half-applied Worker
-# deploy is not a state worth racing toward.
 concurrency:
   group: deploy-support
   cancel-in-progress: false
 
 jobs:
   deploy:
-    # The typed confirmation is not security, it is a speed bump. Dispatching a
-    # workflow is two clicks and this one talks to production.
     if: inputs.confirm == 'deploy'
     runs-on: ubuntu-latest
-    # Named so a required reviewer can be added later in Settings, Environments,
-    # production, without touching this file. Adding one turns every deploy into
-    # an approval prompt, which is the right trade the moment more than one
-    # person can dispatch this.
     environment: production
     defaults:
       run:
@@ -83,18 +66,43 @@ jobs:
       - name: Unit tests
         run: npm test
 
-      # Bundles and validates bindings without publishing. Catches a bad
-      # wrangler.jsonc before the credential is used at all.
       - name: Dry run
         run: npx wrangler deploy --dry-run
 
-      # Diagnostic, and deliberately never fatal. `whoami` prints the token's
-      # actual permission scopes, which turns "Authentication error [code:
-      # 10000]" from something you guess at into a list you read. Two deploys
-      # were spent guessing; printing this is cheaper than a third.
+      # Asks Cloudflare the three questions wrangler's error cannot separate.
+      # `Authentication error [code: 10000]` is returned both for a token that
+      # lacks a permission and for a token pointed at an account it cannot see,
+      # and the message is identical, which is how three deploys were spent
+      # guessing.
       #
-      # continue-on-error because a step that exists to inform a human must
-      # never be the reason a working deploy does not happen.
+      # The accounts check works with GitHub's secret masking rather than
+      # against it. Any id equal to CLOUDFLARE_ACCOUNT_ID is redacted to ***,
+      # so a correct id is invisible and a wrong one prints in the clear. A
+      # visible hex id in that output is proof the secret names the wrong
+      # account, and nothing secret is disclosed either way.
+      - name: Diagnose token and account
+        continue-on-error: true
+        env:
+          CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ACCOUNT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          echo '=== 1. Is the token itself valid, and what is its status ==='
+          curl -sS -H "Authorization: Bearer $CF_TOKEN" \
+            https://api.cloudflare.com/client/v4/user/tokens/verify | head -c 600
+          echo; echo
+          echo '=== 2. Which accounts can this token see ==='
+          echo 'An id shown as *** matches CLOUDFLARE_ACCOUNT_ID and is correct.'
+          echo 'An id shown in clear hex does NOT match, and is the bug.'
+          curl -sS -H "Authorization: Bearer $CF_TOKEN" \
+            https://api.cloudflare.com/client/v4/accounts | head -c 900
+          echo; echo
+          echo '=== 3. The exact endpoint wrangler fails on, called directly ==='
+          curl -sS -o /tmp/svc.json -w 'HTTP %{http_code}\n' \
+            -H "Authorization: Bearer $CF_TOKEN" \
+            "https://api.cloudflare.com/client/v4/accounts/$CF_ACCOUNT/workers/services/hamdam-support"
+          head -c 600 /tmp/svc.json
+          echo
+
       - name: Token scopes
         continue-on-error: true
         run: npx wrangler whoami
@@ -102,13 +110,11 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
-      # `npx wrangler deploy`, not `npm run deploy`, and the difference is
-      # deliberate. predeploy-check.mjs refuses to deploy from a dirty tree or
-      # an unpushed branch, which is exactly right on a laptop and meaningless
-      # here: this job checks out a named ref straight from origin into a clean
-      # runner, which is a stronger guarantee than the guard was written to
-      # provide. It also reads the current branch name, which is `HEAD` on the
-      # detached checkout Actions performs, so it would block every run.
+      # `npx wrangler deploy`, not `npm run deploy`. predeploy-check.mjs refuses
+      # a dirty tree or an unpushed branch, which is right on a laptop and
+      # meaningless on a runner checking out a named ref from origin. It also
+      # reads the branch name, which is `HEAD` on a detached checkout, so it
+      # would block every run.
       - name: Deploy
         run: npx wrangler deploy
         env:
