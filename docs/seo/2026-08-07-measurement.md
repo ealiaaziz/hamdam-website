@@ -99,21 +99,67 @@ dropped below 100, that is a real trade to weigh rather than a surprise.
 
 ## Still to do, both outside this repository
 
-### Google Search Console
+### Google Search Console: done, and what it showed
 
-The zone already has a verification record:
+Reached through the Composio connection on 2026-08-08. The property exists as a
+domain property, `sc-domain:hamdam.com.au`, with siteOwner permission, which is
+what the `google-site-verification` TXT record in the zone was for.
 
-```
-google-site-verification=6-rEEAs5vLNCtIFncqSKAu07aMDCaAi1RYVGKCgsNf4
-```
+The sitemap was already registered, submitted 2026-07-04, and Google had
+downloaded it as recently as 2026-08-07. It was resubmitted on 2026-08-08 so the
+fetch would pick up the eighteen URLs added that day; the record still reports
+`submitted: 6` because that counter reflects the last processed crawl, and
+`indexed: 0` is a field Google no longer populates meaningfully. Neither number
+should be read as the truth about indexing. Per-URL inspection is.
 
-so the property was set up at some point and may only need signing into. Submit
-`https://hamdam.com.au/sitemap-index.xml`, then watch Coverage for the ten poet
-pages and six moment pages entering the index.
+**The baseline, measured rather than assumed:**
 
-Search Console is the only source for which *queries* bring people in, which is
-what tells you whether the seasonal pages (Yalda in December, Norooz in March)
-are working. Cloudflare Web Analytics counts visits; it does not know why.
+| URL | Coverage state |
+| --- | --- |
+| `/` | Submitted and indexed (PASS, crawled 2026-08-05, mobile) |
+| `/fa/` | Discovered, currently not indexed |
+| `/privacy/` | Discovered, currently not indexed |
+| `/poets/hafez/` | URL is unknown to Google |
+| `/moments/yalda/` | URL is unknown to Google |
+
+Ninety days of search analytics, the whole of it: one query, "hamdam", 13
+impressions, 0 clicks, average position 22.5.
+
+**What that means, and it is the most important thing in this document.**
+
+One page of the site is indexed. The homepage. Five of the six pages that
+existed before 2026-08-08 are either not indexed or not known, and the pages
+that are not indexed were *discovered* by Google, from the sitemap and from
+internal links, and then not fetched: `pageFetchState` is unspecified on both,
+so this is not Google crawling them and judging the content poor. It is Google
+deciding they are not worth the crawl.
+
+That is the signature of a domain with no authority, and it is now evidence
+rather than inference. It reframes the priorities in this repository's other
+notes. The technical work is genuinely done: robots.txt allows everything, the
+CSP and headers are right, every page scores 100 in Lighthouse, structured data
+is clean, canonicals and hreflang are correct, the sitemap is valid and being
+fetched. None of that is the constraint. Google is not declining to rank these
+pages, it is declining to look at them.
+
+So the ordering that matters is: links first, and then everything else.
+Publishing more pages does not help a domain that is not being crawled. Three
+asks are worth more than three more pages, and the poet and Fal-e Hafez pages
+now give each of them something concrete to point at:
+
+- **Ganjoor**, credited on every page of this site already, for a listing.
+- **Diaspora media**, for whom an Australian-built Persian poetry app is a story.
+- **App directories**, which are low effort and legitimate.
+
+Expect the new pages to stay "unknown to Google" for some time. That is normal
+for URLs a day old, and it will stay normal for longer than it should while the
+domain has nothing pointing at it.
+
+**Not a problem, checked and cleared:** search analytics shows impressions
+against both `/fa/terms` and `/fa/terms/`, and against both the http and https
+homepage. The non-slash and http forms are historical. Production returns 307 to
+the slashed https form and every variant declares the same canonical, so there
+is no duplicate-content issue to fix.
 
 ### Bing Webmaster Tools
 
