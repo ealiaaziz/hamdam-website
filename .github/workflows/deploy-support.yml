@@ -1,0 +1,111 @@
+# Manual, gated deploy of the support desk Worker.
+#
+# The sibling ci.yml says CI must never deploy, and that rule is still right
+# for the marketing site: that one deploys itself on every push, so a second
+# automatic path would just be a second way to be surprised. This workflow is
+# the deliberate exception, and it is narrow on purpose.
+#
+# It only ever runs when somebody asks for it by name. There is no `push`
+# trigger and there must never be one. What it buys is that deploying the desk
+# stops requiring a particular laptop with a particular wrangler login, and
+# starts being a thing that runs the tests first, records who asked, and leaves
+# a log. Before this, the only gate between a change and the mailbox that talks
+# to customers was a person remembering to run `npm test`.
+#
+# The credential never leaves GitHub. CLOUDFLARE_API_TOKEN is a repository
+# secret, scoped in the Cloudflare dashboard to Workers Scripts and this zone's
+# Workers Routes, and nothing else. See docs/deploy-runbook.md for the exact
+# scopes and how to rotate it.
+name: Deploy support desk
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Branch, tag or SHA to deploy'
+        required: true
+        default: 'main'
+      confirm:
+        description: 'Type deploy to confirm. Anything else is a no-op.'
+        required: true
+        default: ''
+
+# Read-only. The deploy credential is a secret, not this token, and nothing
+# here writes to the repository.
+permissions:
+  contents: read
+
+# One deploy at a time, and never cancel one in flight. A half-applied Worker
+# deploy is not a state worth racing toward.
+concurrency:
+  group: deploy-support
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    # The typed confirmation is not security, it is a speed bump. Dispatching a
+    # workflow is two clicks and this one talks to production.
+    if: inputs.confirm == 'deploy'
+    runs-on: ubuntu-latest
+    # Named so a required reviewer can be added later in Settings, Environments,
+    # production, without touching this file. Adding one turns every deploy into
+    # an approval prompt, which is the right trade the moment more than one
+    # person can dispatch this.
+    environment: production
+    defaults:
+      run:
+        working-directory: support
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: support/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Unit tests
+        run: npm test
+
+      # Bundles and validates bindings without publishing. Catches a bad
+      # wrangler.jsonc before the credential is used at all.
+      - name: Dry run
+        run: npx wrangler deploy --dry-run
+
+      # `npx wrangler deploy`, not `npm run deploy`, and the difference is
+      # deliberate. predeploy-check.mjs refuses to deploy from a dirty tree or
+      # an unpushed branch, which is exactly right on a laptop and meaningless
+      # here: this job checks out a named ref straight from origin into a clean
+      # runner, which is a stronger guarantee than the guard was written to
+      # provide. It also reads the current branch name, which is `HEAD` on the
+      # detached checkout Actions performs, so it would block every run.
+      - name: Deploy
+        run: npx wrangler deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      # A deploy that returns success and a desk that answers are two different
+      # claims. Check the second one.
+      - name: Health check
+        run: |
+          for attempt in 1 2 3 4 5; do
+            code=$(curl -s -o /tmp/health.json -w '%{http_code}' https://support.hamdam.com.au/health || echo 000)
+            if [ "$code" = "200" ]; then
+              echo "Healthy on attempt $attempt:"
+              cat /tmp/health.json
+              exit 0
+            fi
+            echo "Attempt $attempt returned $code, retrying in 10s"
+            sleep 10
+          done
+          echo 'Deploy published but /health did not return 200. Consider: npx wrangler rollback'
+          exit 1
