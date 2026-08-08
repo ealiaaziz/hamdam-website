@@ -1,0 +1,79 @@
+# Takes one Search Console reading a month and commits it to the traffic log.
+#
+# Separate from ci.yml on purpose. That file's first rule is that it verifies
+# and never deploys; this one writes to the repository, which is a different
+# kind of job and should not be buried inside the build.
+#
+# The schedule is 00:07 UTC on the 3rd, which is 10:07 Brisbane the same day
+# (UTC+10, no daylight saving). The 3rd rather than the 1st because Search
+# Console data lags two to three days, so a run on the 1st would read an
+# incomplete final week. The 7 rather than the 0 because every scheduled job
+# in the world fires on the hour and GitHub drops runs under load.
+#
+# Note that the commit this makes is a push, and a push to this repository
+# deploys the site through Workers Builds. For a documentation-only change
+# that is a no-op in content terms, but it does spend a build.
+
+name: SEO log
+
+on:
+  schedule:
+    - cron: '7 0 3 * *'
+  # So the first run does not have to wait for the 3rd, and so a failed month
+  # can be retried without editing the cron.
+  workflow_dispatch:
+    inputs:
+      start_date:
+        description: 'Override window start (YYYY-MM-DD). Leave blank for last calendar month.'
+        required: false
+      end_date:
+        description: 'Override window end (YYYY-MM-DD). Leave blank for last calendar month.'
+        required: false
+
+# Least privilege: this job writes one documentation file and nothing else.
+permissions:
+  contents: write
+
+jobs:
+  reading:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      # No `npm ci`. The script has no dependencies, which is the point of
+      # signing the service account JWT with node:crypto rather than pulling in
+      # googleapis. Skipping install also skips the "prepare" hook.
+      - name: Take the reading
+        env:
+          GSC_SERVICE_ACCOUNT_KEY: ${{ secrets.GSC_SERVICE_ACCOUNT_KEY }}
+          GSC_START: ${{ inputs.start_date }}
+          GSC_END: ${{ inputs.end_date }}
+        run: node scripts/gsc-pull.mjs
+
+      # Project hard rule 3, and an honest note about its reach: check-dashes
+      # walks src, public and support, NOT docs, so it does not actually
+      # inspect the file this job just wrote. The strings Google returns
+      # (coverage states, and query text real people typed) are normalised by
+      # `noDashes` in the script instead. This step stays as a cheap guard in
+      # case that walk is ever widened to cover docs.
+      - name: Dash check
+        run: node scripts/check-dashes.mjs
+
+      - name: Commit
+        run: |
+          if git diff --quiet -- docs/seo/traffic-log.md; then
+            echo "No change to the traffic log. Nothing to commit."
+            exit 0
+          fi
+          git config user.name  'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git add docs/seo/traffic-log.md
+          git commit -m 'Monthly Search Console reading'
+          # Contention here is unlikely once a month, but a rebase is cheap and
+          # a lost reading is not recoverable from anywhere else.
+          git pull --rebase origin main
+          git push origin HEAD:main
