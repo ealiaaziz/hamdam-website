@@ -122,8 +122,19 @@ should be read as the truth about indexing. Per-URL inspection is.
 | `/poets/hafez/` | URL is unknown to Google |
 | `/moments/yalda/` | URL is unknown to Google |
 
-Ninety days of search analytics, the whole of it: one query, "hamdam", 13
-impressions, 0 clicks, average position 22.5.
+Search analytics, the whole of it: 25 impressions, 0 clicks, average position
+15.1. One query is named, "hamdam", at 13 impressions and average position 22.5;
+the remaining 12 impressions are against queries Google withholds because too
+few people issued them.
+
+**This paragraph said "13 impressions" when it was written, and that was
+wrong.** 13 is the total of the `query` breakdown, which omits the withheld
+queries, and it understated the site by roughly half. It also said "ninety
+days", and there are not ninety days: the property records nothing before
+2026-07-03, so every figure here covers about five weeks. Corrected 2026-08-08
+against a fresh pull. Take headline totals from a `dimensions: []` call.
+
+Monthly readings from here are in `traffic-log.md`.
 
 **What that means, and it is the most important thing in this document.**
 
