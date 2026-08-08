@@ -190,6 +190,17 @@ const copy =
     font-family: var(--font-farsi-verse);
     font-size: var(--text-verse-fa);
     line-height: 1.9;
+    /* The verse bank stores each hemistich on its own line, and without this
+       they collapsed into one wrapped paragraph -- so the poem ran on as prose
+       and broke wherever the column happened to end, mid-phrase. Worst on a
+       phone, where the narrow column made it several ragged lines, but it was
+       wrong at every width. VerseCard has always had this; the mood demo,
+       which renders the same field from the same data, never did.
+
+       pre-line, not pre: honour the newlines the poet put there, still wrap a
+       hemistich too long for the column rather than letting it overflow. */
+    white-space: pre-line;
+    text-wrap: pretty;
   }
   .mood-demo__verse-en {
     margin-top: 1rem;
