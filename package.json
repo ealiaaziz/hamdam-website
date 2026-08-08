@@ -19,7 +19,7 @@
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.7.3",
-    "@fontsource/markazi-text": "^5.2.9",
+    "@fontsource/markazi-text": "^5.3.0",
     "@fontsource/source-serif-pro": "^5.2.5",
     "@fontsource/vazirmatn": "^5.2.8",
     "@tailwindcss/vite": "^4.3.2",
