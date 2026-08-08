@@ -217,6 +217,33 @@ footer.meta {
 .sla-line { font-size: 0.85rem; color: var(--text-soft); display: flex; gap: 1.25rem; flex-wrap: wrap; }
 .sla-line strong { color: var(--text); }
 
+/* The declarations that used to be style="..." attributes on elements in
+ * render/admin.ts and render/status.ts.
+ *
+ * They were not merely untidy, they were not applying. This Worker sends
+ * style-src 'self' with no 'unsafe-inline', which is the whole point of the
+ * comment at the top of this file, so every one of those attributes was
+ * dropped by the browser before it was read. The badge rows were not flex,
+ * the console's "Nothing here." was not soft, the approve and discard buttons
+ * were on separate lines, and nobody noticed because the pages still read
+ * fine and the console has two users.
+ *
+ * They are classes now, which is what the CSP was asking for. The other way
+ * to make them work is to add 'unsafe-inline' to style-src, and that trades a
+ * real control for a cosmetic convenience: an injected style attribute is not
+ * a script but it is enough to overlay one element with another, which is a
+ * convincing fake button on a page whose buttons resolve and close other
+ * people's tickets. */
+.page-head { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 0.5rem; }
+.badge-row { display: flex; gap: 0.5rem; align-items: center; margin-bottom: 1rem; }
+.inline-form { display: inline; }
+.card--fit { height: fit-content; }
+.flush { margin: 0; }
+.flush-top { margin-top: 0; }
+.hint--spaced { margin-top: 1rem; }
+.queue-sub { font-size: 0.78rem; color: var(--text-soft); }
+.queue-empty { color: var(--text-soft); }
+
 /* Persian, without a webfont.
  *
  * The marketing site serves Vazirmatn. This portal deliberately does not: a

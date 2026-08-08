@@ -289,6 +289,172 @@ export async function setSyncState(db: D1Database, key: string, value: string): 
     .run();
 }
 
+// ---- the ingest lock ------------------------------------------------------
+
+/** The `sync_state` key the ingest lock lives under. */
+export const INGEST_LOCK_KEY = 'ingest_lock_expires_utc';
+
+/**
+ * How long one ingest pass may hold the lock before another may take it.
+ *
+ * Five minutes, which is comfortably longer than a full batch of twenty five
+ * messages and comfortably shorter than the time anyone would spend wondering
+ * why the desk has gone quiet.
+ */
+export const INGEST_LOCK_TTL_MS = 5 * 60_000;
+
+/**
+ * Takes the ingest lock, or returns null because somebody else holds it.
+ *
+ * A successful acquire hands back the holding: the exact value written into
+ * `sync_state`, which `releaseIngestLock` needs in order to release this pass's
+ * lock rather than whatever lock happens to be there when the pass finishes.
+ *
+ * The cron fires every sixty seconds and a pass over a full batch takes
+ * minutes: twenty five messages, each one a Graph fetch for headers, a
+ * handful of D1 writes, a model call and up to two pieces of outbound mail.
+ * So runs overlap, routinely, and overlapping runs are not merely wasteful.
+ * They read the same checkpoint, fetch the same messages, and race each other
+ * through `handleMessage`, where the dedupe ledger is consulted at the top and
+ * written at the bottom. Both passes see `wasProcessed` as false, both go the
+ * whole way, and the loser's `ON CONFLICT DO NOTHING` writes nothing and says
+ * nothing. The visible result is two tickets, two acknowledgements, two model
+ * calls off a small daily budget, and two pieces of mail to the requester, for
+ * one email. Moving the ledger write earlier, which this change also does,
+ * shrinks the window and cannot close it: two passes can still both read
+ * before either writes.
+ *
+ * A TTL rather than a boolean held flag, and that choice is the important
+ * one. A Worker can be evicted, its request cancelled, or its subrequest
+ * budget exhausted, at any point including between the acquire and the
+ * release. A boolean set by a run that then dies is set forever, and the
+ * failure it produces is the exact failure this desk has already been bitten
+ * by twice: the mailbox looks completely normal while no email is being read.
+ * An expiry means the worst case is that ingestion pauses for one TTL and
+ * then resumes on its own, with nobody needing to know it happened.
+ *
+ * The read and the write are one statement, for the same reason
+ * `claimModelCall` and `consumeRateLimit` are: two crons arriving in the same
+ * instant must not both see the lock as free. The `WHERE` clause on the
+ * conflict branch is what makes it a lock at all, and `RETURNING value`
+ * returning no row is how a caller learns it lost.
+ *
+ * Fails closed. If D1 cannot answer, this returns null and the pass is
+ * skipped, which is the opposite of `consumeRateLimit`'s choice and correct
+ * here for the opposite reason: a skipped pass costs sixty seconds and the
+ * next cron picks up the same mail, while an unlocked pass during a database
+ * wobble is the duplicate-everything scenario running with no brakes.
+ *
+ * The failure is written to `last_ingest_error` as well as to the log, for the
+ * reason `ingestPass` gives about every other failure on this path: Worker
+ * logs need a websocket to tail, which is the thing that is unavailable
+ * exactly when somebody wants it, and a gate that can permanently disable
+ * ingestion must not be the one failure that leaves no trace in the database.
+ * The write is itself best effort, because if D1 is unreachable then so is
+ * this, and the ten minute heartbeat is the backstop underneath both.
+ */
+export async function acquireIngestLock(
+  db: D1Database,
+  ttlMs: number = INGEST_LOCK_TTL_MS,
+  now: Date = new Date(),
+): Promise<IngestLockHolding | null> {
+  const nowIso = now.toISOString();
+  const expiresIso = new Date(now.getTime() + ttlMs).toISOString();
+
+  try {
+    // ISO-8601 UTC strings sort lexicographically in the same order they sort
+    // chronologically, which is why a plain `<=` is a valid time comparison
+    // here and why every other timestamp in this schema is stored this way.
+    //
+    // The stored value carries a random suffix after the expiry, which is the
+    // fencing token `releaseIngestLock` checks. The expiry has to stay at the
+    // front and stay fixed width so the `<=` above is still comparing
+    // timestamps: `2026-08-08T03:00:00.000Z#a1b2...` sorts against a bare
+    // timestamp exactly as the expiry alone would, up to the point where they
+    // differ. The single behaviour the suffix changes is the tie, where the
+    // stored expiry equals `?3` to the millisecond: the longer string now
+    // sorts higher, so that instant reads as "still held" rather than "just
+    // expired". At a sixty second cron that costs one pass in the rarest case
+    // there is, and it errs towards not running two passes at once, which is
+    // the direction this whole function exists to err in.
+    const value = `${expiresIso}#${crypto.randomUUID().replaceAll('-', '')}`;
+    const row = await db
+      .prepare(
+        `INSERT INTO sync_state (key, value, updated_at)
+         VALUES (?1, ?2, strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+         ON CONFLICT(key) DO UPDATE SET
+           value = ?2,
+           updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')
+         WHERE sync_state.value <= ?3
+         RETURNING value`,
+      )
+      .bind(INGEST_LOCK_KEY, value, nowIso)
+      .first<{ value: string }>();
+    return row === null ? null : { value };
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : String(error);
+    console.warn('ingest lock: could not acquire, skipping this pass:', reason);
+    try {
+      await setSyncState(db, 'last_ingest_error', `${nowIso} could not acquire the ingest lock: ${reason}`.slice(0, 400));
+    } catch {
+      // If the lock write failed because D1 is unreachable then this one will
+      // too. The heartbeat going stale is what is left, and it is enough.
+    }
+    return null;
+  }
+}
+
+/** What a pass holds while it owns the lock, and hands back to release it. */
+export interface IngestLockHolding {
+  /** The exact `sync_state.value` this pass wrote, expiry and fencing token. */
+  value: string;
+}
+
+/**
+ * Gives the lock back, so the next cron does not have to wait out the TTL.
+ *
+ * Written as an expiry in the past rather than as a delete, so the row stays
+ * put and stays readable: "when did the last pass finish" is a question
+ * somebody debugging a quiet mailbox will want answered, and a missing row
+ * answers nothing.
+ *
+ * Only if this pass still holds it, which is the whole reason `holding` exists.
+ * An unconditional release defeats the lock in the one case the lock is for. A
+ * pass that overruns the TTL has already lost the lock to the next cron, and if
+ * it then clears the row on its way out it frees a lock somebody else is
+ * holding, so the cron after that starts a second concurrent pass and the desk
+ * duplicates everything under exactly the load that made the pass slow. The
+ * `WHERE value = ?2` makes the release a compare and swap: it releases what
+ * this pass wrote and nothing else.
+ *
+ * `holding` is optional so a caller that does not have one, which today means
+ * only the tests, still gets the old unconditional behaviour rather than a
+ * type error.
+ *
+ * Never throws. This runs in a `finally`, and a bookkeeping failure here must
+ * not replace whatever the pass was already reporting. The TTL is the backstop
+ * if it does not land.
+ */
+export async function releaseIngestLock(db: D1Database, holding?: IngestLockHolding): Promise<void> {
+  const released = new Date(0).toISOString();
+  try {
+    if (!holding) {
+      await setSyncState(db, INGEST_LOCK_KEY, released);
+      return;
+    }
+    await db
+      .prepare(
+        `UPDATE sync_state
+            SET value = ?3, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')
+          WHERE key = ?1 AND value = ?2`,
+      )
+      .bind(INGEST_LOCK_KEY, holding.value, released)
+      .run();
+  } catch {
+    // The expiry releases it either way.
+  }
+}
+
 // ---- assistant drafts -----------------------------------------------------
 //
 // A draft is an outbound_emails row that has not been released. Approving it
@@ -459,8 +625,24 @@ export async function recordAssistantTurn(
 
 // ---- model call budget ----------------------------------------------------
 
-/** Model calls allowed per UTC day before the desk falls back to keywords. */
-export const DEFAULT_DAILY_CALL_LIMIT = 200;
+/**
+ * Model calls allowed per UTC day before the desk falls back to keywords.
+ *
+ * The arithmetic, because 200 was a round number rather than a derived one
+ * and it sat above the thing it was meant to be protecting. The free Workers
+ * AI allocation that comes with this plan is 10,000 neurons a day, resetting
+ * at 00:00 UTC, and a reply on this model costs roughly 80 of them. That is
+ * about 125 replies, so a ceiling of 200 could never be reached: the
+ * allocation ran out first, and what the desk actually did on call 126 was
+ * whatever Cloudflare returns when there is nothing left, handled as a model
+ * failure rather than as a budget decision.
+ *
+ * 110 sits under the real ceiling with room for replies that cost more than
+ * the average. Crossing it is a decision the desk makes and logs, and the
+ * requester gets the deterministic answer, which is the graceful ending; the
+ * allocation running out is the same outcome arrived at by accident.
+ */
+export const DEFAULT_DAILY_CALL_LIMIT = 110;
 
 /**
  * Claims one call against today's budget. Returns false when the budget is
@@ -504,7 +686,13 @@ export async function claimModelCall(db: D1Database, limit = DEFAULT_DAILY_CALL_
  */
 export async function wasProcessed(db: D1Database, internetMessageId: string, fromEmail: string): Promise<boolean> {
   const row = await db
-    .prepare('SELECT 1 AS hit FROM inbound_emails WHERE internet_message_id = ?1 AND lower(trim(coalesce(raw_from, ""))) = ?2')
+    // `''`, not `""`. SQLite's double-quoted-string misfeature makes `""` an
+    // identifier first and only falls back to a string literal when no column
+    // of that name exists, so this depended on `inbound_emails` never gaining
+    // a column named by the empty string, and more usefully on nobody turning
+    // the fallback off. It read as a string literal to everyone and was not
+    // one. Single quotes are the only spelling SQL has for a string.
+    .prepare(`SELECT 1 AS hit FROM inbound_emails WHERE internet_message_id = ?1 AND lower(trim(coalesce(raw_from, ''))) = ?2`)
     .bind(internetMessageId, fromEmail.trim().toLowerCase())
     .first<{ hit: number }>();
   return Boolean(row);

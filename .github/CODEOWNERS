@@ -1,0 +1,20 @@
+# Paths that are code execution rather than content, and are reviewed as such.
+#
+# scripts/git-hooks/ is here because package.json's `prepare` script points
+# core.hooksPath at it. After anybody runs `npm install`, every file in that
+# directory is a script git executes on the matching event, on that person's
+# machine, with their SSH keys and their Cloudflare credentials in reach. A
+# pull request that adds a post-checkout hook gets none of the scrutiny an npm
+# dependency gets: no lockfile diff, no audit, no Dependabot. This is the
+# scrutiny.
+/scripts/git-hooks/ @ealiaaziz
+/package.json        @ealiaaziz
+
+# Workflows hold the deploy path and the only long-lived credential.
+/.github/workflows/  @ealiaaziz
+/.github/CODEOWNERS  @ealiaaziz
+
+# The support desk handles inbound mail from strangers and sends mail signed by
+# this domain. Every trust boundary in the project is in here.
+/support/src/        @ealiaaziz
+/support/wrangler.jsonc @ealiaaziz

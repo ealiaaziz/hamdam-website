@@ -76,7 +76,7 @@ export function adminQueuePage(opts: {
       return `<tr>
   <td>${priorityBadge(t.priority)}</td>
   <td><a class="subject" href="/admin/tickets/${t.id}">${escapeHtml(t.subject)}</a><br>
-      <span style="font-size:0.78rem;color:var(--text-soft)">${ticketPublicId(t.id)} &middot; ${escapeHtml(t.requester_email)}</span></td>
+      <span class="queue-sub">${ticketPublicId(t.id)} &middot; ${escapeHtml(t.requester_email)}</span></td>
   <td>${statusBadge(t.status)}</td>
   <td>${overdue ? '<span class="badge badge--breach">Overdue</span>' : formatDateTime(t.sla_first_response_due)}</td>
   <td>${formatDateTime(t.updated_at)}</td>
@@ -87,9 +87,9 @@ export function adminQueuePage(opts: {
   const body = `
 ${ingestNotice(opts.ingest)}
 ${allowlistNotice(opts.allowlistConfigured)}
-<div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:0.5rem">
+<div class="page-head">
   <h1>Support queue</h1>
-  <p class="lede" style="margin:0">Signed in as ${escapeHtml(opts.agentEmail)}</p>
+  <p class="lede flush">Signed in as ${escapeHtml(opts.agentEmail)}</p>
 </div>
 <div class="filters">
   <a class="${!opts.filterPriority ? 'active' : ''}" href="/admin?${statusQuery}">All priorities</a>
@@ -103,7 +103,7 @@ ${allowlistNotice(opts.allowlistConfigured)}
 <div class="card">
   <table class="queue">
     <thead><tr><th>Priority</th><th>Ticket</th><th>Status</th><th>First response due</th><th>Updated</th></tr></thead>
-    <tbody>${rows || `<tr><td colspan="5" style="color:var(--text-soft)">Nothing here.</td></tr>`}</tbody>
+    <tbody>${rows || `<tr><td colspan="5" class="queue-empty">Nothing here.</td></tr>`}</tbody>
   </table>
 </div>
 `;
@@ -135,10 +135,10 @@ function draftsBlock(drafts: DraftRow[], ticketId: number): string {
   <p class="draft-meta">To ${escapeHtml(d.to_email)} &middot; subject ${escapeHtml(d.subject)}
   &middot; ${d.assistant_article_id ? `from article <code>${escapeHtml(d.assistant_article_id)}</code>` : 'not from a knowledge base article'}</p>
   <div class="draft-body">${textToSafeHtml(stripHtml(d.body_html))}</div>
-  <form method="post" action="/admin/tickets/${ticketId}/drafts/${d.id}/approve" style="display:inline">
+  <form method="post" action="/admin/tickets/${ticketId}/drafts/${d.id}/approve" class="inline-form">
     <button class="btn" type="submit">Approve and send</button>
   </form>
-  <form method="post" action="/admin/tickets/${ticketId}/drafts/${d.id}/discard" style="display:inline">
+  <form method="post" action="/admin/tickets/${ticketId}/drafts/${d.id}/discard" class="inline-form">
     <button class="btn btn--ghost" type="submit">Discard</button>
   </form>
   <p class="hint">Nothing has been sent. Approving queues it for the next
@@ -184,7 +184,7 @@ ${allowlistNotice(opts.allowlistConfigured)}
 
 <div class="grid-2">
   <div class="card">
-    <div style="display:flex;gap:0.5rem;align-items:center;margin-bottom:1rem">
+    <div class="badge-row">
       ${priorityBadge(ticket.priority)}
       ${statusBadge(ticket.status)}
       ${overdue ? '<span class="badge badge--breach">First response overdue</span>' : ''}
@@ -208,8 +208,8 @@ ${allowlistNotice(opts.allowlistConfigured)}
       <button class="btn" type="submit">Send reply</button>
     </form>
   </div>
-  <div class="card" style="height:fit-content">
-    <h2 style="margin-top:0">Update</h2>
+  <div class="card card--fit">
+    <h2 class="flush-top">Update</h2>
     <form method="post" action="/admin/tickets/${ticket.id}/status">
       <div class="field">
         <label for="status">Status</label>
@@ -225,7 +225,7 @@ ${allowlistNotice(opts.allowlistConfigured)}
       </div>
       <button class="btn btn--ghost" type="submit">Save</button>
     </form>
-    <p class="hint" style="margin-top:1rem">Marking resolved emails the requester automatically. Signed in as ${escapeHtml(opts.agentEmail)}.</p>
+    <p class="hint hint--spaced">Marking resolved emails the requester automatically. Signed in as ${escapeHtml(opts.agentEmail)}.</p>
   </div>
 </div>
 `;

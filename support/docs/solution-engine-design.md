@@ -14,9 +14,29 @@ An assistant that reads a ticket, finds a known answer, and talks the
 requester through it -- asking for more detail when the picture is
 incomplete, and handing over to a person when it should.
 
-Status: **live on the portal, draft-first for email.** The portal answers
-requesters immediately. Email replies are drafted for a person to approve
-before they go out.
+Status: **live on the portal and auto-sent by email.** Corrected 2026-08-08,
+security review: this said "draft-first for email" and had said it for some
+time after it stopped being true. The portal answers requesters immediately,
+and so does the mailbox. `replyWithAssistant` in `../src/ingest.ts` composes a
+model-written reply and hands it straight to `queueAndSend`; no person sees it
+first. The draft-and-approve machinery still exists and is still used, but only
+where an agent asks for a draft in the console.
+
+What guards the email path instead is upstream and in code: P1 and P2 never
+reach the model, a Hamdam claim must cite a reviewed article or the app
+reference, a reply claiming a person acted is thrown away, and, since
+2026-08-08, a reply carrying a link or an email address the desk does not
+publish is thrown away too.
+
+**And the sender must authenticate.** Also 2026-08-08: the desk now reads
+Exchange's `Authentication-Results` verdict on every inbound message, not only
+on the ones trying to append to an existing ticket. A sender with no aligned
+SPF or DKIM result gets a filed ticket and no automatic reply at all. That gate
+exists precisely because this path auto-sends: `From:` is a line of text the
+sending client writes, so without it anyone could name a victim's address and
+have this domain deliver two pieces of DKIM-signed mail to it, the second one
+composed by a language model. A person replying by hand to such a ticket works
+normally.
 
 ## What it is for
 
@@ -144,16 +164,31 @@ the mechanism rather than from taste:
 
 | | Portal | Email |
 |---|---|---|
-| Speed | immediate | next hourly poll |
-| Suggestion shown | on the page | as a drafted reply |
-| Approval needed | no | yes, a person presses send |
+| Speed | immediate | next cron pass, about a minute |
+| Suggestion shown | on the page | in the reply that is sent |
+| Approval needed | no | no |
+| Sender must authenticate | n/a | yes, or nothing is sent |
 | Requester can object | one click, right there | only by replying |
+
+**Corrected 2026-08-08.** The two right-hand cells above used to read "as a
+drafted reply" and "yes, a person presses send", and the paragraph below them
+argued for why. Neither has been true since the reply became model-backed: the
+same words now go to the portal instantly with no review either, so holding
+the email while publishing identical text on a page would have been theatre,
+and the approval step was dropped rather than kept as a ritual. The hourly
+Routine is gone too; a cron trigger reads the inbox every minute.
 
 The portal needs no approval gate because nothing is sent. The requester
 asked, is present, sees the suggestion framed as a suggestion, and has a
 "this did not help" control with the same visual weight as the one that
-accepts it. A wrong article costs them ten seconds. A wrong *email* costs
-an apology, which is why that path keeps the human in it.
+accepts it. A wrong article costs them ten seconds.
+
+A wrong *email* still costs an apology, and what replaced the human in that
+path is a set of checks that run before anything leaves: the priority gate,
+the sourcing rule, the impersonation check, the unapproved-link check, and the
+sender authentication gate described at the top of this document. Those are
+code with tests beside them, which is the trade being made here, and it is
+worth saying out loud that it is a trade rather than an upgrade.
 
 The acknowledgement email now says this plainly -- that the tracking page
 answers straight away -- so requesters who want speed know where to get it.

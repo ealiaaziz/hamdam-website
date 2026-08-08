@@ -1,3 +1,34 @@
 #!/bin/sh
 # Persian byte-check gate — see scripts/check-persian.mjs. Do not skip.
-npm run -s check:persian
+npm run -s check:persian || exit 1
+
+# Secret gate. Best effort by design: if gitleaks is not installed this is a
+# no-op rather than a wall, because a hook that blocks a commit on a missing
+# tool is a hook people disable. GitHub push protection is the backstop that
+# does not depend on anybody's laptop being set up.
+#
+# Install with: brew install gitleaks
+# Exit code 1 means leaks found. Anything else means the tool itself failed,
+# and blocking a commit on that would be the bug: `gitleaks protect` is
+# deprecated in favour of `gitleaks git --staged` and will eventually be
+# removed, at which point an un-checked non-zero exit would block every commit
+# in the repository with a message saying a credential was found, which is
+# false. Prefer the new subcommand where it exists.
+if command -v gitleaks >/dev/null 2>&1; then
+  if gitleaks git --help >/dev/null 2>&1; then
+    gitleaks git --staged --redact --no-banner --config .gitleaks.toml
+  else
+    gitleaks protect --staged --redact --no-banner --config .gitleaks.toml
+  fi
+  status=$?
+  if [ "$status" -eq 1 ]; then
+    echo ''
+    echo 'gitleaks found a candidate credential in the staged changes.'
+    echo 'If it is public by design, add it to the allowlist in .gitleaks.toml'
+    echo 'with a comment saying why, rather than committing with --no-verify.'
+    exit 1
+  elif [ "$status" -ne 0 ]; then
+    echo "gitleaks exited $status without scanning. Not blocking the commit."
+    echo 'GitHub push protection is the backstop; see .gitleaks.toml.'
+  fi
+fi

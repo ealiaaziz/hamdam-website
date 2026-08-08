@@ -16,8 +16,17 @@ pnpm-debug.log*
 
 
 # environment variables
+#
+# Globbed rather than listed. The listed form covered .env and .env.production
+# and missed .env.local, which is the one Vite's own documentation calls the
+# place to put local secrets and describes as gitignored by default. A
+# developer who believes that and is wrong commits a secret to a public repo.
 .env
-.env.production
+.env.*
+!.env.example
+
+# npm auth: .npmrc holds _authToken when a private registry is configured.
+.npmrc
 
 # macOS-specific files
 .DS_Store
@@ -26,4 +35,8 @@ pnpm-debug.log*
 .idea/
 
 # wrangler local dev vars (may hold secrets; .example is the committed template)
+# Globbed for the same reason as .env above: `wrangler --env production` reads
+# .dev.vars.production, which the bare name did not cover.
 .dev.vars
+.dev.vars.*
+!.dev.vars.example

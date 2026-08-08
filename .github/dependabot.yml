@@ -1,0 +1,37 @@
+# Dependency and action updates, weekly.
+#
+# This exists because the 2026-08-08 security review found four advisories
+# sitting in the lockfiles that had been fixed upstream for weeks, and no
+# mechanism that would ever have mentioned them. None of the four were
+# reachable in production, which is the point: nobody was going to notice, so
+# nobody would have noticed the one that was.
+#
+# The github-actions ecosystem is listed first deliberately. Actions are the
+# dependency nobody thinks of as a dependency, and a retagged third-party
+# action is the supply chain attack that has actually happened to other people.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: 'ci'
+
+  # The marketing site.
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: 'deps'
+
+  # The support desk keeps its own lockfile and its own deploy, so it needs its
+  # own entry. Two production dependencies, which is the whole reason its
+  # surface stays reviewable.
+  - package-ecosystem: npm
+    directory: /support
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: 'deps(support)'

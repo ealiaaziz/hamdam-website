@@ -134,6 +134,33 @@ export function stripHtml(html: string): string {
     .replace(/&gt;/g, '>')
     .replace(/&quot;/g, '"')
     .replace(/&#39;/g, "'")
+    // A second tag strip, after the entities and not before them.
+    //
+    // The order above is the whole finding. Tags were removed first and
+    // entities decoded second, so `&lt;img src=x onerror=alert(1)&gt;` walked
+    // past the tag strip as inert text and then had its brackets handed back
+    // to it on the way out. What this function returns is treated as plain
+    // text by every caller: it goes into a ticket comment, into the console,
+    // into the model's context, and into the body of an email the desk sends.
+    // Re-materialising markup at the end means the one function whose job is
+    // to remove markup was, on that input, manufacturing it.
+    //
+    // Nothing here renders it, so this was not a live cross-site scripting
+    // bug. It was one careless `.innerHTML` away from being one, in a string
+    // that no reader of the calling code would think could contain a tag.
+    //
+    // Same bounded `[^<>]` class as the strip above, for the same reason: a
+    // run of `<` cannot be consumed by the class, so this stays linear and
+    // the budget test keeps passing. One extra pass, and only one, because a
+    // decode does not run again after it and so nothing can reappear.
+    //
+    // The cost, stated plainly because it is real: a message that legitimately
+    // wrote "5 &lt; 7 and 9 &gt; 2" now loses everything between the two,
+    // because after decoding it is indistinguishable from a tag. That is a
+    // handful of characters in a rare sentence, against markup arriving in a
+    // string the whole codebase treats as text, and this is the direction to
+    // be wrong in.
+    .replace(/<[^<>]*>/g, '')
     .replace(/\n{3,}/g, '\n\n')
     .trim();
 }

@@ -166,6 +166,133 @@ function withProvenance(reply: ModelReply, locale: Locale = 'en'): string {
   return `${reply.body}\n\n${strings(locale).replyGeneralAdvice}`;
 }
 
+/**
+ * Hosts the desk is willing to put in front of a requester.
+ *
+ * Short on purpose. Every entry is somewhere the desk would send a person
+ * anyway: its own site, Apple because that is where the app lives and where
+ * purchases and restores happen, and Lifeline because the crisis guidance in
+ * the prompt names it and that is the one link that must never be missing.
+ * Subdomains of these are allowed, so support.apple.com and any future
+ * kb.hamdam.com.au work without another entry.
+ */
+const ALLOWED_LINK_HOSTS = ['hamdam.com.au', 'apple.com', 'support.apple.com', 'lifeline.org.au'];
+
+/**
+ * The domain the desk's own replies may hand out an address at, subdomains
+ * included.
+ *
+ * Subdomains were excluded at first and links were not, which made the rule
+ * disagree with itself: `support.apple.com` was a fine host to link to and
+ * `anyone@support.hamdam.com.au` was a forgery. There is no version of this
+ * where the desk's own subdomain is less trustworthy than Apple's.
+ */
+const ALLOWED_EMAIL_DOMAIN = 'hamdam.com.au';
+
+// Deliberately looser than a URL parser, because the job is to notice a link,
+// not to resolve one. A bare "evil.example/reset" with no scheme is still a
+// thing a requester will type into a browser, so it has to count.
+//
+// The schemeless half ends `\.[a-z]{2,}\/`, which is to say it insists the
+// last label before the slash looks like a top level domain. Without that it
+// only asked for "labels, a dot, a slash", and the sentences a support desk
+// writes are full of those: "this affects iOS 17.4/17.5", "fixed in 2.1/2.2",
+// "the ratio was 3.5/10". Every one of them was read as a hostname, failed the
+// allow-list, and silently threw away the model's whole answer. A hostname's
+// last label is alphabetic in every case that matters, and a numeric address
+// like `http://192.0.2.1/x` is still caught by the scheme half above.
+const URL_PATTERN =
+  /\b(?:https?:\/\/|www\.)[^\s<>()[\]{}"']+|\b[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)*\.[a-z]{2,}\/[^\s<>()[\]{}"']*/gi;
+const EMAIL_PATTERN = /\b[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}\b/gi;
+
+function hostOf(candidate: string): string | null {
+  const withScheme = /^https?:\/\//i.test(candidate) ? candidate : `https://${candidate}`;
+  try {
+    const host = new URL(withScheme).hostname.toLowerCase();
+    // A trailing dot is a legal fully qualified name and is not how any of
+    // the allowed hosts are written, so it would otherwise be a free bypass.
+    return host.replace(/\.$/, '');
+  } catch {
+    return null;
+  }
+}
+
+function hostIsAllowed(host: string): boolean {
+  return ALLOWED_LINK_HOSTS.some((allowed) => host === allowed || host.endsWith(`.${allowed}`));
+}
+
+/** Every address written anywhere in a block of text, folded for comparison. */
+function addressesIn(text: string): Set<string> {
+  return new Set((text.match(EMAIL_PATTERN) ?? []).map((address) => address.toLowerCase()));
+}
+
+function emailIsAllowed(address: string, fromTheThread: ReadonlySet<string>): boolean {
+  const lower = address.toLowerCase();
+  const domain = lower.slice(lower.lastIndexOf('@') + 1);
+  if (domain === ALLOWED_EMAIL_DOMAIN || domain.endsWith(`.${ALLOWED_EMAIL_DOMAIN}`)) return true;
+  // Not a new address, then. It is one the requester already put on this
+  // ticket, being read back to them.
+  return fromTheThread.has(lower);
+}
+
+/**
+ * Whether a model-written reply hands the requester a link or an address the
+ * desk does not publish.
+ *
+ * This is the control the prompt cannot be trusted to enforce. The body of a
+ * reply is composed by a language model that has just read text a stranger
+ * wrote, and the highest-value thing that text can ask for is a sentence like
+ * "reset your password at hamdam-support.example" or "email
+ * billing@hamdam-help.example" arriving in a message the requester already
+ * believes, because it came from their support desk and is signed by the
+ * domain. Everything else the model gets wrong costs somebody time; this one
+ * costs them a credential.
+ *
+ * An allow-list rather than a block-list, because the set of hosts the desk
+ * legitimately links to is four items long and the set of hostile ones is
+ * every other name that exists.
+ *
+ * `threadText` is the requester's own words on this ticket, and it exists
+ * because the first version of this check had no notion of them and broke the
+ * most ordinary sentence a support desk writes. "I will follow up at
+ * jane@gmail.com, as you asked" is not the desk introducing a new address, it
+ * is the desk repeating one the requester supplied two messages ago, and
+ * throwing the reply away over it made the assistant unable to confirm a
+ * detail back to the person who gave it. So an address is allowed when it is
+ * the desk's own domain, or when that exact address is already written
+ * somewhere in the thread being answered. Nothing new gets introduced either
+ * way, which is the property actually being defended.
+ *
+ * What this does not catch, stated because the comment here used to claim
+ * otherwise: a hostname mentioned with no scheme, no `www.` and no path.
+ * "See evil.example" goes through. Catching it would mean treating any two
+ * dotted labels as a host, and support replies are full of `Info.plist`,
+ * `config.json` and `Node.js`, so the cure is worse. The scheme, the `www.`
+ * and the path are what make a string something a requester can act on
+ * without retyping it, and those are the ones that matter.
+ *
+ * A false positive here is not free but it is survivable: the reply is
+ * replaced by the deterministic one and the requester still gets an answer,
+ * just a plainer one, with the reason recorded on the ticket.
+ */
+export function carriesUnapprovedContact(body: string, threadText = ''): boolean {
+  const fromTheThread = addressesIn(threadText);
+
+  for (const match of body.match(EMAIL_PATTERN) ?? []) {
+    if (!emailIsAllowed(match, fromTheThread)) return true;
+  }
+
+  for (const match of body.match(URL_PATTERN) ?? []) {
+    // An address already cleared above would otherwise be re-read here as a
+    // hostname with a local part stuck to the front of it.
+    if (match.includes('@')) continue;
+    const host = hostOf(match);
+    if (host === null || !hostIsAllowed(host)) return true;
+  }
+
+  return false;
+}
+
 /** Why a given reply came out the way it did. Written to the agent state. */
 function reasonFor(reply: ModelReply): string {
   const source = reply.articleId
@@ -234,6 +361,32 @@ export async function composeAssistantReplyLive(
 
   if (!reply) return deterministic('model returned nothing');
 
+  // Before the action branches, not inside one of them.
+  //
+  // Where a check sits decides what it covers, and this one has to cover
+  // everything the model wrote. An escalation body and a clarifying question
+  // are read by the requester exactly as attentively as an answer is, and a
+  // planted link is if anything more convincing inside "a person is picking
+  // this up, in the meantime see ..." than inside a set of steps. Putting
+  // this above the branches means a future fourth action inherits it rather
+  // than quietly not having it.
+  // The question as well as the body, because the question is not a summary
+  // of the body: it is a separate field the model fills in, it is stored on
+  // the ticket, and `assistantClarifyingEmail` renders it into the email on
+  // its own line in bold. Checking only the body left the one field that gets
+  // the requester's full attention unchecked.
+  //
+  // `conversationText` is the subject plus every requester message on this
+  // ticket, which is exactly the set of words the requester has written here.
+  // Passing it lets the check tell "the desk is introducing an address" apart
+  // from "the desk is repeating one you gave it", and only the first of those
+  // is the attack.
+  const threadText = input.conversationText;
+  if (carriesUnapprovedContact(reply.body, threadText) || carriesUnapprovedContact(reply.question ?? '', threadText)) {
+    console.warn('assistant: model reply carried an unapproved link or address; using the deterministic reply');
+    return deterministic('model reply carried a link or address the desk does not publish');
+  }
+
   // A question about Hamdam answered from general knowledge is a guess about
   // someone else's product, dressed as support.
   //
@@ -248,7 +401,18 @@ export async function composeAssistantReplyLive(
   // on a Hamdam ticket, an answer must come from a reviewed article or from
   // the app reference, or it is not an answer. Asking a clarifying question
   // is still fine, since a question asserts nothing.
-  if (input.topic === 'hamdam' && reply.action === 'answer' && !reply.articleId && !reply.referenceId) {
+  //
+  // Escalations are held to the same rule, which they were not. The prompt
+  // asks for a full escalation: say everything you do know, then say which
+  // part you do not have and that a person is picking it up. That is the
+  // right instruction and it means an escalation body carries Hamdam claims
+  // in it, written in the same confident register as an answer, with a
+  // handover sentence at the end that a requester reads as reassurance
+  // rather than as a caveat on the paragraph above. Sourcing "answer" only
+  // let every unsourced product claim through as long as the model attached
+  // a handover to it. 'ask' stays exempt, because a question still asserts
+  // nothing.
+  if (input.topic === 'hamdam' && reply.action !== 'ask' && !reply.articleId && !reply.referenceId) {
     return {
       body: strings(input.locale ?? 'en').replyHamdamUnsourced,
       action: 'escalate',

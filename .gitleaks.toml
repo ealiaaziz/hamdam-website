@@ -1,0 +1,52 @@
+# Secret scanning configuration.
+#
+# Added after the 2026-08-08 review, which found the history clean across all
+# 268 commits and no control that would have kept it that way. The commit hook
+# checked Persian byte encoding and CI checked dashes; neither looked for a
+# credential, on a public repository where the window between pushing one and
+# it being scraped is minutes.
+#
+# The allowlist below matters as much as the scan. A scanner that cries wolf
+# over values that are public by design is a scanner people learn to skip with
+# --no-verify, and then it protects nothing.
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "cloudflare-api-token"
+description = "Cloudflare API token (40 hex)"
+regex = '''(?i)(?:cloudflare|cf)[_-]?(?:api)?[_-]?token['"\s:=]+([A-Za-z0-9_-]{40})'''
+secretGroup = 1
+
+[allowlist]
+description = "Values that match a secret pattern but are public by design"
+
+paths = [
+  # Lighthouse reports carry internal audit and entity IDs shaped like hashes,
+  # and reference git commit SHAs. Hundreds of false positives, zero secrets.
+  '''docs/website-redesign/.*''',
+  '''docs/seo/.*''',
+]
+
+regexes = [
+  # Cloudflare Access application audience tag (support/wrangler.jsonc). This is
+  # the value the Worker verifies the `aud` claim AGAINST. It authenticates
+  # nothing on its own and grants nothing to whoever holds it.
+  '''f9fd91afd878949abf0009cd76f5ce70f690eedaf521b9d6052dd81341975286''',
+  # D1 database_id (support/wrangler.jsonc). Identifies the database; reaching
+  # it still requires an authorised API token scoped to the account.
+  '''0d2a8372-cf55-47d1-8491-e9398cfc0d14''',
+  # Cloudflare Ruleset Engine rule ID for the www to apex redirect
+  # (TODO-Ealia.md). An object identifier, not a bearer token.
+  '''48c94ca320414fc29ad0ada77e863dbe''',
+  # Zero Trust team domain. A public hostname that serves the JWKS.
+  '''wispy-art-3af8\.cloudflareaccess\.com''',
+  # Sequential test fixtures in support/test/access.test.ts and
+  # src/lib/__tests__/analytics.test.js. Self-evidently synthetic.
+  '''a1b2c3d4e5f60718293a4b5c6d7e8f90''',
+  '''0f1e2d3c4b5a69788796a5b4c3d2e1f0''',
+  # Cloudflare Web Analytics beacon token. Ships in the HTML of every page by
+  # construction, so committing it is correct rather than a leak.
+  '''PUBLIC_CF_BEACON_TOKEN''',
+]

@@ -1,10 +1,19 @@
 # Runs on every push and pull request.
 #
-# This exists because there is no deploy automation on this project and never
-# will be by default: production is a manual `npm run deploy`, so nothing was
-# ever going to catch a broken build except a person remembering to look. CI
-# does not deploy and must never deploy. It only answers "would this build, and
-# is the content still valid" before a human runs the deploy themselves.
+# The paragraph that used to be here said there is no deploy automation on this
+# project and that production is a manual `npm run deploy`. That was already
+# wrong when the security review read it on 2026-08-08, and CLAUDE.md has
+# carried the correction since 2026-08-02: a Cloudflare Workers Builds
+# connection is attached to this repository and deploys the marketing site to
+# production within a minute of a push, from any branch, not only from main.
+#
+# So CI is advisory and the deploy does not wait for it. That is the single
+# most important thing to know before adding a job here: a green tick is not a
+# gate, and the site is already live by the time it appears. It only answers
+# "would this build, and is the content still valid" for a human reading after
+# the fact. The support desk is genuinely manual and is unaffected.
+#
+# CI does not deploy and must never deploy.
 #
 # The dash check enforces project hard rule 3 (no U+2014 / U+2013). It was added
 # alongside the S1 sweep that removed the 36 existing violations, so it has been
@@ -16,7 +25,33 @@ on:
   push:
   pull_request:
 
+# Read-only, explicitly, rather than whatever the repository default happens to
+# be. Both jobs run `npm ci`, which executes install scripts belonging to
+# esbuild, workerd and fsevents, so third-party code runs here on every push. A
+# push to this repository is what deploys the site through Workers Builds, so a
+# token with `contents: write` in that job is a production deploy primitive
+# handed to a supply chain nobody in this project controls. Nothing in CI needs
+# to write anything.
+permissions:
+  contents: read
+
 jobs:
+  # Credential scan, separate from the build so a leak is legible in the
+  # workflow list rather than buried in a build log. fetch-depth: 0 because the
+  # useful question is not only "is this diff clean" but "has this repository
+  # ever published a secret", and it is a public repository.
+  secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Scan for committed credentials
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   verify:
     runs-on: ubuntu-latest
     steps:

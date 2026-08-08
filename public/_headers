@@ -4,16 +4,42 @@
   X-Frame-Options: DENY
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
-  Permissions-Policy: geolocation=(), camera=(), microphone=(), payment=()
+  Permissions-Policy: geolocation=(), camera=(), microphone=(), payment=(), usb=(), serial=(), bluetooth=(), midi=(), magnetometer=(), gyroscope=(), accelerometer=(), ambient-light-sensor=(), display-capture=(), idle-detection=(), local-fonts=(), screen-wake-lock=(), xr-spatial-tracking=(), browsing-topics=(), interest-cohort=(), autoplay=(), fullscreen=(self)
+  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Resource-Policy: same-origin
 
 /_astro/*
   Cache-Control: public, max-age=31536000, immutable
 
+# One rule per path, and the unset line is load-bearing. Two things about this
+# file's format were discovered the hard way on 2026-08-08 and are worth
+# writing down, because both fail silently.
+#
+# First, rules are keyed by path when the config is built, so a path listed
+# twice does not merge: the later block replaces the earlier one entirely and
+# nothing warns you. /badges/* was written twice and lost its CORP header that
+# way.
+#
+# Second, a header already set by a broader rule is APPENDED to, not replaced.
+# Writing Cross-Origin-Resource-Policy here without the unset produces
+# "same-origin, cross-origin", which browsers read as an unrecognised value and
+# therefore as no CORP at all. That happens to work for these images, but only
+# by accident, and the same trick on Cache-Control or X-Frame-Options would not
+# be an accident anybody enjoyed.
+#
+# These two directories are the exception to the same-origin CORP above,
+# because their whole purpose is to be rendered by somebody else: a link
+# preview in a browser-based mail or chat client is a cross-origin embed, and
+# same-origin CORP is exactly the header that refuses it.
 /og/*
   Cache-Control: public, max-age=86400
+  ! Cross-Origin-Resource-Policy
+  Cross-Origin-Resource-Policy: cross-origin
 
 /badges/*
   Cache-Control: public, max-age=2592000
+  ! Cross-Origin-Resource-Policy
+  Cross-Origin-Resource-Policy: cross-origin
 
 /icons/*
   Cache-Control: public, max-age=2592000

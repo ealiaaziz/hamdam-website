@@ -47,8 +47,62 @@ export const RATE_LIMITS = {
    * person can be sent is bounded no matter how the requests are spread.
    */
   ticket_create_email: { limit: 5, windowSeconds: 3600 },
-  /** Replies on a ticket the caller already holds the token for. */
-  ticket_reply: { limit: 60, windowSeconds: 3600 },
+  /**
+   * Replies on a ticket the caller already holds the token for.
+   *
+   * Sixty was set from what a conversation looks like and not from what a
+   * reply costs. Every one of them stores text, mails the desk, and spends a
+   * model call, so sixty an hour on a single ticket is sixty model calls out
+   * of a daily budget of just over a hundred: one tracking token, held by
+   * anyone the requester ever forwarded their email to, empties the day's
+   * assistant for everybody else and leaves no trace beyond a long thread.
+   *
+   * Twenty is still far more than a real back-and-forth, which is a handful
+   * of messages, and the fast loop is still the feature. The per-ticket model
+   * bucket below is the tighter of the two and does the real work; this one
+   * bounds the storage and the mail that come with a reply even when the
+   * model is not consulted.
+   */
+  ticket_reply: { limit: 20, windowSeconds: 3600 },
+  /**
+   * Model calls spent on any one ticket.
+   *
+   * The daily budget is a single global counter, so before this the cheapest
+   * way to take the assistant away from every other requester for the rest of
+   * the day was to hold one ticket and keep typing. A ticket that genuinely
+   * needs the model six times in an hour has stopped being a conversation the
+   * assistant is helping with, and the turn limit in `agentPolicy.ts` has
+   * usually handed it to a person well before this bites. Crossing it is
+   * gentle in the same way the rest of these are: the deterministic reply
+   * still answers, immediately, in the thread.
+   */
+  model_call_ticket: { limit: 6, windowSeconds: 3600 },
+  /**
+   * Inbound messages the desk will answer by itself in one hour, in total.
+   *
+   * Counted per message answered, not per email sent, and the two are not the
+   * same number: a message that opens a new ticket produces an acknowledgement
+   * *and* a model-written reply, so forty here is up to eighty pieces of
+   * outbound mail. This said "automated replies the desk will send by email"
+   * and meant "decisions to answer", which understated the real ceiling by
+   * about half. Corrected 2026-08-08. The number is deliberately unchanged: it
+   * was chosen against observed volume rather than derived from the arithmetic,
+   * and eighty an hour is still far below a level that would trouble the
+   * domain's reputation.
+   *
+   * Every other ceiling on the mail path is keyed on something the sender
+   * chooses. `inbound_sender` counts a `From` header, which is a line of text
+   * an attacker rotates for free, and `outbound_recipient` counts an address
+   * they also choose. A per-key limit cannot bound a total when the key is
+   * attacker-supplied, so this one has no key at all: it is the ceiling on the
+   * desk as a whole, and it is the only number in this file that an attacker
+   * cannot get more of by varying something.
+   *
+   * Forty an hour is well above any real day this desk has had. Over it,
+   * messages are still read, still filed, still in the console, counted in the
+   * pass summary as suppressed, and a person replying works normally.
+   */
+  automated_reply_global: { limit: 40, windowSeconds: 3600 },
   /** "Email me this conversation", which sends mail on every press. */
   ticket_summary: { limit: 10, windowSeconds: 3600 },
   /**
@@ -263,6 +317,39 @@ export function meteringSubject(email: string): string {
  * file keeps knowing nothing about who the team are. Matching folds the same
  * way the counting does, so an exemption cannot be dodged by spelling a team
  * address differently, and cannot be missed because it was.
+ *
+ * This one fails OPEN, the same as everything else in this file, and the
+ * reason is worth writing down because the opposite was tried on 2026-08-08
+ * and was worse than the problem it was aimed at.
+ *
+ * The argument for failing closed is a good one on its face. `consumeRateLimit`
+ * fails open on a D1 error and that is right for admitting a ticket, where the
+ * cost of being wrong is one extra row. Sending is not the same trade: the cost
+ * of being wrong there is unbounded outbound mail from a domain whose
+ * reputation every future reply depends on, during an outage, with no counter
+ * running to notice or to stop it, which is precisely when nobody is looking.
+ * So refusing to send while the counter is unreachable reads as the careful
+ * choice.
+ *
+ * It is not, in this codebase, because a refusal here is not a delay. It is
+ * permanent loss. `queueAndSend` marks the row `failed` with a reason and
+ * returns, and nothing in this Worker ever reads a `failed` or a `pending` row
+ * again: the `scheduled` handler runs `purgeRateLimits` and `ingestInbox` and
+ * that is all, and the hourly Claude Code Routine that used to drain the queue
+ * was retired on 2026-08-02 (see README.md). So a thirty second D1 wobble
+ * silently destroyed every acknowledgement, assistant reply and conversation
+ * summary in that window, and the requester never learned their ticket had
+ * been received. Failing open in the same window risks some unmetered mail to
+ * addresses that are, on the portal path, already bounded by
+ * `ticket_create_email`, and on the mailbox path by `automated_reply_global`.
+ * Losing a person's only confirmation that the desk heard them is the larger
+ * harm, and it is the one nobody finds out about.
+ *
+ * What would have to exist before failing closed is the right call: a drain
+ * pass in `scheduled()` that re-attempts rows left `pending`, so that a refusal
+ * here parks the mail rather than burying it. Write that first, have this
+ * return `pending` rather than `failed`, and then this comment should be
+ * rewritten the other way round.
  */
 export async function mayEmailRecipient(
   db: D1Database,
@@ -274,6 +361,7 @@ export async function mayEmailRecipient(
   if (exempt.some((address) => meteringSubject(address) === subject)) {
     return { allowed: true, count: 0, retryAfterSeconds: 0 };
   }
+
   return consumeRateLimit(db, 'outbound_recipient', subject, now);
 }
 
