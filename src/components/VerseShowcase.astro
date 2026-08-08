@@ -25,6 +25,21 @@ const showcaseVerses = showcaseIds
 <section class="verse-showcase" data-verse-showcase>
   {sceneImage && <SceneBackground image={sceneImage} />}
   {
+    /* Above the cards, not below them (2026-08-07). This prop is named `intro` and
+       was rendered last, so the three verses arrived with nothing framing them and
+       the line that explains them read as an orphaned caption. It introduces the
+       section now, which is what it was written to do. Copy itself is untouched in
+       both locales. */
+  }
+  <p
+    class:list={[
+      'verse-showcase__intro',
+      lang === 'fa' ? 'font-farsi verse-showcase__intro--fa' : 'font-serif italic',
+    ]}
+  >
+    {intro}
+  </p>
+  {
     /* Staged rather than stacked (2026-08-07). Three equal cards in a row is the
        generic-three-card-row this brand explicitly avoids; three sheets laid on a
        table at slightly different depths is the same content read as a scene. The
@@ -42,14 +57,6 @@ const showcaseVerses = showcaseIds
       />
     ))}
   </div>
-  <p
-    class:list={[
-      'verse-showcase__intro',
-      lang === 'fa' ? 'font-farsi verse-showcase__intro--fa' : 'font-serif italic',
-    ]}
-  >
-    {intro}
-  </p>
 </section>
 
 <style>
@@ -97,7 +104,9 @@ const showcaseVerses = showcaseIds
   .verse-showcase__intro {
     max-width: 28rem;
     margin-inline: auto;
-    margin-top: 3.5rem;
+    /* Was margin-top, when this trailed the cards. It leads them now, so the gap
+       belongs underneath it. */
+    margin-bottom: 3.5rem;
     text-align: center;
     color: rgb(27 27 58 / 0.7);
   }
