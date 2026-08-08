@@ -9,6 +9,7 @@ Rule for all generation tasks: a claim may appear in marketing output ONLY if it
 ## Product identity — VERIFIED
 - Name: Hamdam. Positioning: daily Persian poetry, reflection and journal app. (Source: hamdam.com.au, fetched 7 Aug 2026)
 - Platform: iPhone, available now on the AU App Store, App Store ID 6784461990. (Source: hamdam.com.au meta tags and App Store links)
+- Minimum iOS: 26.5. Confirmed by Ealia 2026-08-07, resolving the deployment target question that had been open since setup: 26.5 is the intended floor, not the 17.0 once assumed, and not a build mistake. Published as `operatingSystem: 'iOS 26.5+'` in src/lib/schema.js, which is pinned to that exact string by a test. Any change to the floor is made here first and in the schema second. Worth stating plainly in any campaign: this is a high floor, so the addressable audience is phones running a current iOS, and saying so up front costs less than a download that cannot install.
 - Poets: Hafez, Rumi, Saadi, Khayyam, Parvin Etesami. Five poets, bilingual Persian/English. (Source: hamdam.com.au)
 - Verses sourced from Ganjoor.net, credited on site. (Source: hamdam.com.au footer)
 - Trade mark: HAMDAM™, Australian trade mark application no. 2674427, filed 11 July 2026. (Source: hamdam.com.au footer)
@@ -41,7 +42,7 @@ Rule for all generation tasks: a claim may appear in marketing output ONLY if it
 
 ## UNVERIFIED — need a check before first use
 - App Store rating, review count, download numbers: never cite without pulling current App Store data at time of writing.
-- Current app version and iOS compatibility: deployment target issue (26.5 vs intended 17.0) unresolved as of last review; do not make device-compatibility claims until fixed and verified.
+- Current app version: never cite without checking the App Store listing at time of writing. (iOS compatibility is resolved and moved to Product identity above.)
 - Farsi site parity: Farsi legal pages incomplete as of last review; do not link Farsi legal pages in campaigns until confirmed complete.
 
 ## Standing rules (not claims — pipeline constraints)

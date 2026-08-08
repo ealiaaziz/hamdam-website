@@ -1,20 +1,31 @@
 // Structured data for the two homepages.
 //
 // Extracted from index.astro / fa/index.astro on 2026-08-07, when an SEO audit
-// found `operatingSystem: 'iOS 26+'` published on both. That string was the
-// accidental deployment target (26.5 rather than the intended 17.0), so the
-// schema was advertising the defect to every search and answer engine that
-// read it. Both copies said it, because both were hand-maintained; one builder
-// with one test is why they can no longer drift apart.
+// found `operatingSystem: 'iOS 26+'` published on both. Both copies said it,
+// because both were hand-maintained; one builder with one test is why they can
+// no longer drift apart.
+//
+// The version claim has now been three different things, so the history is
+// worth keeping straight. It read 'iOS 26+' while FACTS.md recorded the
+// deployment target as an unresolved defect (26.5 where 17.0 was intended), so
+// the schema was publishing a number nobody stood behind. It was cut to the
+// unversioned 'iOS' on that basis: true whatever the minimum turned out to be,
+// and safe to publish while the answer was unknown. On 2026-08-07 Ealia
+// confirmed the minimum genuinely is iOS 26.5, so it is now stated.
+//
+// 'iOS 26.5+' looks almost identical to the string that was removed, and is
+// not the same claim at all. The old one was an unverified number inherited
+// from a suspected build mistake. This one is a verified requirement, recorded
+// in FACTS.md, and stating it is the point: an answer engine that knows the
+// floor will not recommend the app to someone whose phone cannot run it.
 //
 // Two rules govern what may appear here, and both come from FACTS.md:
 //
-//   1. No device-compatibility claim until the deployment target is fixed and
-//      verified. `operatingSystem` is therefore the unversioned 'iOS'. That is
-//      true whatever the minimum turns out to be, and it is what stops the
-//      schema from either advertising the bug or publishing an iOS 17 claim
-//      the shipped binary does not yet support. Add the floor back, as
-//      'iOS 17.0', in the same commit that verifies the new build.
+//   1. Device-compatibility claims track FACTS.md and nothing else. The
+//      minimum is iOS 26.5, VERIFIED there on 2026-08-07. If the floor ever
+//      moves, it moves in FACTS.md first and here second, never the other way
+//      round: this file is downstream of that record, which is what stopped an
+//      unverified 26+ being published for weeks.
 //   2. Nothing about translation quality or provenance. FACTS.md marks that
 //      CONTESTED and hard-blocked while AI-generated English remains in the
 //      app, so featureList below describes the mechanism (a verse and a
@@ -100,8 +111,8 @@ export function homepageSchema({ lang, name, description, url, downloadUrl, scre
     alternateName: 'Hamdam: Daily Persian Poetry',
     description,
     url,
-    // Unversioned on purpose. Read the header of this file before changing it.
-    operatingSystem: 'iOS',
+    // VERIFIED minimum, not a guess. Read the header before changing it.
+    operatingSystem: 'iOS 26.5+',
     applicationCategory: 'LifestyleApplication',
     availableOnDevice: 'iPhone',
     downloadUrl,

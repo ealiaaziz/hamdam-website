@@ -51,19 +51,30 @@ describe('homepageSchema', () => {
   });
 });
 
-// The reason this file exists. Both homepages published `iOS 26+`, the
-// accidental deployment target, until 2026-08-07. FACTS.md bars any
-// device-compatibility claim until the 17.0 build ships and is verified, so
-// the correct value is the unversioned 'iOS' -- not '26', which advertises the
-// bug, and not '17', which would be a claim the shipped binary does not
-// support yet.
+// The reason this file exists. Both homepages published `iOS 26+` while
+// FACTS.md still recorded the deployment target as an unresolved defect, so
+// the number was published before anyone stood behind it. It was cut to the
+// unversioned 'iOS' on 2026-08-07, then set to the real floor the same day
+// once Ealia confirmed the minimum genuinely is 26.5.
+//
+// The assertion is pinned to the exact string rather than a pattern, because
+// the failure this guards is a plausible-looking wrong number, not a malformed
+// one. '26+', '26.5', '17.0' and 'iOS' would all pass a loose regex and all
+// misstate what the app requires. Change it here only after FACTS.md changes.
 describe('operatingSystem', () => {
-  it('makes no version claim', () => {
-    expect(appNode(build()).operatingSystem).toBe('iOS');
+  it('states the verified minimum exactly', () => {
+    expect(appNode(build()).operatingSystem).toBe('iOS 26.5+');
   });
 
-  it('carries no digits anywhere in the OS string', () => {
-    expect(appNode(build()).operatingSystem).not.toMatch(/\d/);
+  it('is identical on both locales, since a device floor is not localised', () => {
+    const fa = build({ lang: 'fa', name: 'همدم', url: 'https://hamdam.com.au/fa/' });
+    expect(appNode(fa).operatingSystem).toBe(appNode(build()).operatingSystem);
+  });
+
+  it('never reverts to the unverified 26+ or the abandoned 17.0', () => {
+    const os = appNode(build()).operatingSystem;
+    expect(os).not.toBe('iOS 26+');
+    expect(os).not.toMatch(/\b17(\.0)?\b/);
   });
 });
 
