@@ -3,6 +3,7 @@ import type {
   CommentRow,
   OutboundEmailRow,
   OutboundKind,
+  OutboundStatus,
   RequesterRow,
   TicketRow,
   TicketStatus,
@@ -237,6 +238,82 @@ export async function listPendingOutboundEmails(db: D1Database): Promise<Outboun
   const result = await db
     .prepare(`SELECT * FROM outbound_emails WHERE status = 'pending' ORDER BY created_at ASC`)
     .all<OutboundEmailRow>();
+  return result.results;
+}
+
+/**
+ * What the console needs to know about one undelivered email. Deliberately
+ * not the whole row: see the column list below.
+ */
+export interface UndeliveredOutbound {
+  id: number;
+  kind: OutboundKind;
+  to_email: string;
+  status: OutboundStatus;
+  failure_reason: string | null;
+  created_at: string;
+}
+
+/**
+ * How long a `pending` row is given before the console calls it stuck.
+ *
+ * Every row is `pending` for the moment between the insert and the send
+ * resolving, and the send runs in `waitUntil` after the response has already
+ * gone, so a row queued by the request that is rendering this page is
+ * legitimately pending and must not be reported. Five minutes is far longer
+ * than a Graph call and far shorter than the gap before anyone would care.
+ */
+const STUCK_AFTER_MS = 5 * 60 * 1000;
+
+/**
+ * Mail on this ticket that has not reached anyone.
+ *
+ * Read for the console rather than for the mail path, because these are the
+ * states nothing retries and nothing announces. An agent's evidence that
+ * their reply was delivered is a 303 back to the ticket, and that redirect
+ * is returned identically whether Graph accepted the message or refused it:
+ * the send runs in `waitUntil`, after the response has gone. So either the
+ * console says it or nobody finds out until the customer says they were
+ * ignored.
+ *
+ * Both `failed` and `pending`, because the second is the worse of the two
+ * and was the easier one to miss. `approveDraft` releases a draft by setting
+ * `pending`, and nothing in this Worker ever reads a pending row:
+ * `scheduled()` runs `purgeRateLimits` and `ingestInbox`, and
+ * `listPendingOutboundEmails` has no callers at all. So approving a draft
+ * returns its usual redirect and then does nothing, forever, and a query for
+ * `failed` alone would have reported that ticket as perfectly healthy. Same
+ * for anything queued while `canSendDirectly` is false.
+ *
+ * `draft` is excluded: a draft is a message deliberately not sent yet, which
+ * is a state the console already shows on purpose.
+ *
+ * Named columns rather than `SELECT *`, because `body_html` is the bulk of
+ * the row and none of it is rendered here. A summary email carries the whole
+ * conversation, so a handful of failed summaries on a chatty ticket is
+ * megabytes fetched to display four fields, on exactly the page an agent
+ * most needs to load.
+ *
+ * Newest first, and unbounded on purpose. This is scoped to one ticket, and
+ * a ticket with enough undelivered mail to be worth paging through is a
+ * ticket whose whole history someone needs to be looking at.
+ */
+export async function listUndeliveredOutboundForTicket(
+  db: D1Database,
+  ticketId: number,
+  now: Date = new Date(),
+): Promise<UndeliveredOutbound[]> {
+  const stuckBefore = new Date(now.getTime() - STUCK_AFTER_MS).toISOString();
+  const result = await db
+    .prepare(
+      `SELECT id, kind, to_email, status, failure_reason, created_at
+         FROM outbound_emails
+        WHERE ticket_id = ?1
+          AND (status = 'failed' OR (status = 'pending' AND created_at <= ?2))
+        ORDER BY created_at DESC`,
+    )
+    .bind(ticketId, stuckBefore)
+    .all<UndeliveredOutbound>();
   return result.results;
 }
 

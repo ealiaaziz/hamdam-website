@@ -37,6 +37,7 @@ import {
   recordRejectedArticle,
   discardDraft,
   listDrafts,
+  listUndeliveredOutboundForTicket,
   queueAssistantDraft,
   createTicket,
   getTicketById,
@@ -165,7 +166,11 @@ async function queueConversationSummary(
  * should not wait on SMTP to see their ticket, and `waitUntil` keeps the
  * Worker alive for it after the response has gone.
  */
-async function queueAndSend(c: DeskContext, email: NewOutboundEmail): Promise<number> {
+async function queueAndSend(
+  c: DeskContext,
+  email: NewOutboundEmail,
+  options: { humanAuthored?: boolean } = {},
+): Promise<number> {
   const id = await queueOutboundEmail(c.env.DB, email);
   if (!canSendDirectly(c.env)) return id;
 
@@ -175,10 +180,41 @@ async function queueAndSend(c: DeskContext, email: NewOutboundEmail): Promise<nu
     // path crosses. The portal metered its own submissions and the mailbox
     // metered its own senders, and neither of them was counting the thing
     // that matters to a stranger, which is their own inbox.
-    const allowance = await mayEmailRecipient(c.env.DB, email.toEmail, unmeteredRecipients(c.env));
-    if (!allowance.allowed) {
-      await markOutboundFailed(c.env.DB, id, `recipient hourly limit reached (${allowance.count})`);
-      return;
+    //
+    // Human-authored mail is exempt, for the same reason escalation is, and
+    // the reason is a hole rather than a preference. This ceiling exists to
+    // bound *machine-generated* volume, but checking it at the one point
+    // every path crosses meant it was also being applied to an agent typing
+    // a reply into the console. That conflation was reachable. The portal
+    // never verifies a requester's address, so a stranger could open five
+    // tickets naming victim@customer.com (`ticket_create_email`, 5/hr),
+    // take the tracking tokens straight back out of the 303, and press
+    // "email me this conversation" five more times (`ticket_summary`, which
+    // is metered per IP at 10/hr, not per recipient). Ten pieces of mail,
+    // which is exactly that address's `outbound_recipient` budget. From
+    // then on every reply an agent typed to that person was marked `failed`
+    // below and never sent, while the console returned its usual redirect
+    // and the agent believed it had gone. One address, repeatable every
+    // hour, and the desk quietly loses the ability to answer a named
+    // customer.
+    //
+    // Exempt means neither blocked nor counted, matching how
+    // `mayEmailRecipient` already treats the escalation addresses: an
+    // agent's reply is not the volume this bounds, and it must not be able
+    // to spend the budget either. It cannot be turned into a way to send
+    // unmetered mail, because the only caller that sets it is behind
+    // Cloudflare Access and the `ADMIN_EMAILS` allowlist.
+    //
+    // Deliberately not keyed on `kind`. `ingest.ts` queues the *assistant's*
+    // reply as `agent_reply` too, and that one is machine mail and stays
+    // metered. What matters is who composed the text, not what the row is
+    // labelled, and only the call site knows that, so it is passed in.
+    if (!options.humanAuthored) {
+      const allowance = await mayEmailRecipient(c.env.DB, email.toEmail, unmeteredRecipients(c.env));
+      if (!allowance.allowed) {
+        await markOutboundFailed(c.env.DB, id, `recipient hourly limit reached (${allowance.count})`);
+        return;
+      }
     }
     const result = await sendMail(c.env, { toEmail: email.toEmail, subject: email.subject, bodyHtml: email.bodyHtml });
     if (result.sent) await markOutboundSent(c.env.DB, id);
@@ -194,8 +230,23 @@ async function queueAndSend(c: DeskContext, email: NewOutboundEmail): Promise<nu
   // outbound row: the scheduled handler runs `purgeRateLimits` and
   // `ingestInbox`, and that is the whole of it. So `failed` here means a
   // person has to notice it and resend, which is exactly why
-  // `mayEmailRecipient` fails open rather than closed, and why a drain pass
-  // belongs on the list of things this desk still needs.
+  // `mayEmailRecipient` fails open rather than closed.
+  //
+  // Amended 2026-08-10. This used to end "and why a drain pass belongs on
+  // the list of things this desk still needs", named as the fix for the
+  // hole described above. It is not the fix, and writing it would have been
+  // the wrong call. A drain re-enters `mayEmailRecipient` and is refused
+  // again for as long as the window holds, so the best it buys is the same
+  // reply an hour late, in exchange for a retry counter, a migration, and
+  // new failure semantics on the mail path. The exemption above removes the
+  // reachability outright, in the request, with no schema change. A drain
+  // pass is still a reasonable thing to want for ordinary Graph flakiness,
+  // but it is a reliability feature and should be argued for on those
+  // terms, not smuggled in as a security fix.
+  //
+  // What `failed` still means is that a person has to notice, so the admin
+  // ticket page now says so out loud rather than leaving the agent to infer
+  // delivery from a redirect.
   c.executionCtx.waitUntil(deliver());
   return id;
 }
@@ -996,8 +1047,16 @@ app.get('/admin/tickets/:id', async (c) => {
   if (!ticket) return c.notFound();
   const comments = await listComments(c.env.DB, id);
   const drafts = await listDrafts(c.env.DB, id);
+  const undeliveredOutbound = await listUndeliveredOutboundForTicket(c.env.DB, id);
   return c.html(
-    adminTicketPage({ ticket, comments, agentEmail, drafts, allowlistConfigured: adminAllowlist(c.env).length > 0 }),
+    adminTicketPage({
+      ticket,
+      comments,
+      agentEmail,
+      drafts,
+      undeliveredOutbound,
+      allowlistConfigured: adminAllowlist(c.env).length > 0,
+    }),
   );
 });
 
@@ -1019,15 +1078,25 @@ app.post('/admin/tickets/:id/reply', async (c) => {
     if (ticket.status === 'new') await updateTicketStatus(c.env.DB, id, 'open');
 
     const rendered = agentReplyEmail({ ticketId: id, subject: ticket.subject, agentName: agentEmail, message: body });
-    await queueAndSend(c, {
-      ticketId: id,
-      commentId,
-      kind: 'agent_reply',
-      toEmail: ticket.requester_email,
-      subject: rendered.subject,
-      bodyHtml: rendered.html,
-      inReplyToMessageId: ticket.last_inbound_message_id,
-    });
+    // The one call site that is human-authored: an agent, behind Access and
+    // the allowlist, has typed this and pressed send. It is exempt from the
+    // per-recipient ceiling because that ceiling bounds machine-generated
+    // mail, and because a stranger who has spent a requester's budget must
+    // not thereby be able to stop the desk answering them. See the note in
+    // `queueAndSend`.
+    await queueAndSend(
+      c,
+      {
+        ticketId: id,
+        commentId,
+        kind: 'agent_reply',
+        toEmail: ticket.requester_email,
+        subject: rendered.subject,
+        bodyHtml: rendered.html,
+        inReplyToMessageId: ticket.last_inbound_message_id,
+      },
+      { humanAuthored: true },
+    );
   }
   return c.redirect(`/admin/tickets/${id}`, 303);
 });
