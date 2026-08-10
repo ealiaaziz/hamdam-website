@@ -3,7 +3,7 @@ import { describeAge, type Heartbeat } from '../heartbeat.js';
 import { escapeHtml, stripHtml, textToSafeHtml, ticketPublicId } from '../ids.js';
 import { PRIORITY_LABEL, SLA_POLICY, type Priority } from '../itil.js';
 import type { CommentRow, TicketStatus, TicketWithRequester } from '../types.js';
-import type { DraftRow } from '../db.js';
+import type { DraftRow, UndeliveredOutbound } from '../db.js';
 
 const ADMIN_NAV = [
   { href: '/admin', label: 'Queue' },
@@ -148,11 +148,61 @@ function draftsBlock(drafts: DraftRow[], ticketId: number): string {
     .join('\n');
 }
 
+/**
+ * Says out loud that mail on this ticket did not go out.
+ *
+ * The gap this closes is that an agent's only feedback after pressing send
+ * is a 303 back to this page, and that redirect looks the same whether the
+ * message was delivered or refused, because the send happens after the
+ * response. Nothing retries a `failed` row and nothing else mentions it, so
+ * without this the first person to notice is the customer, and what they
+ * notice is silence.
+ *
+ * Rendered at the top with the other notices rather than beside the thread,
+ * because the thread already shows the agent's comment as posted: the
+ * comment row is written before the send is attempted, so the reply is
+ * sitting there in the history looking exactly like one that went. The
+ * correction has to be somewhere the eye lands first.
+ *
+ * `failure_reason` comes from `sendMail` or from the rate limiter, so it is
+ * ours rather than a requester's, but it is escaped anyway. It is a string
+ * that reaches a page, and the rule that makes that safe is that it is
+ * applied without asking where the string came from.
+ *
+ * The wording names the address and stops there. An earlier draft said "the
+ * requester has not seen this" and "resend by posting the reply again
+ * below", which is right for `agent_reply` and wrong for the rest: a
+ * `requester_reply` notification goes to the desk's own inbox and a
+ * `status_change` queued by an escalation goes to the team, so on those rows
+ * both sentences would have sent a reader to comfort the wrong person and
+ * fix it the wrong way. Saying who it was for and letting them decide is
+ * both shorter and true of every kind.
+ */
+function undeliveredMailNotice(undelivered: readonly UndeliveredOutbound[]): string {
+  if (undelivered.length === 0) return '';
+  const items = undelivered
+    .map((f) => {
+      // 'pending' here has already passed the staleness threshold in the
+      // query, so it means nothing ever picked it up rather than in flight.
+      const state = f.status === 'pending' ? 'never attempted' : escapeHtml(f.failure_reason ?? 'no reason recorded');
+      return `<li><strong>${escapeHtml(f.kind.replace(/_/g, ' '))}</strong> to ${escapeHtml(f.to_email)},
+      queued ${formatDateTime(f.created_at)} &mdash; ${state}</li>`;
+    })
+    .join('\n');
+  const one = undelivered.length === 1;
+  const count = one ? 'One email' : `${undelivered.length} emails`;
+  return `<div class="notice notice--error">${count} on this ticket ${one ? 'has' : 'have'} not been delivered,
+  and nothing will retry ${one ? 'it' : 'them'} automatically. Check who ${one ? 'it was' : 'they were'} for
+  before assuming anyone has seen ${one ? 'it' : 'them'}.
+  <ul>${items}</ul></div>`;
+}
+
 export function adminTicketPage(opts: {
   ticket: TicketWithRequester;
   comments: CommentRow[];
   agentEmail: string;
   drafts?: DraftRow[];
+  undeliveredOutbound?: UndeliveredOutbound[];
   allowlistConfigured: boolean;
 }): string {
   const { ticket, comments } = opts;
@@ -176,6 +226,7 @@ export function adminTicketPage(opts: {
 
   const body = `
 ${allowlistNotice(opts.allowlistConfigured)}
+${undeliveredMailNotice(opts.undeliveredOutbound ?? [])}
 <p class="lede"><a href="/admin">&larr; Queue</a></p>
 <h1>${escapeHtml(ticket.subject)}</h1>
 <p class="lede">${publicId} &middot; ${escapeHtml(ticket.requester_name ?? ticket.requester_email)} &lt;${escapeHtml(ticket.requester_email)}&gt;
