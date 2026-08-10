@@ -186,7 +186,7 @@ function undeliveredMailNotice(undelivered: readonly UndeliveredOutbound[]): str
       // query, so it means nothing ever picked it up rather than in flight.
       const state = f.status === 'pending' ? 'never attempted' : escapeHtml(f.failure_reason ?? 'no reason recorded');
       return `<li><strong>${escapeHtml(f.kind.replace(/_/g, ' '))}</strong> to ${escapeHtml(f.to_email)},
-      queued ${formatDateTime(f.created_at)} &mdash; ${state}</li>`;
+      queued ${formatDateTime(f.created_at)}: ${state}</li>`;
     })
     .join('\n');
   const one = undelivered.length === 1;
