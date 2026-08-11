@@ -1,22 +1,18 @@
 #!/usr/bin/env python3
-"""Hamdam reel frame renderer, v2.
+"""Hamdam reel frame renderer, v3 - six pages.
 
     python3 hamdam_reel_render.py <conceptId> <stage 0..5> [outDir]
 
-Six stages so a reel builds instead of cutting. All six share one frame and one
-layout - only text appears - so consecutive stages cross-dissolve without the
-image seeming to move.
-
   0  scene only
-  1  + headline
-  2  + first half of the Persian
-  3  + second half of the Persian
-  4  + English translation
-  5  + poet name
+  1  headline
+  2  Persian verse, alone
+  3  English translation, alone, at the same type size as the Persian
+  4  poet, city and century
+  5  the lesson and who to send it to, in both languages
 
-Scene: sunrise over open water, the sun already clear of the horizon, a light
-path on the water and birds climbing away to the right. Warmer and more open
-than v1 - the mood is encouragement, not elegy.
+Pages 2 and 3 share one computed type size so the two languages carry equal
+weight. Every page shares one frame and one layout, so consecutive pages
+cross-dissolve without the image seeming to move.
 
 Persian is read byte-exact from the queue and never typed.
 """
@@ -40,7 +36,6 @@ V = next(v for v in json.load(open(f'{BASE}/verse-queue.json')) if v['id'] == C[
 FA = [l.strip() for l in V['persian'].split('\n') if l.strip()]
 EN = V['english']
 assert len(FA) in (2, 4)
-HALF = len(FA)//2
 
 S = 2
 W, H = 1080 * S, 1920 * S
@@ -185,15 +180,9 @@ def wrap(draw, text, font, maxw):
 
 cx = IW//2
 HEAD_Y = 0.470 if FOUR else 0.520
-FA_TOP = 0.560 if FOUR else 0.635
-FA_GAP = 0.058 if FOUR else 0.068
 POET_Y = 0.950
-EN_GAP = 0.036
 
-f_poet = ImageFont.truetype(SS+'SourceSerif4-Light.otf', S*20)
-f_en   = ImageFont.truetype(SS+'SourceSerif4-LightIt.otf', S*(21 if FOUR else 24))
-
-if STAGE >= 1:
+if 1 <= STAGE <= 3:
     hl = C['headline']
     hsz = 26 if FOUR else 30
     while hsz > 15:
@@ -203,29 +192,63 @@ if STAGE >= 1:
         hsz -= 1
     track(d, (cx, int(IH*HEAD_Y)), hl, f_head, CREAM, S*2.2)
 
-if STAGE >= 2:
-    sz = 38 if FOUR else 44
-    while sz > 20:
+def common_size():
+    """One size shared by the Persian page and the English page."""
+    sz = 40 if FOUR else 46
+    while sz > 18:
         f_fa = ImageFont.truetype(FZ+'Vazirmatn-Light.ttf', S*sz)
-        if max(d.textlength(l, font=f_fa, direction='rtl', language='fa') for l in FA) <= IW*0.86:
-            break
+        f_en = ImageFont.truetype(SS+'SourceSerif4-Light.otf', S*sz)
+        fa_ok = max(d.textlength(l, font=f_fa, direction='rtl', language='fa') for l in FA) <= IW*0.86
+        en_lines = wrap(d, EN, f_en, IW*0.86)
+        if fa_ok and len(en_lines) <= 6:
+            return sz, f_fa, f_en, en_lines
         sz -= 2
-    shown = FA[:HALF] if STAGE == 2 else FA
-    for i, line in enumerate(shown):
-        rtl(d, (cx, int(IH*(FA_TOP + i*FA_GAP))), line, f_fa, hx('F8F2E4'))
+    f_fa = ImageFont.truetype(FZ+'Vazirmatn-Light.ttf', S*18)
+    f_en = ImageFont.truetype(SS+'SourceSerif4-Light.otf', S*18)
+    return 18, f_fa, f_en, wrap(d, EN, f_en, IW*0.86)
 
-if STAGE >= 4:
-    lines = wrap(d, EN, f_en, IW*0.84)[:3]
-    en_bottom = POET_Y - 0.052
-    en_top = en_bottom - (len(lines)-1)*EN_GAP
-    fa_bottom = FA_TOP + (len(FA)-1)*FA_GAP
-    if en_top - fa_bottom < 0.052:
-        en_top = fa_bottom + 0.052
-    for i, l in enumerate(lines):
-        d.text((cx, int(IH*(en_top + i*EN_GAP))), l, font=f_en, fill=hx('EAE1CC'), anchor='mm')
+BLOCK_MID = 0.660 if FOUR else 0.700
 
-if STAGE >= 5:
-    track(d, (cx, int(IH*POET_Y)), C['poet'].upper(), f_poet, hx('D2C4A6'), S*7)
+if STAGE == 2:
+    sz, f_fa, _, _ = common_size()
+    gap = (sz*1.75)/(IH/S)
+    y0 = BLOCK_MID - (len(FA)-1)*gap/2
+    for i, line in enumerate(FA):
+        rtl(d, (cx, int(IH*(y0 + i*gap))), line, f_fa, hx('F8F2E4'))
+
+if STAGE == 3:
+    sz, _, f_en, en_lines = common_size()
+    gap = (sz*1.60)/(IH/S)
+    y0 = BLOCK_MID - (len(en_lines)-1)*gap/2
+    for i, line in enumerate(en_lines):
+        d.text((cx, int(IH*(y0 + i*gap))), line, font=f_en, fill=hx('F4EEDE'), anchor='mm')
+
+if STAGE == 4:
+    f_p  = ImageFont.truetype(FZ+'Vazirmatn-Medium.ttf', S*46)
+    f_pe = ImageFont.truetype(SS+'SourceSerif4-Light.otf', S*26)
+    rtl(d, (cx, int(IH*0.610)), C.get('poetLineFa','').split(' \u2014 ')[0], f_p, hx('F8F2E4'))
+    d.line([cx-IW*0.07, int(IH*0.670), cx+IW*0.07, int(IH*0.670)], fill=hx('9C8C6E'), width=S)
+    d.text((cx, int(IH*0.725)), C.get('poetLineEn', C['poet']), font=f_pe, fill=hx('DCD0B8'), anchor='mm')
+
+if STAGE == 5:
+    f_lf = ImageFont.truetype(FZ+'Vazirmatn-Medium.ttf', S*36)
+    f_sf = ImageFont.truetype(FZ+'Vazirmatn-Regular.ttf', S*26)
+    f_le = ImageFont.truetype(SS+'SourceSerif4-It.otf', S*30)
+    f_se = ImageFont.truetype(SS+'SourceSerif4-Light.otf', S*24)
+    lf, le = C.get('lessonFa',''), C.get('lessonEn','')
+    sf, se = C.get('sendFa',''),   C.get('sendEn','')
+    sz = 36
+    while sz > 20 and d.textlength(lf, font=f_lf, direction='rtl', language='fa') > IW*0.86:
+        sz -= 2; f_lf = ImageFont.truetype(FZ+'Vazirmatn-Medium.ttf', S*sz)
+    rtl(d, (cx, int(IH*0.520)), lf, f_lf, hx('FBF6EA'))
+    rtl(d, (cx, int(IH*0.583)), sf, f_sf, hx('DCD0B8'))
+    d.line([cx-IW*0.07, int(IH*0.635), cx+IW*0.07, int(IH*0.635)], fill=hx('9C8C6E'), width=S)
+    for i, l in enumerate(wrap(d, le, f_le, IW*0.86)[:2]):
+        d.text((cx, int(IH*(0.690 + i*0.042))), l, font=f_le, fill=hx('F4EEDE'), anchor='mm')
+    for i, l in enumerate(wrap(d, se, f_se, IW*0.86)[:2]):
+        d.text((cx, int(IH*(0.775 + i*0.036))), l, font=f_se, fill=hx('DCD0B8'), anchor='mm')
+    rtl(d, (cx, int(IH*0.870)), '\u0647\u0645\u062f\u0645',
+        ImageFont.truetype(FZ+'Vazirmatn-SemiBold.ttf', S*34), hx('EFE6D2'))
 
 card_w = IW + FB*2
 card_h = IH + FB*2 + int(H*0.052)
