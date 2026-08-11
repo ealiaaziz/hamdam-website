@@ -1,0 +1,136 @@
+{
+  "_readme": "Concept bank for the Hamdam reel series. The agent READS this file and never writes to it. Each entry pairs a verse id from social/verse-queue.json with a human-verified argument. After a concept ships, set used=true by hand. When fewer than three entries have used=false, write more — do not let the agent improvise one.",
+  "_verification_status": "DRAFT — every 'argument' below was written by Claude on 2026-08-07 and must be read and approved by Ealia before the task is switched on. Claims flagged in _check are the ones worth verifying against a source. Nothing here has been posted.",
+  "concepts": [
+    {
+      "id": "parvin-023-needle",
+      "verseId": "parvin-023",
+      "poet": "Parvin",
+      "headline": "THE NEEDLE ANSWERS BACK",
+      "argument": "A shirt complains to a needle about the wounds it leaves. The needle replies: if you don't like my way, go and speak to the tailor.\n\nThis is the مناظره — the debate poem, and Parvin's signature form. Two ordinary objects argue and one of them wins. She gives speech to needles, to thorns, to crows, to the smallest and least regarded thing in the room, and the wisdom almost always belongs to the humbler party.\n\nThe needle's answer is also a refusal to be blamed for a design it did not choose. It points past itself, to the hand that guides it.",
+      "questionFa": "کدام شیء در خانه‌ات حرفی برای گفتن دارد؟",
+      "questionEn": "Which object in your house would have something to say?",
+      "poetLineFa": "پروین اعتصامی — تبریز و تهران، قرن بیستم",
+      "poetLineEn": "Parvin Etesami — Tabriz and Tehran, 20th century",
+      "hashtagsFa": ["#همدم", "#پروین_اعتصامی", "#شعر_فارسی", "#ادبیات_فارسی", "#مناظره", "#تأمل_روزانه"],
+      "hashtagsEn": ["#persianpoetry", "#parvinetesami", "#persianliterature", "#persianculture", "#dailypoetry", "#iranianaustralian"],
+      "_check": "That مناظره (debate poem) is Parvin's signature form — well established. The reading of the needle's reply is interpretation, not a factual claim, so it is safe as written.",
+      "used": false,
+      "mood": "wry"
+    },
+    {
+      "id": "khayyam-036-handle",
+      "verseId": "khayyam-036",
+      "poet": "Khayyam",
+      "headline": "THAT HANDLE WAS SOMEONE'S ARM",
+      "argument": "Khayyam looks at a clay jug and says: this was a lover once. The handle you are holding was an arm around someone's neck.\n\nIn English, Khayyam usually arrives softened — wistful, Victorian, a little melancholy. The Persian is not wistful. It is a physicist's observation delivered flat: matter is conserved, the dead become the cup, and you are drinking from someone.\n\nThat is what makes it frightening rather than pretty. He is not being poetic about death. He is being accurate.",
+      "questionFa": "خیام را اول به فارسی خواندی یا به انگلیسی؟",
+      "questionEn": "Did you meet Khayyam first in Persian, or in English?",
+      "poetLineFa": "خیام — نیشابور، قرن یازدهم",
+      "poetLineEn": "Omar Khayyam — Nishapur, 11th century",
+      "hashtagsFa": ["#همدم", "#خیام", "#رباعیات", "#شعر_فارسی", "#ادبیات_فارسی", "#تأمل_روزانه"],
+      "hashtagsEn": ["#persianpoetry", "#khayyam", "#rubaiyat", "#persianliterature", "#persianculture", "#dailypoetry"],
+      "_check": "Khayyam was an astronomer and mathematician of Nishapur, 11th–12th century — safe. The claim that English translations soften him is a widely held critical view; it is phrased as a comparison rather than as a fact about any named translator, which keeps it clear of copyright and of overreach.",
+      "used": false,
+      "mood": "grave"
+    },
+    {
+      "id": "parvin-014-socrates",
+      "verseId": "parvin-014",
+      "poet": "Parvin",
+      "headline": "SHE PUT SOCRATES IN A PERSIAN QASIDA",
+      "argument": "Someone asks Socrates what he has learned of death. He answers with a question: why do you call this life?\n\nA 20th-century Iranian woman writing in classical Persian form, arguing with a Greek philosopher who died 2,300 years earlier. Persian poetry has always done this — absorbed what it met and answered back in its own metre.\n\nParvin is usually taught, when she is taught at all, as the gentle one who wrote about flowers and mothers. She was also this.",
+      "questionFa": "پروین را در مدرسه خواندی، یا در خانه، یا هیچ‌وقت؟",
+      "questionEn": "Did you learn Parvin at school, at home, or never?",
+      "poetLineFa": "پروین اعتصامی — تبریز و تهران، قرن بیستم",
+      "poetLineEn": "Parvin Etesami — Tabriz and Tehran, 20th century",
+      "hashtagsFa": ["#همدم", "#پروین_اعتصامی", "#شعر_فارسی", "#ادبیات_فارسی", "#فلسفه", "#تأمل_روزانه"],
+      "hashtagsEn": ["#persianpoetry", "#parvinetesami", "#persianliterature", "#philosophy", "#persianculture", "#dailypoetry"],
+      "_check": "The poem itself names Socrates, so that is on the page. Parvin lived 1907–1941 — 20th century, correct. 'Usually taught as the gentle one' is a characterisation of reception; soften or cut if you disagree with it.",
+      "used": false,
+      "mood": "grave"
+    },
+    {
+      "id": "khayyam-007-grass",
+      "verseId": "khayyam-007",
+      "poet": "Khayyam",
+      "headline": "BEFORE THE GRASS GROWS FROM YOU",
+      "argument": "Sit on the grass and live well for a few days — before the grass grows out of you.\n\nThe English phrase for this is carpe diem, and it flattens the poem. Horace says seize the day because time flies. Khayyam says something colder: you are the soil. The grass you are sitting on and the grass that will grow from you are the same grass.\n\nThe consolation and the threat are the same sentence. That is the rubaʿi form doing what it does — four lines, and the turn lands in the last one.",
+      "questionFa": "امروز کجا می‌نشینی؟",
+      "questionEn": "Where will you sit today?",
+      "poetLineFa": "خیام — نیشابور، قرن یازدهم",
+      "poetLineEn": "Omar Khayyam — Nishapur, 11th century",
+      "hashtagsFa": ["#همدم", "#خیام", "#رباعیات", "#شعر_فارسی", "#لحظه", "#تأمل_روزانه"],
+      "hashtagsEn": ["#persianpoetry", "#khayyam", "#rubaiyat", "#persianliterature", "#mindfulness", "#dailypoetry"],
+      "_check": "The rubaʿi's turn falling in the fourth line is standard description of the form. The Horace comparison is interpretation — cut it if it feels like showing off.",
+      "used": false,
+      "mood": "grave"
+    },
+    {
+      "id": "parvin-008-sparrow",
+      "verseId": "parvin-008",
+      "poet": "Parvin",
+      "headline": "A SPARROW TELLS A PIGEON TO LEAVE",
+      "argument": "At dawn a sparrow tells a pigeon: put your head out of the nest. The horizons are bright — why are you sleeping in the dark?\n\nNote which bird is speaking. The گنجشک is the smallest and most ordinary bird in Persian verse, the one nobody writes about. The کبوتر is the poet's bird, the noble one. Parvin hands the wisdom to the sparrow and the excuses to the pigeon.\n\nShe does this everywhere. The lesser party is right.",
+      "questionFa": "این روزها چه چیزی تو را از آشیانه بیرون می‌آورد؟",
+      "questionEn": "What gets you out of the nest lately?",
+      "poetLineFa": "پروین اعتصامی — تبریز و تهران، قرن بیستم",
+      "poetLineEn": "Parvin Etesami — Tabriz and Tehran, 20th century",
+      "hashtagsFa": ["#همدم", "#پروین_اعتصامی", "#شعر_فارسی", "#ادبیات_فارسی", "#سحر", "#تأمل_روزانه"],
+      "hashtagsEn": ["#persianpoetry", "#parvinetesami", "#persianliterature", "#persianculture", "#dawn", "#dailypoetry"],
+      "_check": "The relative poetic status of گنجشک vs کبوتر is a judgement about convention rather than a hard fact — it is defensible but worth a native reader's eye before it ships.",
+      "used": false,
+      "mood": "happy"
+    },
+    {
+      "id": "hafez-004-phoenix",
+      "verseId": "hafez-004",
+      "poet": "Hafez",
+      "headline": "THE PHOENIX IS NO ONE'S PREY",
+      "argument": "The phoenix is nobody's prey. Take your trap back — all it ever catches is wind.\n\nThe bird is the عنقا, the simurgh's cousin, and the joke is that it does not exist. You cannot trap it because there is nothing there to trap. Hafez is not saying you have failed to catch it. He is saying the hunt was the mistake.\n\nHe wrote a great deal of this kind of line, and it is the part of him that English quote accounts almost never carry — Hafez the sceptic, unimpressed, slightly amused at your equipment.",
+      "questionFa": "دنبال چه چیزی هستی که شاید اصلاً آنجا نباشد؟",
+      "questionEn": "What are you hunting that might not be there?",
+      "poetLineFa": "حافظ — شیراز، قرن چهاردهم",
+      "poetLineEn": "Hafez — Shiraz, 14th century",
+      "hashtagsFa": ["#همدم", "#حافظ", "#شعر_فارسی", "#ادبیات_فارسی", "#عنقا", "#تأمل_روزانه"],
+      "hashtagsEn": ["#persianpoetry", "#hafez", "#persianliterature", "#persianculture", "#dailypoetry", "#persiandiaspora"],
+      "_check": "Hafez of Shiraz, 14th century — safe. عنقا confirmed present in the Persian of hafez-004. The bird as mythical and unattainable is standard.",
+      "used": false,
+      "mood": "wry"
+    },
+    {
+      "id": "rumi-050-home",
+      "verseId": "rumi-050",
+      "poet": "Rumi",
+      "headline": "THE PART IS PULLED TOWARD ITS WHOLE",
+      "argument": "This is homesickness — and not the metaphorical kind. Rumi's family fled Balkh ahead of the Mongols when he was a boy. He never went back. He died in Konya, about 3,000 km from where he was born.\n\nHe wrote about longing for home because he was someone who couldn't go home.",
+      "questionFa": "کجا را وطن می‌دانی؟",
+      "questionEn": "Where do you call home?",
+      "poetLineFa": "مولانا — بلخ و قونیه، قرن سیزدهم",
+      "poetLineEn": "Rumi — Balkh and Konya, 13th century",
+      "hashtagsFa": ["#همدم", "#مولانا", "#شعر_فارسی", "#ادبیات_فارسی", "#غربت", "#وطن", "#دلتنگی"],
+      "hashtagsEn": ["#persianpoetry", "#rumi", "#persianliterature", "#persianculture", "#diaspora", "#iranianaustralian", "#homesickness"],
+      "_check": "Published by hand 7 August 2026. Kept here as the format reference. Marked used.",
+      "used": true,
+      "mood": "love"
+    }
+  ],
+  "_blocked": [
+    {
+      "id": "saadi-baniadam",
+      "reason": "The بنی آدم verse resolves to no validated bank. Validate against Ganjoor and add it to verse-queue.json before writing this concept.",
+      "poet": "Saadi"
+    },
+    {
+      "id": "hafez-001-arabic-opening",
+      "reason": "The opening hemistich of the Divan is in Arabic. Blocked only because hafez-001 ran as a carousel on 3 August and the task refuses a verse seen in the last 30 captions. Unblocks by late September. Keep to the linguistic point and stay off the disputed question of whose Arabic line it originally was.",
+      "poet": "Hafez"
+    },
+    {
+      "id": "fal-ritual",
+      "reason": "Not a verse reel. How a fal is actually taken. Hold for Hafez Day (12 October) or the Yalda run-up (21 December). Needs a different renderer: no couplet.",
+      "poet": "Hafez"
+    }
+  ],
+  "_mood_key": "Pairs the concept with a track from the Drive 11Labs folder. happy = bright Mahur; love = romantic Mahur; grave = restrained, sparse, low; wry = light but not celebratory. Never put a love or happy bed under a grave concept."
+}
