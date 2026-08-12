@@ -1,22 +1,18 @@
 #!/usr/bin/env python3
-"""Hamdam reel frame renderer, v4 - six pages.
+"""Hamdam reel frame renderer, v5 - six pages, optional photographic background.
 
     python3 hamdam_reel_render.py <conceptId> <stage 0..5> [outDir]
 
   0  scene only
   1  headline
   2  Persian verse, alone
-  3  English translation, alone, at the same type size, poet line beneath
+  3  English translation, alone, same type size, poet line beneath
   4  the philological point - insightFa then insightEn
   5  the lesson and who to send it to, in both languages
 
-Page 4 is the change that matters: the argument that makes this account
-different used to live only in the caption, where almost nobody reads it.
-It is now on screen.
-
-Pages 2 and 3 share one computed type size so the two languages carry equal
-weight. Every page shares one frame and one layout, so consecutive pages
-cross-dissolve without the image seeming to move.
+If HAMDAM_BG_DIR contains bg-<mood>.jpg for the concept's mood, that photo is
+used: blurred and dimmed as the full-bleed exterior, sharp inside the framed
+print. Otherwise the procedural sunrise scene is drawn. See BACKGROUNDS.md.
 
 Persian is read byte-exact from the queue and never typed.
 """
@@ -129,6 +125,30 @@ def birds(img, n, cxf, cyf, spread_f, col, scale):
         d.line([(x, y-s*0.10), (x+s*0.35, y-s*0.55), (x+s, y)], fill=col, width=max(1, int(s*0.20)))
     return img
 
+# ---- optional photographic background -------------------------------------
+# Drop bg-<mood>.jpg into HAMDAM_BG_DIR (mood comes from the concept).
+# Missing file -> the procedural scene below is used instead. Never fails.
+BG_DIR = os.environ.get('HAMDAM_BG_DIR', '')
+MOOD   = C.get('mood', '')
+PHOTO  = None
+if BG_DIR and MOOD:
+    for ext in ('jpg', 'jpeg', 'png'):
+        cand = os.path.join(BG_DIR, f'bg-{MOOD}.{ext}')
+        if os.path.exists(cand):
+            try:
+                PHOTO = Image.open(cand).convert('RGB')
+            except Exception:
+                PHOTO = None
+            break
+
+def cover(img, tw, th):
+    """Scale-and-crop to fill tw x th without distorting."""
+    iw, ih = img.size
+    sc = max(tw/iw, th/ih)
+    nw, nh = int(iw*sc+0.5), int(ih*sc+0.5)
+    im = img.resize((nw, nh), Image.LANCZOS)
+    return im.crop(((nw-tw)//2, (nh-th)//2, (nw-tw)//2+tw, (nh-th)//2+th))
+
 bg = vgrad(W, H, [(0, SKY_HI), (.26, SKY_MID), (.52, TEAL_M), (.78, hx('16282C')), (1, TEAL_D)])
 bg = horizon_band(bg, 0.48, hx('16282C'), amp=0.012, seed=3)
 bg = sun(bg, 0.68, 0.40, 0.075, GOLD, CREAM)
@@ -137,6 +157,10 @@ bg = mist(bg, 11, bands=8, strength=0.30)
 bg = birds(bg, 9, 0.30, 0.30, 0.30, hx('20353A'), S*7)
 bg = bg.filter(ImageFilter.GaussianBlur(S*5))
 bg = Image.blend(bg, Image.new('RGB', (W, H), TEAL_D), 0.06)
+
+if PHOTO is not None:
+    bg = cover(PHOTO, W, H).filter(ImageFilter.GaussianBlur(S*14))
+    bg = Image.blend(bg, Image.new('RGB', (W, H), (0, 0, 0)), 0.34)
 
 FOUR = len(FA) == 4
 IX = int(W*0.115)
@@ -153,6 +177,10 @@ inner = lightpath(inner, 0.62, 0.40, hx('F0D9A6'), width_f=0.09)
 inner = mist(inner, 21, bands=6, strength=0.22)
 inner = birds(inner, 8, 0.30, 0.22, 0.34, hx('7A5F3E'), S*6)
 inner = inner.filter(ImageFilter.GaussianBlur(S*1.2))
+
+if PHOTO is not None:
+    inner = cover(PHOTO, IW, IH)
+    inner = Image.blend(inner, Image.new('RGB', (IW, IH), (0, 0, 0)), 0.10)
 
 sh = Image.new('L', (IW, IH), 0); sd = ImageDraw.Draw(sh)
 knee = 0.30 if FOUR else 0.34
