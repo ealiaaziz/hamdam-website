@@ -1,14 +1,18 @@
 #!/usr/bin/env python3
-"""Hamdam reel frame renderer, v3 - six pages.
+"""Hamdam reel frame renderer, v4 - six pages.
 
     python3 hamdam_reel_render.py <conceptId> <stage 0..5> [outDir]
 
   0  scene only
   1  headline
   2  Persian verse, alone
-  3  English translation, alone, at the same type size as the Persian
-  4  poet, city and century
+  3  English translation, alone, at the same type size, poet line beneath
+  4  the philological point - insightFa then insightEn
   5  the lesson and who to send it to, in both languages
+
+Page 4 is the change that matters: the argument that makes this account
+different used to live only in the caption, where almost nobody reads it.
+It is now on screen.
 
 Pages 2 and 3 share one computed type size so the two languages carry equal
 weight. Every page shares one frame and one layout, so consecutive pages
@@ -169,6 +173,15 @@ def rtl(draw, xy, t, f, fill):
     draw.text(xy, t, font=f, fill=fill, anchor='mm', direction='rtl',
               language='fa', features=['kern', 'liga'])
 
+def wrap_fa(draw, text, font, maxw):
+    words, lines, cur = text.split(), [], ''
+    for w_ in words:
+        t = (cur+' '+w_).strip()
+        if draw.textlength(t, font=font, direction='rtl', language='fa') <= maxw: cur = t
+        else: lines.append(cur); cur = w_
+    if cur: lines.append(cur)
+    return lines
+
 def wrap(draw, text, font, maxw):
     words, lines, cur = text.split(), [], ''
     for w_ in words:
@@ -222,13 +235,32 @@ if STAGE == 3:
     y0 = BLOCK_MID - (len(en_lines)-1)*gap/2
     for i, line in enumerate(en_lines):
         d.text((cx, int(IH*(y0 + i*gap))), line, font=f_en, fill=hx('F4EEDE'), anchor='mm')
+    f_poet = ImageFont.truetype(SS+'SourceSerif4-Light.otf', S*20)
+    track(d, (cx, int(IH*POET_Y)), C.get('poetLineEn', C['poet']), f_poet, hx('C8BCA4'), S*4)
 
 if STAGE == 4:
-    f_p  = ImageFont.truetype(FZ+'Vazirmatn-Medium.ttf', S*46)
-    f_pe = ImageFont.truetype(SS+'SourceSerif4-Light.otf', S*26)
-    rtl(d, (cx, int(IH*0.610)), C.get('poetLineFa','').split(' \u2014 ')[0], f_p, hx('F8F2E4'))
-    d.line([cx-IW*0.07, int(IH*0.670), cx+IW*0.07, int(IH*0.670)], fill=hx('9C8C6E'), width=S)
-    d.text((cx, int(IH*0.725)), C.get('poetLineEn', C['poet']), font=f_pe, fill=hx('DCD0B8'), anchor='mm')
+    # The philological point, on screen rather than buried in the caption.
+    inf, ine = C.get('insightFa',''), C.get('insightEn','')
+    szf = 34
+    while szf > 20:
+        f_if = ImageFont.truetype(FZ+'Vazirmatn-Medium.ttf', S*szf)
+        if len(wrap_fa(d, inf, f_if, IW*0.86)) <= 2: break
+        szf -= 2
+    fa_lines = wrap_fa(d, inf, f_if, IW*0.86)
+    y = 0.500
+    for i, l in enumerate(fa_lines[:2]):
+        rtl(d, (cx, int(IH*(y + i*0.052))), l, f_if, hx('FBF6EA'))
+    rule_y = y + len(fa_lines[:2])*0.052 + 0.018
+    d.line([cx-IW*0.07, int(IH*rule_y), cx+IW*0.07, int(IH*rule_y)], fill=hx('9C8C6E'), width=S)
+    sze = 27
+    while sze > 18:
+        f_ie = ImageFont.truetype(SS+'SourceSerif4-It.otf', S*sze)
+        if len(wrap(d, ine, f_ie, IW*0.86)) <= 3: break
+        sze -= 2
+    en_lines = wrap(d, ine, f_ie, IW*0.86)[:3]
+    ey = rule_y + 0.055
+    for i, l in enumerate(en_lines):
+        d.text((cx, int(IH*(ey + i*0.040))), l, font=f_ie, fill=hx('F0E8D4'), anchor='mm')
 
 if STAGE == 5:
     f_lf = ImageFont.truetype(FZ+'Vazirmatn-Medium.ttf', S*36)
