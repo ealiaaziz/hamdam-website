@@ -67,9 +67,24 @@ export const FEATURE_LIST = Object.freeze([
  * The Organization node. Kept separate from the app node and referenced by
  * @id so both homepages describe one publisher rather than two anonymous ones.
  *
- * No `sameAs`: the social accounts are real but no URL for them is recorded
- * anywhere in this repository, and guessing a handle into structured data
- * would be asserting something unverified. Add them here once confirmed.
+ * `sameAs` was empty until 2026-08-13 for a good reason: the accounts were
+ * real but no URL for them was recorded anywhere in this repository, and
+ * guessing a handle into structured data asserts something unverified. The
+ * three below are confirmed, so the reason no longer applies.
+ *
+ * What this is for, and what it is not for. `sameAs` is how a search engine
+ * ties this Organization node to profiles it already has an entity for. That
+ * matters here because "hamdam" is a common Persian word and a widely used
+ * brand name: over the 3 July to 11 August window the brand term drew 13
+ * impressions at average position 22.5 and no clicks. Nothing in this array
+ * fixes that quickly. Entity signals compound over months, which is the
+ * argument for adding them now rather than in December.
+ *
+ * No LinkedIn URL: whether a company page exists is unresolved (the connector
+ * returned 403 on organisation ACLs, which does not distinguish "no page"
+ * from "no permission"). Add one here only once someone has loaded the page
+ * in a browser. An unverified URL in `sameAs` is the exact failure this
+ * comment used to describe.
  */
 export const organizationSchema = Object.freeze({
   '@type': 'Organization',
@@ -77,6 +92,11 @@ export const organizationSchema = Object.freeze({
   name: 'Hamdam',
   url: `${SITE}/`,
   email: 'developer@hamdam.com.au',
+  sameAs: Object.freeze([
+    'https://www.instagram.com/hamdam_au/',
+    'https://x.com/Hamdam_au',
+    'https://apps.apple.com/au/app/hamdam-daily-persian-poetry/id6784461990',
+  ]),
   logo: {
     '@type': 'ImageObject',
     url: `${SITE}/icons/icon-512.png`,
