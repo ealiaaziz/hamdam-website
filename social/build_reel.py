@@ -6,13 +6,16 @@
 Transitions are composed in PIL frame by frame. ffmpeg 7.1.3 in the workbench
 has a broken xfade filter - it emits zero frames - so this does not use it.
 
-Frames are PIPED to ffmpeg's stdin as raw RGB and never written to disk. The
-first version wrote 552 JPEGs into /tmp, which on the Composio workbench is a
-493 MB tmpfs - RAM-backed - on a 985 MB single-core box. That crashed the
-sandbox. Streaming keeps memory flat regardless of reel length.
+Two things here exist because the Composio workbench is a single core with a
+985 MB memory cgroup and a 493 MB tmpfs on /tmp:
 
-Encoding is still three light passes: video-only, audio-only, stream-copy mux.
-x264 runs at -preset veryfast because the workbench has one core.
+  - Frames are PIPED to ffmpeg's stdin as raw RGB, never written to disk.
+    Writing 552 JPEGs into /tmp put ~140 MB into RAM-backed tmpfs.
+  - The zoom cache is lazy, one level at a time. An eager ladder of
+    6 pages x 16 levels x 1080x1920x3 is ~600 MB and was OOM-killed.
+
+Measured peak RSS with both fixes: 231 MB. Encoding is three light passes -
+video-only, audio-only, stream-copy mux - at -preset veryfast.
 
 Page timing is weighted, not uniform. The Persian verse and the English
 translation carry the content and hold longest; the scene and the headline are
@@ -29,7 +32,7 @@ W, H = 1080, 1920
 HOLD = [1.6, 2.4, 4.4, 4.4, 3.0, 2.6]
 DISSOLVE = 0.45
 ZOOM = 0.018
-ZOOM_STEPS = 16          # quantised: 16 cached resizes per page, not ~130
+ZOOM_STEPS = 16
 
 
 def sh(cmd):
@@ -53,21 +56,35 @@ def load_pages(tid):
 
 
 class Zoom:
-    """Cached zoom ladder. BILINEAR: at a 1.8% push the difference from
-    LANCZOS is invisible and it is ~40% faster."""
+    """Lazy, single-level zoom cache.
+
+    An eager ladder (6 pages x 16 levels x 1080x1920x3) is ~600 MB and gets
+    OOM-killed on the workbench's 985 MB cgroup. Only one level per page is
+    ever on screen at a time, so cache exactly that and recompute when the
+    quantised level changes: 16 resizes per page, ~96 for the whole reel.
+
+    BILINEAR: at a 1.8% push the difference from LANCZOS is invisible and it
+    is ~40% faster on a single core.
+    """
+
+    __slots__ = ('im', '_j', '_cached')
 
     def __init__(self, im):
-        self.levels = []
-        for j in range(ZOOM_STEPS):
-            s = 1.0 + ZOOM * (j / (ZOOM_STEPS - 1))
-            nw, nh = int(W * s), int(H * s)
-            big = im.resize((nw, nh), Image.BILINEAR)
-            self.levels.append(big.crop(((nw - W) // 2, (nh - H) // 2,
-                                         (nw - W) // 2 + W, (nh - H) // 2 + H)))
-            del big
+        self.im = im
+        self._j = None
+        self._cached = None
 
     def at(self, t):
-        return self.levels[min(ZOOM_STEPS - 1, max(0, int(t * (ZOOM_STEPS - 1))))]
+        j = min(ZOOM_STEPS - 1, max(0, int(t * (ZOOM_STEPS - 1))))
+        if j != self._j:
+            s = 1.0 + ZOOM * (j / (ZOOM_STEPS - 1))
+            nw, nh = int(W * s), int(H * s)
+            big = self.im.resize((nw, nh), Image.BILINEAR)
+            self._cached = big.crop(((nw - W) // 2, (nh - H) // 2,
+                                     (nw - W) // 2 + W, (nh - H) // 2 + H))
+            del big
+            self._j = j
+        return self._cached
 
 
 def main():
