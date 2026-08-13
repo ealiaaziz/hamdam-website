@@ -13,8 +13,12 @@ Checks (mechanical only; semantic claim checking is layer 2, see AUDIT_PROMPT.md
      no markers may remain at all.
   3. Contested phrases: hard-blocked wording per FACTS.md (translation
      quality/provenance claims).
-  4. Dollar amounts: prohibited in marketing copy per FACTS.md pricing rule.
-  5. American spellings: warning only (Australian English required).
+  4. Contested privacy phrases: hard-blocked whole-app privacy claims per
+     FACTS.md "CONTESTED: privacy claims".
+  5. Bare "Free" as a full-stop price claim: blocked per FACTS.md pricing rule,
+     because it omits in-app purchases.
+  6. Dollar amounts: prohibited in marketing copy per FACTS.md pricing rule.
+  7. American spellings: warning only (Australian English required).
 
 Exit code 0 = PASS (warnings allowed), 1 = FAIL, 2 = usage/input error.
 """
@@ -49,7 +53,17 @@ ARABIC_RANGES = (
     (0xFE70, 0xFEFF),
 )
 
-# Hard-blocked phrases per FACTS.md CONTESTED section. Case-insensitive.
+# Hard-blocked phrases per FACTS.md "CONTESTED: translation quality".
+# Case-insensitive, and matched against apostrophe-normalised text so a curly
+# U+2019 cannot walk a phrase past the gate (see _normalise_apostrophes).
+#
+# The second group was added 2026-08-13. The first group is category-shaped
+# ("<adverb> translated") and caught nothing that actually shipped, because
+# what shipped was not of that shape: "a translation that doesn't flatten it"
+# names no translator and claims no method, it just asserts quality by
+# comparison. Four published Instagram posts carry it. FACTS.md now lists the
+# strings themselves and so does this file, because layer 2 is a model and a
+# model is the wrong place for a rule that can be spelled out.
 CONTESTED_PATTERNS = [
     r"careful(?:ly)?\s+(?:english\s+)?translat",   # careful translation / carefully translated
     r"expert(?:ly)?\s+translat",
@@ -57,9 +71,31 @@ CONTESTED_PATTERNS = [
     r"hand[\s\u2010-]?translated",
     r"human[\s\u2010-]?translated",
     r"professionally\s+translat",
-    r"faithful\s+translat",
     r"authoritative\s+translat",
+    # Verbatim from FACTS.md, 2026-08-13. Each has a test in tests/.
+    r"doesn'?t\s+flatten",          # covers both "a/an (English) translation that doesn't flatten it"
+    r"most\s+translations\s+soften",
+    r"\bfaithful(?:ness)?\b",
+    r"\buncompromising\b",
+    r"true\s+to\s+the\s+original",
+    r"properly\s+translated",
 ]
+
+# Hard-blocked phrases per FACTS.md "CONTESTED: privacy claims", added
+# 2026-08-13. These are whole-app claims. The narrow ones FACTS.md marks
+# ALLOWED ("no account required", "no sign up", "no ads") are deliberately not
+# here and must keep passing; tests/t18_privacy_allowed.txt pins that.
+PRIVACY_PATTERNS = [
+    r"\bno\s+tracking\b",
+    r"\bwe\s+collect\s+nothing\b",
+    r"\bnothing\s+leaves\s+your\s+device\b",
+    r"\bno\s+data\s+collected\b",
+]
+
+# "Free." as a complete claim omits in-app purchases, which the App Store
+# listing shows and FACTS.md records. Matches the word only when a sentence
+# ends on it: "free to download" and "free trial" are fine and must stay fine.
+BARE_FREE_RE = re.compile(r"\bfree\s*[.!]", re.IGNORECASE)
 
 # Unambiguous American spellings (warning level). Word-boundary matched,
 # case-insensitive. Deliberately short: only entries with no legitimate
@@ -87,6 +123,16 @@ def _mask(text, pattern):
 
 def _line_of(text, index):
     return text.count("\n", 0, index) + 1
+
+
+def _normalise_apostrophes(text):
+    """Fold typographic apostrophes to ASCII for phrase matching only.
+
+    Kept separate from the text used for line numbers and dash checking: this
+    is a matching aid, not a rewrite. Same length in, same length out, so
+    offsets computed against the result still point at the right line.
+    """
+    return text.replace("’", "'").replace("ʼ", "'").replace("‘", "'")
 
 
 def is_arabic_char(ch):
@@ -136,14 +182,50 @@ def lint(text, mode="draft"):
             })
             break  # one violation per draft is enough to fail; avoid noise
 
+    # Phrase checks run on apostrophe-normalised text so "doesn’t flatten" and
+    # "doesn't flatten" are the same string to the gate.
+    phrase_text = _normalise_apostrophes(text)
+
     for pat in CONTESTED_PATTERNS:
-        m = re.search(pat, text, re.IGNORECASE)
+        m = re.search(pat, phrase_text, re.IGNORECASE)
         if m:
             violations.append({
                 "rule": "contested-phrase",
-                "line": _line_of(text, m.start()),
-                "detail": f"Hard-blocked wording per FACTS.md CONTESTED section: '{m.group(0)}'.",
+                "line": _line_of(phrase_text, m.start()),
+                "detail": (
+                    f"Hard-blocked wording per FACTS.md 'CONTESTED: translation quality': "
+                    f"'{m.group(0)}'. Translation quality, fidelity and comparison claims are "
+                    f"blocked until cited public domain translations ship. Descriptive presence "
+                    f"is allowed, e.g. 'in Persian, with an English translation alongside'."
+                ),
             })
+
+    for pat in PRIVACY_PATTERNS:
+        m = re.search(pat, phrase_text, re.IGNORECASE)
+        if m:
+            violations.append({
+                "rule": "contested-privacy-phrase",
+                "line": _line_of(phrase_text, m.start()),
+                "detail": (
+                    f"Hard-blocked wording per FACTS.md 'CONTESTED: privacy claims': "
+                    f"'{m.group(0)}'. Whole-app privacy claims are blocked while the published "
+                    f"privacy policy's outbound-host list is known to be incomplete. Narrow, "
+                    f"checkable statements are allowed: 'no account required', 'no sign up', "
+                    f"'no ads', and 'the journal is stored on device'."
+                ),
+            })
+
+    m = BARE_FREE_RE.search(masked)
+    if m:
+        violations.append({
+            "rule": "bare-free-claim",
+            "line": _line_of(text, m.start()),
+            "detail": (
+                f"'{m.group(0).strip()}' states the price as a complete claim and omits in-app "
+                f"purchases, which the App Store listing shows. Per FACTS.md pricing: use "
+                f"'free to download, with optional extras'."
+            ),
+        })
 
     m = DOLLAR_RE.search(masked)
     if m:
