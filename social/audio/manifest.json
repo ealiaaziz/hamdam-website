@@ -1,0 +1,21 @@
+{
+  "target_lufs": -16.0,
+  "true_peak_ceiling": -1.5,
+  "dropped_duplicates": [
+    "mahur_morning_dup2"
+  ],
+  "tracks": {
+    "dawn": [
+      { "file": "golden_age_mahur.mp3", "duration": 29.57, "note": "trimmed 0.52s of leading silence" },
+      { "file": "golden_age_of_mahur.mp3", "duration": 28.9, "note": "trimmed 1.17s of leading silence" },
+      { "file": "maahurs_embrace.mp3", "duration": 29.57, "note": "trimmed 0.51s of leading silence" },
+      { "file": "mahur_morning.mp3", "duration": 29.66, "note": "trimmed 0.41s of leading silence" },
+      { "file": "mahur_sunrise.mp3", "duration": 28.68, "note": "trimmed 1.41s of leading silence" },
+      { "file": "mahur_sunrise_dup2.mp3", "duration": 29.91, "note": "trimmed 0.16s of leading silence" },
+      { "file": "whispers_of_mahur.mp3", "duration": 29.93, "note": "trimmed 0.15s of leading silence" }
+    ],
+    "dusk": [
+      { "file": "homayoun_elegy.mp3", "duration": 26.04, "note": "cut 29.5-55.5s at measured phrase boundaries" }
+    ]
+  }
+}
