@@ -1,0 +1,64 @@
+{
+  "id": "dusk",
+  "name": "Last Light",
+  "note": "Cold, still, late. For verses about mortality, impermanence and loss. A low moon replaces the sun; the light path is silver, not gold; the birds are gone. Deliberately quiet rather than dramatic - no black, no red, nothing gothic. Pairs with Dastgah-e Homayoun audio.",
+  "moods": ["grave"],
+  "audio": {
+    "dastgah": "Homayoun",
+    "folder": "social/audio/dusk/"
+  },
+  "exterior": {
+    "gradient": [
+      [0.00, "3B4657"],
+      [0.24, "2B3546"],
+      [0.50, "1D2532"],
+      [0.76, "141A24"],
+      [1.00, "0C1017"]
+    ],
+    "horizon": { "at": 0.52, "colour": "141A24", "amp": 0.009, "seed": 7 },
+    "sun": { "x": 0.30, "y": 0.365, "r": 0.042, "glow": "9FB0C4", "disc": "E4E9F0",
+             "falloff": [4.4, 3.0, 2.1, 1.5, 1.15] },
+    "lightpath": { "x": 0.30, "at": 0.52, "colour": "8DA0B4", "width": 0.075 },
+    "mist": { "seed": 5, "bands": 9, "strength": 0.26, "colour": "8C99A8" },
+    "birds": null,
+    "blur": 5,
+    "settle": { "colour": "0C1017", "amount": 0.10 }
+  },
+  "interior": {
+    "gradient": [
+      [0.00, "AAB6C4"],
+      [0.18, "8391A4"],
+      [0.34, "5E6B7E"],
+      [0.48, "434E5E"],
+      [0.62, "2F3846"],
+      [0.78, "1E242E"],
+      [1.00, "0E1116"]
+    ],
+    "horizon": { "at": 0.44, "colour": "39424F", "amp": 0.010, "seed": 9 },
+    "sun": { "x": 0.34, "y": 0.265, "r": 0.060, "glow": "C6D2DF", "disc": "F0F3F7",
+             "falloff": [4.0, 2.8, 2.0, 1.45, 1.12] },
+    "lightpath": { "x": 0.34, "at": 0.44, "colour": "A8B6C6", "width": 0.070 },
+    "mist": { "seed": 17, "bands": 7, "strength": 0.28, "colour": "9AA6B4" },
+    "birds": null,
+    "blur": 1.2,
+    "scrim": { "colour": "05070A", "peak": 232 }
+  },
+  "frame": {
+    "gradient": [[0.0, "2E3440"], [1.0, "1A1F27"]],
+    "bevel": "0B0E13",
+    "handle": "B6BFCB"
+  },
+  "ink": {
+    "headline": "EEF1F5",
+    "persian": "F2F5F8",
+    "english": "E6EBF1",
+    "poet": "A9B3C0",
+    "insight_fa": "F2F5F8",
+    "insight_en": "DDE4EC",
+    "lesson_fa": "F2F5F8",
+    "lesson_en": "E6EBF1",
+    "send": "BAC4D0",
+    "rule": "6E7A88",
+    "wordmark": "E2E7EE"
+  }
+}

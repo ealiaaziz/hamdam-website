@@ -1,0 +1,62 @@
+{
+  "id": "dawn",
+  "name": "First Light",
+  "note": "Byte-for-byte the palette that hamdam_reel_render.py v5 hardcoded. Warm, gold, hopeful. Pairs with Dastgah-e Mahur audio. Use for moods that open outward: love, happy, wry.",
+  "moods": ["love", "happy", "wry"],
+  "audio": {
+    "dastgah": "Mahur",
+    "folder": "social/audio/dawn/"
+  },
+  "exterior": {
+    "gradient": [
+      [0.00, "9FB8BC"],
+      [0.26, "6E8E92"],
+      [0.52, "2C4448"],
+      [0.78, "16282C"],
+      [1.00, "101E22"]
+    ],
+    "horizon": { "at": 0.48, "colour": "16282C", "amp": 0.012, "seed": 3 },
+    "sun": { "x": 0.68, "y": 0.40, "r": 0.075, "glow": "F2C572", "disc": "F7F1E1" },
+    "lightpath": { "x": 0.68, "at": 0.48, "colour": "D8C79A", "width": 0.10 },
+    "mist": { "seed": 11, "bands": 8, "strength": 0.30, "colour": "BBD2CE" },
+    "birds": { "n": 9, "x": 0.30, "y": 0.30, "spread": 0.30, "colour": "20353A", "scale": 7 },
+    "blur": 5,
+    "settle": { "colour": "101E22", "amount": 0.06 }
+  },
+  "interior": {
+    "gradient": [
+      [0.00, "CFDCD4"],
+      [0.16, "EBD4A8"],
+      [0.32, "F2C572"],
+      [0.44, "E8A85C"],
+      [0.56, "9A7048"],
+      [0.74, "4A3A2A"],
+      [1.00, "17140F"]
+    ],
+    "horizon": { "at": 0.40, "colour": "6B5334", "amp": 0.014, "seed": 5 },
+    "sun": { "x": 0.62, "y": 0.29, "r": 0.105, "glow": "FFE0A8", "disc": "FFF6E4" },
+    "lightpath": { "x": 0.62, "at": 0.40, "colour": "F0D9A6", "width": 0.09 },
+    "mist": { "seed": 21, "bands": 6, "strength": 0.22, "colour": "BBD2CE" },
+    "birds": { "n": 8, "x": 0.30, "y": 0.22, "spread": 0.34, "colour": "7A5F3E", "scale": 6 },
+    "blur": 1.2,
+    "scrim": { "colour": "0A0A07", "peak": 220 }
+  },
+  "frame": {
+    "gradient": [[0.0, "4A3A28"], [1.0, "2C2118"]],
+    "bevel": "1A140E",
+    "handle": "D6C9B0"
+  },
+  "ink": {
+    "headline": "F7F1E1",
+    "persian": "F8F2E4",
+    "english": "F4EEDE",
+    "poet": "C8BCA4",
+    "insight_fa": "FBF6EA",
+    "insight_en": "F0E8D4",
+    "lesson_fa": "FBF6EA",
+    "lesson_en": "F4EEDE",
+    "send": "DCD0B8",
+    "rule": "9C8C6E",
+    "wordmark": "EFE6D2"
+  }
+}
