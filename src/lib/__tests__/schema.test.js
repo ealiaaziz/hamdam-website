@@ -123,10 +123,38 @@ describe('FEATURE_LIST', () => {
 });
 
 describe('organizationSchema', () => {
-  it('carries a logo and contact, and asserts no unverified social profiles', () => {
+  it('carries a logo and contact', () => {
     expect(organizationSchema.logo.url).toBe('https://hamdam.com.au/icons/icon-512.png');
     expect(organizationSchema.email).toBe('developer@hamdam.com.au');
-    expect(organizationSchema).not.toHaveProperty('sameAs');
+  });
+
+  // Until 2026-08-13 this asserted `not.toHaveProperty('sameAs')`, which was
+  // the right test while no social URL was recorded anywhere in the repo. The
+  // three below are confirmed, so the assertion inverts: the profiles are
+  // named, and the test's job becomes stopping an unverified fourth.
+  it('lists exactly the three confirmed profiles', () => {
+    expect(organizationSchema.sameAs).toEqual([
+      'https://www.instagram.com/hamdam_au/',
+      'https://x.com/Hamdam_au',
+      'https://apps.apple.com/au/app/hamdam-daily-persian-poetry/id6784461990',
+    ]);
+  });
+
+  // LinkedIn is deliberately absent: whether a company page exists is
+  // unresolved, and a 403 on organisation ACLs does not distinguish "no page"
+  // from "no permission". This fails if someone adds a guessed URL, which is
+  // the same failure the old assertion existed to prevent.
+  it('claims no profile that has not been confirmed', () => {
+    for (const url of organizationSchema.sameAs) {
+      expect(url).toMatch(/^https:\/\/(www\.instagram\.com|x\.com|apps\.apple\.com)\//);
+    }
+  });
+
+  it('cannot be mutated by a caller', () => {
+    expect(() => {
+      organizationSchema.sameAs.push('https://www.linkedin.com/company/invented');
+    }).toThrow();
+    expect(organizationSchema.sameAs).toHaveLength(3);
   });
 });
 
