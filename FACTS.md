@@ -54,6 +54,14 @@ The privacy policy (`/privacy/` section 5, mirrored in `/terms/` section 12) pre
 | `api.inaturalist.org` | **no** | SymbolImageService, second image source |
 | `inaturalist-open-data.s3.amazonaws.com` | **no** | image bytes for iNaturalist results, prefetched by SymbolImageService |
 
+**Method, and how complete this is.** The first pass read the hosts named in the Swift sources. A second, exhaustive pass on 2026-08-13 enumerated every network-capable call site in the app instead (`URLSession`, `dataTask`, `AsyncImage`, `WKWebView`, `NWConnection`, `openURL`, `UIApplication.shared.open`), which is nine non-test files, and read each one. **It found no fifth non-Apple host.** The four above are the complete set of undisclosed non-Apple traffic. Three things the second pass did settle, all of which would otherwise have gone into a policy fix wrong:
+
+- **Apple media hosts are fetched, not just linked.** `MiniPlayerView` renders MusicKit artwork through `AsyncImage`, and `WeatherAttributionView` fetches the WeatherKit attribution marks the same way, with `developer.apple.com` as its fallback legal link. These are real outbound requests to Apple hosts. The policy's blanket sentence about Apple's frameworks covers them, but anyone rewriting section 5 should decide that deliberately rather than discover it later.
+- **Discover fetches no artwork.** `DiscoverPick` uses a static SF Symbol for cover art, by design and with a comment saying so. Only the iTunes Search API call goes out. There is no `mzstatic` traffic from that feature, which is what a reasonable person would have assumed there was.
+- **Ganjoor.net is genuinely not contacted at runtime**, so the policy's existing sentence about it is accurate. The only references in the app are comments describing an offline seeding pipeline. Bundled JSON does carry `podcasts.apple.com`, `books.apple.com` and `ganjoor.net` URLs, but those are destinations opened in the browser when a person taps them, not requests the app makes.
+
+That last distinction is the one to hold on to while rewriting: a link a user taps, which hands off to Safari, is not the app contacting a host. `music.apple.com` search from the mini player and the source links under symbol photographs are both in that category. The four hosts in the table are not: the app requests those itself, without the user choosing to visit them.
+
 Two consequences.
 
 1. The policy states, in bold, that "**Nager.Date (date.nager.at)** is the only service Hamdam contacts that is not operated by Apple." That sentence is false. iNaturalist is not Apple and not Wikimedia, and Amazon S3 serves its image bytes. This is a factual error in a published legal document, not a marketing nicety.
