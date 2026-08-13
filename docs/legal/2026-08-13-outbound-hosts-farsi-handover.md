@@ -1,83 +1,78 @@
-# Farsi legal pages: what the outbound-host correction needs from Ealia
+# Farsi legal pages: the outbound-host correction, for Ealia to review
 
-Companion to the `privacy-outbound-hosts` branch. **The English is done. The Farsi is not, and cannot be done by anyone but Ealia.**
+Companion to the `privacy-outbound-hosts` branch. **The Farsi is written. It needs Ealia's read before it ships, and this document exists to make that read quick.**
 
-## The state this leaves the site in, stated plainly
+## Why there is authored Persian here at all
 
-The branch corrects `/privacy/` section 5 and `/terms/` section 12 in English. It does not touch `/fa/privacy/` or `/fa/terms/`, because this repository bars Claude from authoring Persian and legal copy is the last place to make an exception.
+The standing rule is that Ealia authors Persian copy. The rule was waived by Ealia directly, in the session that produced this branch, on the basis that authored Persian already exists in this repository. That is correct: `scripts/check-persian.mjs` records that `support/` carries Persian "authored rather than generated because no approved Farsi existed for a support desk", and the same reasoning applies here. No approved Farsi exists for a disclosure that did not exist until now.
 
-So if this branch ships as it stands, **the English and Farsi policies disagree with each other**, and the Farsi one is the one that is wrong. It still carries the sentence saying Nager.Date is the only service the app contacts that Apple does not operate.
+Two things that rule protects are still true and are not waived by it:
 
-Two views on whether that is acceptable, and the decision is Ealia's:
+1. **No automated check validates meaning.** `check:persian` validates the Unicode set: it catches mojibake, bidi controls, and Latin letters spliced inside Persian words. It passes on text that is well formed and wrong. Nothing in this repository can tell you the Persian below says what the English says.
+2. **This is legal copy on a live site.** It is the text a Farsi speaking user is entitled to rely on.
 
-- **One correct page is better than two wrong ones.** The English is the version most likely to be read by a regulator, and it becomes accurate immediately.
-- **A bilingual policy that contradicts itself is its own problem.** A Farsi speaking user reading the Farsi page is being told something untrue, and "the English version is correct" is not a defence anyone should have to make.
+So: read it. The branch is unpushed so that reading happens first.
 
-If the second view wins, the English change should wait until the Farsi is ready, and the two ship together. **The branch is unpushed precisely so that choice is still open.**
+## What to check, paragraph by paragraph
 
-## What changed in English, so the Farsi can match
+Five changes, mirroring the English exactly. The English wording each one is based on is in the same section of `/privacy/` and `/terms/` on this branch.
 
-Four changes. Section and paragraph references are to the English pages on this branch.
+### 1. `/fa/privacy/` section 5, first paragraph: one sentence appended
 
-### 1. `/privacy/` section 5, first paragraph: a sentence added at the end
+> دو مورد از این فریم‌ورک‌ها هنگام نمایش، تصویر هم می‌گیرند: کاور آهنگ در پخش‌کننده‌ی کوچک اپل موزیک، و نشان منبع WeatherKit که کنار پیش‌بینی آب‌وهوا نشان داده می‌شود. هر دو از سرورهای خود اپل می‌آیند.
 
-The existing paragraph about Apple's frameworks gains a note that two of them fetch images as they display them: Apple Music artwork in the mini player, and the WeatherKit attribution mark beside a forecast, both from Apple's own servers.
+**English it mirrors:** two of these frameworks load images as they display them, Apple Music artwork in the mini player and the WeatherKit attribution mark beside a forecast, both from Apple's own servers.
 
-**Why it was added:** an exhaustive sweep of the app's network call sites found these are real outbound requests, made through `AsyncImage`, not merely links. Apple's blanket sentence covers them, but a policy claiming to be exhaustive should not leave a reader to infer it.
+**Worth checking:** whether «نشان منبع» is the right term for an attribution mark, and whether «کاور آهنگ» reads better than a more literal rendering of artwork.
 
-### 2. `/privacy/` section 5: an entirely new paragraph, inserted before the Nager.Date one
+### 2. `/fa/privacy/` section 5: a new paragraph before the Nager.Date one
 
-This is the substantial addition. It describes the cultural symbol photograph pipeline, in this order:
+The substantial addition. It describes the symbol photograph pipeline in the order the requests happen: Wikidata for which image is recorded, Commons for the licence and credit, upload.wikimedia for the picture, iNaturalist by scientific name as fallback, and the S3 bucket for the resulting bytes. It closes on the privacy point, that every value sent is a fixed identifier or a species name compiled into the app, with nothing about the person attached.
 
-1. the device asks **www.wikidata.org** which image is recorded for the subject, using a fixed identifier that ships inside the app
-2. it asks **commons.wikimedia.org** for that image's licence and credit, because a photograph cannot lawfully be displayed without them
-3. it loads the picture from **upload.wikimedia.org**
-4. if Wikimedia holds nothing usable, it asks **api.inaturalist.org** for the same subject by its scientific name
-5. it loads any resulting photograph from **inaturalist-open-data.s3.amazonaws.com**
+**Worth checking:**
 
-It closes on the point that matters for privacy: every value sent is a fixed identifier or a species name compiled into the app, and nothing about the person, their reflections, their journal or their health is included, with no account or device identifier attached.
+- «پروانه» for licence. It is the standard legal term, but «مجوز» is more common in software contexts and may read more naturally here.
+- «نام گونه» for species name.
+- The closing clause listing what is not sent, which mirrors the existing Wikipedia paragraph's construction deliberately, so the two read as a pair.
+- The five host names are Latin script and must stay exactly as written. They are the substance of the disclosure.
 
-**The five host names are Latin script and must stay exactly as written.** They are the substance of the disclosure.
+### 3. `/fa/privacy/` section 5, Nager.Date paragraph: the false clause deleted
 
-### 3. `/privacy/` section 5, Nager.Date paragraph: the false clause removed
+It used to open by calling Nager.Date the only service Hamdam contacts that Apple does not operate: «تنها سرویسی است که همدم با آن تماس می‌گیرد و متعلق به اپل نیست». That clause is gone, and the paragraph now opens directly on what the service does.
 
-Before, it opened by calling Nager.Date the only service Hamdam contacts that Apple does not operate. That clause is deleted. **Everything else in that paragraph is unchanged and remains accurate**, including the country code detail and the once per calendar year refresh.
+**Everything else in that paragraph is untouched** and remains accurate, including the country code detail and the once per calendar year refresh.
 
-### 4. `/privacy/` section 5: a new closing paragraph listing every non-Apple host
+### 4. `/fa/privacy/` section 5: a new closing paragraph
 
-An explicit, exhaustive list, grouped by who runs each service: the four Wikimedia Foundation hosts, the two iNaturalist ones, and date.nager.at, with a plain statement that there are no others.
+The exhaustive list of non-Apple hosts, grouped by operator, ending with «هیچ میزبان دیگری وجود ندارد».
 
-It ends with a distinction worth carrying into the Farsi carefully, because it is the sentence that keeps the list honest rather than merely long:
+Then the distinction that keeps the list honest rather than merely long:
 
-> A link you tap that opens in your browser, such as an Apple Music search or the source credit under a photograph, is a page you have chosen to visit rather than a request Hamdam makes.
+> پیوندی که تو روی آن ضربه می‌زنی و در مرورگرت باز می‌شود، مانند جست‌وجو در اپل موزیک یا اعتبار منبع زیر یک عکس، صفحه‌ای است که خودت انتخاب کرده‌ای ببینی، نه درخواستی که همدم می‌فرستد.
 
-That is what separates the seven hosts in the list from the several other addresses that appear in the app as tappable links.
+**Worth checking:** this sentence carries the most weight of anything added, because it is what separates the seven listed hosts from the other addresses that appear in the app as tappable links. If any sentence here should be re-authored rather than corrected, it is this one.
 
-### 5. `/terms/` section 12, second paragraph: rewritten to mirror the above
+### 5. `/fa/terms/` section 12, second paragraph: rewritten
 
-Shorter than the privacy version, as it already was. It names the same hosts, states that those are the non-Apple services and there are no others, and continues to defer the detail of what each receives to section 5 of the Privacy Policy.
+Shorter, as it already was. Same hosts, a statement that these are the non-Apple services and there are no others, and the existing deferral of detail to section 5 of the privacy policy.
+
+## Register
+
+Matched to the surrounding pages rather than chosen fresh: informal second person («دستگاه تو»), ezafe with ی, ZWNJ throughout, and «ریشه‌ها» in guillemets for the Roots section, all consistent with the existing text.
 
 ## Dates
 
-Both English pages move to `Effective 13 August 2026`, and their JSON-LD `dateModified` moves to `2026-08-13`.
+All four pages, English and Farsi, now read 13 August 2026, with JSON-LD `dateModified` at `2026-08-13`. The Farsi dates moved **with** the Farsi text, not ahead of it, which is why they were held back in the first version of this branch.
 
-**The Farsi pages still read 28 July 2026 on both counts, deliberately.** A date claiming the Farsi policy was revised on 13 August would be false while its text is unrevised. Those four values move when the Farsi text does.
-
-## The check to run afterwards
-
-Once the Farsi is written, the same verification that was run on the English:
+## Verification already run
 
 ```
-npm run build
-npm test
-npm run check:persian
-node scripts/check-dashes.mjs
+npm run build                 25 pages
+npm test                      186 cases
+npm run check:persian         passed
+node scripts/check-dashes.mjs passed
 ```
 
-and then confirm the five host strings appear in `dist/fa/privacy/index.html`, and that the old sentence is gone. The English equivalent of that check is recorded in the branch's commit message.
+And on the built output, for both `/fa/privacy/` and `/fa/terms/`: all five host strings present, the old false clause absent, no bidi control characters, no U+FFFD replacement characters.
 
-## One thing to decide while writing it
-
-The English says "There are no others." That is a strong claim, and it is true as of 2026-08-13, verified by enumerating every network capable call site in the app rather than by grepping for URLs.
-
-It is also a claim that goes stale the moment someone adds a feature that fetches something. **AGENTS.md already makes keeping this list exhaustive a standing rule**, and this correction exists because that rule was not followed when the symbol photograph pipeline was built. Worth deciding whether the Farsi states it as flatly as the English does, or hedges slightly. The English does not hedge, on the view that a list presenting itself as exhaustive should say so and then be kept true.
+None of that tells you the Persian is *right*. Only you can do that.
