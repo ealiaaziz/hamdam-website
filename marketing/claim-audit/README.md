@@ -23,14 +23,26 @@ Rules enforced:
 - No dash or hyphen characters in copy (em dash, en dash, hyphen-minus, lookalikes). URLs, email addresses, and [FA] placeholder contents are exempt.
 - Persian (Arabic-script) text only inside [FA]...[/FA] markers. All Persian copy is authored by Ealia; generated drafts carry markers only. Final mode rejects any remaining markers.
 - Contested phrases (translation quality or provenance wording) hard fail.
+- Contested privacy phrases hard fail: whole-app claims such as "no tracking" and "nothing leaves your device". The narrow claims FACTS.md marks ALLOWED, "no account required", "no sign up", "no ads", keep passing on purpose.
+- Bare "Free." as a complete price claim hard fails; it omits in-app purchases. "free to download" and "free trial" pass.
 - Dollar amounts hard fail; pricing defers to the App Store.
 - Common American spellings warn (Australian English required). Warnings do not fail the draft; reviewers see them.
 
-Exit codes: 0 PASS, 1 FAIL, 2 input error. Tests live in tests/ and were executed before this was committed; run them with:
+Phrase rules match against apostrophe-normalised text, so a curly U+2019 cannot carry a blocked phrase past the gate.
 
-    for t in marketing/claim-audit/tests/t*.txt; do python3 marketing/claim-audit/audit_lint.py "$t"; done
+Exit codes: 0 PASS, 1 FAIL, 2 input error. Tests live in tests/, one fixture per blocked phrase, with the expected verdicts in a table inside the runner:
 
-Expected: t1, t5, t8, t9, t10 PASS (t9 with warnings); t2, t3, t4, t6, t7, t11 FAIL; t5 additionally FAILS with --mode final.
+    bash marketing/claim-audit/run_tests.sh
+
+Exit 0 means every fixture behaved as expected. The expectations used to be a sentence in this README, which meant a broken rule failed a reader's attention rather than a command.
+
+### Why the phrase lists are verbatim strings (2026-08-13)
+
+The first version of the contested list was category-shaped: `careful(ly) translat`, `expert(ly) translat`, `scholarly translat`, and so on. It caught nothing that actually shipped, because what shipped was not of that shape. "A translation that doesn't flatten it" names no translator and claims no method; it asserts quality by comparison with unnamed others. Four published Instagram posts carry it, and the semantic layer passed them.
+
+So the blocked strings from FACTS.md are now written out here literally, with a fixture each. Layer 2 is a model, and a model is the wrong place for a rule that can be spelled out.
+
+One consequence to know about before it surprises someone: `faithful` and `uncompromising` are blocked as bare words, not only next to "translation". That is what FACTS.md lists, and it is deliberately blunt, so it will occasionally stop a sentence that was not making a translation claim at all. That is a review conversation, not a bug. If it fires often enough to be a nuisance, narrow it in FACTS.md first and here second, never the other way round.
 
 ## Layer 2: semantic audit
 
