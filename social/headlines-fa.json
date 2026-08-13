@@ -1,13 +1,13 @@
 {
-  "_status": "DRAFT - written by Claude, needs review by a Persian speaker before publishing",
-  "_convention": "Persian-form ک and ی, ZWNJ where required. Editorial copy, not classical verse.",
+  "_status": "Headlines are each concept's own lessonFa, copied byte-exact from reel-concepts.json. No new Persian has been composed by a model. Replace any entry with a purpose-written headline once a Persian speaker has reviewed it.",
+  "_provenance": "lessonFa, verbatim",
   "headlines": {
-    "parvin-023-needle":   "سوزن جواب می‌دهد",
-    "khayyam-036-handle":  "آن دسته، بازوی کسی بود",
-    "parvin-014-socrates": "سقراط در قصیده‌ای فارسی",
-    "khayyam-007-grass":   "پیش از آنکه سبزه از تو بردمد",
-    "parvin-008-sparrow":  "گنجشک به کبوتر می‌گوید برو",
-    "hafez-004-phoenix":   "عنقا شکار کسی نمی‌شود",
-    "rumi-050-home":       "جزء به سوی کلّ خود کشیده می‌شود"
+    "parvin-023-needle": "تو مقصرِ طرحی نیستی که به دستت داده‌اند",
+    "khayyam-036-handle": "هر چیزِ ساده‌ای که در دست داری، روزی کسی بوده",
+    "parvin-014-socrates": "پرسیدن، خودش نیمی از زندگی است",
+    "khayyam-007-grass": "امروز را از دست نده؛ همین است که داری",
+    "parvin-008-sparrow": "گاهی کوچک‌ترین صدا، درست‌ترین حرف را می‌زند",
+    "hafez-004-phoenix": "بعضی چیزها را نمی‌شود گرفت؛ می‌شود دوست داشت",
+    "rumi-050-home": "دلتنگی نشانه‌ی ضعف نیست؛ نشانه‌ی ریشه است"
   }
 }
