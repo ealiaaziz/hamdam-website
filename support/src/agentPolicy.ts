@@ -1,5 +1,6 @@
 import type { Priority } from './itil.js';
 import { clarifyingQuestionFor, matchArticles, type KbMatchResult } from './kb.js';
+import { normalizePersian } from './i18n.js';
 
 // What the assistant is allowed to do, in one readable file.
 //
@@ -36,6 +37,73 @@ const HUMAN_REQUEST_PHRASES = [
   'are you a bot',
   'this is automated',
   'human please',
+  // The same request in Persian.
+  //
+  // This list was English-only while the desk answers in two languages:
+  // i18n.ts reads a ticket as Persian at thirty per cent Persian letters, and
+  // assistantModel.ts then instructs a reply written entirely in Persian. So
+  // the one sentence that outranks every confidence score in this file did
+  // not work for the audience most likely to write it, and a Persian speaker
+  // asking for a person was told, in Persian, by a machine, that a machine
+  // had it in hand.
+  //
+  // Phrases, not words, and the first draft of this list got that wrong in a
+  // way worth recording. It contained the bare noun «انسان», which matches
+  // «خطای انسانی» (human error) and «منابع انسانی» (HR), and the bare
+  // «جواب نده», which is a prefix of «جواب ندهد» -- as in «اگر برنامه جواب
+  // ندهد», "if the app doesn't respond", roughly the most common sentence a
+  // support desk receives. Both would have escalated ordinary tickets
+  // straight past the assistant and into a person's inbox, which is the
+  // failure this list can least afford: a guard that fires on everything is
+  // indistinguishable from no assistant at all, and it gets switched off.
+  //
+  // So each entry carries enough context to be a request. The verb still
+  // varies -- «می‌خواهم ... صحبت کنم», «باید ... صحبت کنم» -- so the match
+  // sits on the stable middle, and the ZWNJ-optional forms are spelled out
+  // where Persian writers differ on it.
+  'با انسان صحبت',
+  'با یک انسان صحبت',
+  'با انسان حرف',
+  'با یک انسان حرف',
+  'با آدم واقعی',
+  'با یک آدم',
+  'با کسی صحبت کنم',
+  'با یکی صحبت کنم',
+  'با یکی حرف بزنم',
+  'با یک نفر صحبت',
+  'با یه نفر صحبت',
+  'با کارشناس صحبت',
+  // «اپراتور» is also the ordinary Persian word for a phone or internet
+  // carrier, so "I called my operator and it did not help" is a support
+  // ticket, not a request for a person. The phrases below are the ones that
+  // only mean the switchboard sense.
+  'اپراتور انسانی',
+  'به اپراتور وصل',
+  'با اپراتور صحبت',
+  // The forms that are not "talk to X": refer it, have someone call me, and
+  // the flat refusal of the bot, which is how most people actually say it.
+  'با ربات حرف',
+  'با ربات صحبت',
+  'شما ربات',
+  'ربات هستی',
+  'ربات هستید',
+  'به یک انسان ارجاع',
+  'به انسان ارجاع',
+  'به یک نفر ارجاع',
+  'یک نفر با من تماس',
+  'کسی با من تماس',
+  'با پشتیبانی صحبت کنم',
+  'این پیام خودکار',
+  // «پاسخ خودکار» and «جواب خودکار» were here and are gone. "I never
+  // received your automatic reply" is a ticket about the acknowledgement
+  // email, not a request for a person, and one hit escalates the ticket for
+  // the rest of its life: `requestedAHuman` runs over the whole conversation
+  // on every turn, so a false positive is not one bad reply, it is an
+  // assistant that never speaks on that thread again.
+  'دیگر ایمیل نزنید',
+  'دیگه ایمیل نزنید',
+  'به من ایمیل نزنید',
+  'ایمیل نفرستید',
 ];
 
 /**
@@ -64,16 +132,42 @@ const CLOSE_REQUEST_PHRASES = [
   'all sorted',
   'that is all i needed',
   "that's all i needed",
+  // Translated for the same reason the human-request list above was, and
+  // missed on the first pass. Without these a Persian speaker cannot close a
+  // ticket from the thread at all: they say it is sorted, the desk carries on
+  // as though it is not, and the honesty problem this list exists to prevent
+  // -- an assistant that says it closed something and did not -- is simply
+  // moved into the other language.
+  'این درخواست را ببندید',
+  'این تیکت را ببندید',
+  'درخواست را ببندید',
+  'میتوانید ببندید',
+  'لطفا ببندید',
+  'مشکل حل شد',
+  'مشکلم حل شد',
+  'درست شد ممنون',
+  'دیگر نیازی نیست',
+  'دیگه نیازی نیست',
+  'همین را میخواستم',
 ];
 
+/**
+ * Both lists are matched against normalized text, and the needles are
+ * normalized once at module load, so a phrase written here in one Persian
+ * spelling matches every spelling of it. `toLowerCase` does nothing to
+ * Persian script; it is kept for the English half. See normalizePersian.
+ */
+const CLOSE_NEEDLES = CLOSE_REQUEST_PHRASES.map((p) => normalizePersian(p));
+const HUMAN_NEEDLES = HUMAN_REQUEST_PHRASES.map((p) => normalizePersian(p));
+
 export function requestedClosure(text: string): boolean {
-  const haystack = text.toLowerCase();
-  return CLOSE_REQUEST_PHRASES.some((phrase) => haystack.includes(phrase));
+  const haystack = normalizePersian(text.toLowerCase());
+  return CLOSE_NEEDLES.some((phrase) => haystack.includes(phrase));
 }
 
 export function requestedAHuman(text: string): boolean {
-  const haystack = text.toLowerCase();
-  return HUMAN_REQUEST_PHRASES.some((phrase) => haystack.includes(phrase));
+  const haystack = normalizePersian(text.toLowerCase());
+  return HUMAN_NEEDLES.some((phrase) => haystack.includes(phrase));
 }
 
 export interface AgentContext {
