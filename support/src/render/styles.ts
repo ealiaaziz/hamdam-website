@@ -167,7 +167,7 @@ textarea { resize: vertical; min-height: 8rem; }
 .msg .body { white-space: normal; }
 
 table.queue { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
-table.queue th, table.queue td { text-align: left; padding: 0.6rem 0.75rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+table.queue th, table.queue td { text-align: start; padding: 0.6rem 0.75rem; border-bottom: 1px solid var(--line); vertical-align: top; }
 table.queue th { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.03em; color: var(--text-soft); }
 table.queue tr:hover td { background: rgb(232 176 75 / 8%); }
 table.queue a.subject { color: var(--text); text-decoration: none; font-weight: 600; }
@@ -269,10 +269,38 @@ html[lang='fa'] select {
 }
 
 /* Right-to-left needs the text edges swapped, not the whole grid rebuilt:
- * the layout is already flow-relative almost everywhere. These are the
- * places that hard-coded a side. */
-html[dir='rtl'] .msg { border-left: none; border-right: 3px solid var(--rule); padding-left: 0; padding-right: 0.85rem; }
-html[dir='rtl'] .filters a { margin-right: 0; margin-left: 0.4rem; }
-html[dir='rtl'] .queue th,
-html[dir='rtl'] .queue td { text-align: right; }
+ * the layout is already flow-relative almost everywhere.
+ *
+ * There used to be three overrides here and all three were wrong, in the way
+ * direction-specific CSS goes wrong: they were written against an earlier
+ * version of the components and never revisited when those changed.
+ *
+ * The worst was the .msg override. It set border-left to none, border-right
+ * to 3px solid var(--rule), and padding-left to 0, which was correct when a
+ * message was a card with a left accent stripe. A message is a symmetric 1px
+ * box now, so in Farsi that rule removed the left border, asked for a right
+ * border in --rule -- a custom property that has never been defined in this
+ * file, so the declaration was invalid at computed-value time and the border
+ * resolved to none -- and then dropped the left padding to zero. Measured in
+ * Chromium: English solid 1px on both sides with 17.6px padding, Farsi none
+ * 0px on both sides with 0px on the left. Every Persian ticket thread
+ * rendered as borderless text jammed against the edge of the page while the
+ * English one beside it looked finished. Nothing failed, so nothing
+ * reported it.
+ *
+ * The .filters a override set a margin to counter a margin the base rule
+ * stopped having when the row became flex with a gap, so Farsi filter pills
+ * carried 0.4rem of extra space that English ones did not.
+ *
+ * Both are deleted rather than corrected: the components they targeted are
+ * symmetric, so the right amount of direction-specific CSS for them is none.
+ * The queue's text-align moved to start in the base rule, which is what the
+ * override was approximating. Prefer flow-relative properties (start and end,
+ * margin-inline, padding-inline) over a second rule keyed on [dir] -- one
+ * declaration that is right in both directions cannot fall out of step with
+ * itself the way these did.
+ *
+ * Note for anyone editing this file: APP_CSS is a template literal, so a
+ * backtick anywhere in it, comments included, ends the string. That is how
+ * this very comment first broke the build. */
 `;
