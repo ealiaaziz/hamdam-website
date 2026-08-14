@@ -26,6 +26,18 @@ Anything touching Farsi output or the verse data is Tier 3 regardless of how sma
 diff looks, because the failure mode there is silent and nobody reviewing the PR may
 read the language.
 
+Editing a colour or type **token** is Tier 3 even though the diff is one line: the
+change reaches every surface using it, and nothing in the build or the test suite will
+tell you it happened.
+
+**Shared bilingual components need a second look before you call something Tier 1.**
+`src/components/Footer.astro` is the clearest example: the Farsi branch and the English
+branch live in one ternary in one file, and the component renders on 12 built pages. So
+an "English-only copy fix" is a change inside a file `check:persian` covers, landing on
+a dozen routes. It is still Tier 1 if the diff genuinely stayed on the English side —
+confirm that from the diff rather than from intent, and check both a homepage and a
+legal page rather than only the one you were looking at.
+
 ---
 
 ## Always — every tier, no exceptions

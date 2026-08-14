@@ -32,6 +32,13 @@ The palette is settled and shared with the iOS app. Use the existing tokens rath
 than typing hex values or inventing near-matches — the tokens are what keeps the site
 and the app looking like one product.
 
+**Editing a token's value is a palette change, not a styling fix.** Redefining
+`--color-saffron-ink` propagates to every surface that uses it and silently drifts the
+site away from the app, which no build or test in this repo will catch. Even when the
+new value measures better in isolation, it is a decision about the brand and belongs to
+Ealia. Apply the tokens; do not redefine them. If a token genuinely looks wrong, say so
+and stop there.
+
 Defined in `src/styles/global.css` (`@theme`) and `src/styles/tokens.css`:
 
 | Name | Token | Value |
@@ -42,11 +49,24 @@ Defined in `src/styles/global.css` (`@theme`) and `src/styles/tokens.css`:
 | Mist amber grey | `--color-mist-amber-grey` | `#C98F45` |
 | Night gold | `--color-night-gold` | `#F0C878` |
 
-**The saffron/saffron-ink split is a contrast rule, not a preference.** Raw saffron
-does not reach AA as text on the cream background; saffron-ink is the darkened variant
-(4.98:1) that does. Use `--color-saffron` for decorative and background work and
-`--color-saffron-ink` for anything that has to be read, including the focus ring. If
-you find yourself reaching for saffron on text, you want the ink.
+**The saffron/saffron-ink split is a contrast rule, not a preference.** Measured
+against `--color-cream` (`#F4EDD8`): raw saffron is **1.67:1**, which fails AA as text
+and also fails the 3:1 a focus indicator needs; saffron-ink is **4.98:1** and passes.
+Use `--color-saffron` for decorative and background work and `--color-saffron-ink` for
+anything that has to be read, including the focus ring. If you find yourself reaching
+for saffron on text, you want the ink.
+
+On a warm light ground, warm text is made readable by going **deeper, not brighter** —
+the instinct behind "make it pop" is the move that breaks it. Saffron-ink is already
+the darkest sanctioned saffron, so on text the remaining levers are weight, size and
+spacing, not chroma. Reach for those before proposing any colour change.
+
+Other ratios on cream, so you do not have to recompute them: ember 2.73:1, mist amber
+grey 2.39:1, night gold 1.36:1. None of the three is a text colour on cream.
+
+**A note on the numbers.** A comment at `src/styles/global.css:119` states raw saffron
+is 1.8:1. That figure is wrong; the WCAG computation gives 1.67:1. The conclusion it
+draws is still right, so nothing downstream is affected, but do not propagate 1.8.
 
 **Type:** `--font-serif` (Source Serif Pro) for English, `--font-farsi` (Vazirmatn)
 for Farsi UI, `--font-farsi-verse` (Markazi Text) for Persian verse, `--font-sans` for
