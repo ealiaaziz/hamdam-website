@@ -64,9 +64,10 @@ spacing, not chroma. Reach for those before proposing any colour change.
 Other ratios on cream, so you do not have to recompute them: ember 2.73:1, mist amber
 grey 2.39:1, night gold 1.36:1. None of the three is a text colour on cream.
 
-**A note on the numbers.** A comment at `src/styles/global.css:119` states raw saffron
-is 1.8:1. That figure is wrong; the WCAG computation gives 1.67:1. The conclusion it
-draws is still right, so nothing downstream is affected, but do not propagate 1.8.
+**A note on the numbers.** These are WCAG-computed against `#F4EDD8`, not copied from
+comments. Two places in the repo asserted raw saffron was 1.8:1 and were corrected to
+1.67:1 on 2026-08-14 (`src/styles/global.css`, `docs/website-redesign/03-technical-inventory.md`).
+If you need a ratio not listed here, compute it rather than quoting prose.
 
 **Type:** `--font-serif` (Source Serif Pro) for English, `--font-farsi` (Vazirmatn)
 for Farsi UI, `--font-farsi-verse` (Markazi Text) for Persian verse, `--font-sans` for

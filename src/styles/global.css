@@ -117,8 +117,10 @@ html {
 }
 
 /* Visible focus ring (Phase W1.10). Saffron-ink rather than raw saffron:
-   the bright token reads at only 1.8:1 against cream, below the 3:1 an
-   indicator needs; the ink variant keeps the hue and passes. */
+   the bright token reads at only 1.67:1 against cream, below the 3:1 an
+   indicator needs; the ink variant keeps the hue and passes. (Ratio
+   corrected 2026-08-14: this said 1.8:1, which the WCAG computation for
+   #E8B04B on #F4EDD8 does not give. The conclusion was unaffected.) */
 :focus-visible {
   outline: 2px solid var(--color-saffron-ink);
   outline-offset: 2px;

@@ -35,8 +35,9 @@ review. Locale logic in `src/lib/locale.js`; store link state in
 the "Coming soon" pill for the official badge. Verses come byte-exact from the
 iOS app's verse bank via generated `src/data/verses.ts`; Farsi hero copy from
 generated `src/data/siteCopy.ts`. Never hand-type Persian — regenerate.
-`npm test` (Vitest, 60 cases) and `npm run check:persian` (also a pre-commit
-hook) must pass. OG images/icons regenerate via `node scripts/generate-og.mjs`.
+`npm test` (Vitest, 189 cases in 11 files) and `npm run check:persian` (also a
+pre-commit hook) must pass. The root suite excludes `support/**` on purpose —
+see the comment in `vitest.config.js` — so this number is the site alone. OG images/icons regenerate via `node scripts/generate-og.mjs`.
 CSP is enforcing (`public/_headers`): no inline styles or scripts, so keep
 `inlineStylesheets: 'never'` and `assetsInlineLimit: 0` in astro.config.
 
@@ -104,8 +105,10 @@ there are worth repeating here because breaking them is expensive:
    acknowledgements for tickets that no longer existed. Deleting the row does
    not recall the mail.
 
-`npm test` (343 cases), `npm run check:persian` and `node
-scripts/check-dashes.mjs` all cover `support/` and must pass.
+`npm test` run from `support/` (414 cases in 29 files), `npm run check:persian`
+and `node scripts/check-dashes.mjs` all cover `support/` and must pass. The
+support suite needs its own `npm ci` inside `support/`; the root install does
+not provide its dependencies.
 
 **Inbound email is not an identity (added 2026-08-02, completed the same
 day).** A message may only be appended to an existing ticket when Exchange

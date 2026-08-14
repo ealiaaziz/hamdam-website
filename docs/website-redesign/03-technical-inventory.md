@@ -104,7 +104,7 @@ flips via the `:dir(rtl)` CSS pseudo-class rather than a per-call side prop, con
 
 **19. Accessibility structure** — Skip-to-content link (localized text per locale), visible
 `:focus-visible` outline using the AA-contrast `saffron-ink` token (in-code comment explains
-why: raw saffron is only 1.8:1 on cream, below the 3:1 an indicator needs), 44px minimum
+why: raw saffron is only 1.67:1 on cream, below the 3:1 an indicator needs), 44px minimum
 touch targets on footer/nav links (`min-h-[44px]`), `aria-hidden` on decorative SVGs,
 `aria-label`s on the language toggle and coming-soon badge. `prefers-reduced-motion: reduce`
 is respected in three separate places: `[data-reveal]` (global.css), the hero's static
