@@ -5,7 +5,7 @@
 // response path (Composio/Outlook sends it, not this Worker).
 
 import { PRIORITY_LABEL, SLA_POLICY, type Priority } from '../itil.js';
-import { escapeHtml, textToSafeHtml, ticketPublicId } from '../ids.js';
+import { agentDisplayName, escapeHtml, textToSafeHtml, ticketPublicId } from '../ids.js';
 import { direction, strings, type Locale } from '../i18n.js';
 
 const WRAP_OPEN = `<div style="font-family:Georgia,'Times New Roman',serif;color:#241E15;max-width:34rem;margin:0 auto;line-height:1.55">`;
@@ -48,10 +48,16 @@ export function agentReplyEmail(opts: {
   message: string;
 }): { subject: string; html: string } {
   const publicId = ticketPublicId(opts.ticketId);
+  // The caller passes the agent's Cloudflare Access address, because that is
+  // what a route behind Access has. It used to be signed straight into the
+  // footer of a reply going to a stranger's inbox. See agentDisplayName: the
+  // sink decides, so a future call site cannot get this wrong by passing the
+  // obvious thing.
+  const signature = agentDisplayName(opts.agentName, 'Hamdam Support');
   const html = `${WRAP_OPEN}
 <p>${textToSafeHtml(opts.message)}</p>
 ${RULE}
-<p style="font-size:0.85rem;color:#574A38">${escapeHtml(opts.agentName)}, Hamdam Support (${escapeHtml(publicId)})</p>
+<p style="font-size:0.85rem;color:#574A38">${escapeHtml(signature)}${signature === 'Hamdam Support' ? '' : ', Hamdam Support'} (${escapeHtml(publicId)})</p>
 ${FOOTER}
 ${WRAP_CLOSE}`;
   return { subject: `[${publicId}] ${opts.subject}`, html };
