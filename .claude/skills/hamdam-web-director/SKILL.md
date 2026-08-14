@@ -101,7 +101,30 @@ When sources disagree, resolve in this order:
 3. This skill
 4. Existing website functionality and verified content
 5. Original Hamdam assets found through Canva
-6. The generic frontend-design skill
+6. The `impeccable` skill
+7. The generic frontend-design skill
+
+### Using `impeccable` (vendored, `.claude/skills/impeccable/`)
+
+Bring it in for craft vocabulary this skill does not carry: component states, motion
+intent, spacing rhythm, and pre-ship polish passes. It ranks below everything above
+it, so where it disagrees, it loses. Specifically:
+
+- **It does not choose the palette or the fonts.** Saffron, Ember, mist amber grey and
+  night gold are settled, and the typefaces are shared with the iOS app. Treat its
+  colour and type playbooks (`colorize`, `typeset`) as advice on *applying* those, and
+  reject any suggestion to replace them.
+- **It must not touch Persian.** No impeccable pass edits `src/data/verses.ts`,
+  `src/data/siteCopy.ts`, or any Farsi string. Its i18n and copy playbooks
+  (`clarify`, `harden`) apply to English only.
+- **Its `redesign` framing does not apply to shipped pages.** Ealia signed off on the
+  homepage structure and English copy on 2026-07-25. Anything that treats the current
+  look as "evidence and anti-reference" is out of scope without a new instruction.
+- **CSP is enforcing.** Reject any inline `style` or `<script>` it proposes.
+- **The detector hook is off on purpose.** See `.claude/skills/impeccable/VENDORED.md`.
+
+The required workflow below still governs: an impeccable pass is step 4, not a
+replacement for steps 5–9.
 
 ## Required workflow
 
