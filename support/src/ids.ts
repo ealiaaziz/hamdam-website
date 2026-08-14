@@ -56,6 +56,26 @@ export function tokensMatch(expected: string, provided: string): boolean {
 }
 
 /**
+ * What a requester is allowed to be told about who replied to them.
+ *
+ * A comment's `author_name` is whatever the writing path stored. For the
+ * assistant that is a display name. For a person it is `identity.email` from
+ * the Cloudflare Access assertion, because that is what the admin routes have
+ * to hand -- and that address then travelled into the status page and into
+ * the footer of every agent reply email, which is how the two people who run
+ * this desk had their real addresses published to anyone holding a tracking
+ * link, and to anyone that link was ever forwarded to.
+ *
+ * Both sinks now call this rather than deciding for themselves, because the
+ * bug was two independent renderers each making the same reasonable-looking
+ * choice. The test is for an `@` rather than for a known name, so anything
+ * address-shaped fails safe no matter which path stored it.
+ */
+export function agentDisplayName(stored: string | null | undefined, fallback: string): string {
+  return stored && !stored.includes('@') ? stored : fallback;
+}
+
+/**
  * Very rough HTML-to-text, used only to record what an approved draft said
  * in the ticket thread. The thread renders with textToSafeHtml, so storing
  * raw HTML there would show the requester a page of tags.
