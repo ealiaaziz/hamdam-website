@@ -1,5 +1,5 @@
 import { page, priorityBadge, statusBadge, formatDateTime, isOverdue } from './layout.js';
-import { escapeHtml, textToSafeHtml, ticketPublicId } from '../ids.js';
+import { agentDisplayName, escapeHtml, textToSafeHtml, ticketPublicId } from '../ids.js';
 import { SLA_POLICY } from '../itil.js';
 import { localePath, parseLocale, strings } from '../i18n.js';
 import type { CommentRow, TicketWithRequester } from '../types.js';
@@ -9,6 +9,16 @@ export function ticketStatusPage(opts: {
   comments: CommentRow[];
   justSubmitted?: boolean;
   justEmailed?: boolean;
+  /**
+   * Render the conversation without handing over the tracking token.
+   *
+   * Used for the page the portal shows immediately after a ticket is filed.
+   * The submitter reads the desk's first answer here and gets no durable key
+   * to the thread; the key is in the acknowledgement email, which only the
+   * mailbox owner receives. See `POST /tickets` in index.ts for why that
+   * distinction is the whole point.
+   */
+  continueByEmail?: boolean;
   /** Pre-rendered suggestion block, or empty when nothing matched. */
   suggestion?: string;
 }): string {
@@ -42,7 +52,21 @@ export function ticketStatusPage(opts: {
     .filter((c) => c.author_type === 'requester' || c.author_type === 'agent')
     .map((c) => {
       const roleClass = c.author_type === 'requester' ? 'msg--requester' : 'msg--agent';
-      const who = c.author_type === 'agent' ? escapeHtml(c.author_name ?? t.supportAuthor) : escapeHtml(t.you);
+      // The filter above drops system notes for a reason it spells out at
+      // length: an agent's Cloudflare Access address does not belong on a page
+      // anyone holding a tracking link can open. And then this line printed it
+      // anyway, from the other direction. A human reply stores `author_name`
+      // as `identity.email` (see the two addComment calls on the admin routes
+      // in index.ts), so every agent reply put a real staff address in front
+      // of the requester and anyone they ever forwarded the link to. Those are
+      // the addresses worth phishing.
+      //
+      // The assistant's name is a display name and stays: "Hamdam Assistant"
+      // is information the requester should have. An address is not. Testing
+      // for the `@` rather than for a known name means a new author, or one
+      // stored by some path added later, fails safe.
+      const who =
+        c.author_type === 'agent' ? escapeHtml(agentDisplayName(c.author_name, t.supportAuthor)) : escapeHtml(t.you);
       return `<div class="msg ${roleClass}">
   <div class="meta"><span>${who}</span><span>${formatDateTime(c.created_at)}</span></div>
   <div class="body">${textToSafeHtml(c.body)}</div>
@@ -69,8 +93,12 @@ ${opts.suggestion ?? ''}
   </div>
   <div class="thread">${thread || `<p class="lede">${escapeHtml(t.noMessages)}</p>`}</div>
   ${
-    ticket.status !== 'closed'
-      ? `<form method="post" action="${localePath(locale, `/tickets/${ticket.id}/reply`)}?token=${token}">
+    opts.continueByEmail
+      ? // No forms, because both of them carry the token in their action and
+        // the token is exactly what this page must not hand out.
+        `<p class="lede">${escapeHtml(t.statusContinueByEmail)}</p>`
+      : ticket.status !== 'closed'
+        ? `<form method="post" action="${localePath(locale, `/tickets/${ticket.id}/reply`)}?token=${token}">
     <div class="field">
       <label for="body">${escapeHtml(t.addReply)}</label>
       <textarea id="body" name="body" required></textarea>
@@ -81,7 +109,7 @@ ${opts.suggestion ?? ''}
     <button class="btn btn--ghost" type="submit">${escapeHtml(t.emailMeButton)}</button>
     <p class="hint">${escapeHtml(t.emailMeHint)}</p>
   </form>`
-      : `<p class="lede">${escapeHtml(t.closedNotice)}</p>`
+        : `<p class="lede">${escapeHtml(t.closedNotice)}</p>`
   }
 </div>
 `;
