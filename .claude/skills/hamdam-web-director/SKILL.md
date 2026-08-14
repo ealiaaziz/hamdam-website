@@ -1,15 +1,21 @@
 ---
 name: hamdam-web-director
-description: Authority for every Hamdam website design, content, and implementation task in this repo. Use for any change to layout, copy, imagery, typography, bilingual (EN/Farsi) behaviour, or the visual system on hamdam.com.au. Overrides generic frontend-design defaults with Hamdam's specific product, cultural, and technical constraints.
+description: Authority for every design, content, and implementation decision on the Hamdam marketing site (hamdam.com.au) in this repo. Use for any change to layout, copy, imagery, typography, colour, motion, the cinematic dawn hero, verses, OG images, or bilingual EN/Farsi and RTL behaviour — including tasks phrased as "make the hero better", "polish this section", "the Farsi page looks off", or a plain request to edit anything under src/pages, src/components, or src/styles. Carries Hamdam's settled palette, cultural constraints, and deploy-on-push risk, so prefer it over generic frontend-design or impeccable guidance whenever they disagree.
 ---
 
 # Hamdam Web Director
 
 You are directing web work for Hamdam, a universal reflection companion grounded in
-Persian poetic wisdom. Tagline: "Hamdam reflects your heart and your sky." This skill
-is the authority for design, content, and implementation decisions on this site. When
-another skill (e.g. a generic frontend-design skill) conflicts with this one, this one
-wins — see Source priority below.
+Persian poetic wisdom. Tagline: "Hamdam reflects your heart and your sky."
+
+This skill is the authority for design, content, and implementation decisions on this
+site. When another skill conflicts with it, this one wins — see Source priority.
+
+**Scope:** the marketing site at `hamdam.com.au` (`src/`, `public/`, `astro.config`).
+The support desk under `support/` is a separate Worker with its own bilingual portal
+and its own authority in `support/docs/build-record.md` — this skill does not govern
+it. If asked to change support portal UI, follow that record instead, and carry over
+only the cultural constraints below, which apply to anything wearing the Hamdam name.
 
 ## Product & positioning
 
@@ -22,12 +28,30 @@ preachy.
 
 ## Visual direction
 
-Warm dawn palette. Established Hamdam accent family — use these, not invented colors:
+The palette is settled and shared with the iOS app. Use the existing tokens rather
+than typing hex values or inventing near-matches — the tokens are what keeps the site
+and the app looking like one product.
 
-1. Saffron
-2. Ember
-3. Mist amber grey
-4. Night gold
+Defined in `src/styles/global.css` (`@theme`) and `src/styles/tokens.css`:
+
+| Name | Token | Value |
+|---|---|---|
+| Saffron | `--color-saffron` | `#E8B04B` |
+| Saffron ink | `--color-saffron-ink` | `#7F6029` |
+| Ember | `--color-ember` | `#D07B3F` |
+| Mist amber grey | `--color-mist-amber-grey` | `#C98F45` |
+| Night gold | `--color-night-gold` | `#F0C878` |
+
+**The saffron/saffron-ink split is a contrast rule, not a preference.** Raw saffron
+does not reach AA as text on the cream background; saffron-ink is the darkened variant
+(4.98:1) that does. Use `--color-saffron` for decorative and background work and
+`--color-saffron-ink` for anything that has to be read, including the focus ring. If
+you find yourself reaching for saffron on text, you want the ink.
+
+**Type:** `--font-serif` (Source Serif Pro) for English, `--font-farsi` (Vazirmatn)
+for Farsi UI, `--font-farsi-verse` (Markazi Text) for Persian verse, `--font-sans` for
+system UI. These are chosen for a reason — Markazi carries the verses because it was
+measured against the longest hemistich in the bank. Do not substitute typefaces.
 
 ## Cultural direction — hard constraints
 
@@ -37,6 +61,10 @@ Warm dawn palette. Established Hamdam accent family — use these, not invented 
 - Never alter approved Farsi content unless the repository contains an authoritative
   replacement (e.g. a regenerated `src/data/siteCopy.ts` / `verses.ts` from the source
   pipeline). Never hand-type or hand-edit Persian text directly.
+
+The last rule has a mechanical backstop — `npm run check:persian` is a pre-commit hook
+and will reject hand-typed Persian — but do not rely on it to catch a judgement error.
+It validates the Unicode set, not whether the words are the approved ones.
 
 ## Photography
 
@@ -66,31 +94,70 @@ Do not produce a generic SaaS landing page. Specifically avoid:
 Use strong editorial typography, calm spacing, clear hierarchy, and a restrained
 cinematic experience instead.
 
+Items 5–8 are not stylistic. Invented numbers, reviews, awards, or capability claims
+about the app are false statements about a real product on a real domain — they do not
+become acceptable as placeholders, and there is no "we'll replace it later."
+
 ## Bilingual requirements
 
 English and Farsi have equal functional quality — not "Farsi as an afterthought."
 Farsi uses correct RTL document semantics: layout order, navigation behaviour, and
 icon direction where applicable, not just right-aligned text.
 
+## Where things live
+
+Start here rather than searching; these are the surfaces most design tasks touch.
+
+| Concern | File |
+|---|---|
+| Colour and type tokens | `src/styles/tokens.css`, `src/styles/global.css` |
+| Scroll-driven sunrise timeline | `src/lib/cinematic.js` (pure logic, unit-tested) |
+| Hero markup and styles | `src/components/HeroCinematic.astro` |
+| Locale routing and helpers | `src/lib/locale.js` |
+| Store badge / "Coming soon" state | `src/lib/appStore.js` (`APP_STORE.RELEASED`) |
+| Verse bank (generated, byte-exact) | `src/data/verses.ts` |
+| Farsi hero copy (generated) | `src/data/siteCopy.ts` |
+| OG images and icons | regenerate with `node scripts/generate-og.mjs` |
+| CSP and headers | `public/_headers` |
+
+**Reviewing the hero:** pin the sunrise with `?dawn=N` instead of trying to scroll to a
+moment by hand. The timeline is night → morning across the first 100vh, and
+reduced-motion renders the static morning state.
+
 ## Technical rules
 
-1. Inspect the existing stack before proposing changes (this repo: Astro 7 +
-   Tailwind v4, Cloudflare deploy on push to `main`, EN at `/`, Farsi at `/fa/`).
-2. Preserve the current framework unless it is demonstrably broken.
-3. Preserve GitHub and Cloudflare deployment compatibility.
-4. Preserve working URLs, redirects, analytics, legal pages, and metadata.
-5. Mobile first, from 320px upward.
-6. Semantic HTML.
-7. Keyboard navigation must work.
-8. Visible focus states.
-9. Respect `prefers-reduced-motion`.
-10. Optimise images using the current repository toolchain when possible.
-11. Prevent layout shift.
-12. Avoid unnecessary client-side JavaScript (CSP here is enforcing — no inline
-    styles/scripts, `inlineStylesheets: 'never'`, `assetsInlineLimit: 0`).
-13. Never expose secrets or credentials.
-14. Never modify DNS or Cloudflare settings.
-15. Never push, merge, publish, or deploy without explicit instruction.
+1. Inspect the existing stack before proposing changes. This repo: Astro 7 +
+   Tailwind v4, deployed as a Cloudflare **Worker with Static Assets**, EN at `/`,
+   Farsi at `/fa/`.
+2. **Pushing publishes the site.** A Cloudflare Workers Builds connection is attached
+   to this repository and deploys to production within about a minute of a push — and
+   not only from `main`. Every push to a feature branch on 2026-08-02 produced a
+   production deployment. There is no staging branch. Treat `git push` as the deploy,
+   and get explicit instruction before making one.
+3. `scripts/predeploy-check.mjs` guards `npm run deploy` only. The push path never
+   runs it, so it is not a safety net for rule 2.
+4. Preserve the current framework unless it is demonstrably broken.
+5. Preserve Cloudflare and GitHub deployment compatibility.
+6. Preserve working URLs, redirects, analytics, legal pages, and metadata.
+7. Mobile first, from 320px upward.
+8. Semantic HTML.
+9. Keyboard navigation must work.
+10. Visible focus states.
+11. Respect `prefers-reduced-motion`.
+12. Optimise images using the current repository toolchain when possible.
+13. Prevent layout shift.
+14. Avoid unnecessary client-side JavaScript. **CSP is enforcing** (`public/_headers`):
+    no inline styles or scripts, which is why `inlineStylesheets: 'never'` and
+    `assetsInlineLimit: 0` are set in `astro.config`. An inline `style` attribute does
+    not degrade here — it is blocked, and the page ships visibly broken.
+15. Adding an animation or UI dependency is a bundle, CSP, and accessibility decision,
+    not a styling one. The site currently has zero animation dependencies. Raise it
+    before reaching for one.
+16. Never expose secrets or credentials.
+17. Never modify DNS or Cloudflare settings.
+18. If the change touches what the iOS app sends over the network, the outbound-host
+    lists in `/privacy/` §5 and `/terms/` §12 are exhaustive and must be updated in the
+    same commit. See `CLAUDE.md`.
 
 ## Source priority
 
@@ -110,21 +177,19 @@ Bring it in for craft vocabulary this skill does not carry: component states, mo
 intent, spacing rhythm, and pre-ship polish passes. It ranks below everything above
 it, so where it disagrees, it loses. Specifically:
 
-- **It does not choose the palette or the fonts.** Saffron, Ember, mist amber grey and
-  night gold are settled, and the typefaces are shared with the iOS app. Treat its
-  colour and type playbooks (`colorize`, `typeset`) as advice on *applying* those, and
-  reject any suggestion to replace them.
+- **It does not choose the palette or the fonts.** Those are settled above and shared
+  with the iOS app. Treat its colour and type playbooks (`colorize`, `typeset`) as
+  advice on *applying* them, and reject any suggestion to replace them.
 - **It must not touch Persian.** No impeccable pass edits `src/data/verses.ts`,
   `src/data/siteCopy.ts`, or any Farsi string. Its i18n and copy playbooks
   (`clarify`, `harden`) apply to English only.
-- **Its `redesign` framing does not apply to shipped pages.** Ealia signed off on the
+- **Its redesign framing does not apply to shipped pages.** Ealia signed off on the
   homepage structure and English copy on 2026-07-25. Anything that treats the current
   look as "evidence and anti-reference" is out of scope without a new instruction.
 - **CSP is enforcing.** Reject any inline `style` or `<script>` it proposes.
 - **The detector hook is off on purpose.** See `.claude/skills/impeccable/VENDORED.md`.
 
-The required workflow below still governs: an impeccable pass is step 4, not a
-replacement for steps 5–9.
+An impeccable pass is step 4 of the workflow below, not a replacement for steps 5–9.
 
 ## Required workflow
 
@@ -138,6 +203,12 @@ replacement for steps 5–9.
 8. Fix critical and high-confidence problems
 9. Report exact results
 
-Full verification checklist (what "record baseline" and "audit" actually check):
-`references/verification.md`. Run it every time this skill directs an implementation
-task — do not skip steps because a change looks small.
+`references/verification.md` says what "record baseline" and "audit" actually check.
+It is **tiered by how much the change can break** — a copy fix and a new section do not
+warrant the same evidence. Read the tier table there first and run the tier that
+matches; do not quietly drop to a lighter tier because a change feels small, and do not
+run the heaviest tier on everything either, because a checklist that is always too
+heavy is one that gets skipped wholesale.
+
+Report what you actually observed. "Should work" is not a result, and neither is a
+green exit code you did not read.

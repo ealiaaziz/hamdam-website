@@ -1,104 +1,144 @@
 # Hamdam Web Director — Verification Checklist
 
-Run every item below for any implementation task this skill directs, before
-reporting results. Record actual observed output, not assumptions — "should work"
-is not a pass.
+Record actual observed output, not assumptions — "should work" is not a pass, and an
+exit code you did not read is not a result.
 
-## 1. Repository cleanliness check
+## Choosing a tier
 
-- `git status` before starting: confirm no unexpected uncommitted changes are
-  already present. If there are, stop and ask before building on top of them.
-- `git status` again after changes: confirm the diff touches only the files the
-  task intended.
+The old version of this file demanded all fifteen checks — including twelve
+screenshots — for every implementation task regardless of size. That is the wrong
+shape: a checklist that is always too heavy for the change in front of you is one that
+gets abandoned entirely, and then nothing gets verified. So it is tiered by how much
+the change can actually break.
 
-## 2. Existing functionality inventory
+Pick the **highest** tier the change touches. When genuinely unsure between two, take
+the higher one — the cost of an extra viewport pass is minutes, and the cost of
+shipping a broken RTL layout is a live marketing site in a language most reviewers
+here cannot read.
 
-- List routes/pages that exist before the change (`/`, `/fa/`, legal pages, any
-  others under `src/pages/`).
-- Note which of them the current task is expected to touch vs. leave untouched.
+| Tier | The change is | Run |
+|---|---|---|
+| 1 | English copy, metadata, alt text, a legal-page edit — nothing that moves a box | Always + §A |
+| 2 | Visual change to an existing surface: spacing, colour, type, a component's states | Always + §A + §B |
+| 3 | A new surface, structural or layout change, or anything touching the dawn hero, `src/lib/cinematic.js`, motion, `src/styles/tokens.css`, `global.css`, or images | Everything |
 
-## 3. Mobile, tablet, and desktop verification
+Anything touching Farsi output or the verse data is Tier 3 regardless of how small the
+diff looks, because the failure mode there is silent and nobody reviewing the PR may
+read the language.
 
-- Verify at minimum: 320px (mobile-first floor), ~768px (tablet), ~1440px
-  (desktop) viewport widths.
-- Check for horizontal scroll, overlap, clipped text, and broken image aspect
-  ratios at each width.
+---
 
-## 4. English and Farsi verification
+## Always — every tier, no exceptions
+
+### 1. Repository cleanliness
+
+- `git status` before starting: confirm no unexpected uncommitted changes are already
+  present. If there are, stop and ask before building on top of them.
+- `git status` after: confirm the diff touches only the files the task intended.
+
+### 2. Build, tests, and content checks
+
+Report pass/fail and counts, plus any warnings — not just exit codes.
+
+- `npm run build` — and read the warnings, not only the final line.
+- `npm test` (Vitest) — report the pass/fail counts you actually saw.
+- `npm run check:persian` — must pass; also a pre-commit hook.
+- `node scripts/check-dashes.mjs` — must pass. It rejects em and en dashes in content
+  files, so it catches typographic drift in copy work specifically.
+
+### 3. CSP and deploy compatibility
+
+- No new inline styles or scripts. The CSP in `public/_headers` is enforcing, so an
+  inline style does not degrade gracefully — it is blocked and the page ships broken.
+- `wrangler.jsonc` and `public/_headers` not broken by the change; no routing or
+  redirect change that conflicts with the Worker config.
+- Remember that pushing publishes. There is no staging branch, and a push from any
+  branch reaches production in about a minute.
+
+---
+
+## §A — Content-facing checks (Tier 1 and up)
+
+### 4. Both locales render
 
 - Verify `/` (English) and `/fa/` (Farsi) both render correctly for the changed
-  surface — not just one locale.
-- Confirm Farsi copy source is the generated pipeline output (e.g.
-  `src/data/siteCopy.ts` / `src/data/verses.ts`), not hand-typed text.
+  surface — not just the one you edited.
+- Confirm Farsi copy comes from the generated pipeline output (`src/data/siteCopy.ts`,
+  `src/data/verses.ts`), not hand-typed text.
 
-## 5. RTL semantic check
+### 5. Legal links
 
-- Confirm `dir="rtl"` (or equivalent) is set at the document/section level for
-  Farsi, not simulated with `text-align: right` alone.
-- Confirm layout order (nav, header, content flow) mirrors correctly, not just
-  text alignment.
-- Confirm icon direction flips where meaning depends on direction (e.g. arrows,
-  chevrons, back/forward affordances).
+- Confirm links to legal pages (privacy, terms) still resolve and were not incidentally
+  moved, renamed, or broken.
 
-## 6. Keyboard check
+### 6. Metadata
+
+- Confirm `<title>`, meta description, and OG tags are present and correct for any page
+  touched.
+- If OG images were affected, confirm `node scripts/generate-og.mjs` was re-run rather
+  than stale images left in place.
+
+---
+
+## §B — Visual and interaction checks (Tier 2 and up)
+
+### 7. Existing functionality inventory
+
+- List routes under `src/pages/` that exist before the change.
+- Note which the task is expected to touch versus leave untouched.
+
+### 8. Viewport verification
+
+- Verify at minimum 320px (mobile-first floor), ~768px (tablet), ~1440px (desktop).
+- Check for horizontal scroll, overlap, clipped text, and broken image aspect ratios at
+  each width.
+
+### 9. RTL semantics
+
+- Confirm `dir="rtl"` (or equivalent) is set at the document/section level for Farsi,
+  not simulated with `text-align: right` alone.
+- Confirm layout order (nav, header, content flow) mirrors correctly, not just text
+  alignment.
+- Confirm icon direction flips where meaning depends on direction — arrows, chevrons,
+  back/forward affordances.
+
+### 10. Keyboard
 
 - Tab through all interactive elements on the changed surface in source order.
-- Confirm nothing is a keyboard trap and nothing is unreachable by keyboard.
+- Confirm nothing is a keyboard trap and nothing is unreachable.
+- Confirm the focus ring is visible against its background. It uses
+  `--color-saffron-ink`, not raw saffron, because raw saffron does not reach AA.
 
-## 7. Reduced motion check
+### 11. Before/after screenshots
 
-- With `prefers-reduced-motion: reduce` simulated, confirm animated elements
-  (e.g. the cinematic sunrise hero) fall back to their static/reduced state.
+For the **changed surface only**, capture `{mobile, desktop} x {EN, FA}` before and
+after. Add tablet at Tier 3, or whenever the change is responsive-layout-specific.
 
-## 8. Missing image behaviour
+Two distinct surfaces (hero and footer, say) are two matrices, not one. If the change
+is genuinely invisible at a given viewport, say so rather than padding the set with
+identical images.
 
-- Confirm layout does not shift or break if an image fails to load (broken src
-  test): reserved dimensions, sensible alt text, no collapsed containers.
+---
 
-## 9. Slow image behaviour
+## §C — Robustness checks (Tier 3 only)
 
-- Confirm perceived layout stability under throttled network — no visible
-  content-jump when large images finish loading late.
+### 12. Reduced motion
 
-## 10. Build and test results
+- With `prefers-reduced-motion: reduce` simulated, confirm animated elements — the
+  cinematic sunrise hero above all — fall back to their static state.
+- Pin intermediate states with `?dawn=N` rather than trying to scroll to a moment.
 
-- `npm run build` (or repo's actual build command) — report pass/fail and any
-  warnings, not just exit code.
-- `npm test` (Vitest) — report pass/fail counts.
-- `npm run check:persian` — report pass/fail. This must pass; it is also a
-  pre-commit hook.
+### 13. Missing image behaviour
 
-## 11. Legal link check
+- Confirm layout does not shift or break if an image fails to load: reserved
+  dimensions, sensible alt text, no collapsed containers.
 
-- Confirm links to legal pages (privacy, terms, etc.) still resolve and were not
-  incidentally moved, renamed, or broken by the change.
+### 14. Slow image behaviour
 
-## 12. Metadata check
+- Confirm perceived layout stability under throttled network — no content-jump when
+  large images finish loading late.
 
-- Confirm `<title>`, meta description, and OG tags are still present and correct
-  for any page touched. If OG images were affected, confirm
-  `node scripts/generate-og.mjs` was re-run rather than stale images left in place.
+### 15. Analytics preservation
 
-## 13. Analytics preservation check
-
-- Confirm any analytics script/tag present before the change is still present and
+- Confirm any analytics script or tag present before the change is still present and
   unmodified after, unless the task explicitly targeted analytics.
-
-## 14. Cloudflare and GitHub compatibility check
-
-- Confirm `wrangler.jsonc` / `public/_headers` (CSP) were not broken by the
-  change: no new inline styles/scripts given the enforcing CSP, no changes to
-  routing/redirects that would conflict with Cloudflare config.
-- Confirm the change is compatible with deploy-on-push-to-`main` (no assumptions
-  about a build step Cloudflare won't run).
-
-## 15. Before/after screenshot list
-
-For every viewport in section 3, for every locale in section 4, capture:
-
-- Before: current state of the changed surface.
-- After: new state of the changed surface.
-
-Minimum matrix: `{mobile, tablet, desktop} x {EN, FA}` = 6 before + 6 after,
-more if the task touches multiple distinct surfaces (e.g. hero + footer are two
-surfaces, not one).
