@@ -216,6 +216,33 @@ export function detectTopic(text: string): Topic {
 }
 
 /**
+ * The topic of a conversation, not of its opening line.
+ *
+ * `topic` is classified once, from the first message, and stored. That is the
+ * right thing for priority, which is set when a ticket is created and should
+ * not lurch about as a thread grows. It was the wrong thing for the sourcing
+ * rule in assistantReply.ts, which refuses to let the assistant answer a
+ * Hamdam question out of general knowledge and keys entirely off this value.
+ *
+ * A thread opening "my phone app keeps crashing" classifies as general_it,
+ * because none of the Hamdam terms are in it. Every later message on that
+ * thread inherited the verdict, so "does the app upload my journal to your
+ * servers, and can I get a refund?" was answered as a general computing
+ * question -- ungated, from whatever the model believed about a product it
+ * has never seen. An opening line is not a promise about the rest of the
+ * conversation, and treating it as one made the gate opt-out.
+ *
+ * Raises only. A ticket classified hamdam stays hamdam even if the newest
+ * message says nothing about the app, for the same reason the priority floor
+ * only raises: the stricter reading of a mixed conversation is the safe one,
+ * and a thread does not stop being about Hamdam because someone paused to say
+ * thank you.
+ */
+export function effectiveTopic(stored: Topic, conversationText: string): Topic {
+  return stored === 'hamdam' ? 'hamdam' : detectTopic(conversationText);
+}
+
+/**
  * The floor a Hamdam ticket cannot fall below.
  *
  * P3 rather than P2: the point is that an app problem is never merely
