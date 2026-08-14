@@ -109,26 +109,29 @@ const ctaLabel = lang === 'fa' ? 'دریافت همدم' : 'Get Hamdam';
 
      Text tone follows the same signal rather than the scroll position, for
      the reason skyToneForProgress documents: the arc crosses light and dark
-     four times, so nothing keyed to depth alone stays correct. */
-  /* Pulled 30% toward whichever end its text tone is, never the raw sky.
-     Caught by a rendered-pixel contrast audit rather than by eye: the bar is
-     the one text-bearing element that crosses every stop of the arc, so
-     while the sections were kept out of the dead zone, the bar sailed
-     straight through it. Scrolling across the roots-to-dawn bridge put the
-     logotype and the language toggle on #765451 at 2.48:1, well under the
-     floor, for the second or so the bridge was under the bar.
+     four times, so nothing keyed to depth alone stays correct.
 
-     Mixing toward night when the tone is night and toward morning when it is
-     morning moves the backing off the dead zone in whichever direction its
-     text already is, so the pairing is safe at every stop: worst case is
-     6.5:1 on the night side and 5.2:1 on the morning side, against 2.48:1
-     before. The bar still tracks the sky -- it is a tint of the real colour,
-     not a fixed slab -- it just never sits exactly on the one range where no
-     text works. */
+     The backing is never the raw sky, though: it is mixed 40% toward
+     whichever end its text tone is. The bar is the one text-bearing element
+     that crosses every stop, so while the sections were kept clear of the
+     dead zone, the bar sailed straight through it -- a rendered-pixel audit
+     caught the logotype and the language toggle on #765451 at 2.48:1 while
+     the roots-to-dawn bridge passed underneath. Mixing toward night on the
+     night tone and toward morning on the morning tone moves the backing off
+     that range in whichever direction the text already is.
+
+     60/40, not 70/30. At 70 the worst case across the ramp was still 4.49:1,
+     under the floor by a hair, on the descent bridge at progress 0.460 where
+     hysteresis deliberately holds the morning tone over a surface that has
+     already gone dark. Sweeping the mix and re-measuring every stop in both
+     scroll directions gives 6.31:1 on the night side and 5.44:1 on the
+     morning side at 60. The bar still tracks the sky by a clear majority --
+     it is a tint of the real colour, not a fixed slab -- it just never sits
+     exactly on the one range where no text works. */
   .nav-bar[data-nav-solid] {
     background-color: color-mix(
       in srgb,
-      var(--sky-color, var(--surface-night, #141430)) 70%,
+      var(--sky-color, var(--surface-night, #141430)) 60%,
       var(--surface-night, #141430)
     );
     border-bottom-color: rgb(244 237 216 / 0.12);
@@ -137,7 +140,7 @@ const ctaLabel = lang === 'fa' ? 'دریافت همدم' : 'Get Hamdam';
   :global(:root[data-sky-tone='morning']) .nav-bar[data-nav-solid] {
     background-color: color-mix(
       in srgb,
-      var(--sky-color, var(--surface-morning, #F4EDD8)) 70%,
+      var(--sky-color, var(--surface-morning, #F4EDD8)) 60%,
       var(--surface-morning, #F4EDD8)
     );
     color: var(--hamdam-text, #241E15);

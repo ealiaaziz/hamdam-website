@@ -229,12 +229,21 @@ export function skyColorForProgress(p) {
 // cream text on a cream surface somewhere in the middle. Reading the tone off
 // the ramp's own resolved colour keeps this correct for any ramp.
 //
-// The band is the same dead zone tokens.css describes: below 0.09 luminance
-// only light text clears 4.5:1, above 0.18 only dark text does, and between
-// them neither is safe -- so the tone holds whatever was already active rather
-// than flickering, and no text-bearing section is parked in that range.
-const TONE_DARK_CEILING = 0.09;
-const TONE_LIGHT_FLOOR = 0.18;
+// The band is the dead zone tokens.css describes, and both bounds are solved
+// rather than picked. Light text here is --text-on-night (92% cream), which
+// holds 4.5:1 up to a background luminance of about 0.125; dark text is
+// --hamdam-text (#241E15, L=0.0136), which needs 4.5 * (0.0136 + 0.05) - 0.05
+// = 0.236 before it is safe. Between those two figures neither colour works,
+// so the tone holds whatever was already active rather than flickering.
+//
+// These were 0.09 and 0.18 when the arc landed, and 0.18 was simply wrong for
+// the colour it gates: dark text on a 0.18 background is 3.62:1, so the tone
+// flipped a stop earlier than it should. Nothing keys off these but the nav
+// bar, whose own mix carries most of the safety margin, but a threshold whose
+// comment claims a contrast it does not deliver is a trap for the next
+// change.
+const TONE_DARK_CEILING = 0.125;
+const TONE_LIGHT_FLOOR = 0.236;
 
 export function skyToneForProgress(progress, previousTone = SKY_TONE.NIGHT) {
   const luminance = relativeLuminance(skyColorForProgress(progress));

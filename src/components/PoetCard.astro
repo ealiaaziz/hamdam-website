@@ -83,6 +83,15 @@ const portraitAlt =
   .poet-card--emphasized {
     width: 248px;
   }
+  /* 220 x 3/2 = 330, the height every non-emphasized portrait resolves to
+     from its aspect ratio at this breakpoint. This pin used to live only
+     inside the min-width: 640px block, so below 640 the emphasized card
+     still rendered a 372px portrait beside 330px neighbours and kept the
+     exact 42px baseline offset the change was meant to remove. */
+  .poet-card--emphasized .poet-card__portrait {
+    aspect-ratio: auto;
+    height: 330px;
+  }
   @media (min-width: 640px) {
     .poet-card {
       width: 240px;
@@ -90,11 +99,8 @@ const portraitAlt =
     .poet-card--emphasized {
       width: 272px;
     }
-    /* 240 x 3/2 = 360, the height every card's portrait resolves to from its
-       aspect ratio. Pinning the emphasized one to the same number keeps the
-       row's single baseline while letting it stay the wider card. */
+    /* 240 x 3/2 = 360, the same arithmetic at the wider breakpoint. */
     .poet-card--emphasized .poet-card__portrait {
-      aspect-ratio: auto;
       height: 360px;
     }
   }

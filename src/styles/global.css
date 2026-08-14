@@ -136,6 +136,29 @@ body {
   color: var(--color-indigo);
 }
 
+/* Anything the page can scroll to has to clear the fixed 56px nav bar
+   (2026-08-14). Without this the skip link lands the reader at #main-content
+   with the bar covering the first line of it -- which defeats the one control
+   on the page whose entire job is getting a keyboard user past the bar -- and
+   the same for the #ceremony jump. 5rem is the bar's 3.5rem plus breathing
+   room. */
+[id] {
+  scroll-margin-top: 5rem;
+}
+
+/* Removes the ~300ms synthetic click delay legacy mobile browsers add while
+   they wait to see if a tap is a double-tap-to-zoom. Zoom itself is
+   untouched: the viewport meta sets no maximum-scale and no
+   user-scalable=no, so pinch zoom still works everywhere. */
+a,
+button,
+label,
+input,
+summary,
+[role='button'] {
+  touch-action: manipulation;
+}
+
 .text-balance {
   text-wrap: balance;
 }

@@ -97,7 +97,16 @@ const ogImage = new URL(
 
     <title>{title}</title>
     <meta name="description" content={description} />
-    <meta name="theme-color" content="#E8B04B" />
+    {
+      /* theme-color matches what is actually at the top of this page, rather
+         than being the brand accent (2026-08-14). It was #E8B04B (saffron),
+         which is neither the night sky the homepage hero opens on nor the
+         cream the legal pages open on -- so on mobile the browser chrome was
+         a third colour above both. The homepages open dark and everything
+         else opens cream; navOverDarkHero already encodes exactly that
+         distinction for the nav bar, so it decides this too. */
+    }
+    <meta name="theme-color" content={navOverDarkHero ? '#141430' : '#F4EDD8'} />
     <meta name="apple-itunes-app" content={`app-id=${APP_STORE.ID}`} />
     {noindex && <meta name="robots" content="noindex" />}
     <link rel="canonical" href={canonicalURL} />

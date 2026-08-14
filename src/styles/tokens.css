@@ -5,7 +5,15 @@
   colours until sections migrate onto these tokens.
 */
 :root {
-  color-scheme: light dark;
+  /* `light`, not `light dark` (2026-08-14). This site is deliberately a
+     single fixed light palette with a scroll-driven arc, never an OS-theme
+     one -- the note at the bottom of this file records the dark-mode block
+     being removed as a real bug for exactly that reason. Advertising `dark`
+     support anyway leaves the UA free to render the things it owns in dark:
+     the mood demo's range input, scrollbars, and the canvas behind the page.
+     Declaring only what is true keeps the form control that exists matching
+     the page it sits on. */
+  color-scheme: light;
   /* Reconciled to the app's DesignSystem/Colors.swift (single source of
      truth per the approved Hamdam Website Art Direction); these previously
      disagreed with both the app and this repo's own global.css. */

@@ -24,7 +24,7 @@ const { image } = Astro.props;
      photograph belongs. Consumers must position their content (`relative`),
      or it will paint underneath this. */
 }
-<div class="scene-bg pointer-events-none absolute inset-y-0 end-0 z-0 hidden w-3/5 max-w-3xl overflow-hidden sm:block" aria-hidden="true">
+<div class="scene-bg pointer-events-none absolute inset-y-0 end-0 z-0 hidden w-[calc(50%-336px)] max-w-3xl overflow-hidden xl:block" aria-hidden="true">
   <Image
     src={image}
     alt=""
@@ -48,25 +48,41 @@ const { image } = Astro.props;
      reaches the text column, which is a stronger guarantee of legibility
      than a global fade ever was, because it is positional rather than
      tonal. Nothing is placed behind the copy at any strength. */
-  /* Stops at 44%, and the number is measured rather than chosen. The
-     container is w-3/5 anchored to the inline end, so at a 1440 viewport it
-     spans x=576..1440. The widest content any consumer puts beside it is a
-     max-w-2xl (672px) centred block, which ends at x=1056. That is 384px
-     from the container's outer edge, i.e. 44% of its width -- so the mask is
-     fully transparent by then and no pixel of photograph is ever composited
-     under a glyph. Verified by sampling rendered pixels under the icon
-     labels, not by eye. Widen a consumer's content past max-w-2xl and this
-     number needs redoing. */
+  /* The geometry, not the mask, is what guarantees legibility.
+     `w-[calc(50%-336px)]` is derived from the content rather than tuned to a
+     viewport: 336px is half of max-w-2xl (672px), the widest centred block
+     any consumer places beside this image, so the container occupies exactly
+     the gutter outside that column and is clear of it at *every* width by
+     construction.
+
+     The previous version got this wrong in a way worth recording. It was
+     `w-3/5` with the mask stopping at 44%, a number derived only from the
+     1440px case -- and the comment claimed no photograph was ever composited
+     under a glyph. That held at 1440 and nowhere else: the container is a
+     percentage of the viewport while the content column has a fixed max
+     width, so as the viewport narrows the column reaches further into the
+     image. Measured against the rendered page, six text elements sat over
+     the photograph at 640-1024px and one still did at 1280px. A single-
+     viewport derivation should never have been written up as a proof.
+
+     `xl:block` follows from the same arithmetic: below 1280px the gutter is
+     under ~300px and not worth a photograph, and at 672px it is nothing at
+     all. Losing the image on smaller screens is the right trade -- the skill
+     this repo follows asks for photography as an emotional layer with proven
+     contrast, not for an image that costs bytes and sits under body copy.
+
+     The mask is now purely aesthetic, softening the image's inner edge
+     inside a region that never meets text. */
   .scene-bg__img {
     opacity: 0.5;
-    -webkit-mask-image: linear-gradient(to left, black 0%, black 14%, transparent 44%);
-    mask-image: linear-gradient(to left, black 0%, black 14%, transparent 44%);
+    -webkit-mask-image: linear-gradient(to left, black 0%, black 55%, transparent 100%);
+    mask-image: linear-gradient(to left, black 0%, black 55%, transparent 100%);
   }
   /* The container is anchored with `end-0`, so it sits on the left in RTL
      and the mask has to fade the other way or it would erase the visible
-     edge and keep the half that overlaps the Farsi text column. */
+     edge and keep the half nearest the Farsi text column. */
   :global([dir='rtl']) .scene-bg__img {
-    -webkit-mask-image: linear-gradient(to right, black 0%, black 14%, transparent 44%);
-    mask-image: linear-gradient(to right, black 0%, black 14%, transparent 44%);
+    -webkit-mask-image: linear-gradient(to right, black 0%, black 55%, transparent 100%);
+    mask-image: linear-gradient(to right, black 0%, black 55%, transparent 100%);
   }
 </style>

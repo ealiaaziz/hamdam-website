@@ -33,7 +33,11 @@ const markSize = Math.round(size * 0.85);
       callers set colour via their own ancestor (body defaults to indigo,
       NavBar sets its own on-night colour); every existing usage inherits
       indigo from <body> so this is a no-op there. */}
-  <span class:list={[fontClass, 'font-bold text-current text-2xl']}>
+  {/* translate="no" (2026-08-14): "Hamdam" is a name, and the Farsi wordmark
+      همدم is a real word ("companion") that machine translation will happily
+      turn into English on a page a browser has decided to translate. The
+      brand should read the same in both directions. */}
+  <span translate="no" class:list={[fontClass, 'font-bold text-current text-2xl']}>
     {wordmark}
   </span>
 </span>
