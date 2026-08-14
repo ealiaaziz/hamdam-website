@@ -40,3 +40,9 @@ pnpm-debug.log*
 .dev.vars
 .dev.vars.*
 !.dev.vars.example
+
+# Agent worktrees. The harness creates one of these per background subagent so
+# parallel agents cannot collide in the working tree, and removes it when the
+# agent exits. They are full checkouts of this repo, so committing them would
+# nest the repository inside itself.
+.claude/worktrees/
