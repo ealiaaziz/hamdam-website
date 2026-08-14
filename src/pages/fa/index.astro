@@ -89,9 +89,13 @@ const jsonLd = homepageSchema({
   }
   <MoodDemo lang="fa" />
 
-  <section class="px-6 pb-4 pt-8 sm:pb-8 sm:pt-12">
+  {
+    /* Day arc, morning into forenoon -- mirrors the English page exactly.
+       Class changes only; the Persian below is untouched generated copy. */
+  }
+  <section class="section-copy bg-gradient-to-b from-[var(--arc-morning)] to-[var(--arc-forenoon)] px-6 py-[var(--spacing-section-mobile)] sm:py-[var(--spacing-section-desktop)]">
     <div data-reveal class="mx-auto max-w-[var(--container-reading)]">
-      <h2 class="text-balance font-farsi text-3xl font-medium text-indigo sm:text-4xl">
+      <h2 class="text-balance font-farsi text-[length:var(--text-h2)] font-medium text-indigo">
         همدمی برای تأمل روزانه.
       </h2>
       <div class="mt-8 space-y-6 font-farsi text-lg leading-[1.9] text-indigo/90">
@@ -110,35 +114,37 @@ const jsonLd = homepageSchema({
 
   <JourneyPair lang="fa" />
 
-  <SectionDivider />
+  <SectionDivider variant="afternoon-lateday" />
 
   {/* 3. FIVE POETS */}
   <VerseShowcase lang="fa" intro={faCopy.verseIntro} sceneImage={dawn} />
 
+  <SectionDivider variant="goldenhour-dusk" />
+
   <PoetsBand lang="fa" />
 
-  <SectionDivider />
+  <SectionDivider variant="dusk-eveplum" />
 
   {/* 4. ROOTS */}
   <RootsMoments lang="fa" />
 
-  <SectionDivider />
+  <SectionDivider variant="firstlight-dawn" />
 
   {/* 5. IN YOUR DAY */}
-  <section class="relative bg-gradient-to-b from-peach/15 via-peach/5 to-transparent px-6 py-[var(--spacing-section-mobile)] sm:py-[var(--spacing-section-desktop)]">
+  <section class="relative bg-gradient-to-b from-[var(--arc-dawn)] to-[var(--arc-sunrise)] px-6 py-[var(--spacing-section-mobile)] text-[var(--hamdam-text)] sm:py-[var(--spacing-section-desktop)]">
     <SceneBackground image={quietGarden} />
     <div data-reveal class="relative mx-auto max-w-[var(--container-reading)]">
-      <h2 class="text-balance font-farsi text-3xl font-medium text-indigo sm:text-4xl">
+      <h2 class="text-balance font-farsi text-[length:var(--text-h2)] font-medium">
         همدم هر جا که نگاه کنی، همراه توست.
       </h2>
-      <p class="mt-8 font-farsi text-lg leading-[1.9] text-indigo/90">
+      <p class="mt-8 font-farsi text-lg leading-[1.9]">
         از سیری بخواه تأملی را آغاز کند، شعر امروز را بشنود، یا روزشمارت را بررسی کند. ابزارکی به
         صفحه‌ی اصلی اضافه کن. اگر اپل واچ داری، شعر و روزشمارت همراهت سفر می‌کنند. اگر بخواهی، هر
         تأمل می‌تواند به‌عنوان یک ثبت حالت ذهنی در اپل هلث ذخیره شود، همراه با موسیقی آرام از اپل
         موزیک.
       </p>
     </div>
-    <div class="mx-auto mt-14 flex max-w-2xl flex-wrap justify-center gap-x-10 gap-y-8">
+    <div class="relative mx-auto mt-14 flex max-w-2xl flex-wrap justify-center gap-x-10 gap-y-8">
       <FeatureIcon name="siri" label="سیری" lang="fa" />
       <FeatureIcon name="widget" label="ابزارک" lang="fa" />
       <FeatureIcon name="watch" label="اپل واچ" lang="fa" />
@@ -147,7 +153,10 @@ const jsonLd = homepageSchema({
     </div>
   </section>
 
-  <SectionDivider />
+  {
+    /* No divider: this section leaves on the sunrise stop and PrivacyTrust
+       enters on it, so the boundary is already continuous. */
+  }
 
   {/* 6. PRIVACY, now carrying the six signals the constellation used to show */}
   <PrivacyTrust lang="fa" />

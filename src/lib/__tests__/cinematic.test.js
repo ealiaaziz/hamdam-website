@@ -194,23 +194,82 @@ describe('skyColorForProgress', () => {
   });
 });
 
-describe('skyToneForProgress (hysteresis at 0.45 / 0.8)', () => {
-  it('is NIGHT at and below 0.45 regardless of previous tone', () => {
+describe('skyToneForProgress (luminance-derived, day arc)', () => {
+  it('is NIGHT at the page top and at the poets/roots trough', () => {
     expect(skyToneForProgress(0, SKY_TONE.MORNING)).toBe(SKY_TONE.NIGHT);
-    expect(skyToneForProgress(0.45, SKY_TONE.MORNING)).toBe(SKY_TONE.NIGHT);
+    expect(skyToneForProgress(0.47, SKY_TONE.MORNING)).toBe(SKY_TONE.NIGHT);
+    expect(skyToneForProgress(0.66, SKY_TONE.MORNING)).toBe(SKY_TONE.NIGHT);
   });
 
-  it('is MORNING at and above 0.8 regardless of previous tone', () => {
-    expect(skyToneForProgress(0.8, SKY_TONE.NIGHT)).toBe(SKY_TONE.MORNING);
+  it('is MORNING once the hero resolves and again at the ceremony', () => {
+    expect(skyToneForProgress(0.11, SKY_TONE.NIGHT)).toBe(SKY_TONE.MORNING);
+    expect(skyToneForProgress(0.3, SKY_TONE.NIGHT)).toBe(SKY_TONE.MORNING);
     expect(skyToneForProgress(1, SKY_TONE.NIGHT)).toBe(SKY_TONE.MORNING);
   });
 
-  it('holds the previous tone inside the 0.45-0.8 hysteresis band', () => {
-    expect(skyToneForProgress(0.6, SKY_TONE.NIGHT)).toBe(SKY_TONE.NIGHT);
-    expect(skyToneForProgress(0.6, SKY_TONE.MORNING)).toBe(SKY_TONE.MORNING);
+  // The regression the old scroll-threshold version would have shipped: the
+  // day arc is light at 0.3 (afternoon) and dark at 0.6 (roots), and a rule
+  // keyed to progress alone called both of those the same tone.
+  it('distinguishes the light afternoon from the dark evening', () => {
+    expect(skyToneForProgress(0.3, SKY_TONE.NIGHT)).toBe(SKY_TONE.MORNING);
+    expect(skyToneForProgress(0.6, SKY_TONE.MORNING)).toBe(SKY_TONE.NIGHT);
+  });
+
+  it('holds the previous tone inside the dead zone rather than flickering', () => {
+    // ~0.70 sits on the firstlight-to-dawn bridge, the range tokens.css
+    // reserves for SectionDivider because neither text colour is safe there.
+    expect(skyToneForProgress(0.7, SKY_TONE.NIGHT)).toBe(SKY_TONE.NIGHT);
+    expect(skyToneForProgress(0.7, SKY_TONE.MORNING)).toBe(SKY_TONE.MORNING);
   });
 
   it('defaults to NIGHT when no previous tone is given', () => {
-    expect(skyToneForProgress(0.6)).toBe(SKY_TONE.NIGHT);
+    expect(skyToneForProgress(0.7)).toBe(SKY_TONE.NIGHT);
+  });
+});
+
+describe('SKY_RAMP shape (the day arc)', () => {
+  const luminance = (rgbString) => {
+    const [r, g, b] = rgbString.match(/\d+/g).map(Number);
+    const ch = (c) => {
+      const s = c / 255;
+      return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
+    };
+    return 0.2126 * ch(r) + 0.7152 * ch(g) + 0.0722 * ch(b);
+  };
+
+  // The defect this replaced: the live page went cream, ember, cream, dusk,
+  // cream, plum, cream, ember -- seven direction changes, so every seam read
+  // as a stripe. The day arc is allowed exactly one reversal, at the trough.
+  it('descends to a single trough and then ascends, with no other reversal', () => {
+    const samples = [];
+    for (let p = 0; p <= 1.0001; p += 0.01) samples.push(luminance(skyColorForProgress(p)));
+
+    // Tolerance, not exact sign: the ramp lerps in 8-bit RGB, so a shallow
+    // leg (morning to forenoon drops only .034 luminance across 9% of the
+    // page) wobbles by ~.001 per sample purely from integer rounding. Eight
+    // such wobbles show up as "reversals" if you compare raw signs. A real
+    // direction change in this arc moves far more than that.
+    const NOISE = 0.005;
+    const direction = (a, b) => (Math.abs(b - a) < NOISE ? 0 : Math.sign(b - a));
+
+    let reversals = 0;
+    let lastDirection = 0;
+    for (let i = 1; i < samples.length; i++) {
+      const d = direction(samples[i - 1], samples[i]);
+      if (d !== 0) {
+        if (lastDirection !== 0 && d !== lastDirection) reversals++;
+        lastDirection = d;
+      }
+    }
+    // One reversal: the hero's rise into morning is the arc's opening, then
+    // the day falls to the poets and rises again. The hero-to-morning leg and
+    // the fall share a peak, so two turning points total.
+    expect(reversals).toBeLessThanOrEqual(2);
+  });
+
+  it('puts the darkest point of the day at the poets, and the brightest at the ceremony', () => {
+    expect(luminance(skyColorForProgress(0.47))).toBeLessThan(luminance(skyColorForProgress(0.42)));
+    expect(luminance(skyColorForProgress(0.47))).toBeLessThan(luminance(skyColorForProgress(0.56)));
+    expect(luminance(skyColorForProgress(1))).toBeGreaterThan(luminance(skyColorForProgress(0.95)));
   });
 });

@@ -1,12 +1,131 @@
 ---
 import PersianShamseh from './PersianShamseh.astro';
+
+/* A tonal bridge, not a rule (rewritten 2026-08-14).
+ *
+ * This used to be a 320px saffron hairline with a cream-backed shamseh sitting
+ * on top of it, dropped between sections. On a page whose sections were flat
+ * slabs of different colours that made things worse rather than better: the
+ * cream chip and the cream strip the divider sat in were themselves a third
+ * colour, so each divider drew a bright line exactly where two saturated
+ * fields already met, and turned a seam into a stripe.
+ *
+ * It now carries the arc between two of the --arc-* stops in tokens.css. Each
+ * variant is the gradient from the section above's exit colour to the section
+ * below's entry colour, so the page has no seams at all: every boundary is a
+ * continuous ramp, and the shamseh rides in the middle of it.
+ *
+ * Two variants (--descent and --ascent) cross the dead zone tokens.css
+ * documents -- the luminance range where neither the light nor the dark text
+ * colour clears 4.5:1. That is exactly why the crossing belongs here: this
+ * component carries no text, so it is the only place on the page allowed in
+ * that range. Both are deliberately tall for the same reason; a short bridge
+ * would make the crossing a hard edge again.
+ *
+ * Variants are fixed classes rather than per-instance colours because the CSP
+ * is style-src 'self' with no unsafe-inline, so there is no inline style
+ * attribute and no Astro define:vars available to pass a colour in. Adding a
+ * boundary means adding a variant here, which also keeps every stop in the
+ * arc visible in one file.
+ */
+/* `ornament` is the default, and it is the original hairline-on-cream form,
+ * kept because the four legal pages (privacy and terms, both locales) use
+ * this component between clauses. Those pages are cream from top to bottom
+ * and ride no arc, so a tonal bridge there would be a 96px band of nothing
+ * with a night-gold shamseh on cream at 1.36:1 -- invisible. Between
+ * paragraphs of a privacy policy the old ornament is exactly right; it was
+ * only wrong on a homepage whose sections were different colours. */
+interface Props {
+  variant?:
+    | 'ornament'
+    | 'afternoon-lateday'
+    | 'goldenhour-dusk'
+    | 'dusk-eveplum'
+    | 'firstlight-dawn';
+}
+
+const { variant = 'ornament' } = Astro.props;
+
+// The shamseh has to stay legible against the middle of its own gradient,
+// which is the one place the colour is hardest to predict. Saffron on cream
+// and on the warm bridge, night-gold on the three that pass through the dark.
+const shamsehColor =
+  variant === 'ornament' || variant === 'afternoon-lateday'
+    ? 'var(--color-saffron)'
+    : 'var(--hamdam-night-gold)';
 ---
 
-<div class="flex items-center justify-center py-4" role="presentation">
-  <div class="relative flex w-full max-w-xs items-center justify-center">
-    <span class="h-px w-full bg-saffron/30"></span>
-    <span class="absolute bg-cream px-4">
-      <PersianShamseh size={20} opacity={0.6} />
-    </span>
-  </div>
-</div>
+{
+  variant === 'ornament' ? (
+    <div class="flex items-center justify-center py-4" role="presentation">
+      <div class="relative flex w-full max-w-xs items-center justify-center">
+        <span class="h-px w-full bg-saffron/30" />
+        <span class="absolute bg-cream px-4">
+          <PersianShamseh size={20} opacity={0.6} />
+        </span>
+      </div>
+    </div>
+  ) : (
+    <div class:list={['divider', `divider--${variant}`]} role="presentation">
+      <PersianShamseh size={22} color={shamsehColor} opacity={0.75} class="divider__mark" />
+    </div>
+  )
+}
+
+<style>
+  .divider {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* Height is the bridge. A boundary between two close stops needs little
+       room; the two that cross the dead zone need enough that the crossing
+       reads as sky rather than as an edge. */
+    height: 96px;
+  }
+
+  .divider__mark {
+    /* The mark is the only fixed point in a field that is moving underneath
+       it, so it gets no background chip -- a chip would be a third colour
+       again, which is the mistake this component used to make. */
+    flex-shrink: 0;
+  }
+
+  /* Journey -> Verse showcase: afternoon easing into late day. Both sides
+     carry dark text, nothing crosses, so this one stays short. */
+  .divider--afternoon-lateday {
+    background: linear-gradient(to bottom, var(--arc-afternoon), var(--arc-lateday));
+  }
+
+  /* Verse showcase -> Poets: the descent into evening, and the longer of the
+     two dead-zone crossings. Dark text ends above it, light text begins
+     below it, and nothing is legible in between. */
+  .divider--goldenhour-dusk {
+    height: 200px;
+    background: linear-gradient(to bottom, var(--arc-goldenhour), var(--arc-dusk));
+  }
+
+  /* Poets -> Roots: both sides are night, so this is a settle, not a
+     crossing. */
+  .divider--dusk-eveplum {
+    height: 72px;
+    background: linear-gradient(to bottom, var(--arc-dusk), var(--arc-eveplum));
+  }
+
+  /* Roots -> Meets-you: first light returning, the second dead-zone
+     crossing. Light text ends above it, dark text begins below it. */
+  .divider--firstlight-dawn {
+    height: 200px;
+    background: linear-gradient(to bottom, var(--arc-firstlight), var(--arc-dawn));
+  }
+
+  /* 220, not 260: the sections either side already contribute 140px of their
+     own bottom/top padding, so a 260px bridge put 540px of empty surface
+     between the last line of one section and the first line of the next.
+     220 still reads as sky rather than as an edge. */
+  @media (min-width: 640px) {
+    .divider--goldenhour-dusk,
+    .divider--firstlight-dawn {
+      height: 220px;
+    }
+  }
+</style>

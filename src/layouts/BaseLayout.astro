@@ -258,6 +258,12 @@ const ogImage = new URL(
           document.documentElement.style.setProperty('--sky-color', skyColorForProgress(progress));
           skyTone = skyToneForProgress(progress, skyTone);
           mainEl?.setAttribute('data-sky-tone', skyTone);
+          // Also on the root element (2026-08-14), so the nav bar can read
+          // it. The nav is a sibling of <main>, not a descendant, so the
+          // existing attribute was unreachable from its selectors -- and the
+          // nav is the one element on the page that sits over every surface
+          // the arc passes through and therefore needs to know which one.
+          document.documentElement.setAttribute('data-sky-tone', skyTone);
 
           ticking = false;
         };

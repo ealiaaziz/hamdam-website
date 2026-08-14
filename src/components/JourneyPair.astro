@@ -111,10 +111,17 @@ const copy =
 </section>
 
 <style>
+  /* Day arc, forenoon into afternoon (2026-08-14). This was a flat
+     --surface-dawn (#C77E4E) slab, the most saturated field on the page and
+     the first of three that made the old page read as stripes. It is now the
+     top of the descent: the section enters at the cream the copy above it
+     ends on and leaves at afternoon, so there is no edge at either end. Dark
+     text throughout -- afternoon is the last stop where --hamdam-text still
+     clears 4.5:1 comfortably (8.37:1). */
   .journey {
     padding-block: var(--spacing-section-mobile);
     padding-inline: 1.5rem;
-    background-color: var(--surface-dawn);
+    background: linear-gradient(to bottom, var(--arc-forenoon), var(--arc-afternoon));
     color: var(--hamdam-text);
   }
   @media (min-width: 640px) {
@@ -229,11 +236,19 @@ const copy =
       flex-direction: row;
       align-items: center;
     }
+    /* The gap is subtracted from the bases (2026-08-14). 40% + 60% is the
+       whole row, and .journey__inner then adds a 2.5rem gap on top of it
+       with `flex: 0 0`, which forbids either child from shrinking to make
+       room -- so the row overflowed its container by exactly the gap. The
+       document reported a 1040px scroll width at a 1024px viewport, and the
+       same 16px past the edge at 1100. `34-next-steps.md` filed this under
+       the poets carousel as "almost certainly pre-existing, worth a glance";
+       it is a separate bug from that one and this is the whole of it. */
     .journey__copy {
-      flex: 0 0 40%;
+      flex: 0 0 calc(40% - 1.25rem);
     }
     .journey__frames {
-      flex: 0 0 60%;
+      flex: 0 0 calc(60% - 1.25rem);
       overflow: visible;
       justify-content: center;
       padding-block-end: 0;

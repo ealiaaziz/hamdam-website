@@ -106,9 +106,18 @@ const jsonLd = homepageSchema({
   }
   <MoodDemo lang="en" />
 
-  <section class="px-6 pb-4 pt-8 sm:pb-8 sm:pt-12">
+  {
+    /* First step of the day arc's descent (2026-08-14). The section's own
+       words are what the whole arc is built on -- "a morning that opens
+       gently, an afternoon that steadies, an evening that settles" -- so it
+       starts in the morning the hero resolves to and leaves on forenoon,
+       and the page carries on falling from there. Padding evened up at the
+       same time: pt-8/pb-4 against the 90/140px every other section uses
+       left a ~250px hole above this heading and none below it. */
+  }
+  <section class="section-copy bg-gradient-to-b from-[var(--arc-morning)] to-[var(--arc-forenoon)] px-6 py-[var(--spacing-section-mobile)] sm:py-[var(--spacing-section-desktop)]">
     <div data-reveal class="mx-auto max-w-[var(--container-reading)]">
-      <h2 class="text-balance font-serif text-4xl font-semibold text-indigo sm:text-5xl">
+      <h2 class="text-balance font-serif text-[length:var(--text-h2)] font-semibold text-indigo">
         A companion for the daily reflection.
       </h2>
       <div class="mt-8 space-y-6 font-serif text-xl leading-[1.7] text-indigo/90">
@@ -138,7 +147,7 @@ const jsonLd = homepageSchema({
 
   <JourneyPair lang="en" />
 
-  <SectionDivider />
+  <SectionDivider variant="afternoon-lateday" />
 
   {
     /* 3. FIVE POETS
@@ -153,14 +162,22 @@ const jsonLd = homepageSchema({
     sceneImage={dawn}
   />
 
+  {
+    /* The descent into evening. This boundary had no divider at all and it
+       is the largest tonal step on the page -- golden hour to the poets'
+       night -- so it gets the tall bridge, and the crossing happens where
+       there is no text to be illegible on. */
+  }
+  <SectionDivider variant="goldenhour-dusk" />
+
   <PoetsBand lang="en" />
 
-  <SectionDivider />
+  <SectionDivider variant="dusk-eveplum" />
 
   {/* 4. ROOTS */}
   <RootsMoments lang="en" />
 
-  <SectionDivider />
+  <SectionDivider variant="firstlight-dawn" />
 
   {
     /* 5. IN YOUR DAY
@@ -171,24 +188,40 @@ const jsonLd = homepageSchema({
        off until asked for, is kept below in a single sentence. Approved by Ealia
        2026-07-25. */
   }
-  <section class="relative bg-gradient-to-b from-peach/15 via-peach/5 to-transparent px-6 py-[var(--spacing-section-mobile)] sm:py-[var(--spacing-section-desktop)]">
+  {
+    /* Dawn into sunrise (2026-08-14). This section used to be cream with a
+       peach wash, sitting between the plum Roots slab and the ember privacy
+       slab -- the last of the bright stripes. It is now the first section
+       after the arc climbs back out of the dead zone, so it carries dark
+       text on a warm ground: --hamdam-text measures 5.13:1 at the dawn end
+       and 7.36:1 at the sunrise end. The secondary paragraph below keeps the
+       same colour at a smaller size rather than dropping to indigo/70, which
+       fails outright on both (2.6:1 and 3.4:1). */
+  }
+  <section class="relative bg-gradient-to-b from-[var(--arc-dawn)] to-[var(--arc-sunrise)] px-6 py-[var(--spacing-section-mobile)] text-[var(--hamdam-text)] sm:py-[var(--spacing-section-desktop)]">
     <SceneBackground image={quietGarden} />
     <div data-reveal class="relative mx-auto max-w-[var(--container-reading)]">
-      <h2 class="text-balance font-serif text-4xl font-semibold text-indigo sm:text-5xl">
+      <h2 class="text-balance font-serif text-[length:var(--text-h2)] font-semibold">
         Hamdam meets you wherever you look.
       </h2>
-      <p class="mt-8 font-serif text-xl leading-[1.7] text-indigo/90">
+      <p class="mt-8 font-serif text-xl leading-[1.7]">
         Ask Siri to start a reflection, hear today's verse, or check your streak. Add a widget to
         your Home Screen. If you wear an Apple Watch, your verse and streak travel with you. If
         you choose, each reflection can be saved to Apple Health as a State of Mind entry, with
         calm music playing alongside through Apple Music.
       </p>
-      <p class="mt-6 font-serif text-lg leading-[1.7] text-indigo/70">
+      <p class="mt-6 font-serif text-lg leading-[1.7]">
         The companions, the calendar and Family Sharing are all optional, and each stays off
         until you ask for it.
       </p>
     </div>
-    <div class="mx-auto mt-14 flex max-w-2xl flex-wrap justify-center gap-x-10 gap-y-8">
+    {
+      /* Four and four, not a wrapping row (2026-08-14). Eight icons in a
+         flex-wrap at this measure broke 6 + 2, leaving an orphaned pair
+         under a full row. A fixed 4-column grid at tablet and up makes the
+         same eight read as two deliberate rows; below that it is 2 x 4. */
+    }
+    <div class="relative mx-auto mt-14 grid max-w-2xl grid-cols-2 justify-items-center gap-x-10 gap-y-8 sm:grid-cols-4">
       <FeatureIcon name="siri" label="Siri" />
       <FeatureIcon name="widget" label="Widgets" />
       <FeatureIcon name="watch" label="Watch" />
@@ -200,7 +233,11 @@ const jsonLd = homepageSchema({
     </div>
   </section>
 
-  <SectionDivider />
+  {
+    /* No divider here any more: this section leaves on the sunrise stop and
+       PrivacyTrust enters on it, so the boundary is already continuous and a
+       bridge would have nothing to bridge. */
+  }
 
   {/* 6. PRIVACY, now carrying the six signals the constellation used to show */}
   <PrivacyTrust lang="en" />

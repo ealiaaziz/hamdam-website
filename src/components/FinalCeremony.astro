@@ -83,7 +83,12 @@ const PETAL_IMAGES = [petal1, petal2, petal3, petal1, petal2, petal3, petal1, pe
 <style>
   .ceremony {
     position: relative;
-    min-height: 100vh;
+    /* Was a flat 100vh. The closing moment is meant to be roomy, but on a
+       tall desktop window 100vh put roughly 400px of empty cream above the
+       shamseh and as much below it, which reads as an unfinished page rather
+       than as calm. Capped so the room stays generous without scaling with
+       the monitor. */
+    min-height: min(100vh, 760px);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -101,13 +106,21 @@ const PETAL_IMAGES = [petal1, petal2, petal3, petal1, petal2, petal3, petal1, pe
        morning tokens only) so the warm first-light tone reaches at least
        the section's vertical midpoint instead of stopping at the
        horizon photo's own shorter fade. */
-    background-image: radial-gradient(
-      120% 70% at 50% 100%,
-      var(--hamdam-saffron) 0%,
-      var(--surface-dawn) 32%,
-      var(--surface-morning) 62%,
-      var(--surface-morning) 100%
-    );
+    /* Two layers now (2026-08-14). The linear one on top joins the day arc:
+       the section enters on the daybreak stop the plans section above it
+       leaves on, and dissolves into morning within the first third, so the
+       page's last boundary is a ramp like every other. The radial below it
+       is F1-04's warm horizon glow, unchanged -- it is a local sunrise at
+       the foot of the section, not a reversal of the arc. */
+    background-image:
+      linear-gradient(to bottom, var(--arc-daybreak) 0%, transparent 34%),
+      radial-gradient(
+        120% 70% at 50% 100%,
+        var(--hamdam-saffron) 0%,
+        var(--surface-dawn) 32%,
+        var(--surface-morning) 62%,
+        var(--surface-morning) 100%
+      );
     color: var(--hamdam-text);
   }
 

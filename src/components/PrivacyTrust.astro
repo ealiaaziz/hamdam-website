@@ -62,8 +62,19 @@ const termsHref = lang === 'fa' ? '/fa/terms/' : '/terms/';
 ---
 
 <section id="privacy" class="privacy-trust" aria-labelledby="privacy-trust-title">
+  {
+    /* Three bands, not one 60ch column beside a phone (restructured
+       2026-08-14). At 1440 the section reserved 1200px and used about 530 of
+       it: the statement, the three trust items, the six signals and the legal
+       links all queued up inside one narrow column while the device sat at
+       the top right and roughly 700px of the section was empty ember, with
+       another 300px of it below the links. The lede keeps the phone beside
+       it, since that pairing is the point; the six signals -- which are a
+       six-item list, not a column of prose -- now use the width they were
+       always being denied. */
+  }
   <div class="privacy-trust__inner">
-    <div class="privacy-trust__content">
+    <div class="privacy-trust__lede">
       <p id="privacy-trust-title" class="privacy-trust__statement text-balance">{copy.statement}</p>
 
       <ul class="privacy-trust__row" data-reveal-group>
@@ -85,6 +96,9 @@ const termsHref = lang === 'fa' ? '/fa/terms/' : '/terms/';
            they support the statement above instead of competing with it a
            screen earlier. Data is shared, not duplicated: src/data/contextSignals.ts. */
       }
+    </div>
+
+    <div class="privacy-trust__signals-block">
       <h3 class="privacy-trust__signals-heading text-balance">{copy.signalsHeading}</h3>
       <ul class="privacy-trust__signals" data-reveal-group>
         {CONTEXT_SIGNALS.map((signal) => (
@@ -97,12 +111,12 @@ const termsHref = lang === 'fa' ? '/fa/terms/' : '/terms/';
           </li>
         ))}
       </ul>
-
-      <nav class="privacy-trust__links" aria-label={copy.links.privacy}>
-        <a href={privacyHref}>{copy.links.privacy}</a>
-        <a href={termsHref}>{copy.links.terms}</a>
-      </nav>
     </div>
+
+    <nav class="privacy-trust__links" aria-label={copy.links.privacy}>
+      <a href={privacyHref}>{copy.links.privacy}</a>
+      <a href={termsHref}>{copy.links.terms}</a>
+    </nav>
 
     {
       /* Real orchestrator 06-privacy screenshot composited 2026-07-19,
@@ -132,10 +146,15 @@ const termsHref = lang === 'fa' ? '/fa/terms/' : '/terms/';
 </section>
 
 <style>
+  /* Day arc, sunrise into apricot (2026-08-14): the first two steps of the
+     climb back to morning. Was flat --surface-dawn. Dark text still, and
+     still without an opacity step anywhere in this file -- the reasoning in
+     the item-body rule below holds for every stop from afternoon to sunrise,
+     not just for --surface-dawn. */
   .privacy-trust {
     padding-block: var(--spacing-section-mobile);
     padding-inline: 1.5rem;
-    background-color: var(--surface-dawn);
+    background: linear-gradient(to bottom, var(--arc-sunrise), var(--arc-apricot));
     color: var(--hamdam-text);
   }
   @media (min-width: 640px) {
@@ -154,8 +173,12 @@ const termsHref = lang === 'fa' ? '/fa/terms/' : '/terms/';
     text-align: center;
   }
 
-  .privacy-trust__content {
+  .privacy-trust__lede {
     max-width: 60ch;
+  }
+
+  .privacy-trust__signals-block {
+    width: 100%;
   }
 
   .privacy-trust__statement {
@@ -216,8 +239,9 @@ const termsHref = lang === 'fa' ? '/fa/terms/' : '/terms/';
   /* The six absorbed signals: a quieter, denser row than the three trust
      claims above, so it reads as supporting detail rather than a second
      headline. Same item typography, three columns instead of one per claim. */
+  /* No top margin: the block is its own grid row now and the container's
+     row-gap does this spacing. Keeping both stacked 3.5rem on top of 4rem. */
   .privacy-trust__signals-heading {
-    margin-top: 3.5rem;
     font-family: var(--font-serif);
     font-size: var(--text-h3);
     font-weight: 600;
@@ -301,9 +325,30 @@ const termsHref = lang === 'fa' ? '/fa/terms/' : '/terms/';
 
   @media (min-width: 1024px) {
     .privacy-trust__inner {
-      flex-direction: row;
-      text-align: start;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      grid-template-areas:
+        'lede   device'
+        'signals signals'
+        'links  links';
+      column-gap: 3rem;
+      row-gap: 4rem;
       align-items: center;
+      text-align: start;
+    }
+    .privacy-trust__lede {
+      grid-area: lede;
+    }
+    .privacy-trust__signals-block {
+      grid-area: signals;
+    }
+    .privacy-trust__links {
+      grid-area: links;
+      margin-top: 0;
+      justify-content: flex-start;
+    }
+    .privacy-trust__device {
+      grid-area: device;
     }
     .privacy-trust__row {
       text-align: start;
@@ -311,12 +356,14 @@ const termsHref = lang === 'fa' ? '/fa/terms/' : '/terms/';
     .privacy-trust__item {
       align-items: flex-start;
     }
-    .privacy-trust__links {
-      justify-content: flex-start;
+    /* Six across, one per signal. At 640-1023 this is two rows of three
+       inside a 60ch column; with the block spanning the full 1200px there is
+       room for the list to be a list. */
+    .privacy-trust__signals {
+      grid-template-columns: repeat(6, minmax(0, 1fr));
     }
-    .privacy-trust__device {
-      flex-shrink: 0;
-      margin-inline-start: 2.5rem;
+    .privacy-trust__signal {
+      align-items: flex-start;
     }
   }
 </style>

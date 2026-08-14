@@ -145,17 +145,72 @@ export function skyProgressForScroll(scrollY, progressDistancePx) {
 
 export const SKY_TONE = Object.freeze({ NIGHT: 'night', MORNING: 'morning' });
 
-// design-system.md §1's five named surfaces, used as flat colour stops
-// (not gradients -- each surface is one colour). Positions are a first-pass
-// ramp per that section's own note ("starting points... must be finalised
-// in-browser against contrast checks"), not yet visually reviewed.
+// The day arc, rewritten 2026-08-14. This used to be a second night-to-morning
+// sunrise spanning the whole page, which contradicted the hero (that one
+// completes its own sunrise inside the first 100vh) and could never be made
+// visible, because the fixed section order puts the two sections that need
+// darkness -- the poets and Roots -- in the middle, where a monotonic sunrise
+// wants light. The page now runs a day instead: the hero's sunrise lands in
+// morning, the day descends into evening at the poets, and climbs back to
+// morning at the ceremony. See the long note in src/styles/tokens.css for the
+// full reasoning and the measured luminances; these stops are the same
+// --arc-* values, positioned at each section's own scroll offset.
+//
+// Positions are each section's measured scroll offset over the ceremony's
+// offset, taken in-browser from the built English page at 1440x900. That
+// makes --sky-color at any scroll position resolve to the colour of whatever
+// section is currently at the top of the viewport, which is what the nav bar
+// reads to tint itself.
+//
+// One approximation, deliberately: the offsets differ per viewport and per
+// locale (the Farsi page is shorter), and this is one global ramp. It stays
+// close because the section *order* is the same everywhere and only the
+// heights move. Nothing safety-critical hangs off the small error -- the
+// sections paint their own surfaces, and the nav's text tone is decided by
+// luminance with a hysteresis band wide enough to absorb it. Re-measure with
+// the same method if section heights change materially.
 const SKY_RAMP = [
-  { at: 0.00, color: '#141430' }, // --surface-night
-  { at: 0.30, color: '#2A2140' }, // --surface-dusk
-  { at: 0.55, color: '#5A3A4A' }, // --surface-firstlight
-  { at: 0.80, color: '#C77E4E' }, // --surface-dawn
-  { at: 1.00, color: '#F4EDD8' }, // --surface-morning
+  // The hero's own sunrise, in four steps rather than one. A single leg from
+  // night to morning looks right as numbers and is wrong on screen: lerping
+  // #141430 to #F4EDD8 in RGB passes through desaturated grey, so the nav bar
+  // -- which tints itself from this ramp -- rendered as a flat grey slab over
+  // a warm orange hero for most of the first viewport, and the language
+  // toggle sat on it at 3.85:1. Routing through dusk, first light and dawn
+  // follows the sunrise the hero is actually painting behind it, and keeps
+  // the bar's tone on the night side of the dead zone while it does.
+  { at: 0.000, color: '#141430' }, // --surface-night, hero top: deepest, pre-dawn
+  { at: 0.045, color: '#2A2140' }, // --surface-dusk
+  { at: 0.075, color: '#5A3A4A' }, // --surface-firstlight
+  { at: 0.098, color: '#C77E4E' }, // --surface-dawn
+  { at: 0.115, color: '#F4EDD8' }, // --arc-morning, hero resolves
+  { at: 0.197, color: '#F4EDD8' }, // mood demo holds full morning
+  { at: 0.260, color: '#F7E7CE' }, // --arc-forenoon, copy section exit
+  { at: 0.342, color: '#E3AE82' }, // --arc-afternoon, journey exit
+  { at: 0.350, color: '#D08F63' }, // --arc-lateday, after the first bridge
+  { at: 0.448, color: '#C98B63' }, // --arc-goldenhour, verse showcase exit
+  { at: 0.470, color: '#2A2140' }, // --arc-dusk, after the descent bridge
+  { at: 0.551, color: '#2A2140' }, // poets hold the trough
+  { at: 0.557, color: '#3E2A42' }, // --arc-eveplum, roots entry
+  { at: 0.687, color: '#5A3A4A' }, // --arc-firstlight, roots exit
+  { at: 0.709, color: '#C77E4E' }, // --arc-dawn, after the ascent bridge
+  { at: 0.790, color: '#DDA075' }, // --arc-sunrise, companions exit
+  { at: 0.902, color: '#E8B98D' }, // --arc-apricot, privacy exit
+  { at: 0.970, color: '#EFCFA4' }, // --arc-daybreak, plans exit
+  { at: 1.000, color: '#F4EDD8' }, // --arc-morning, ceremony: brightest point
 ];
+
+// Relative luminance (WCAG 2.x) of an 'rgb(r g b)' string, which is what
+// lerpHex returns. Used to derive the text tone from whatever the ramp
+// actually resolves to, rather than from hardcoded scroll thresholds that
+// silently go wrong the moment a stop moves.
+function relativeLuminance(rgbString) {
+  const [r, g, b] = rgbString.match(/\d+/g).map(Number);
+  const channel = (c) => {
+    const s = c / 255;
+    return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
+  };
+  return 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b);
+}
 
 export function skyColorForProgress(p) {
   const clamped = clamp01(p);
@@ -167,14 +222,24 @@ export function skyColorForProgress(p) {
   return lerpHex(a.color, b.color, t);
 }
 
-// Two named thresholds (0.45, 0.8) drive one text-tone flip with a
-// hysteresis band between them, not two separate flips: below 0.45 is
-// always NIGHT tone, above 0.8 is always MORNING tone, and progress
-// in between holds whatever tone was already active so a visitor
-// scrolling back and forth near one boundary doesn't flicker.
+// Luminance thresholds, not scroll thresholds (changed 2026-08-14 with the day
+// arc). The old version hardcoded progress 0.45 / 0.8, which was only ever
+// correct for a ramp that darkens once and lightens once; the day arc crosses
+// the light/dark boundary four times, so a scroll-position rule would put
+// cream text on a cream surface somewhere in the middle. Reading the tone off
+// the ramp's own resolved colour keeps this correct for any ramp.
+//
+// The band is the same dead zone tokens.css describes: below 0.09 luminance
+// only light text clears 4.5:1, above 0.18 only dark text does, and between
+// them neither is safe -- so the tone holds whatever was already active rather
+// than flickering, and no text-bearing section is parked in that range.
+const TONE_DARK_CEILING = 0.09;
+const TONE_LIGHT_FLOOR = 0.18;
+
 export function skyToneForProgress(progress, previousTone = SKY_TONE.NIGHT) {
-  if (progress >= 0.8) return SKY_TONE.MORNING;
-  if (progress <= 0.45) return SKY_TONE.NIGHT;
+  const luminance = relativeLuminance(skyColorForProgress(progress));
+  if (luminance >= TONE_LIGHT_FLOOR) return SKY_TONE.MORNING;
+  if (luminance <= TONE_DARK_CEILING) return SKY_TONE.NIGHT;
   return previousTone;
 }
 

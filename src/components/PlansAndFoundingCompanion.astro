@@ -113,10 +113,16 @@ const copy =
 </section>
 
 <style>
+  /* Day arc, apricot into daybreak (2026-08-14). This and PrivacyTrust above
+     it were both flat --surface-dawn, 2,584px of one saturated colour ending
+     the page -- the single largest field on the site. They are now two
+     consecutive steps of the climb back to morning, which also gives the
+     Founding Companion panel a lighter ground to sit on than the near-
+     identical ember it used to be pasted onto. */
   .plans {
     padding-block: var(--spacing-section-mobile);
     padding-inline: 1.5rem;
-    background-color: var(--surface-dawn);
+    background: linear-gradient(to bottom, var(--arc-apricot), var(--arc-daybreak));
     color: var(--hamdam-text);
   }
   @media (min-width: 640px) {
@@ -247,9 +253,17 @@ const copy =
     color: var(--hamdam-text);
   }
 
+  /* Grid with align-items: start, not a stretched flex row (2026-08-14).
+     `flex: 1` stretched Free to Plus's height, so a panel holding one
+     sentence rendered 327px tall with 250px of it empty, next to a full one.
+     Equal columns, natural heights: Free is shorter because Free has less to
+     say, which is the honest presentation and needs no filler copy to prop
+     it up. */
   @media (min-width: 1024px) {
     .plans__panels {
-      flex-direction: row;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      align-items: start;
     }
   }
 </style>

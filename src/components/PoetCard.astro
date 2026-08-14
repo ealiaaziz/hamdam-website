@@ -90,8 +90,23 @@ const portraitAlt =
     .poet-card--emphasized {
       width: 272px;
     }
+    /* 240 x 3/2 = 360, the height every card's portrait resolves to from its
+       aspect ratio. Pinning the emphasized one to the same number keeps the
+       row's single baseline while letting it stay the wider card. */
+    .poet-card--emphasized .poet-card__portrait {
+      aspect-ratio: auto;
+      height: 360px;
+    }
   }
 
+  /* One baseline across the row (2026-08-14). Emphasis used to come from
+     aspect-ratio plus a wider card, which made the centre portrait 408px
+     tall against its neighbours' 360px. Everything below it -- the
+     transliteration, the description -- was pushed down by 48px, so the row
+     read as five misaligned cards rather than one row with a centre.
+     Emphasis is now width alone: the centre card is a wider crop of the same
+     portrait at the same height, so the names and descriptions share a
+     baseline and the emphasis still reads. */
   .poet-card__portrait {
     position: relative;
     aspect-ratio: 2 / 3;

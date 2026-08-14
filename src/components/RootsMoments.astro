@@ -305,10 +305,17 @@ const copy =
 </section>
 
 <style>
+  /* Day arc, evening plum lifting toward first light (2026-08-14). Was a
+     flat --surface-firstlight slab with cream strips above and below it.
+     Roots is where the night bottoms out and starts to turn, so the section
+     itself carries that turn: it enters just above the poets' trough and
+     leaves on the last stop before the bridge into dawn. Light text
+     throughout -- both ends clear 4.5:1 for --text-on-night (9.66:1 and
+     7.40:1) and for the muted pair (6.98:1 and 5.53:1). */
   .roots {
     padding-block: var(--spacing-section-mobile);
     padding-inline: 1.5rem;
-    background-color: var(--surface-firstlight);
+    background: linear-gradient(to bottom, var(--arc-eveplum), var(--arc-firstlight));
     color: var(--text-on-night);
   }
   @media (min-width: 640px) {

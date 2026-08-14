@@ -56,6 +56,56 @@
      choreography in Phase 4; unconsumed until then. */
   --sky-progress: 0;
 
+  /* ---- The day arc (2026-08-14) ----------------------------------------
+     The five --surface-* stops above describe one sunrise, and Phase 4 built
+     the machinery to run it across the whole page. The page could never
+     actually wear it: the hero already completes its own night-to-morning
+     sunrise inside the first 100vh, so a second page-long sunrise underneath
+     it contradicts the hero, and the section order (signed off 2026-07-25 and
+     not being changed) puts the two sections that need darkness -- the poet
+     portraits and Roots -- in the *middle* of the page, where a monotonic
+     sunrise wants light. The result on the live site is a zigzag: cream,
+     ember, cream, dusk, cream, plum, cream, ember. Every seam reads as a
+     stripe rather than a sky.
+
+     So the page runs a *day*, not a second sunrise, which is what the section
+     it opens with already promises in words: "a morning that opens gently, an
+     afternoon that steadies, an evening that settles." The hero's sunrise
+     lands in morning; the page then descends through afternoon into evening,
+     trough at the poets (the hour you actually read poetry), and climbs back
+     to full morning at the ceremony, whose own line is "Return tomorrow."
+     Two monotone runs, no reversals, and the ceremony stays the brightest
+     point of the page exactly as its spec requires.
+
+     Every stop is measured, not eyeballed. Relative luminance descends
+     .848 .814 .482 .340 .318 to the .020 trough, then climbs .031 .057 .276
+     .418 .538 .657 .848 -- strictly monotone in each run. On the warm mid
+     stops (afternoon through sunrise) the ONLY body colour that clears 4.5:1
+     directly on the surface is --hamdam-text: --hamdam-text-soft,
+     --color-saffron-ink and any opacity-reduced indigo all fail there, which
+     is the same trap PrivacyTrust already documents for --surface-dawn. Use
+     size, weight and tracking for hierarchy on those surfaces, never opacity.
+
+     Two ranges carry no text on purpose. Between --arc-goldenhour and
+     --arc-dusk, and between --arc-firstlight and --arc-dawn, the surface is
+     too dark for dark text and too light for light text -- around #8A5A52 the
+     best available pairing is 4.43:1, under the floor either way. Both
+     crossings happen inside SectionDivider, which is why that component is a
+     tonal bridge now instead of a hairline: it is the only thing on the page
+     allowed in the dead zone. Do not park a text-bearing section there. */
+  --arc-morning: #F4EDD8;    /* = --surface-morning; mood demo, footer */
+  --arc-forenoon: #F7E7CE;   /* copy section exit */
+  --arc-afternoon: #E3AE82;  /* journey exit */
+  --arc-lateday: #D08F63;    /* verse showcase entry */
+  --arc-goldenhour: #C98B63; /* verse showcase exit; last stop before the dead zone */
+  --arc-dusk: #2A2140;       /* = --surface-dusk; poets, the trough */
+  --arc-eveplum: #3E2A42;    /* roots entry */
+  --arc-firstlight: #5A3A4A; /* = --surface-firstlight; roots exit */
+  --arc-dawn: #C77E4E;       /* = --surface-dawn; meets-you entry */
+  --arc-sunrise: #DDA075;    /* meets-you exit, privacy entry */
+  --arc-apricot: #E8B98D;    /* privacy exit, plans entry */
+  --arc-daybreak: #EFCFA4;   /* plans exit, ceremony entry */
+
   /* Two-token focus system (design-system.md §18). The existing
      `:focus-visible` rule in global.css still uses --color-saffron-ink
      directly; these exist so night/dusk surfaces landing later can opt in

@@ -47,7 +47,14 @@
   --color-night-gold: #F0C878;
   --color-peach: #F4C6A8;
   --color-divider: rgba(27, 27, 58, 0.12);
-  --color-card: rgba(255, 255, 255, 0.6);
+  /* Opaque paper, not translucent white (2026-08-14). Its only consumer is
+     VerseCard, which used to sit on cream where 60% white was effectively
+     cream anyway. The verse showcase now sits on the day arc's late-day
+     stop, and over that surface a 60% white card resolved dark enough that
+     the card's own --color-saffron-ink attribution dropped to 4.66:1 and its
+     translation to 3.9:1. An opaque card makes the verse read the same
+     wherever the arc has got to, which is what a page of paper should do. */
+  --color-card: #F7EFE0;
 
   /* Fonts */
   --font-serif: "Source Serif Pro", Georgia, serif;

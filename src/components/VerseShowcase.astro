@@ -22,24 +22,84 @@ const showcaseVerses = showcaseIds
   .filter((v): v is (typeof verses)[number] => v !== undefined);
 ---
 
-<section class="relative px-6 py-[var(--spacing-section-mobile)] sm:py-[var(--spacing-section-desktop)]">
+<section class="verse-showcase">
   {sceneImage && <SceneBackground image={sceneImage} />}
-  <div class="relative mx-auto grid max-w-6xl grid-cols-1 gap-8 lg:grid-cols-3" data-reveal-group>
-    {showcaseVerses.map((verse) => (
-      <VerseCard
-        persian={verse.persian}
-        translation={verse.english}
-        poet={lang === 'fa' ? verse.poetFa : verse.poetEn}
-      />
-    ))}
-  </div>
+  {
+    /* The intro leads now (moved above the cards 2026-08-14). It was rendered
+       below them, which made the sentence that frames the whole section --
+       five poets, two languages -- read as a footnote to three verses the
+       visitor had already had to interpret unaided. Same approved string,
+       same component API; only its position changed. */
+  }
   <p
+    data-reveal
     class:list={[
-      'mx-auto mt-12 max-w-md text-center',
-      lang === 'fa' ? 'font-farsi text-lg leading-[1.9]' : 'font-serif italic',
-      'text-indigo/70',
+      'verse-showcase__intro text-balance',
+      lang === 'fa' ? 'font-farsi' : 'font-serif italic',
     ]}
   >
     {intro}
   </p>
+  <div class="verse-showcase__grid" data-reveal-group>
+    {
+      showcaseVerses.map((verse) => (
+        <VerseCard
+          persian={verse.persian}
+          translation={verse.english}
+          poet={lang === 'fa' ? verse.poetFa : verse.poetEn}
+        />
+      ))
+    }
+  </div>
 </section>
+
+<style>
+  /* Day arc, late day into golden hour (2026-08-14). Was transparent, i.e.
+     page cream, sitting between a flat ember slab above and a flat dusk slab
+     below -- the brightest of the three stripes the old page stacked here.
+     It is now the bottom of the descent, and the last section before the
+     dead-zone bridge into the poets' night. */
+  .verse-showcase {
+    position: relative;
+    padding-inline: 1.5rem;
+    padding-block: var(--spacing-section-mobile);
+    background: linear-gradient(to bottom, var(--arc-lateday), var(--arc-goldenhour));
+    color: var(--hamdam-text);
+  }
+  @media (min-width: 640px) {
+    .verse-showcase {
+      padding-block: var(--spacing-section-desktop);
+    }
+  }
+
+  .verse-showcase__intro {
+    position: relative;
+    margin-inline: auto;
+    margin-block-end: 3.5rem;
+    max-width: 34rem;
+    text-align: center;
+    font-size: var(--text-h3);
+    line-height: 1.6;
+    /* Not --hamdam-text-soft and not an opacity step: on this section's own
+       surface those measure 2.51:1 and fail outright. Hierarchy here comes
+       from size and measure instead. See tokens.css. */
+    color: var(--hamdam-text);
+  }
+  :global([lang='fa']) .verse-showcase__intro {
+    line-height: 1.9;
+  }
+
+  .verse-showcase__grid {
+    position: relative;
+    margin-inline: auto;
+    max-width: 72rem;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+  @media (min-width: 1024px) {
+    .verse-showcase__grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+</style>

@@ -65,9 +65,13 @@ const carouselLabel = lang === 'fa' ? 'پنج شاعر' : 'The five poets';
 </section>
 
 <style>
+  /* The trough of the day arc, and the only section that stays a flat field:
+     both bridges either side of it land on this exact colour, so the poets
+     sit in a held moment of evening rather than on a slope. Same #2A2140 as
+     before, named through the arc now. */
   .poets-band {
     padding-block: var(--spacing-section-mobile);
-    background-color: var(--surface-dusk);
+    background-color: var(--arc-dusk);
     color: var(--text-on-night);
   }
   @media (min-width: 640px) {
@@ -88,26 +92,35 @@ const carouselLabel = lang === 'fa' ? 'پنج شاعر' : 'The five poets';
     font-weight: 500;
   }
 
+  /* Fixed 2026-08-14: Parvin was unreachable between 1024px and ~1360px.
+     The old rule flipped the track to `overflow-x: visible` at min-width
+     1024px, but the row is four 240px cards plus one 272px card and four
+     20px gaps -- 1312px, plus 48px of padding. So from 1024px up to 1360px
+     the fifth card sat outside the viewport with the scroller switched off
+     and no way to reach it. The document reported scrollWidth 1168 at a
+     1024 viewport while the page itself could not be scrolled sideways.
+     `34-next-steps.md` recorded this as "worth a glance, not a defect"; it
+     cost the section a poet at every laptop width.
+
+     `safe center` is the fix rather than a higher breakpoint: the track
+     always scrolls, and centring only applies while the content fits, so
+     there is no width at which a card is both off-screen and unreachable.
+     Plain `center` would not do -- it centres overflow in both directions
+     and makes the first card unreachable instead of the last. */
   .poets-band__track {
     margin-top: 2.5rem;
     display: flex;
     gap: 1.25rem;
     overflow-x: auto;
     scroll-snap-type: x mandatory;
+    justify-content: safe center;
+    align-items: flex-start;
     padding-inline: 1.5rem;
     padding-block-end: 0.5rem;
   }
   .poets-band__track:focus-visible {
     outline: 2px solid var(--hamdam-night-gold);
     outline-offset: 4px;
-  }
-
-  @media (min-width: 1024px) {
-    .poets-band__track {
-      justify-content: center;
-      overflow-x: visible;
-      align-items: flex-end;
-    }
   }
 
   .poets-band__dots {
@@ -122,7 +135,11 @@ const carouselLabel = lang === 'fa' ? 'پنج شاعر' : 'The five poets';
     border-radius: 50%;
     background: var(--text-on-night-muted);
   }
-  @media (min-width: 1024px) {
+  /* 1400px, not 1024px: the dots say "this scrolls", and it still does at
+     1024 (see the track comment). Hiding them where the row is in fact
+     still scrollable removed the only affordance telling anyone the fifth
+     poet was there. */
+  @media (min-width: 1400px) {
     .poets-band__dots {
       display: none;
     }

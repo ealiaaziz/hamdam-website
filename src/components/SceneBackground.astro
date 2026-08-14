@@ -14,12 +14,59 @@ interface Props {
 const { image } = Astro.props;
 ---
 
-<div class="scene-bg pointer-events-none absolute inset-y-0 end-0 -z-10 hidden w-3/5 max-w-3xl overflow-hidden sm:block" aria-hidden="true">
+{
+  /* z-0, not -z-10 (2026-08-14). Every consumer of this component used to sit
+     on a translucent wash, so a photograph behind the section still showed
+     through it. With the day arc the sections paint opaque gradients, and a
+     negative z-index put the photograph behind the very background that is
+     now painting -- it rendered nothing at all. It sits above the section
+     background and below the content, which is where a section background
+     photograph belongs. Consumers must position their content (`relative`),
+     or it will paint underneath this. */
+}
+<div class="scene-bg pointer-events-none absolute inset-y-0 end-0 z-0 hidden w-3/5 max-w-3xl overflow-hidden sm:block" aria-hidden="true">
   <Image
     src={image}
     alt=""
     width={image.width}
     height={image.height}
-    class="h-full w-full object-cover opacity-25"
+    class="scene-bg__img h-full w-full object-cover"
   />
 </div>
+
+<style>
+  /* Masked rather than uniformly faded (2026-08-14). At a flat 25% these
+     photographs were, measured on the built page, close to invisible: the
+     quiet-garden shot behind the companions section read as a faint smudge
+     and the dawn shot behind the verses only surfaced at the far right edge.
+     They were costing their bytes and delivering nothing, which is the worst
+     of both options -- either a photograph is doing emotional work or it
+     should not be there.
+
+     So the opacity goes up and a mask takes over the job the opacity was
+     badly doing: the image is legible at the outer edge and gone before it
+     reaches the text column, which is a stronger guarantee of legibility
+     than a global fade ever was, because it is positional rather than
+     tonal. Nothing is placed behind the copy at any strength. */
+  /* Stops at 44%, and the number is measured rather than chosen. The
+     container is w-3/5 anchored to the inline end, so at a 1440 viewport it
+     spans x=576..1440. The widest content any consumer puts beside it is a
+     max-w-2xl (672px) centred block, which ends at x=1056. That is 384px
+     from the container's outer edge, i.e. 44% of its width -- so the mask is
+     fully transparent by then and no pixel of photograph is ever composited
+     under a glyph. Verified by sampling rendered pixels under the icon
+     labels, not by eye. Widen a consumer's content past max-w-2xl and this
+     number needs redoing. */
+  .scene-bg__img {
+    opacity: 0.5;
+    -webkit-mask-image: linear-gradient(to left, black 0%, black 14%, transparent 44%);
+    mask-image: linear-gradient(to left, black 0%, black 14%, transparent 44%);
+  }
+  /* The container is anchored with `end-0`, so it sits on the left in RTL
+     and the mask has to fade the other way or it would erase the visible
+     edge and keep the half that overlaps the Farsi text column. */
+  :global([dir='rtl']) .scene-bg__img {
+    -webkit-mask-image: linear-gradient(to right, black 0%, black 14%, transparent 44%);
+    mask-image: linear-gradient(to right, black 0%, black 14%, transparent 44%);
+  }
+</style>

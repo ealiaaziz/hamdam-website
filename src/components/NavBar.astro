@@ -56,7 +56,14 @@ const ctaLabel = lang === 'fa' ? 'دریافت همدم' : 'Get Hamdam';
           <a
             data-nav-cta
             href={appStoreUrl(lang, null, 'nav')}
-            class="nav-bar__cta inline-flex min-h-[44px] items-center rounded-[var(--radius-pill)] bg-[var(--hamdam-night-gold)] px-5 text-sm font-semibold text-indigo"
+            /* hidden below md (2026-08-14): StickyDownloadAction is the
+               mobile CTA and is itself md:hidden, but this one carried no
+               width condition, so on a phone both rendered at once --
+               the same "Get Hamdam" pill in the bar and floating over the
+               bottom of the same 844px viewport. stickyCta.js's whole
+               premise is "exactly one App Store action is ever visible";
+               the state machine was right and the markup was not. */
+            class="nav-bar__cta hidden min-h-[44px] items-center rounded-[var(--radius-pill)] bg-[var(--hamdam-night-gold)] px-5 text-sm font-semibold text-indigo md:inline-flex"
           >
             {ctaLabel}
           </a>
@@ -86,10 +93,55 @@ const ctaLabel = lang === 'fa' ? 'دریافت همدم' : 'Get Hamdam';
   .nav-bar--on-light {
     color: var(--color-indigo, #1B1B3A);
   }
+  /* The bar wears the sky it is over (2026-08-14). It used to go solid
+     --surface-night the moment you scrolled 24px and stay there, which was
+     motivated for the 1350px of dark hero and unmotivated for the other
+     11,000px: a hard navy slab pinned across a cream page for most of the
+     scroll, and the single loudest thing on the site after the hero.
+
+     --sky-color is already published on the root element by the shared
+     scroll loop in BaseLayout, and the day arc's stops are positioned at the
+     scroll offsets of the sections they belong to -- so at any scroll
+     position it resolves to the colour of whatever is at the top of the
+     viewport, which is exactly what is behind this bar. The bar is still
+     fully opaque, so its own contrast never depends on what shows through;
+     it just stops being a different colour from the page.
+
+     Text tone follows the same signal rather than the scroll position, for
+     the reason skyToneForProgress documents: the arc crosses light and dark
+     four times, so nothing keyed to depth alone stays correct. */
+  /* Pulled 30% toward whichever end its text tone is, never the raw sky.
+     Caught by a rendered-pixel contrast audit rather than by eye: the bar is
+     the one text-bearing element that crosses every stop of the arc, so
+     while the sections were kept out of the dead zone, the bar sailed
+     straight through it. Scrolling across the roots-to-dawn bridge put the
+     logotype and the language toggle on #765451 at 2.48:1, well under the
+     floor, for the second or so the bridge was under the bar.
+
+     Mixing toward night when the tone is night and toward morning when it is
+     morning moves the backing off the dead zone in whichever direction its
+     text already is, so the pairing is safe at every stop: worst case is
+     6.5:1 on the night side and 5.2:1 on the morning side, against 2.48:1
+     before. The bar still tracks the sky -- it is a tint of the real colour,
+     not a fixed slab -- it just never sits exactly on the one range where no
+     text works. */
   .nav-bar[data-nav-solid] {
-    background-color: var(--surface-night, #141430);
+    background-color: color-mix(
+      in srgb,
+      var(--sky-color, var(--surface-night, #141430)) 70%,
+      var(--surface-night, #141430)
+    );
     border-bottom-color: rgb(244 237 216 / 0.12);
     color: var(--text-on-night, #F4EDD8);
+  }
+  :global(:root[data-sky-tone='morning']) .nav-bar[data-nav-solid] {
+    background-color: color-mix(
+      in srgb,
+      var(--sky-color, var(--surface-morning, #F4EDD8)) 70%,
+      var(--surface-morning, #F4EDD8)
+    );
+    color: var(--hamdam-text, #241E15);
+    border-bottom-color: rgb(36 30 21 / 0.14);
   }
   .nav-bar__cta {
     opacity: 0;
