@@ -1,48 +1,63 @@
 # Reel backgrounds
 
-The renderer can composite a real photograph behind every page of a reel.
-It is keyed to the concept's `mood`, not to the day of the week - a weekday
-is not a mood, and pairing a bright image with a poem about mortality is the
-failure this design exists to prevent.
+Every page of a reel sits on a background keyed to the concept's `mood` - not
+to the day of the week. A weekday is not a mood, and pairing a bright image
+with a poem about mortality is the failure this design exists to prevent.
 
-## How it works
+## The four moods
 
-Set `HAMDAM_BG_DIR` to a folder containing:
+| Mood | Reads as | Concepts |
+| --- | --- | --- |
+| `happy` | Morning well under way. Green and gold. | parvin-008 |
+| `grave` | Before the sun clears. Cold, low, mostly shade. | khayyam-036, khayyam-007, parvin-014 |
+| `love`  | Late warm light. Rose into deep amber. | rumi-050 |
+| `wry`   | Plain daylight. Even, nothing dramatic. | parvin-023, hafez-004 |
 
-| File | Used by concepts with |
-| --- | --- |
-| `bg-grave.jpg` | mood `grave` - khayyam-036, khayyam-007, parvin-014 |
-| `bg-happy.jpg` | mood `happy` - parvin-008 |
-| `bg-wry.jpg`   | mood `wry` - parvin-023, hafez-004 |
-| `bg-love.jpg`  | mood `love` - rumi-050 |
+All four share one structure: light gathering about a third of the way down,
+the eight-point khatam star from the secondary logo near the top, and the
+frame falling quiet below 60% where the verse sits. One family, four
+temperatures.
 
-`.jpeg` and `.png` also work. The photo is used twice: blurred and dimmed
-as the full-bleed exterior, and sharp inside the framed print - the same
-structure as the ney reel, which is the best-performing post on the account.
-The text-darkening gradient is applied after the photo, so text stays legible
-whatever the image brightness.
+## How the task uses them
+
+Run the generator once per run, then point the renderer at its output:
+
+```bash
+python3 make_backgrounds.py /tmp/bg
+export HAMDAM_BG_DIR=/tmp/bg
+```
+
+The generator is deterministic - identical output every run - so a palette
+change is a commit here rather than a re-upload anywhere. It writes
+`bg-happy.jpg`, `bg-grave.jpg`, `bg-love.jpg` and `bg-wry.jpg` at 1620x2880.
+
+The photo is used twice per page: blurred and dimmed as the full-bleed
+exterior, and sharp inside the framed print - the same structure as the ney
+reel. The text-darkening gradient is applied after, so text stays legible.
 
 **Failure is impossible by design.** No `HAMDAM_BG_DIR`, no file for that
-mood, or an unreadable file - the renderer silently falls back to the
-procedural sunrise scene and the run completes.
+mood, or an unreadable file - the renderer falls back to its own procedural
+sunrise scene and the run completes.
 
-## Sourcing rules
+## Replacing these with real photographs
 
-- Portrait or square, at least 1080x1920, ideally larger. Landscape gets
-  centre-cropped hard and usually loses its subject.
-- Quiet in the lower two thirds. All text sits there. Busy foregrounds fight it.
-- **Own it or license it.** Your own photographs are best - they make the
-  account unfakeable. Otherwise use genuinely free-for-commercial-use stock
-  and record the source.
-- **No AI-generated landmarks.** Generated "Persepolis" images get the
-  capitals and reliefs wrong, and this audience knows the real thing. A
-  fabricated monument is the visual version of a fabricated verse.
-- Subject does not need to be Iran. Light, water, plaster, a courtyard, a
-  window - depth and warmth matter more than location.
+Drop `bg-<mood>.jpg` into the same folder after running the generator and it
+overrides that mood. Real photographs would be better than anything generated
+here; the ney reel's advantage over every later post was that it used one.
 
-## What good looks like per mood
+- Portrait, at least 1080x1920. Landscape gets centre-cropped hard.
+- Quiet in the lower two thirds. All text sits there.
+- Own it or license it. Your own photographs make the account unfakeable.
+- **No AI-generated landmarks.** Generated "Persepolis" gets the capitals and
+  reliefs wrong, and this audience knows the real thing. A fabricated monument
+  is the visual version of a fabricated verse.
+- Subject need not be Iran. Light, water, plaster, a courtyard, a window -
+  depth and warmth matter more than location.
 
-- **grave** - low light, stone, dusk, still water. Restrained, not gloomy.
-- **happy** - morning light, open sky, green. Bright without being loud.
-- **wry** - ordinary domestic light. A table, a doorway, cloth.
-- **love** - warm interior light, soft focus, dusk.
+## Why there is no scenery
+
+Drawn cypresses, watercourses, gardens and ruins were all attempted and all
+failed. Polygons drawn in code have none of the texture, imperfection or depth
+that makes a scene read as real; they come out as floating shapes. Abstract
+light is the one thing this method renders convincingly, so that is all these
+backgrounds contain.
