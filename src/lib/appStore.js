@@ -8,14 +8,26 @@ export const APP_STORE = Object.freeze({
   RELEASED: true,
   COUNTRY: 'au',
   /**
-   * Minimum iOS, VERIFIED in FACTS.md on 2026-08-07 (Ealia). Lives here rather
-   * than in either consumer because it has two: the structured data in
-   * schema.js and the requirement line under the store badge. Those were about
-   * to be two hand-maintained copies of one number, which is exactly how both
-   * homepages came to publish an unverified `iOS 26+` in the first place.
+   * Minimum iOS, VERIFIED in FACTS.md. Lives here rather than in either
+   * consumer because it has two: the structured data in schema.js and the
+   * requirement line under the store badge. Those were about to be two
+   * hand-maintained copies of one number, which is exactly how both homepages
+   * came to publish an unverified `iOS 26+` in the first place.
    * Change it in FACTS.md first, here second, and nowhere else.
+   *
+   * 26 since 2026-08-15, down from 26.5, because Hamdam 1.2 is live and ships
+   * `IPHONEOS_DEPLOYMENT_TARGET = 26.0`. The 2026-08-13 audit had already read
+   * that out of the project file and queued this edit against 1.2 shipping.
+   *
+   * Yes, the rendered string is `iOS 26+` again, and no, the old defect has not
+   * returned: that one was an unchecked number inherited from a suspected build
+   * mistake, this one is the shipping build's own target. FACTS.md carries the
+   * full distinction, and it is worth reading before assuming a regression.
+   *
+   * Bare number, no `+` and no `iOS` -- both consumers add their own, and a
+   * test enforces the shape so `iOS iOS 26++` cannot happen.
    */
-  MINIMUM_IOS: '26.5',
+  MINIMUM_IOS: '26',
 });
 
 // The App Store Connect provider token, read from the build environment

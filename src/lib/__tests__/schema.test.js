@@ -56,15 +56,24 @@ describe('homepageSchema', () => {
 // FACTS.md still recorded the deployment target as an unresolved defect, so
 // the number was published before anyone stood behind it. It was cut to the
 // unversioned 'iOS' on 2026-08-07, then set to the real floor the same day
-// once Ealia confirmed the minimum genuinely is 26.5.
+// once Ealia confirmed the minimum genuinely was 26.5.
 //
-// The assertion is pinned to the exact string rather than a pattern, because
-// the failure this guards is a plausible-looking wrong number, not a malformed
-// one. '26+', '26.5', '17.0' and 'iOS' would all pass a loose regex and all
+// It reads `iOS 26+` again as of 2026-08-15, and this is the one place where
+// that could be mistaken for the original defect coming back, so: it is not.
+// 26.5 was the floor of version 1.1.1. Version 1.2 is live and ships
+// `IPHONEOS_DEPLOYMENT_TARGET = 26.0`, read from the project file on
+// 2026-08-13 and confirmed live by Ealia on 2026-08-15. Same characters,
+// different provenance -- the first was inherited from a suspected build
+// mistake and unchecked, this one is the shipping build's own target. FACTS.md
+// has the full trail.
+//
+// The assertion stays pinned to the exact string rather than a pattern,
+// because the failure it guards is a plausible-looking wrong number, not a
+// malformed one. '26.5', '17.0' and 'iOS' would all pass a loose regex and all
 // misstate what the app requires. Change it here only after FACTS.md changes.
 describe('operatingSystem', () => {
   it('states the verified minimum exactly', () => {
-    expect(appNode(build()).operatingSystem).toBe('iOS 26.5+');
+    expect(appNode(build()).operatingSystem).toBe('iOS 26+');
   });
 
   it('is identical on both locales, since a device floor is not localised', () => {
@@ -72,10 +81,19 @@ describe('operatingSystem', () => {
     expect(appNode(fa).operatingSystem).toBe(appNode(build()).operatingSystem);
   });
 
-  it('never reverts to the unverified 26+ or the abandoned 17.0', () => {
+  // This assertion used to read `expect(os).not.toBe('iOS 26+')`, written when
+  // 26+ was the unverified number and never publishing it again was the whole
+  // point. 26+ is now the verified floor of the shipping build, so that
+  // assertion had to go -- but only that half of it. What it was really
+  // guarding is still worth guarding: 17.0 was an abandoned assumption that
+  // was never anyone's real target, and the bare unversioned 'iOS' was a
+  // deliberate placeholder for the window when nobody knew the answer. Neither
+  // should ever reappear, and both would look plausible in a diff.
+  it('never reverts to the abandoned 17.0 or the unversioned placeholder', () => {
     const os = appNode(build()).operatingSystem;
-    expect(os).not.toBe('iOS 26+');
     expect(os).not.toMatch(/\b17(\.0)?\b/);
+    expect(os).not.toBe('iOS');
+    expect(os).toMatch(/^iOS \d+(\.\d+)*\+$/);
   });
 });
 
@@ -169,7 +187,7 @@ describe('the iOS floor has one source', () => {
 
   it('keeps MINIMUM_IOS a bare version, not a prefixed or suffixed string', () => {
     // The consumers add "iOS " and "+"; if the constant carried them too the
-    // rendered result would read "iOS iOS 26.5++" and still typecheck.
+    // rendered result would read "iOS iOS 26++" and still typecheck.
     expect(APP_STORE.MINIMUM_IOS).toMatch(/^\d+(\.\d+)*$/);
   });
 });

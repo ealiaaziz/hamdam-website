@@ -39,7 +39,8 @@ const { lang = 'en', class: className = '', placement = 'badge', showRequirement
 const eyebrow = lang === 'fa' ? 'به‌زودی' : 'Coming soon';
 const headline = lang === 'fa' ? 'برای آیفون' : 'to iPhone';
 
-// "iOS 26.5+" rather than a sentence, and identical in both locales.
+// "iOS 26+" rather than a sentence, and identical in both locales. The number
+// comes from APP_STORE.MINIMUM_IOS, never a literal here.
 //
 // A sentence would need a Farsi half, and this repo bars authoring that. The
 // alternative pattern used elsewhere here is to omit the element on the Farsi

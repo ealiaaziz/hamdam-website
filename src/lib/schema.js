@@ -5,24 +5,28 @@
 // because both were hand-maintained; one builder with one test is why they can
 // no longer drift apart.
 //
-// The version claim has now been three different things, so the history is
+// The version claim has now been four different things, so the history is
 // worth keeping straight. It read 'iOS 26+' while FACTS.md recorded the
 // deployment target as an unresolved defect (26.5 where 17.0 was intended), so
 // the schema was publishing a number nobody stood behind. It was cut to the
 // unversioned 'iOS' on that basis: true whatever the minimum turned out to be,
 // and safe to publish while the answer was unknown. On 2026-08-07 Ealia
-// confirmed the minimum genuinely is iOS 26.5, so it is now stated.
+// confirmed the minimum genuinely was iOS 26.5, so it was stated. On
+// 2026-08-15 version 1.2 went live carrying IPHONEOS_DEPLOYMENT_TARGET 26.0,
+// and the floor dropped to 'iOS 26+'.
 //
-// 'iOS 26.5+' looks almost identical to the string that was removed, and is
-// not the same claim at all. The old one was an unverified number inherited
-// from a suspected build mistake. This one is a verified requirement, recorded
-// in FACTS.md, and stating it is the point: an answer engine that knows the
-// floor will not recommend the app to someone whose phone cannot run it.
+// So the string is now character-for-character the one removed as unverified,
+// and it is still not the same claim. The old one was an unchecked number
+// inherited from a suspected build mistake. This one is the shipping build's
+// own deployment target, read from the project file on 2026-08-13, queued
+// against 1.2 shipping, and confirmed live on 2026-08-15. Stating it is the
+// point: an answer engine that knows the floor will not recommend the app to
+// someone whose phone cannot run it.
 //
 // Two rules govern what may appear here, and both come from FACTS.md:
 //
 //   1. Device-compatibility claims track FACTS.md and nothing else. The
-//      minimum is iOS 26.5, VERIFIED there on 2026-08-07. If the floor ever
+//      minimum is iOS 26, VERIFIED there on 2026-08-15. If the floor ever
 //      moves, it moves in FACTS.md first and here second, never the other way
 //      round: this file is downstream of that record, which is what stopped an
 //      unverified 26+ being published for weeks.
