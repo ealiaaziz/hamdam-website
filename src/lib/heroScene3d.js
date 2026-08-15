@@ -54,6 +54,44 @@ function mulberry32(seed) {
   };
 }
 
+// --- Camera dolly (2026-08-15) ----------------------------------------------
+// The star field had depth but the camera never used it: the eye sat at a fixed
+// z and only the pointer nudged it sideways, so on a touch device -- where
+// pointermove never fires -- the layer was a still image that faded out. The
+// depth was real and nothing expressed it.
+//
+// The camera now moves forward through the field as the hero's own sunrise
+// progresses, so the near stars slide outward past the far ones and the night
+// opens rather than simply dimming. That is parallax the flat SVG fallback
+// cannot imitate, which is the only honest reason for the WebGL layer to exist.
+//
+// Two constraints fixed the numbers. It is driven by scroll progress, never by
+// a clock, because motion-specification.md principle 2 rules out idle motion --
+// and reduced-motion visitors never reach this module at all, since
+// HeroCinematic only imports it outside that branch. And the travel stops well
+// short of the field: the nearest star sits at z = -1.5 against a camera at
+// z = 4, so 5.5 world units separate them, and moving 1.4 leaves 4.1. Nothing
+// clips through the near plane at any progress.
+//
+// The window matches the star fade exactly (0 to 0.4). Past 0.4 opacity is 0
+// and the draw is skipped, so travelling further would move a camera looking at
+// nothing.
+export const DOLLY_DEPTH = 1.4;
+const DOLLY_WINDOW = 0.4;
+
+/**
+ * @param {number} p hero scroll progress, 0..1
+ * @returns {number} world units to move the eye forward, 0..DOLLY_DEPTH
+ */
+export function cameraDollyForProgress(p) {
+  const c = Math.max(0, Math.min(1, p));
+  const t = Math.min(1, c / DOLLY_WINDOW);
+  // Ease-out quadratic: the movement is quickest while the stars are brightest
+  // and has all but stopped by the time they finish fading, so the layer never
+  // draws attention to itself on the way out.
+  return DOLLY_DEPTH * (1 - (1 - t) * (1 - t));
+}
+
 function deterministicStars(count, seed) {
   const rand = mulberry32(seed);
   const stars = [];
@@ -284,6 +322,7 @@ export async function initHeroScene3d(canvas) {
   let rafId = 0;         // 0 means no frame is scheduled
   let needsRender = true;
   let opacity = 1;
+  let dolly = 0;
   const PARALLAX_AMOUNT = 0.35;
   const SETTLE_EPSILON = 1e-4; // below this the damping is visually finished
   const eye = [0, 0, CAMERA_Z];
@@ -291,6 +330,10 @@ export async function initHeroScene3d(canvas) {
   const draw = () => {
     eye[0] = curX * PARALLAX_AMOUNT;
     eye[1] = -curY * PARALLAX_AMOUNT * 0.6;
+    // Forward through the field, not a zoom: the eye moves while LOOK_AT stays
+    // put, so near and far stars separate at different rates. A change to the
+    // projection would only have scaled everything uniformly.
+    eye[2] = CAMERA_Z - dolly;
     lookAt(view, eye, LOOK_AT);
     gl.uniformMatrix4fv(uView, false, view);
     gl.uniform1f(uOpacity, opacity);
@@ -345,8 +388,16 @@ export async function initHeroScene3d(canvas) {
     setProgress(p) {
       const c = Math.max(0, Math.min(1, p));
       const next = 1 - Math.min(1, c / 0.4);
-      if (next === opacity) return; // scrolling past the fade window changes nothing
+      const nextDolly = cameraDollyForProgress(c);
+      // Both, not just opacity. The early return is what keeps scrolling the
+      // rest of the page free of work once the hero has faded out, and it has
+      // to stay true of every uniform the frame depends on -- checking opacity
+      // alone would have pinned the camera at whatever z it held when the fade
+      // finished, which is the same position anyway past 0.4 but would silently
+      // break the moment either window moved.
+      if (next === opacity && nextDolly === dolly) return;
       opacity = next;
+      dolly = nextDolly;
       wake();
     },
     destroy() {

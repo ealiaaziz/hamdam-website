@@ -253,6 +253,26 @@ const copy =
       justify-content: center;
       padding-block-end: 0;
     }
+    /* Real perspective rather than a flat overlap (2026-08-15). The two frames
+       were stacked with a negative margin and a scale on the front one, which
+       reads as two stickers rather than as two devices. A shared perspective
+       and a small opposed rotation puts them at an angle to each other, so the
+       overlap is now occlusion in depth instead of z-index.
+
+       The perspective lives on the container, not the frames, so both share one
+       vanishing point -- a per-element `perspective` would give each its own and
+       they would not agree. Neither element needs `transform-style: preserve-3d`
+       because nothing is nested inside them in 3D; they are leaves, and
+       preserve-3d is ignored on them anyway since each clips its screenshot with
+       overflow: hidden.
+
+       1400px is deliberately long. A short perspective on an element this size
+       distorts the device outline into something no phone looks like, which is
+       the failure mode that makes CSS 3D read as a gimmick. */
+    .journey__frames {
+      perspective: 1400px;
+      perspective-origin: 50% 45%;
+    }
     .journey__frame {
       width: 240px;
       position: relative;
@@ -260,18 +280,36 @@ const copy =
     }
     .journey__frame--reflect {
       margin-inline-end: -60px;
+      transform: rotateY(7deg) translateZ(-30px);
+    }
+    .journey__frame--journey {
+      transform: rotateY(-7deg) translateZ(-30px);
     }
     .journey__frame--front {
       z-index: 2;
       box-shadow: var(--shadow-lift);
     }
+    /* The frontmost frame turns to face the reader and steps toward them. The
+       translateZ is what the scale used to fake: moving 60px closer at this
+       perspective grows it by about the same 3% the old scale did, but the edges
+       converge correctly on the way instead of the whole bitmap inflating. */
     .journey__frames:not(:hover) .journey__frame--front,
     .journey__frame--front:hover {
-      transform: scale(1.03);
+      transform: rotateY(0deg) translateZ(30px);
     }
+    /* Flat, and the rotations go too -- not just the transition. A static
+       rotateY is still a perspective distortion of a photograph of a screen,
+       which is exactly what someone asking for reduced motion is asking to be
+       spared. */
     @media (prefers-reduced-motion: reduce) {
-      .journey__frame {
+      .journey__frames {
+        perspective: none;
+      }
+      .journey__frame,
+      .journey__frame--reflect,
+      .journey__frame--journey {
         transition: none;
+        transform: none;
       }
       .journey__frames:not(:hover) .journey__frame--front,
       .journey__frame--front:hover {

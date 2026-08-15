@@ -79,6 +79,11 @@ const portraitAlt =
     display: flex;
     flex-direction: column;
     border-radius: var(--radius-card);
+    /* Perspective for the portrait's hover lift below. Short enough that the
+       tilt is legible on a 240px card, long enough that the frame does not
+       visibly keystone -- these are paintings, and a portrait that skews reads
+       as a mistake rather than as depth. */
+    perspective: 900px;
   }
   .poet-card--emphasized {
     width: 248px;
@@ -130,9 +135,16 @@ const portraitAlt =
     object-fit: cover;
     object-position: top center;
   }
+  /* The lift happens in depth now (2026-08-15): the portrait steps toward the
+     reader and tips its top edge back, so the card catches the light the way a
+     framed painting on a wall does when you lean in. It was a flat 4px nudge
+     upward, which at this size was barely perceptible as anything at all.
+     translateZ does the approach and rotateX the tip; both are composited, so
+     this stays on the same GPU path the nudge was on and still triggers no
+     layout. */
   .group:hover .poet-card__portrait,
   .group:focus-within .poet-card__portrait {
-    transform: translateY(-4px);
+    transform: translate3d(0, -4px, 26px) rotateX(4deg);
     box-shadow: 0 0 48px var(--glow-warm), var(--shadow-lift);
   }
   @media (prefers-reduced-motion: reduce) {
