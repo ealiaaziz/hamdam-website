@@ -4,27 +4,45 @@ Cinematic warm-dawn bilingual landing site for the 2 August 2026 app launch.
 Astro 7 + Tailwind v4, deployed to hamdam.com.au as a **Cloudflare Worker with
 Static Assets**.
 
-**Pushing deploys this site. Corrected 2026-08-02, and this line has now been
-wrong twice.** It first said "Pages" and "on push to main"; on 2026-07-21 that
-was replaced with "there is no CI/CD, pushing to main alone deploys nothing",
-which is wrong in the opposite direction. A **Cloudflare Workers Builds**
-connection is attached to this repository and deploys `hamdam-website` to
-production within a minute of a push, and not only from `main`: every push to
-the feature branch on 2026-08-02 produced a production deployment, five for
-five, and the build's own dashboard URL says `production`.
+**Pushing `main` deploys this site. Pushing any other branch does not.
+Corrected 2026-08-15, and this line has now been wrong three times.** It first
+said "Pages" and "on push to main"; on 2026-07-21 that became "there is no
+CI/CD, pushing to main alone deploys nothing"; on 2026-08-02 that became "every
+push to any branch deploys, five for five". The third was wrong too, and it is
+the one that cost something: a session pushed six commits to a feature branch
+across three separate pushes on 2026-08-15, told the owner "expect a deploy
+within a minute" each time on the strength of this paragraph, and none of them
+deployed. The live site sat on `main` throughout.
 
-Two consequences, and the second is the one that matters. `npm run deploy` is
-not the only path to production, so `scripts/predeploy-check.mjs` is not a
-gate: it guards the manual path, and the automatic path never runs it. That
-guard was added on 2026-07-25 after a deploy shipped four unpushed commits, so
-the risk it was written for is live again on the path that now does most of
-the deploying. And anyone who can push any branch can publish the marketing
-site.
+**Verify, do not quote.** This paragraph has been confidently wrong more often
+than it has been right, so before telling anyone something is live, fetch it:
 
-Still deploy with `npm run deploy` rather than a bare `wrangler deploy`, and
-know that a push has the same effect. The Workers Builds connection's
-settings, including which branch it treats as production, are in the
-Cloudflare dashboard and could not be read with the API token used here.
+```
+curl -sS https://hamdam.com.au/ | grep -o '/_astro/[A-Za-z0-9_.-]*\.css'
+```
+
+and compare the hashes against your own `dist/`. Different hashes, or a
+stylesheet present locally and absent live, means it did not deploy. That check
+takes ten seconds and would have caught this immediately.
+
+The likely reading of 2026-08-02 is that those five builds ran while the
+feature branch was itself the configured production branch, or that they were
+preview deployments whose dashboard URL was misread as production. The Workers
+Builds connection's settings, including which branch it treats as production,
+are in the Cloudflare dashboard and could not be read with the API token used
+here, so this is inference from behaviour, not configuration anyone has seen.
+
+Two consequences. Work on a feature branch reaches production only when it
+reaches `main` -- fast-forward or merge, then push `main`. And
+`scripts/predeploy-check.mjs` guards `npm run deploy` only; the Workers Builds
+path never runs it, so a push to `main` publishes whatever is committed there
+without that check. That guard was added on 2026-07-25 after a deploy shipped
+four unpushed commits.
+
+Still deploy with `npm run deploy` rather than a bare `wrangler deploy` when
+deploying by hand. Note that the manual path publishes the *working tree's*
+build regardless of branch, which is how `main` and production can drift apart:
+prefer pushing `main`.
 
 The support desk is a **separate** Worker with no build connection, and is
 unaffected: it deploys only via `cd support && npm run deploy`. EN at `/`, Farsi (RTL, Vazirmatn) at `/fa/`. Scroll-driven sunrise
