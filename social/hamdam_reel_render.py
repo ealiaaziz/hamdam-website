@@ -1,14 +1,27 @@
 #!/usr/bin/env python3
-"""Hamdam reel frame renderer, v5 - six pages, optional photographic background.
+"""Hamdam reel frame renderer, v6 - six pages, argument early, follow prompt.
 
     python3 hamdam_reel_render.py <conceptId> <stage 0..5> [outDir]
 
   0  scene only
   1  headline
-  2  Persian verse, alone
-  3  English translation, alone, same type size, poet line beneath
-  4  the philological point - insightFa then insightEn
-  5  the lesson and who to send it to, in both languages
+  2  the philological point - insightFa then insightEn
+  3  Persian verse, alone
+  4  English translation, alone, same type size, poet line beneath
+  5  the lesson, who to send it to, and the follow prompt
+
+WHY THIS ORDER. The 13 August reel reached 1,063 viewers with an average
+watch time of 4 seconds against a 30 second runtime. Anything after the
+first few seconds is seen by almost nobody, so the argument - the one page
+no other account can produce - is now second, landing around 3 seconds.
+That reel also produced 4 profile visits and 0 follows, because nothing on
+screen ever asked; page 5 now asks.
+
+Target runtime is 15 seconds. Page starts: 0.0, 0.8, 3.0, 6.5, 10.0, 12.5.
+
+Pages 3 and 4 share one computed type size so the two languages carry equal
+weight. Every page shares one frame and one layout, so consecutive pages
+cross-dissolve without the image seeming to move.
 
 If HAMDAM_BG_DIR contains bg-<mood>.jpg for the concept's mood, that photo is
 used: blurred and dimmed as the full-bleed exterior, sharp inside the framed
@@ -69,9 +82,9 @@ def mist(img, seed, bands=7, strength=0.30):
     w, h = img.size; rng = random.Random(seed)
     layer = Image.new('L', (w, h), 0); d = ImageDraw.Draw(layer)
     for _ in range(bands):
-        y = rng.uniform(0.30, 0.92)*h; th = rng.uniform(0.02, 0.075)*h
-        d.ellipse([-w*0.3, y-th, w*1.3, y+th], fill=int(rng.uniform(40, 120)))
-    layer = layer.filter(ImageFilter.GaussianBlur(int(h*0.035)))
+        y = rng.uniform(0.30, 0.92)*h; th = rng.uniform(0.012, 0.048)*h
+        d.ellipse([-w*0.35, y-th, w*1.35, y+th], fill=int(rng.uniform(60, 150)))
+    layer = layer.filter(ImageFilter.GaussianBlur(int(h*0.030)))
     return Image.composite(Image.new('RGB', (w, h), HAZE), img,
                            layer.point(lambda p: int(p*strength)))
 
@@ -126,8 +139,6 @@ def birds(img, n, cxf, cyf, spread_f, col, scale):
     return img
 
 # ---- optional photographic background -------------------------------------
-# Drop bg-<mood>.jpg into HAMDAM_BG_DIR (mood comes from the concept).
-# Missing file -> the procedural scene below is used instead. Never fails.
 BG_DIR = os.environ.get('HAMDAM_BG_DIR', '')
 MOOD   = C.get('mood', '')
 PHOTO  = None
@@ -223,7 +234,7 @@ cx = IW//2
 HEAD_Y = 0.470 if FOUR else 0.520
 POET_Y = 0.950
 
-if 1 <= STAGE <= 3:
+if STAGE == 1 or 3 <= STAGE <= 4:
     hl = C['headline']
     hsz = 26 if FOUR else 30
     while hsz > 15:
@@ -251,23 +262,8 @@ def common_size():
 BLOCK_MID = 0.660 if FOUR else 0.700
 
 if STAGE == 2:
-    sz, f_fa, _, _ = common_size()
-    gap = (sz*1.75)/(IH/S)
-    y0 = BLOCK_MID - (len(FA)-1)*gap/2
-    for i, line in enumerate(FA):
-        rtl(d, (cx, int(IH*(y0 + i*gap))), line, f_fa, hx('F8F2E4'))
-
-if STAGE == 3:
-    sz, _, f_en, en_lines = common_size()
-    gap = (sz*1.60)/(IH/S)
-    y0 = BLOCK_MID - (len(en_lines)-1)*gap/2
-    for i, line in enumerate(en_lines):
-        d.text((cx, int(IH*(y0 + i*gap))), line, font=f_en, fill=hx('F4EEDE'), anchor='mm')
-    f_poet = ImageFont.truetype(SS+'SourceSerif4-Light.otf', S*20)
-    track(d, (cx, int(IH*POET_Y)), C.get('poetLineEn', C['poet']), f_poet, hx('C8BCA4'), S*4)
-
-if STAGE == 4:
-    # The philological point, on screen rather than buried in the caption.
+    # The philological point. Second page, ~3 seconds in, because that is
+    # the only part of the runtime most viewers actually see.
     inf, ine = C.get('insightFa',''), C.get('insightEn','')
     szf = 34
     while szf > 20:
@@ -290,25 +286,51 @@ if STAGE == 4:
     for i, l in enumerate(en_lines):
         d.text((cx, int(IH*(ey + i*0.040))), l, font=f_ie, fill=hx('F0E8D4'), anchor='mm')
 
+if STAGE == 3:
+    sz, f_fa, _, _ = common_size()
+    gap = (sz*1.75)/(IH/S)
+    y0 = BLOCK_MID - (len(FA)-1)*gap/2
+    for i, line in enumerate(FA):
+        rtl(d, (cx, int(IH*(y0 + i*gap))), line, f_fa, hx('F8F2E4'))
+
+if STAGE == 4:
+    sz, _, f_en, en_lines = common_size()
+    gap = (sz*1.60)/(IH/S)
+    y0 = BLOCK_MID - (len(en_lines)-1)*gap/2
+    for i, line in enumerate(en_lines):
+        d.text((cx, int(IH*(y0 + i*gap))), line, font=f_en, fill=hx('F4EEDE'), anchor='mm')
+    f_poet = ImageFont.truetype(SS+'SourceSerif4-Light.otf', S*20)
+    track(d, (cx, int(IH*POET_Y)), C.get('poetLineEn', C['poet']), f_poet, hx('C8BCA4'), S*4)
+
 if STAGE == 5:
-    f_lf = ImageFont.truetype(FZ+'Vazirmatn-Medium.ttf', S*36)
-    f_sf = ImageFont.truetype(FZ+'Vazirmatn-Regular.ttf', S*26)
-    f_le = ImageFont.truetype(SS+'SourceSerif4-It.otf', S*30)
-    f_se = ImageFont.truetype(SS+'SourceSerif4-Light.otf', S*24)
     lf, le = C.get('lessonFa',''), C.get('lessonEn','')
     sf, se = C.get('sendFa',''),   C.get('sendEn','')
-    sz = 36
-    while sz > 20 and d.textlength(lf, font=f_lf, direction='rtl', language='fa') > IW*0.86:
-        sz -= 2; f_lf = ImageFont.truetype(FZ+'Vazirmatn-Medium.ttf', S*sz)
-    rtl(d, (cx, int(IH*0.520)), lf, f_lf, hx('FBF6EA'))
-    rtl(d, (cx, int(IH*0.583)), sf, f_sf, hx('DCD0B8'))
-    d.line([cx-IW*0.07, int(IH*0.635), cx+IW*0.07, int(IH*0.635)], fill=hx('9C8C6E'), width=S)
+    szl = 34
+    while szl > 20:
+        f_lf = ImageFont.truetype(FZ+'Vazirmatn-Medium.ttf', S*szl)
+        if len(wrap_fa(d, lf, f_lf, IW*0.86)) <= 2: break
+        szl -= 2
+    for i, l in enumerate(wrap_fa(d, lf, f_lf, IW*0.86)[:2]):
+        rtl(d, (cx, int(IH*(0.430 + i*0.050))), l, f_lf, hx('FBF6EA'))
+    f_le = ImageFont.truetype(SS+'SourceSerif4-It.otf', S*26)
     for i, l in enumerate(wrap(d, le, f_le, IW*0.86)[:2]):
-        d.text((cx, int(IH*(0.690 + i*0.042))), l, font=f_le, fill=hx('F4EEDE'), anchor='mm')
-    for i, l in enumerate(wrap(d, se, f_se, IW*0.86)[:2]):
-        d.text((cx, int(IH*(0.775 + i*0.036))), l, font=f_se, fill=hx('DCD0B8'), anchor='mm')
-    rtl(d, (cx, int(IH*0.870)), '\u0647\u0645\u062f\u0645',
-        ImageFont.truetype(FZ+'Vazirmatn-SemiBold.ttf', S*34), hx('EFE6D2'))
+        d.text((cx, int(IH*(0.535 + i*0.038))), l, font=f_le, fill=hx('F0E8D4'), anchor='mm')
+    d.line([cx-IW*0.07, int(IH*0.605), cx+IW*0.07, int(IH*0.605)], fill=hx('9C8C6E'), width=S)
+    f_sf = ImageFont.truetype(FZ+'Vazirmatn-Regular.ttf', S*25)
+    f_se = ImageFont.truetype(SS+'SourceSerif4-Light.otf', S*22)
+    rtl(d, (cx, int(IH*0.655)), sf, f_sf, hx('DCD0B8'))
+    for i, l in enumerate(wrap(d, se, f_se, IW*0.86)[:1]):
+        d.text((cx, int(IH*0.700)), l, font=f_se, fill=hx('CFC3AA'), anchor='mm')
+    # The follow prompt. 1,063 viewers and 0 follows on 13 August, because
+    # nothing on screen ever asked.
+    rtl(d, (cx, int(IH*0.790)), '\u062f\u0646\u0628\u0627\u0644 \u06a9\u0646\u06cc\u062f \u2014 \u0647\u0631 \u0631\u0648\u0632 \u06cc\u06a9 \u0628\u06cc\u062a',
+        ImageFont.truetype(FZ+'Vazirmatn-SemiBold.ttf', S*32), hx('FFF6E4'))
+    d.text((cx, int(IH*0.840)), 'Follow for a verse a day, in Persian',
+           font=ImageFont.truetype(SS+'SourceSerif4-Light.otf', S*24),
+           fill=hx('EFE4CC'), anchor='mm')
+    d.text((cx, int(IH*0.890)), '@hamdam_au',
+           font=ImageFont.truetype(SS+'SourceSerif4-Bold.otf', S*24),
+           fill=hx('FFF6E4'), anchor='mm')
 
 card_w = IW + FB*2
 card_h = IH + FB*2 + int(H*0.052)
