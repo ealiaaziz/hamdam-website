@@ -1,8 +1,8 @@
 {
  "_readme": "Concept bank for the Hamdam reel series. The agent READS this file and never writes to it. After a concept ships, set used=true by hand. When fewer than three entries have used=false, write more - do not let the agent improvise one.",
  "_verification_status": "DRAFT - arguments, insights and lessons drafted by Claude and must be read and approved by Ealia. Claims flagged in _check are the ones worth verifying.",
- "_page_note": "Reel pages: 0 scene, 1 headline, 2 Persian verse, 3 English translation with the poet line beneath, 4 insightFa/insightEn - the philological point, on screen rather than buried in the caption, 5 lessonFa/lessonEn then sendFa/sendEn. Page 4 is the page nobody else can copy; keep it to one sharp claim that is true.",
- "_mood_key": "Pairs the concept with a track from the Drive 11Labs folder. happy = bright Mahur; love = romantic Mahur; grave = restrained, sparse; wry = light but not celebratory. Never put a love or happy bed under a grave concept.",
+ "_page_note": "Reel pages: 0 scene, 1 headline, 2 Persian verse, 3 English translation with the poet line beneath, 4 insightFa/insightEn - the philological point, on screen rather than buried in the caption, 5 lessonFa/lessonEn then sendFa/sendEn. Page 4 is the page nobody else can copy; keep it to one sharp claim that is true. insightEn, lessonEn, sendEn and headline must be Latin script ONLY - Source Serif has no Arabic glyphs, so a Persian word inside an English line renders as tofu boxes. Transliterate instead (anqa, simurgh, ghazal).",
+ "_mood_key": "Pairs the concept with a background from make_backgrounds.py and a track from the Drive 11Labs folder. happy = bright Mahur; love = romantic Mahur; grave = restrained, sparse; wry = light but not celebratory. Never put a love or happy bed under a grave concept.",
  "concepts": [
   {
    "id": "parvin-023-needle", "verseId": "parvin-023", "poet": "Parvin", "mood": "wry", "used": true,
@@ -89,7 +89,7 @@
    "headline": "THE PHOENIX IS NO ONE'S PREY",
    "argument": "The phoenix is nobody's prey. Take your trap back - all it ever catches is wind.\n\nThe bird is the \u0639\u0646\u0642\u0627, and the joke is that it does not exist. You cannot trap it because there is nothing there to trap. Hafez is not saying you have failed to catch it. He is saying the hunt was the mistake.\n\nHe wrote a great deal of this kind of line, and it is the part of him English quote accounts almost never carry - Hafez the sceptic, unimpressed, slightly amused at your equipment.",
    "insightFa": "\u0639\u0646\u0642\u0627 \u0648\u062c\u0648\u062f \u0646\u062f\u0627\u0631\u062f \u2014 \u0628\u0631\u0627\u06cc \u0647\u0645\u06cc\u0646 \u0628\u0647 \u062f\u0627\u0645 \u0646\u0645\u06cc\u200c\u0627\u0641\u062a\u062f",
-   "insightEn": "The \u0639\u0646\u0642\u0627 does not exist. That is why no trap can hold it.",
+   "insightEn": "The anqa is a bird that does not exist. That is why no trap can hold it.",
    "lessonFa": "\u0628\u0639\u0636\u06cc \u0686\u06cc\u0632\u0647\u0627 \u0631\u0627 \u0646\u0645\u06cc\u200c\u0634\u0648\u062f \u06af\u0631\u0641\u062a\u061b \u0645\u06cc\u200c\u0634\u0648\u062f \u062f\u0648\u0633\u062a \u062f\u0627\u0634\u062a",
    "lessonEn": "Some things cannot be caught - only loved",
    "sendFa": "\u0628\u0631\u0627\u06cc \u06a9\u0633\u06cc \u0628\u0641\u0631\u0633\u062a \u06a9\u0647 \u0633\u062e\u062a \u062f\u0646\u0628\u0627\u0644\u0650 \u0686\u06cc\u0632\u06cc \u0627\u0633\u062a",
@@ -98,7 +98,7 @@
    "poetLineEn": "Hafez \u2014 Shiraz, 14th century",
    "hashtagsFa": ["#\u0647\u0645\u062f\u0645", "#\u062d\u0627\u0641\u0638", "#\u0634\u0639\u0631_\u0641\u0627\u0631\u0633\u06cc", "#\u0627\u062f\u0628\u06cc\u0627\u062a_\u0641\u0627\u0631\u0633\u06cc", "#\u0639\u0646\u0642\u0627", "#\u062a\u0623\u0645\u0644_\u0631\u0648\u0632\u0627\u0646\u0647"],
    "hashtagsEn": ["#persianpoetry", "#hafez", "#persianliterature", "#persianculture", "#dailypoetry", "#persiandiaspora"],
-   "_check": "\u0639\u0646\u0642\u0627 confirmed present in the Persian of hafez-004."
+   "_check": "\u0639\u0646\u0642\u0627 confirmed present in the Persian of hafez-004. insightEn transliterates it as 'anqa' because Source Serif cannot render Arabic script."
   },
   {
    "id": "rumi-050-home", "verseId": "rumi-050", "poet": "Rumi", "mood": "love", "used": true,
