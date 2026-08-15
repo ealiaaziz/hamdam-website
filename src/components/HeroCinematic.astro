@@ -270,6 +270,14 @@ const deviceAlt =
     transform: translateY(var(--sun-y));
   }
 
+  /* The haze has its own drift rate (2026-08-15). It shared --horizon-drift
+     with the photographic mountain plate below, so two layers that are
+     nowhere near each other in the scene settled by the identical distance
+     and read as one flat plate. --haze-drift is a little over half the
+     mountains' rate, which is the right direction: atmospheric haze sits
+     further away than the ridgeline in front of it, and further things move
+     less. Both still resolve to 0 at the end of the hero, so nothing about
+     the final composition changes -- only the way it assembles. */
   .hero__horizon {
     position: absolute;
     top: 70%;
@@ -282,7 +290,7 @@ const deviceAlt =
       transparent
     );
     opacity: var(--haze-o);
-    transform: translateY(var(--horizon-drift));
+    transform: translateY(var(--haze-drift, var(--horizon-drift)));
   }
 
   .hero__horizon-photo {
@@ -417,6 +425,62 @@ const deviceAlt =
     box-shadow: var(--shadow-lift);
     overflow: hidden;
     transform: translateY(var(--device-drift));
+  }
+
+  /* The hero phone sits in space at desktop (2026-08-15), matching the paired
+     frames in JourneyPair so the site has one depth language rather than a flat
+     device here and angled ones further down.
+
+     This has to be done through the settle keyframes rather than as a static
+     `transform` on .hero__device, and finding out why turned up something
+     pre-existing. The hero-settle animation below runs on .hero__device with
+     `forwards`, and its final keyframe is `transform: translateY(0)` -- an
+     animation's value wins over the element's own transform declaration, and
+     `forwards` keeps it winning after the animation ends. So the element's
+     `transform: translateY(var(--device-drift))` has never applied for anyone:
+     motion-OK visitors get the animation's translateY(0) instead, and
+     reduced-motion visitors never run the script that defines --device-drift,
+     which makes the declaration invalid. Setting a static rotateY here would
+     have been clobbered in exactly the same way and looked like a CSS bug.
+     --device-drift being dead is a separate, older issue and is left alone
+     here rather than fixed as a side effect of a 3D change.
+
+     perspective() as a transform function rather than a property on a parent:
+     the device is the only thing in that stack that wants depth, and the
+     property on the parent would put the headline and CTA beside it into the
+     same 3D context.
+
+     Desktop only. Below 1024px the device is centred under the copy rather than
+     beside it, and turning a device that already faces the reader only turns it
+     away. Reduced-motion needs no override: these keyframes live in the
+     no-preference block, so that branch keeps the flat element. */
+  /* Both selectors are direction-qualified, and the LTR one has to be. The
+     settle block further down uses the `animation:` shorthand, which resets
+     animation-name, and it comes later in the source -- so a bare
+     `.hero__device` here loses to it at equal specificity while the RTL
+     selector wins on its extra attribute. That asymmetry is worse than either
+     outcome on its own: it shipped a rotated device in Farsi and a flat one in
+     English from the same rule. Matching the specificity on both sides keeps
+     the two directions honest with each other. */
+  @media (min-width: 1024px) and (prefers-reduced-motion: no-preference) {
+    :global([dir='ltr']) .hero__device {
+      animation-name: hero-settle-device;
+    }
+    /* The hero mirrors under RTL, so the device lands on the other side of the
+       copy and has to turn the other way to face it. */
+    :global([dir='rtl']) .hero__device {
+      animation-name: hero-settle-device-rtl;
+    }
+  }
+
+  /* Same 12px rise and fade as hero-settle, landing rotated instead of flat. */
+  @keyframes hero-settle-device {
+    from { opacity: 0; transform: perspective(1600px) translateY(12px) rotateY(-7deg); }
+    to { opacity: 1; transform: perspective(1600px) translateY(0) rotateY(-7deg); }
+  }
+  @keyframes hero-settle-device-rtl {
+    from { opacity: 0; transform: perspective(1600px) translateY(12px) rotateY(7deg); }
+    to { opacity: 1; transform: perspective(1600px) translateY(0) rotateY(7deg); }
   }
 
   .hero__device-frame {
@@ -584,6 +648,10 @@ const deviceAlt =
       // the last 24px of its rise.
       const vh = window.innerHeight;
       style.setProperty('--horizon-drift', `${(1 - p) * 0.08 * vh}px`);
+      // A third settle rate, so the hero assembles from four planes rather
+      // than three: sky, haze, mountains, device. The haze is behind the
+      // ridgeline, so it travels less than the 0.08 the mountain plate uses.
+      style.setProperty('--haze-drift', `${(1 - p) * 0.045 * vh}px`);
       style.setProperty('--device-drift', `${(1 - p) * 24}px`);
 
       // Nav text tracks the same flip as the hero's own text (transparent

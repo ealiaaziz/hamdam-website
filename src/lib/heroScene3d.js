@@ -106,6 +106,75 @@ function deterministicStars(count, seed) {
   return stars;
 }
 
+// --- Foreground motes (2026-08-15) ------------------------------------------
+// The hero had a mid plane and a far plane and nothing in front of them, so the
+// dolly moved the camera through a field that was entirely in the distance.
+// These eighteen warm points sit between the camera and the stars, which is
+// what turns the travel into something you can read: at full dolly a mote at
+// z = -0.6 sweeps outward roughly four times as fast as a star at -8, and that
+// ratio is the depth cue. Without a near plane the whole field drifts almost
+// uniformly and the effect is close to a zoom.
+//
+// They are dust caught by first light, so they arrive as the sun does and are
+// gone before the hero resolves -- see moteOpacityForProgress. Nothing here is
+// clock-driven: the motes never move in world space at all. Every bit of their
+// motion is the camera passing them, which keeps this inside
+// motion-specification.md principle 2 exactly as the star layer is.
+const MOTE_COUNT = 18;
+const MOTE_SEED = 44; // distinct from the star seed (43) and the SVG field's (42)
+// Larger than a star (0.055) because they are nearer and because dust catching
+// light reads as a soft bloom rather than a point.
+const MOTE_SIZE = 0.08;
+// --hamdam-night-gold, #F0C878. Warm against the cream stars, so the two planes
+// separate by hue as well as by parallax.
+const MOTE_BASE_RGB = [240 / 255, 200 / 255, 120 / 255];
+
+function deterministicMotes(count, seed) {
+  const rand = mulberry32(seed);
+  const motes = [];
+  for (let i = 0; i < count; i++) {
+    motes.push({
+      // Narrower than the star spread: these are close enough to the camera
+      // that a wide spread would put most of them outside the frustum.
+      x: (rand() - 0.5) * 9,
+      // Lower in the frame than the stars, which sit at 1.5 and above. This is
+      // where the sun rises and where lit dust would actually be.
+      y: -0.5 + rand() * 5,
+      // In front of the star field's -1.5 nearest, and never nearer than the
+      // camera's closest approach: the eye stops at z = 2.6 after a full 1.4
+      // dolly, so 2.4 world units of clearance remain at the very nearest.
+      z: -0.2 - rand() * 2.2,
+      brightness: 0.4 + rand() * 0.6,
+    });
+  }
+  return motes;
+}
+
+/**
+ * Motes rise with the sun and are gone before the hero resolves: nothing at
+ * first, a peak through the middle of the dawn, nothing again by the time the
+ * sky is morning. The star field is doing the opposite over the same window, so
+ * the two planes hand over rather than overlapping into clutter.
+ * @param {number} p hero scroll progress, 0..1
+ * @returns {number} 0..MOTE_PEAK_OPACITY
+ */
+export const MOTE_PEAK_OPACITY = 0.55;
+const MOTE_IN = 0.12;
+const MOTE_PEAK = 0.38;
+const MOTE_OUT = 0.72;
+
+export function moteOpacityForProgress(p) {
+  const c = Math.max(0, Math.min(1, p));
+  if (c <= MOTE_IN || c >= MOTE_OUT) return 0;
+  const t =
+    c < MOTE_PEAK
+      ? (c - MOTE_IN) / (MOTE_PEAK - MOTE_IN)
+      : 1 - (c - MOTE_PEAK) / (MOTE_OUT - MOTE_PEAK);
+  // Smoothstep so neither end pops on. A linear ramp is visible as a hard
+  // corner at this opacity against a sky that is itself changing colour.
+  return MOTE_PEAK_OPACITY * t * t * (3 - 2 * t);
+}
+
 // --- Matrices ---------------------------------------------------------------
 // Column-major, the order gl.uniformMatrix4fv wants with transpose = false.
 
@@ -235,18 +304,33 @@ export async function initHeroScene3d(canvas) {
     colors[i * 3 + 2] = STAR_BASE_RGB[2] * s.brightness;
   });
 
+  const motes = deterministicMotes(MOTE_COUNT, MOTE_SEED);
+  const motePositions = new Float32Array(motes.length * 3);
+  const moteColors = new Float32Array(motes.length * 3);
+  motes.forEach((m, i) => {
+    motePositions[i * 3] = m.x;
+    motePositions[i * 3 + 1] = m.y;
+    motePositions[i * 3 + 2] = m.z;
+    moteColors[i * 3] = MOTE_BASE_RGB[0] * m.brightness;
+    moteColors[i * 3 + 1] = MOTE_BASE_RGB[1] * m.brightness;
+    moteColors[i * 3 + 2] = MOTE_BASE_RGB[2] * m.brightness;
+  });
+
   const aPosition = gl.getAttribLocation(program, 'aPosition');
   const aColor = gl.getAttribLocation(program, 'aColor');
-  const positionBuffer = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-  gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW);
   gl.enableVertexAttribArray(aPosition);
-  gl.vertexAttribPointer(aPosition, 3, gl.FLOAT, false, 0, 0);
-  const colorBuffer = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
-  gl.bufferData(gl.ARRAY_BUFFER, colors, gl.STATIC_DRAW);
   gl.enableVertexAttribArray(aColor);
-  gl.vertexAttribPointer(aColor, 3, gl.FLOAT, false, 0, 0);
+
+  const makeBuffer = (data) => {
+    const buf = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+    gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
+    return buf;
+  };
+  const positionBuffer = makeBuffer(positions);
+  const colorBuffer = makeBuffer(colors);
+  const motePositionBuffer = makeBuffer(motePositions);
+  const moteColorBuffer = makeBuffer(moteColors);
 
   const uView = gl.getUniformLocation(program, 'uView');
   const uProjection = gl.getUniformLocation(program, 'uProjection');
@@ -260,8 +344,8 @@ export async function initHeroScene3d(canvas) {
   gl.enable(gl.BLEND);
   gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
   gl.clearColor(0, 0, 0, 0);
-  gl.uniform1f(uSize, STAR_SIZE);
-  gl.uniform1f(uOpacity, 1);
+  // uSize and uOpacity are set per draw call now that there are two planes;
+  // no useful default to seed here.
 
   const projection = new Float32Array(16);
   const view = new Float32Array(16);
@@ -322,10 +406,27 @@ export async function initHeroScene3d(canvas) {
   let rafId = 0;         // 0 means no frame is scheduled
   let needsRender = true;
   let opacity = 1;
+  let moteOpacity = 0;
   let dolly = 0;
   const PARALLAX_AMOUNT = 0.35;
   const SETTLE_EPSILON = 1e-4; // below this the damping is visually finished
   const eye = [0, 0, CAMERA_Z];
+
+  // Both planes share one program, one pair of attributes and one pair of
+  // uniforms; only the bound buffers and the two scalars change between them.
+  // An invisible plane is skipped entirely rather than drawn at zero alpha,
+  // which matters because for most of the page's scroll depth both are zero and
+  // the frame should cost nothing.
+  const drawPlane = (posBuf, colBuf, count, size, alpha) => {
+    if (alpha <= 0) return;
+    gl.bindBuffer(gl.ARRAY_BUFFER, posBuf);
+    gl.vertexAttribPointer(aPosition, 3, gl.FLOAT, false, 0, 0);
+    gl.bindBuffer(gl.ARRAY_BUFFER, colBuf);
+    gl.vertexAttribPointer(aColor, 3, gl.FLOAT, false, 0, 0);
+    gl.uniform1f(uSize, size);
+    gl.uniform1f(uOpacity, alpha);
+    gl.drawArrays(gl.POINTS, 0, count);
+  };
 
   const draw = () => {
     eye[0] = curX * PARALLAX_AMOUNT;
@@ -336,9 +437,12 @@ export async function initHeroScene3d(canvas) {
     eye[2] = CAMERA_Z - dolly;
     lookAt(view, eye, LOOK_AT);
     gl.uniformMatrix4fv(uView, false, view);
-    gl.uniform1f(uOpacity, opacity);
     gl.clear(gl.COLOR_BUFFER_BIT);
-    if (opacity > 0) gl.drawArrays(gl.POINTS, 0, stars.length);
+    // Far plane first, near plane second. Depth testing is off (the layer is
+    // additive-ish transparency over a sky it does not own), so draw order is
+    // the only thing deciding what sits in front of what.
+    drawPlane(positionBuffer, colorBuffer, stars.length, STAR_SIZE, opacity);
+    drawPlane(motePositionBuffer, moteColorBuffer, motes.length, MOTE_SIZE, moteOpacity);
   };
 
   const step = () => {
@@ -389,15 +493,16 @@ export async function initHeroScene3d(canvas) {
       const c = Math.max(0, Math.min(1, p));
       const next = 1 - Math.min(1, c / 0.4);
       const nextDolly = cameraDollyForProgress(c);
-      // Both, not just opacity. The early return is what keeps scrolling the
-      // rest of the page free of work once the hero has faded out, and it has
-      // to stay true of every uniform the frame depends on -- checking opacity
-      // alone would have pinned the camera at whatever z it held when the fade
-      // finished, which is the same position anyway past 0.4 but would silently
-      // break the moment either window moved.
-      if (next === opacity && nextDolly === dolly) return;
+      const nextMote = moteOpacityForProgress(c);
+      // Every value the frame depends on, not just opacity. The early return is
+      // what keeps scrolling the rest of the page free of work once the hero
+      // has gone, so it has to be exhaustive -- checking opacity alone would
+      // have frozen the camera and the motes at whatever they held when the
+      // star fade finished, and the motes are still changing well past that.
+      if (next === opacity && nextDolly === dolly && nextMote === moteOpacity) return;
       opacity = next;
       dolly = nextDolly;
+      moteOpacity = nextMote;
       wake();
     },
     destroy() {
@@ -408,6 +513,8 @@ export async function initHeroScene3d(canvas) {
       pointerTarget.removeEventListener('pointermove', onPointerMove);
       gl.deleteBuffer(positionBuffer);
       gl.deleteBuffer(colorBuffer);
+      gl.deleteBuffer(motePositionBuffer);
+      gl.deleteBuffer(moteColorBuffer);
       gl.deleteProgram(program);
       gl.deleteShader(vs);
       gl.deleteShader(fs);

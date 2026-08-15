@@ -230,11 +230,64 @@ const PETAL_IMAGES = [petal1, petal2, petal3, petal1, petal2, petal3, petal1, pe
     .ceremony--petals-active .ceremony__petal:nth-child(10) { animation-delay: 2700ms; }
   }
 
+  /* Three depths, and the petals tumble rather than spin (2026-08-15).
+     They used to fall with translateY and a flat rotate(), which is a sticker
+     sliding down the glass: the sizes already varied across the approved
+     24-48px range to imply depth, and nothing ever cashed that in. Each petal
+     now falls at one of three real distances and turns on an axis that is not
+     the screen normal, so it presents its face, goes edge-on, and comes back --
+     which is what a petal actually does on the way down.
+
+     The near/far offsets are +-80px against a 1200px perspective, and that
+     pairing is doing arithmetic, not taste: it scales a petal by 1.071 and
+     0.938, so the largest (44px) renders at 47.1 and the smallest (28px) at
+     26.3. Both stay inside the 24-48px range CY-01 approved, which a deeper
+     offset would have broken at the top end.
+
+     Depth is assigned across the three-image cycle rather than along it, so
+     the same petal artwork appears at more than one distance and the field
+     does not resolve into three visible groups.
+
+     All of this sits inside the existing prefers-reduced-motion: no-preference
+     block, so a visitor who asked for less motion still gets no petals at all
+     rather than static rotated ones. */
+  @media (prefers-reduced-motion: no-preference) {
+    .ceremony--petals-active .ceremony__petals {
+      perspective: 1200px;
+      perspective-origin: 50% 0%;
+    }
+    .ceremony--petals-active .ceremony__petal:nth-child(2),
+    .ceremony--petals-active .ceremony__petal:nth-child(5),
+    .ceremony--petals-active .ceremony__petal:nth-child(9) {
+      animation-name: ceremony-petal-fall-near;
+    }
+    .ceremony--petals-active .ceremony__petal:nth-child(3),
+    .ceremony--petals-active .ceremony__petal:nth-child(6),
+    .ceremony--petals-active .ceremony__petal:nth-child(8) {
+      animation-name: ceremony-petal-fall-far;
+    }
+  }
+
+  /* The mid plane, and the default: nth-child 1, 4, 7 and 10 keep this one. */
   @keyframes ceremony-petal-fall {
-    0% { opacity: 0; transform: translateY(0) rotate(0deg); }
+    0% { opacity: 0; transform: translate3d(0, 0, 0) rotate3d(1, 0.5, 0.2, 0deg); }
     10% { opacity: 0.85; }
     90% { opacity: 0.6; }
-    100% { opacity: 0; transform: translateY(110vh) rotate(220deg); }
+    100% { opacity: 0; transform: translate3d(0, 110vh, 0) rotate3d(1, 0.5, 0.2, 260deg); }
+  }
+
+  @keyframes ceremony-petal-fall-near {
+    0% { opacity: 0; transform: translate3d(0, 0, 80px) rotate3d(1, 0.8, -0.3, 0deg); }
+    10% { opacity: 0.85; }
+    90% { opacity: 0.6; }
+    100% { opacity: 0; transform: translate3d(0, 110vh, 80px) rotate3d(1, 0.8, -0.3, 320deg); }
+  }
+
+  @keyframes ceremony-petal-fall-far {
+    0% { opacity: 0; transform: translate3d(0, 0, -80px) rotate3d(1, 0.3, 0.5, 0deg); }
+    10% { opacity: 0.85; }
+    90% { opacity: 0.6; }
+    100% { opacity: 0; transform: translate3d(0, 110vh, -80px) rotate3d(1, 0.3, 0.5, 200deg); }
   }
 </style>
 
