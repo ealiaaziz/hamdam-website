@@ -186,9 +186,15 @@ const jsonLd = homepageSchema({
            with the legal name, trade mark, application number and support
            address kept Latin-script and LTR in their own spans. */
       }
+      {
+        /* Brand rather than legal name, mirroring Footer.astro (2026-08-15).
+           The Farsi around it is untouched approved copy; only the Latin-script
+           span's contents changed. The legal entity still heads the
+           business-details block in /fa/privacy/ and /fa/terms/. */
+      }
       <p class="font-farsi text-xs text-indigo/70">
         &copy; {new Date().getFullYear()}{' '}
-        <span lang="en" dir="ltr">Seyed Valiallah Azizollahi</span>. همه‌ی حقوق محفوظ است.
+        <span lang="en" dir="ltr" translate="no">Hamdam</span>. همه‌ی حقوق محفوظ است.
       </p>
       <p class="font-farsi text-xs text-indigo/70">
         <span lang="en" dir="ltr">HAMDAM&trade;</span> موضوع درخواست ثبت علامت تجاری در استرالیا

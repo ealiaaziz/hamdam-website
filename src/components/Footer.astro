@@ -64,9 +64,21 @@ const { lang = 'en' } = Astro.props;
          spans so a screen reader announces them in the right language and
          bidi never reorders the digits. */
     }
+    {
+      /* The notice carries the brand rather than the legal name (2026-08-15,
+         Ealia's instruction). The legal entity is untouched everywhere it is
+         load-bearing -- "Seyed Valiallah Azizollahi (sole trader) . ABN 74 389
+         481 503" still heads the business-details block in /privacy/ and
+         /terms/ in both locales, and remains the schema.org founder -- so this
+         changes what the footer displays, not who owns anything.
+
+         Latin-script and LTR in its own span on the Farsi page too, matching
+         how this slot has always treated the name it replaces: the surrounding
+         approved Farsi is untouched and no Persian is authored here. */
+    }
     <p class="text-xs text-indigo/70">
       &copy; {new Date().getFullYear()}{' '}
-      <span lang="en" dir="ltr">Seyed Valiallah Azizollahi</span>.{' '}
+      <span lang="en" dir="ltr" translate="no">Hamdam</span>.{' '}
       {lang === 'fa' ? 'همه‌ی حقوق محفوظ است.' : 'All rights reserved.'}
     </p>
     {

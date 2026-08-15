@@ -424,7 +424,26 @@ const deviceAlt =
     background: linear-gradient(to bottom, var(--surface-dusk), var(--surface-firstlight));
     box-shadow: var(--shadow-lift);
     overflow: hidden;
-    transform: translateY(var(--device-drift));
+    /* The independent `translate` property, not transform (2026-08-15). This
+       drift had never applied to anyone: the hero-settle animation below runs
+       on this element with `forwards` and ends at `transform: translateY(0)`,
+       and an animation's value beats the element's own transform declaration
+       and keeps beating it after the animation finishes. So every motion-OK
+       visitor got translateY(0) instead of the drift, and reduced-motion
+       visitors never run the script that defines --device-drift at all, which
+       made the declaration invalid. Three planes were drifting and the fourth
+       was pinned.
+
+       `translate` is a separate property from `transform` and composes with it
+       (translate, then rotate, then scale, then transform), so the settle
+       animation and the rotation can own `transform` while the scroll-linked
+       drift owns this. Nothing has to be sequenced or duplicated into
+       keyframes, and the value keeps re-resolving as the scroll updates it.
+
+       The 0px fallback matters: reduced-motion visitors never get the custom
+       property defined, and without it the declaration would be invalid rather
+       than simply zero. */
+    translate: 0 var(--device-drift, 0px);
   }
 
   /* The hero phone sits in space at desktop (2026-08-15), matching the paired
