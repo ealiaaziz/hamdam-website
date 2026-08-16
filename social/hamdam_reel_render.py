@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Hamdam reel frame renderer, v6 - six pages, argument early, follow prompt.
+"""Hamdam reel frame renderer, v7 - six pages, argument early, persistent CTA.
 
     python3 hamdam_reel_render.py <conceptId> <stage 0..5> [outDir]
 
@@ -8,16 +8,19 @@
   2  the philological point - insightFa then insightEn
   3  Persian verse, alone
   4  English translation, alone, same type size, poet line beneath
-  5  the lesson, who to send it to, and the follow prompt
+  5  the lesson, who to send it to, and the product line
 
-WHY THIS ORDER. The 13 August reel reached 1,063 viewers with an average
-watch time of 4 seconds against a 30 second runtime. Anything after the
-first few seconds is seen by almost nobody, so the argument - the one page
-no other account can produce - is now second, landing around 3 seconds.
-That reel also produced 4 profile visits and 0 follows, because nothing on
-screen ever asked; page 5 now asks.
+WHY THIS SHAPE. Instagram's own insights say attention ends early: the reels
+average a 4 second watch against a 30 second runtime, and slides 4-5 of every
+carousel this account published received zero views. Two independent formats,
+the same answer.
 
-Target runtime is 15 seconds. Page starts: 0.0, 0.8, 3.0, 6.5, 10.0, 12.5.
+So the argument - the one page no other account can produce - is second,
+landing around 3 seconds. And the follow ask is NOT on the last page; it sits
+in the footer strip that appears on every page, visible from second one. A CTA
+on page six is a CTA for the people who least need it.
+
+Target runtime 15 seconds. Page starts: 0.0, 0.8, 3.0, 6.5, 10.0, 12.5.
 
 Pages 3 and 4 share one computed type size so the two languages carry equal
 weight. Every page shares one frame and one layout, so consecutive pages
@@ -321,16 +324,13 @@ if STAGE == 5:
     rtl(d, (cx, int(IH*0.655)), sf, f_sf, hx('DCD0B8'))
     for i, l in enumerate(wrap(d, se, f_se, IW*0.86)[:1]):
         d.text((cx, int(IH*0.700)), l, font=f_se, fill=hx('CFC3AA'), anchor='mm')
-    # The follow prompt. 1,063 viewers and 0 follows on 13 August, because
-    # nothing on screen ever asked.
-    rtl(d, (cx, int(IH*0.790)), '\u062f\u0646\u0628\u0627\u0644 \u06a9\u0646\u06cc\u062f \u2014 \u0647\u0631 \u0631\u0648\u0632 \u06cc\u06a9 \u0628\u06cc\u062a',
-        ImageFont.truetype(FZ+'Vazirmatn-SemiBold.ttf', S*32), hx('FFF6E4'))
-    d.text((cx, int(IH*0.840)), 'Follow for a verse a day, in Persian',
+    # The follow ask now lives in the persistent strip below, visible from
+    # page one. This page carries the product line instead.
+    rtl(d, (cx, int(IH*0.795)), '\u0647\u0631 \u0631\u0648\u0632 \u06cc\u06a9 \u0628\u06cc\u062a\u060c \u06cc\u06a9 \u0644\u062d\u0638\u0647 \u0645\u06a9\u062b',
+        ImageFont.truetype(FZ+'Vazirmatn-SemiBold.ttf', S*30), hx('FFF6E4'))
+    d.text((cx, int(IH*0.845)), 'A verse a day, in Persian. Free on iPhone.',
            font=ImageFont.truetype(SS+'SourceSerif4-Light.otf', S*24),
            fill=hx('EFE4CC'), anchor='mm')
-    d.text((cx, int(IH*0.890)), '@hamdam_au',
-           font=ImageFont.truetype(SS+'SourceSerif4-Bold.otf', S*24),
-           fill=hx('FFF6E4'), anchor='mm')
 
 card_w = IW + FB*2
 card_h = IH + FB*2 + int(H*0.052)
@@ -339,9 +339,22 @@ card.paste(vgrad(card_w, card_h, [(0, hx('4A3A28')), (1, hx('2C2118'))]), (0, 0)
 card.paste(inner, (FB, FB))
 cd = ImageDraw.Draw(card)
 cd.rectangle([FB-S, FB-S, FB+IW+S-1, FB+IH+S-1], outline=hx('1A140E'), width=S)
-cd.text((card_w//2, FB+IH+int(H*0.028)), 'hamdam  \u00b7  @hamdam_au',
-        font=ImageFont.truetype(SS+'SourceSerif4-Light.otf', S*24),
-        fill=hx('D6C9B0'), anchor='mm')
+
+# Persistent follow strip, present on every page. Instagram's insights show
+# slides 4-5 of every carousel got zero views and the reels average a 4 second
+# watch, so a CTA that lives only on the last page reaches almost nobody.
+f_ff = ImageFont.truetype(FZ+'Vazirmatn-Medium.ttf', S*24)
+f_fl = ImageFont.truetype(SS+'SourceSerif4-Bold.otf', S*23)
+_fa, _dot, _en = '\u062f\u0646\u0628\u0627\u0644 \u06a9\u0646\u06cc\u062f', '  \u00b7  ', '@hamdam_au'
+_wfa = cd.textlength(_fa, font=f_ff, direction='rtl', language='fa')
+_wd  = cd.textlength(_dot, font=f_fl)
+_wen = cd.textlength(_en, font=f_fl)
+_x   = card_w//2 - (_wfa + _wd + _wen)/2
+_fy  = FB + IH + int(H*0.028)
+cd.text((_x, _fy), _fa, font=f_ff, fill=hx('E8DCC2'), anchor='lm',
+        direction='rtl', language='fa', features=['kern', 'liga'])
+cd.text((_x + _wfa, _fy), _dot, font=f_fl, fill=hx('9C8C6E'), anchor='lm')
+cd.text((_x + _wfa + _wd, _fy), _en, font=f_fl, fill=hx('F2E8D2'), anchor='lm')
 
 shadow = Image.new('L', (W, H), 0)
 ImageDraw.Draw(shadow).rectangle([IX-FB, IY-FB, IX-FB+card_w, IY-FB+card_h], fill=150)
