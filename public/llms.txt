@@ -1,6 +1,6 @@
 # Hamdam
 
-> Hamdam is a daily Persian poetry, reflection and journal app for iPhone, made in Brisbane, Australia. Each day it offers a verse from Hafez, Rumi, Saadi, Khayyam or Parvin Etesami, in the original Persian beside an English translation, with a reflection chosen by how the day feels on a five point mood slider. Free tier with 15 reflections per month; Hamdam Plus subscription and a one time Founding Companion purchase. Available on the Australian App Store (App Store ID 6784461990). No accounts, no sign up, no tracking; the private journal syncs only through the user's own iCloud, opt in.
+> Hamdam is a daily Persian poetry, reflection and journal app for iPhone, made in Brisbane, Australia. Each day it offers a verse from Hafez, Rumi, Saadi, Khayyam or Parvin Etesami, in the original Persian or in English, with a reflection chosen by how the day feels on a five point mood slider. Free tier with 15 reflections per month; Hamdam Plus subscription and a one time Founding Companion purchase. Available on the Australian App Store (App Store ID 6784461990). No accounts, no sign up, no tracking; the private journal syncs only through the user's own iCloud, opt in.
 
 Every claim in this file is drawn from the site itself. Verses are sourced from
 Ganjoor.net and credited on every page. The site is bilingual: English pages at

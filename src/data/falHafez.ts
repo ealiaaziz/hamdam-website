@@ -44,5 +44,10 @@ export const FAL_HAFEZ_BODY_EN: readonly string[] = [
   // such thing: its Privacy entries cover accounts, email, analytics and iCloud
   // sync, none of which is this. It may well be true; it is not verified, and
   // the privacy policy is where a claim like that belongs once it is.
-  'Hamdam does the same thing without the paper. Ask, and it opens the Divan at a verse, in the original Persian beside an English translation.',
+  // "beside an English translation" -> "or in English", 2026-08-16. The fal is
+  // the sharpest case of the site-wide presentation error: DivanLeafView shows
+  // the ghazal in one language and, in Farsi, deliberately shows no English at
+  // all (Ealia, 2026-07-27: "I don't need English translation at all, add
+  // tafsir instead"). See "Verse display" in FACTS.md.
+  'Hamdam does the same thing without the paper. Ask, and it opens the Divan at a verse, in the original Persian or in English.',
 ];

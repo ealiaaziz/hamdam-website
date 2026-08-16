@@ -89,11 +89,31 @@ const jsonLd = homepageSchema({
        Leads with what the app does, not the brand line. The tagline is still
        here, demoted to the subhead, which keeps the approved sentence on the
        page while the first thing a visitor reads is the function. Approved by
-       Ealia 2026-07-25. */
+       Ealia 2026-07-25.
+
+       One word added 2026-08-16, on Ealia's instruction, for search: the
+       sentence carried no category term at all, so the page's most weighted
+       heading said nothing about Persian poetry.
+
+       "Persian" rather than a longer prefix, and the reason is measured, not
+       aesthetic. The candidate that scored best on paper was "Daily Persian
+       poetry: a verse and a reflection, chosen for how your day feels.", which
+       carries more terms and matches the <title> and the AU App Store name
+       exactly, and it was tried first. It renders at six lines at 1440x900
+       against this sentence's four, which pushes the subhead from y=620 to
+       y=760 -- into the mountain silhouette, where it is unreadable. The hero
+       is a fixed-height cinematic composition, so H1 length is a layout
+       constraint here and not just a copy choice. Measured at 390x844 and
+       1440x900 before choosing; screenshots in the PR.
+
+       This costs one word of the approved 2026-07-25 sentence ("A verse" ->
+       "A Persian verse") and nothing else. The Farsi H1 is untouched and
+       correctly so -- it comes from `faCopy.tagline`, is generated rather than
+       authored here, and its own title already leads with the category. */
   }
   <HeroCinematic
     lang="en"
-    title="A verse and a reflection, chosen for how your day feels."
+    title="A Persian verse and a reflection, chosen for how your day feels."
     subhead="Hamdam reflects your heart and your sky."
   />
 
@@ -131,15 +151,27 @@ const jsonLd = homepageSchema({
              marks any claim about translation quality or provenance CONTESTED
              with a hard block, because the app still ships AI-generated
              English while publicly committing to cited public domain sources
-             (Nicholson, Whinfield, Bell). The rest of the sentence is the
-             approved 2026-07-25 copy, unchanged: the presentation claim, a
-             Persian original beside an English translation, is true today.
-             Restore an adjective here only once the replacement translations
-             have shipped and FACTS.md records them as VERIFIED. */
+             (Nicholson, Whinfield, Bell). Restore an adjective here only once
+             the replacement translations have shipped and FACTS.md records
+             them as VERIFIED.
+
+             "beside" -> "or in" 2026-08-16, on Ealia's instruction. This
+             comment used to end by asserting that "the presentation claim, a
+             Persian original beside an English translation, is true today".
+             It was not true, and had never been checked: the app shows one
+             language at a time, whichever the app is set to, on every primary
+             surface. Read out of hamdam-ios @ 820270c -- see "Verse display"
+             in FACTS.md for the file-and-line sources.
+
+             The same sentence stood in five places and this comment was the
+             written justification for all of them, which is the reason to
+             correct it here rather than delete it: a future reader who finds
+             only the new wording should be able to see that the old one was
+             checked and failed, not quietly restyled. */
         }
         <p>
-          Every verse arrives in its original Persian beside an English translation, drawn from
-          Hafez, Rumi, Saadi, Khayyam and Parvin Etesami.
+          Every verse arrives in its original Persian, or in English, drawn from Hafez, Rumi,
+          Saadi, Khayyam and Parvin Etesami.
         </p>
       </div>
     </div>
@@ -158,7 +190,7 @@ const jsonLd = homepageSchema({
   }
   <VerseShowcase
     lang="en"
-    intro="A verse for every morning. Five poets. Two languages. Centuries of wisdom."
+    intro="A verse for every morning. Five poets. In Persian or English. Centuries of wisdom."
     sceneImage={dawn}
   />
 
