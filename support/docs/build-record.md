@@ -1080,3 +1080,95 @@ The parts of this that a fourth pass could have found and did not:
   path traversal on `/static`, a null byte in the path, an 8KB header, a 4KB
   URL, duplicate query parameters, a 2MB body, and CRLF in the email field.
   All refused correctly. `/tickets/40` on the MTA-STS hostname is a 404.
+
+## Header review across both hosts, 2026-08-16
+
+A read-only review of `hamdam.com.au` and `support.hamdam.com.au`, prompted by
+a request to point an automated pentest tool at them. The tool never ran: the
+open-source CLI needs Python 3.12 and the environment had 3.11, and the managed
+path needs an account nobody had created. So this was done by hand, which is
+worth saying because it changes what the result means. Nothing below was proved
+with a working exploit. Read it as a review, not as a pentest.
+
+Everything the earlier passes closed was re-checked and holding: the
+`/fa/%61dmin` bypass is dead in every spelling tried, `/admin` and `//admin`
+both reach Cloudflare Access, D1 is parameterised throughout, the render layer
+escapes, and no cookie, error detail or config file is exposed on either host.
+DMARC, SPF, CAA, TLS-RPT and MTA-STS are all live and correct.
+
+Three things were not.
+
+**The desk had the weaker headers, which is backwards.** Fetching both hosts
+side by side rather than reading either config: the site sends
+`Cross-Origin-Opener-Policy` and `Cross-Origin-Resource-Policy` and has since
+2026-08-08; the desk sent neither. The site names twenty one features in
+`Permissions-Policy`; the desk named four. The desk is the half of the estate
+holding requesters' names, addresses and whatever they pasted into a ticket.
+
+Neither file looked wrong on its own, and that is the point. The site's headers
+are declarative in `public/_headers`, the desk's were a run of `c.header` calls
+in `index.ts`, and nothing read both. The list is now a value in
+`src/securityHeaders.ts`, the way `urls.ts` is a value, and
+`test/headerParity.test.js` at the repository root fails when the desk denies
+less than the site. That test reads both files as text rather than importing
+either, because the root CI job never installs this package's dependencies.
+
+The parity test was itself wrong first. It asserted the file *contained*
+`Cross-Origin-Opener-Policy`, which stayed true after the header was deleted
+from the object, because the paragraph explaining what COOP does still said the
+words. Found by deleting the line and watching the test stay green. A prose
+mention is not a header. It parses the object literal now.
+
+**`support.hamdam.com.au/.well-known/security.txt` was a 404.** RFC 9116 scopes
+that file per host and the site's copy names this host in its scope section, so
+the content was right and at the wrong address: anyone probing the desk directly
+found nobody listening. The Worker now 301s to the canonical copy, which the RFC
+expects researchers to follow, rather than growing a second file with an
+`Expires` date that must never drift from the first. Above the country check,
+for the reason `/health` and the MTA-STS policy are: whoever found the bug is
+wherever they are.
+
+**`www.hamdam.com.au` sent no security headers at all.** Not a weaker set: none.
+The `www` to apex redirect is generated at Cloudflare's edge, before the Worker
+and before `_headers`, so nothing in this repository ever reached it. A first
+visit to `www` was therefore redirected with no HSTS, no `nosniff`, nothing.
+
+The cause was that the zone's own HSTS setting had never been switched on. The
+apex looked protected because `_headers` sets the header on responses the
+Worker serves, which hid the fact that the zone-level control was off. Enabled
+2026-08-16 via the API with `max-age=31536000`, `includeSubDomains`, `preload`
+and `nosniff`, matching what `_headers` and `securityHeaders.ts` already send,
+so the values do not stack into a malformed header. Verified after the change:
+the `www` 301 now carries both, and the apex, the desk, the MTA-STS host and
+`circuitenergy` each still return exactly one `Strict-Transport-Security`.
+
+Note the plaintext `http://www` redirect still carries no HSTS, and that is
+correct rather than half-done: RFC 6797 requires a user agent to ignore the
+header when it arrives over a non-secure transport, so the redirect to https is
+what makes that first request safe and the header on it would be decoration.
+
+**The `preload` token is still a promise nobody has kept.** All three hosts
+advertise `preload` and `hstspreload.org` reports `hamdam.com.au` as unknown to
+the list, so no browser gives this domain first-visit protection. The `www` gap
+above was the blocker, since the list requires the redirect to carry the header;
+that is now cleared, and submitting is the owner's call because coming back off
+the list takes months and ships on browser release trains. Raised and left open
+deliberately.
+
+**`circuitenergy.hamdam.com.au` is a second deployment of this codebase.**
+Proxied, on this zone, serving "Circuit Energy IT" from what is recognisably
+this Worker's layout and stylesheet, and routed from somewhere that is not this
+repository's `wrangler.jsonc`. Its `/admin` returns the 503 that
+`ACCESS_TEAM_DOMAIN` and `ACCESS_AUD` being unset produces, so the console is
+shut and shut in the fail-closed direction, and `/fa/admin` 404s there too.
+
+But there is no Cloudflare Access application in front of that hostname: the
+Access policy is scoped to `support.hamdam.com.au/admin`. What is holding that
+console closed is two unset variables, and the obvious way to make that desk
+work is to set them. If they are ever set to this desk's values, an Access
+assertion issued for Hamdam authenticates against a different organisation's
+queue, and `ADMIN_EMAILS` is the only thing that would then object. This is the
+"second address nobody audits" failure the rest of this file keeps arguing
+about, and `workers_dev: false` and `preview_urls: false` exist here precisely
+to prevent its cousins. Recorded, not acted on: that Worker is not deployed from
+this repository and its configuration was not read.
