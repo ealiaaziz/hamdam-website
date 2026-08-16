@@ -21,6 +21,7 @@ newest reading is always the last one in each section.
 | Taken | Window | Impressions | Clicks | Avg position | Named queries | Pages with impressions |
 | --- | --- | --- | --- | --- | --- | --- |
 | 2026-08-08 | all data to date (2026-07-03 to 2026-08-05) | 25 | 0 | 15.1 | 1 | 4 |
+| 2026-08-16 | since the last reading (2026-08-06 to 2026-08-13) | 70 | 2 | 36.8 | 16 | 11 |
 <!-- readings:row -->
 
 Trailing 28 days at the first reading (2026-07-09 to 2026-08-05): 23
@@ -69,6 +70,76 @@ any later row.**
 
 **Zero clicks.** Not a rounding artefact. No one has ever arrived at this site
 from Google search.
+
+### 2026-08-16, an off-schedule reading
+
+Taken by hand, out of cycle, to put a boundary immediately before the canonical
+App Store link and the claim corrections went live. **Everything in this row
+predates that deploy** -- it shipped on 2026-08-16 and Search Console data was
+final only to 2026-08-13 -- so this measures the content cluster, not the SEO
+work, and the next reading is the first that can say anything about the latter.
+The window is 8 days against the first reading's 34, so compare rates, not
+totals.
+
+**The site is not failing to be indexed. It is failing to rank.** That is a
+different problem with different fixes, and this reading is the first evidence
+for which one we have. 11 pages drew impressions, against 4; 16 queries are
+named, against 1. Google is crawling, indexing and showing these pages. It is
+showing them at an average position of 36.8.
+
+**Impressions are up roughly twelvefold by rate.** 70 in 8 days is 8.8/day,
+against 25 in 34 days, or 0.74/day. Cumulative to 2026-08-13 is 95 impressions,
+2 clicks, average position 31.1.
+
+**The first clicks the site has ever had.** Two, both United Kingdom, both
+mobile, both at position 5, one on the homepage (position 1.25) and one on
+`/poets/khayyam/` (6.8). At that position and CTR they are almost certainly
+brand searches by someone who already knew the name. Two clicks is not a trend.
+It is the zero ending, which is worth recording once and not over-reading.
+
+**Average position got worse, 15.1 to 36.8, and that is the good outcome.** The
+first reading's 15.1 was an impression-weighted average over essentially one
+query, `hamdam`, the site's own name. The site now surfaces for sixteen, most
+of them deep. Ranking 36.8 across sixteen real queries beats 15.1 across your
+own brand name. Do not read this row as a regression.
+
+**Pages, and what is drawing.** The poet cluster is the whole story:
+
+| URL | Impressions | Avg position |
+| --- | --- | --- |
+| `/poets/hafez/` | 22 | 59.0 |
+| `/fal-e-hafez/` | 14 | 27.1 |
+| `/fa/privacy/` | 7 | 7.6 |
+| `/poets/rumi/` | 7 | 49.6 |
+| `/poets/khayyam/` | 5 | 6.8 (1 click) |
+| `/` | 4 | 1.25 (1 click) |
+| `/poets/saadi/` | 4 | 30.8 |
+| `/fa/poets/khayyam/`, `/fa/poets/saadi/`, `/poets/parvin-etesami/` | 2 each | 70.5 / 63.0 / 30.5 |
+| `/moments/yalda/` | 1 | 4.0 |
+
+`/fa/terms/`, which was two of the four pages in the first reading, has dropped
+out entirely. Legal pages surfacing was always an artefact of having nothing
+else indexed.
+
+**Queries worth naming.** `hafez` at 10 impressions, position 57.8, is the
+biggest single term and the furthest from useful. The `ganjoor` queries are the
+interesting ones: `ganjoor rumi` at position 8, `ganjoor khayyam` at 5,
+`ganjoor saadi` at 7. We credit Ganjoor on every page and are being surfaced
+next to it, near the top, on the one branded term in the space we are honestly
+associated with. `fal e hafez english`, 2 impressions at 38, is the
+highest-intent term here and is nowhere near where the fal page should sit.
+One Farsi brand query appeared, `اپ همدم برای ایفون`, at position 10.
+
+**Countries.** Iran 7 (mobile, position 8.3), Australia 7, United States 6,
+Austria 6, Canada 5, Pakistan 6, United Kingdom 4, then a long tail. Still
+diaspora shaped, and now with Iran itself at the top on mobile.
+
+**What this says about the App Store indexing brief.** The premise was that the
+listing is not being indexed and the site could help. This reading says the site
+has almost no ranking authority to lend: two clicks, ever, and an average
+position in the thirties. The canonical link closed a real gap and cost little,
+but nobody should expect it to move the listing on its own. Next reading is the
+one that tests it.
 
 <!-- readings:notes -->
 
