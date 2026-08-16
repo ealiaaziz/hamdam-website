@@ -41,7 +41,7 @@
 // violation and the exact kind of invented claim this repo's rules exist to
 // prevent.
 
-import { APP_STORE } from './appStore.js';
+import { APP_STORE, APP_STORE_CANONICAL_URL } from './appStore.js';
 
 const SITE = 'https://hamdam.com.au';
 
@@ -99,7 +99,12 @@ export const organizationSchema = Object.freeze({
   sameAs: Object.freeze([
     'https://www.instagram.com/hamdam_au/',
     'https://x.com/Hamdam_au',
-    'https://apps.apple.com/au/app/hamdam-daily-persian-poetry/id6784461990',
+    // Was the `/au/` form of this URL until 2026-08-16. Same listing, but it
+    // is now the shared APP_STORE_CANONICAL_URL constant, so the crawlable
+    // footer link, this node and the application node's own `sameAs` are
+    // byte-identical. Three spellings of one entity is the opposite of what
+    // `sameAs` is for.
+    APP_STORE_CANONICAL_URL,
   ]),
   logo: {
     '@type': 'ImageObject',
@@ -137,11 +142,24 @@ export function homepageSchema({ lang, name, description, url, downloadUrl, scre
     alternateName: 'Hamdam: Daily Persian Poetry',
     description,
     url,
+    // Added 2026-08-16. `url` stays the homepage, which is this app's page on
+    // this site and the right value for it; `sameAs` is the separate job of
+    // naming the same entity elsewhere, and the App Store listing is the only
+    // other authoritative page for it. `downloadUrl`/`installUrl` below point
+    // at the same listing but carry a `ct` token and a storefront, so they are
+    // action URLs and cannot double as the identity signal.
+    sameAs: [APP_STORE_CANONICAL_URL],
     // VERIFIED minimum, not a guess, and derived rather than retyped so it
     // cannot drift from the requirement line under the store badge.
     operatingSystem: `iOS ${APP_STORE.MINIMUM_IOS}+`,
     applicationCategory: 'LifestyleApplication',
     availableOnDevice: 'iPhone',
+    // VERIFIED in FACTS.md ("Copyright Seyed Valiallah Azizollahi"), matched
+    // by the footer copyright line, by `organizationSchema.founder` above and
+    // by the App Store listing's own `artistName`/`sellerName`. A Person
+    // rather than the Organization because the store credits a sole trader by
+    // name, and `publisher` already carries the brand.
+    author: { '@type': 'Person', name: 'Seyed Valiallah Azizollahi' },
     downloadUrl,
     installUrl: downloadUrl,
     inLanguage: lang === 'fa' ? ['fa', 'en'] : ['en', 'fa'],

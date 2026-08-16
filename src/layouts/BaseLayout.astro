@@ -205,9 +205,14 @@ const ogImage = new URL(
       // flatten web-hero / web-nav / web-pricing back into one bucket and undo
       // the whole point of the placement tokens. An inbound utm_campaign is a
       // real attributed visit and legitimately outranks the placement default.
+      // `:not([data-canonical-store-link])` exempts the footer's canonical
+      // App Store link (2026-08-16). That link exists to be a clean,
+      // parameter-free citation of the listing; rewriting it on a campaign
+      // visit would put a `ct` back on the one URL whose whole purpose is not
+      // having one, and Googlebot executes this script.
       if (inboundSearch.get('utm_campaign')) {
         const campaignParams = campaignParamsFromSearch(inboundSearch);
-        document.querySelectorAll<HTMLAnchorElement>('a[href^="https://apps.apple.com/"]').forEach((a) => {
+        document.querySelectorAll<HTMLAnchorElement>('a[href^="https://apps.apple.com/"]:not([data-canonical-store-link])').forEach((a) => {
           const url = new URL(a.href);
           url.searchParams.set('ct', campaignParams.ct);
           // No configured provider token means no `pt` at all -- and clear any

@@ -1,5 +1,6 @@
 ---
 import HamdamLogotype from './HamdamLogotype.astro';
+import { APP_STORE_CANONICAL_URL } from '../lib/appStore';
 
 interface Props {
   lang?: 'en' | 'fa';
@@ -49,6 +50,35 @@ const { lang = 'en' } = Astro.props;
         </nav>
         <p class="text-sm text-indigo/70">Made with love in Brisbane.</p>
         <p class="text-xs text-indigo/70">Verses sourced from Ganjoor.net.</p>
+        {
+          /* The site's one clean reference to the App Store listing, added
+             2026-08-16. Every other store link on the site is a CTA built by
+             appStoreUrl(): pinned to /au/ and carrying a ct campaign token,
+             which is correct for attribution and useless as a crawlable
+             citation, so an indexer had no parameter-free URL for the listing
+             anywhere on the site.
+
+             Deliberately plain. No rel="nofollow" and no rel="sponsored":
+             this is our own product, not a paid or untrusted destination, and
+             either value would tell a crawler to discount exactly the link
+             that exists to be counted. No ct either, which is why it carries
+             data-canonical-store-link -- the campaign rewriter in BaseLayout
+             skips that attribute, so an inbound utm_campaign visit cannot
+             quietly turn this back into a tagged URL.
+
+             English branch only. The Farsi footer would need Persian anchor
+             text and this repo bars authoring it; raised for Ealia in the PR
+             rather than machine-translated here. */
+        }
+        <p class="text-xs text-indigo/70">
+          <a
+            href={APP_STORE_CANONICAL_URL}
+            data-canonical-store-link
+            class="inline-flex min-h-[44px] items-center px-1 underline decoration-saffron/40 underline-offset-4 hover:text-indigo"
+          >
+            Hamdam: Daily Persian Poetry on the App Store
+          </a>
+        </p>
       </div>
     )
   }

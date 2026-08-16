@@ -6,7 +6,7 @@ import {
   ORGANIZATION_ID,
   APPLICATION_ID,
 } from '../schema.js';
-import { APP_STORE } from '../appStore.js';
+import { APP_STORE, APP_STORE_CANONICAL_URL, appStoreUrl } from '../appStore.js';
 
 const build = (overrides = {}) =>
   homepageSchema({
@@ -49,6 +49,53 @@ describe('homepageSchema', () => {
   it('omits screenshot entirely rather than publishing an empty array', () => {
     expect(appNode(build({ screenshots: [] }))).not.toHaveProperty('screenshot');
     expect(appNode(build()).screenshot).toHaveLength(1);
+  });
+
+  // Added 2026-08-16 with the canonical store link. The listing was not
+  // appearing in search indexes while competitor listings were, and one
+  // contributing cause was that every reference to it on this site was a
+  // storefront-pinned, ct-tagged CTA. `sameAs` is the field that tells a
+  // search engine this app and that listing are one entity, so it has to be
+  // the clean URL and it has to match the crawlable footer link exactly.
+  it('names the App Store listing as the same entity, via the clean URL', () => {
+    expect(appNode(build()).sameAs).toEqual([APP_STORE_CANONICAL_URL]);
+  });
+
+  // The three properties an application node is judged on. `author` was
+  // simply missing until 2026-08-16; the other two were already right and are
+  // pinned here so they stay that way.
+  it('carries author, applicationCategory and operatingSystem', () => {
+    const node = appNode(build());
+    expect(node.author).toEqual({ '@type': 'Person', name: 'Seyed Valiallah Azizollahi' });
+    expect(node.applicationCategory).toBe('LifestyleApplication');
+    expect(node.operatingSystem).toBe(`iOS ${APP_STORE.MINIMUM_IOS}+`);
+  });
+
+  // `url` is this site's page for the app and must not be quietly repointed
+  // at the App Store: the two fields answer different questions, and losing
+  // the homepage here would drop the only link between the entity and the
+  // site that publishes it.
+  it('keeps url pointing at the homepage, not the store', () => {
+    expect(appNode(build()).url).toBe('https://hamdam.com.au/');
+  });
+});
+
+// The canonical store URL, asserted on its own because three things now
+// depend on it being exactly this string: the footer anchor, the application
+// node's `sameAs` and the organization's. A `ct`, a `?l=fa` or a reinstated
+// `/au/` segment here would silently undo the reason it was added.
+describe('APP_STORE_CANONICAL_URL', () => {
+  it('carries no query string and no storefront segment', () => {
+    expect(APP_STORE_CANONICAL_URL).toBe(
+      'https://apps.apple.com/app/hamdam-daily-persian-poetry/id6784461990'
+    );
+    expect(APP_STORE_CANONICAL_URL).not.toContain('?');
+    expect(APP_STORE_CANONICAL_URL).not.toMatch(/apps\.apple\.com\/[a-z]{2}\//);
+  });
+
+  it('is a different URL from every CTA the site builds', () => {
+    expect(APP_STORE_CANONICAL_URL).not.toBe(appStoreUrl('en', null, 'footer'));
+    expect(appStoreUrl('en', null, 'footer')).toContain('ct=web-footer');
   });
 });
 
@@ -154,7 +201,7 @@ describe('organizationSchema', () => {
     expect(organizationSchema.sameAs).toEqual([
       'https://www.instagram.com/hamdam_au/',
       'https://x.com/Hamdam_au',
-      'https://apps.apple.com/au/app/hamdam-daily-persian-poetry/id6784461990',
+      'https://apps.apple.com/app/hamdam-daily-persian-poetry/id6784461990',
     ]);
   });
 

@@ -30,6 +30,38 @@ export const APP_STORE = Object.freeze({
   MINIMUM_IOS: '26',
 });
 
+/**
+ * The one clean, crawlable App Store URL for the listing: named slug, no
+ * storefront segment, no query string. Everything else on this site links to
+ * the store through `appStoreUrl()`, which pins `/au/` and appends a `ct`
+ * campaign token; that is right for a CTA a person clicks and wrong for the
+ * reference a crawler follows. Until 2026-08-16 the site had only the tagged
+ * form, so no page offered an indexer a parameter-free URL for the listing at
+ * all, while competitor listings sat in the index with theirs.
+ *
+ * Storefront-less on purpose. `/au/` is a real page, but it tells a crawler
+ * this is the Australian edition of the listing rather than the listing, and
+ * the audience is not only Australian. Apple resolves the bare form to the
+ * viewer's own storefront.
+ *
+ * The slug is decorative to Apple: `id6784461990` alone resolves, and a
+ * deliberately wrong slug still 200s. It is here because it carries the
+ * product name, which is the part an indexer reads. Note that the slug Apple
+ * canonicalises to is per storefront -- `/au/` rewrites to
+ * `hamdam-daily-persian-poetry`, `/us/` to `hamdam-poetry-reflection`, because
+ * the listing has a different localised name in each -- so no single slug is
+ * "the" right one. This is the AU name, which matches `alternateName` in the
+ * structured data and the site's own `<title>`.
+ *
+ * Verified 2026-08-16: resolves 200, and the iTunes lookup API returns this
+ * listing for id 6784461990 on both the AU and US storefronts.
+ *
+ * Never append parameters to this. The campaign-parameter rewriter in
+ * BaseLayout skips it by attribute for that reason.
+ */
+export const APP_STORE_CANONICAL_URL =
+  `https://apps.apple.com/app/hamdam-daily-persian-poetry/id${APP_STORE.ID}`;
+
 // The App Store Connect provider token, read from the build environment
 // (`PUBLIC_ASC_PROVIDER_TOKEN`) rather than hard-coded, because it is an
 // account-specific value only ASC can supply.
