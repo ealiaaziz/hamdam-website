@@ -15,7 +15,7 @@ const build = (overrides = {}) =>
     description: 'A daily verse and a reflection.',
     url: 'https://hamdam.com.au/',
     downloadUrl: 'https://apps.apple.com/au/app/id6784461990?ct=web-schema',
-    screenshots: ['https://hamdam.com.au/_astro/01-hero-en.png'],
+    screenshots: ['https://hamdam.com.au/_astro/01-today-en.png'],
     ...overrides,
   });
 

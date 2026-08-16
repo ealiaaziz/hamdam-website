@@ -7,8 +7,8 @@ import heroHorizonDesktop from '../assets/website-redesign/hero-horizon-desktop.
 import heroHorizonMobile from '../assets/website-redesign/hero-horizon-mobile.png';
 import heroBlossomForeground from '../assets/website-redesign/hero-blossom-foreground.png';
 import deviceFrame from '../assets/website-redesign/device-frame-iphone.png';
-import heroScreenshotEn from '../assets/website-redesign/screenshots/EN/01-hero-en.png';
-import heroScreenshotFa from '../assets/website-redesign/screenshots/FA/01-hero-fa.png';
+import heroScreenshotEn from '../assets/website-redesign/screenshots/EN/01-today-en.png';
+import heroScreenshotFa from '../assets/website-redesign/screenshots/FA/01-today-fa.png';
 
 interface Props {
   lang: 'en' | 'fa';
@@ -21,17 +21,39 @@ const { lang, title, subhead } = Astro.props;
 // client never computes positions and they can never jitter.
 const stars = starField(40, 42);
 
-// Real orchestrator screenshot landed 2026-07-19 (see
-// docs/app-store/phase-3-screenshot-orchestrator.md's "raw, uncomposed"
-// set -- NOT the composed App-Store marketing PNGs, which already have
-// their own baked-in phone mockup and would double-frame here): the Today
-// screen, seeded with the hafez-015 verse (ScreenshotSeedData.swift's
-// heroVerse).
+// Replaced 2026-08-16. This was `01-hero-en/fa.png`, described here as a real
+// orchestrator screenshot of the Today screen seeded with the hafez-015 verse.
+// It was a real render, and it was not a real screen. It came from
+// `TodayScreenshotView` in hamdam-ios's DebugTools/ScreenshotOrchestrator: a
+// `#if DEBUG` composition that never calls TodayView and whose verse card
+// (`ScreenshotViewFactory.swift:406-422`) carries no language check, so it
+// stacked Persian over English in both locales. The Farsi one was the worse
+// half: the app in Farsi deliberately shows no English at all (Ealia,
+// 2026-07-27). Four of its six elements are absent from production Today --
+// the Persian couplet in EN mode, both languages together, the streak pill
+// (removed 2026-07-23) and the Apple Health row (a different tab).
+//
+// The harness header calls its previews "assembled entirely from real, shared
+// production components ... never a hand-drawn mock", which is true of the
+// components and false of the arrangement. That sentence is why this survived
+// three weeks on the homepage.
+//
+// `01-today-en/fa.png` is the 2026-07-26 capture of the real Today screen,
+// 1320x2868, matched EN/FA pair, verified against the production view. It has
+// no verse on it, and no screenshot in that repo is both a real app screen and
+// a screen with a verse: the fal shows one only after you tap "Receive Verse".
+// The poetry claim now lives entirely in the h1 and the copy, which can carry
+// it honestly, rather than in a picture that could not. See FACTS.md, "The
+// homepage hero screenshot", for the full record.
 const heroScreenshot = lang === 'fa' ? heroScreenshotFa : heroScreenshotEn;
+// The Farsi alt lost "با شعری صبحگاهی از حافظ" (with a morning verse by Hafez)
+// and gained nothing: deletion only, because the replacement image has no verse
+// and this repo bars authoring Persian. Every remaining character is from the
+// approved string.
 const deviceAlt =
   lang === 'fa'
-    ? 'نمای صفحه اصلی همدم با شعری صبحگاهی از حافظ'
-    : 'Hamdam Today screen showing a morning verse by Hafez';
+    ? 'نمای صفحه اصلی همدم'
+    : 'The Hamdam Today screen: an evening greeting, the sky where you live, and the day’s reflection.';
 ---
 
 <section id="hero" class="hero" aria-labelledby="hero-title">
