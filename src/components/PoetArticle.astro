@@ -104,9 +104,21 @@ const provenance =
     <p class="poet__description text-balance">{description}</p>
 
     {
-      /* English only, by design. See the note at the top of this file. */
+      /* English only, by design. See the note at the top of this file.
+
+         The h2 was added 2026-08-16. The page had exactly one heading, its h1,
+         which is the poet's name and nothing else, so the biography beneath it
+         was an unlabelled block: no section structure for a parser, and no way
+         for a screen reader to jump to it. One heading, naming the poet the
+         paragraphs are about. It asserts nothing the biography does not.
+
+         `poet.transliteration` rather than `name`, because this branch is the
+         English one and `name` would be the Persian form on the Farsi side --
+         which never renders here, but reading the right variable keeps it that
+         way if the condition above ever changes. */
       lang === 'en' && (
         <div class="poet__bio">
+          <h2 class="poet__bio-title">{`About ${poet.transliteration}`}</h2>
           {page.biographyEn.map((paragraph) => (
             <p>{paragraph}</p>
           ))}
@@ -240,6 +252,19 @@ const provenance =
     font-size: var(--text-body);
     line-height: 1.7;
     color: var(--text-on-night);
+  }
+
+  /* Matches the fal page's section label, deliberately: the two pages sit in
+     one cluster and link to each other, so a reader moving between them should
+     meet the same typographic device rather than two inventions. */
+  .poet__bio-title {
+    font-family: var(--font-sans);
+    font-size: var(--text-meta);
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--hamdam-night-gold);
+    margin-bottom: -0.4rem;
   }
 
   .poet__verse {

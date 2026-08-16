@@ -35,9 +35,25 @@ export const FAL_HAFEZ = {
  * the same call the poet pages made. Every sentence is either a matter of
  * record about the practice or a description of what the app already does.
  */
-export const FAL_HAFEZ_BODY_EN: readonly string[] = [
-  'A fal is a question put to a book. You hold the question in mind, open the Divan of Hafez at random, and read the ghazal you land on as an answer. The practice is old enough that it has its own name, faal-e Hafez, and its own etiquette: you do not ask twice about the same thing, and you read the whole poem rather than picking the line you wanted.',
-  'It belongs to particular nights. On Yalda, the longest night of the year, the Divan comes out after the pomegranates and someone reads for each person present. It happens again at Norooz. In many houses the book lives somewhere permanent and gets opened whenever a decision is close, which is why Iranians often say they own two books they never bought: the Quran and the Hafez.',
+export const FAL_HAFEZ_BODY_EN: readonly { heading: string; body: string }[] = [
+  // Headings added 2026-08-16. The paragraphs are unchanged, word for word;
+  // only their labels are new. The page had exactly one heading, its h1, above
+  // three paragraphs answering three different questions, which is the shape a
+  // search engine reads as one undifferentiated block and a screen reader
+  // offers no way to navigate. The 2026-08-16 Search Console reading has this
+  // page at position 27 for "fal e hafez english", the highest-intent query in
+  // this space, so the sub-questions people actually type are worth naming.
+  //
+  // Each heading labels the paragraph beneath it and claims nothing the
+  // paragraph does not already say.
+  {
+    heading: 'What a fal is',
+    body: 'A fal is a question put to a book. You hold the question in mind, open the Divan of Hafez at random, and read the ghazal you land on as an answer. The practice is old enough that it has its own name, faal-e Hafez, and its own etiquette: you do not ask twice about the same thing, and you read the whole poem rather than picking the line you wanted.',
+  },
+  {
+    heading: 'When a fal is read',
+    body: 'It belongs to particular nights. On Yalda, the longest night of the year, the Divan comes out after the pomegranates and someone reads for each person present. It happens again at Norooz. In many houses the book lives somewhere permanent and gets opened whenever a decision is close, which is why Iranians often say they own two books they never bought: the Quran and the Hafez.',
+  },
   // The privacy sentence that was here has been removed. It read "nothing about
   // the question leaves your phone... the question is never stored", which is a
   // specific claim about how one feature handles input, and FACTS.md verifies no
@@ -49,5 +65,8 @@ export const FAL_HAFEZ_BODY_EN: readonly string[] = [
   // the ghazal in one language and, in Farsi, deliberately shows no English at
   // all (Ealia, 2026-07-27: "I don't need English translation at all, add
   // tafsir instead"). See "Verse display" in FACTS.md.
-  'Hamdam does the same thing without the paper. Ask, and it opens the Divan at a verse, in the original Persian or in English.',
+  {
+    heading: 'Fal-e Hafez in Hamdam',
+    body: 'Hamdam does the same thing without the paper. Ask, and it opens the Divan at a verse, in the original Persian or in English.',
+  },
 ];

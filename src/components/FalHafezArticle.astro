@@ -80,8 +80,11 @@ const provenance =
       /* English only, deliberately. See the note on FAL_HAFEZ_BODY_EN. */
       lang === 'en' && (
         <div class="fal__body">
-          {FAL_HAFEZ_BODY_EN.map((paragraph) => (
-            <p>{paragraph}</p>
+          {FAL_HAFEZ_BODY_EN.map((section) => (
+            <section class="fal__section">
+              <h2 class="fal__section-title">{section.heading}</h2>
+              <p>{section.body}</p>
+            </section>
           ))}
         </div>
       )
@@ -195,10 +198,29 @@ const provenance =
     margin-top: 2.5rem;
     display: flex;
     flex-direction: column;
-    gap: 1.25rem;
+    gap: 2rem;
     font-family: var(--font-serif);
     font-size: var(--text-body);
     line-height: 1.7;
+  }
+
+  /* Section headings, added 2026-08-16. Deliberately quiet: this is an
+     editorial page, not a documentation page, so the label sits above its
+     paragraph at body weight in the sans face and lets the prose stay the
+     loudest thing on the page. Sized below the h1 so the hierarchy reads
+     correctly to a person as well as to a parser. */
+  .fal__section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+  .fal__section-title {
+    font-family: var(--font-sans);
+    font-size: var(--text-meta);
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--hamdam-night-gold);
   }
 
   .fal__verse {
