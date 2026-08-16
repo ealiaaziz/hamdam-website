@@ -17,6 +17,7 @@ import { suggestionBlock } from './render/agentSuggestion.js';
 import { canSendDirectly, sendMail } from './mailer.js';
 import { isAllowedCountry, parseAllowedCountries } from './geo.js';
 import { mtaStsResponseFor } from './mtaSts.js';
+import { DEFAULT_CACHE_CONTROL, SECURITY_HEADERS } from './securityHeaders.js';
 import { viaCloudflareEdge } from './edge.js';
 import { HEARTBEAT_KEY, readHeartbeat } from './heartbeat.js';
 import { adminAllowlist, isAllowedAgent } from './adminAccess.js';
@@ -309,29 +310,23 @@ const app = new Hono<DeskEnv>();
  * A named function applied in all three places, rather than three copies of
  * the list, because the failure this is fixing is a list that existed in one
  * place and was not reached from two others.
+ *
+ * The list itself now lives in securityHeaders.ts, for the next version of
+ * that same failure: it was a sequence of calls here, which a test can only
+ * check by driving the whole app, so nothing checked it and it drifted behind
+ * the marketing site's.
  */
 function applySecurityHeaders(c: Context<DeskEnv>): void {
-  c.header('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'");
-  c.header('X-Frame-Options', 'DENY');
-  c.header('X-Content-Type-Options', 'nosniff');
-  c.header('Referrer-Policy', 'strict-origin-when-cross-origin');
-  c.header('Permissions-Policy', 'geolocation=(), camera=(), microphone=(), payment=()');
-  c.header('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
+  for (const [name, value] of Object.entries(SECURITY_HEADERS)) {
+    c.header(name, value);
+  }
 
-  // Nothing generated here is cacheable by anything in the middle.
-  //
-  // A ticket page carries a person's name, their email address and whatever
-  // they pasted into a description, and it is reached by a URL that has the
-  // only credential guarding it in the query string. Both halves of that make
-  // a stored copy dangerous: a shared cache keyed on the URL is keyed on the
-  // credential, and browser back-button restores put the thread on screen
-  // after the tab was handed to someone else.
-  //
-  // Set only where nothing has spoken already, so /static/app.css keeps the
-  // long cache lifetime it asks for. Defaulting the other way round would
-  // mean every new route was cacheable until someone remembered.
+  // Set only where nothing has spoken already, so /static/app.css and the
+  // MTA-STS policy keep the cache lifetimes they ask for. Defaulting the other
+  // way round would mean every new route was cacheable until someone
+  // remembered.
   if (!c.res.headers.has('cache-control')) {
-    c.header('Cache-Control', 'private, no-store, max-age=0');
+    c.header('Cache-Control', DEFAULT_CACHE_CONTROL);
   }
 }
 
@@ -422,6 +417,30 @@ app.get('/health', async (c) => {
     'cache-control': 'public, max-age=30',
   });
 });
+
+// Where to report a bug in this desk.
+//
+// RFC 9116 fixes the path and scopes it per host, and a researcher who finds
+// something on support.hamdam.com.au reads it from support.hamdam.com.au. The
+// site's copy at hamdam.com.au names this host in its scope section, which is
+// the correct content and was at the wrong address: probing the desk directly
+// returned a 404 and the honest conclusion to draw from a 404 is that nobody
+// is listening.
+//
+// A redirect rather than a second copy of the file. RFC 9116 section 3 expects
+// researchers to follow one, and the alternative is duplicating an `Expires`
+// date across two files that must then never drift -- the failure being that
+// the copy nobody remembers goes stale and a stale security.txt is read as an
+// abandoned one. One file, one expiry, two addresses.
+//
+// Above the country check, like /health and the MTA-STS policy and for the
+// same reason: whoever found the bug is wherever they are, and the desk's own
+// file says email is never geo-restricted. Refusing somebody the address to
+// report a vulnerability to, because of where they are, is refusing the
+// report.
+app.get('/.well-known/security.txt', (c) =>
+  c.redirect('https://hamdam.com.au/.well-known/security.txt', 301),
+);
 
 // Serve only where Hamdam is sold.
 //

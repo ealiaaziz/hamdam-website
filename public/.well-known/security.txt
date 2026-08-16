@@ -3,6 +3,7 @@ Contact: https://support.hamdam.com.au/
 Expires: 2027-08-02T00:00:00.000Z
 Preferred-Languages: en, fa
 Canonical: https://hamdam.com.au/.well-known/security.txt
+Canonical: https://support.hamdam.com.au/.well-known/security.txt
 Policy: https://hamdam.com.au/privacy/
 
 # Hamdam is a small team in Brisbane. If you have found something, write to
