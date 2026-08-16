@@ -1084,11 +1084,20 @@ The parts of this that a fourth pass could have found and did not:
 ## Header review across both hosts, 2026-08-16
 
 A read-only review of `hamdam.com.au` and `support.hamdam.com.au`, prompted by
-a request to point an automated pentest tool at them. The tool never ran: the
-open-source CLI needs Python 3.12 and the environment had 3.11, and the managed
-path needs an account nobody had created. So this was done by hand, which is
-worth saying because it changes what the result means. Nothing below was proved
-with a working exploit. Read it as a review, not as a pentest.
+a request to point an automated pentest tool at them. The tool did not run, so
+this was done by hand, which is worth saying because it changes what the result
+means: nothing below was proved with a working exploit. Read it as a review,
+not as a pentest.
+
+Why it did not run is worth recording too, because the first answer given was
+wrong. The reported reason was that the open-source CLI needs Python 3.12 and
+the environment had 3.11. `python3` was 3.11 and `pip` refused the package, and
+that was taken for the environment. It was not: 3.12 and 3.13 were both already
+installed alongside it, and the tool installs in seconds against either. A
+default on a path is not the same fact as an absence, and the check that would
+have separated them was one command. The real and only blocker is that the CLI
+drives its agents with an LLM key that nobody supplied, and the managed path
+needs an account nobody created.
 
 Everything the earlier passes closed was re-checked and holding: the
 `/fa/%61dmin` bypass is dead in every spelling tried, `/admin` and `//admin`
