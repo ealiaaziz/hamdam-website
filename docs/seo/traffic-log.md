@@ -6,10 +6,26 @@ It exists because the site spent a day being optimised against estimates. The
 forecast in `2026-08-07-measurement.md` is a set of scenarios, and scenarios are
 worth nothing unless something checks them against the meter. This is the meter.
 
-Readings are taken automatically by `.github/workflows/seo-log.yml` on the 3rd
-of each month, which runs `scripts/gsc-pull.mjs` and commits the result. The
-by-hand procedure is at the bottom of this file, for backfills and for when the
-credential lapses.
+`.github/workflows/seo-log.yml` runs `scripts/gsc-pull.mjs` and commits the
+result. It is built and tested but **paused on 2026-08-19, having never run**:
+its monthly schedule is commented out and `GSC_SERVICE_ACCOUNT_KEY` was never
+set, so it only runs on demand from the Actions tab.
+
+Paused on instruction, and the schedule was commented out rather than left live
+because a monthly job with no credential does nothing every month except email
+a failure. Both readings below were taken by hand instead, which is why the
+cadence in the table is irregular.
+
+The original argument for pausing was that nothing was moving, so a monthly
+cadence would only report the same nothing. **The 2026-08-16 reading weakened
+that argument** and it should be read before anyone decides to leave this off:
+pages drawing impressions went from 4 to 11, named queries from 1 to 16, and
+the site took its first two clicks. Something is now moving fast enough that a
+regular cadence has a case it did not have on 2026-08-08. Re-enabling is two
+uncommented lines and one secret; the workflow header says how.
+
+The by-hand procedure at the bottom of this file needs no credential and is how
+both existing readings were taken.
 
 ## Readings
 

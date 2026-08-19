@@ -1,10 +1,12 @@
-# Takes one Search Console reading a month and commits it to the traffic log.
+# Takes one Search Console reading and commits it to the traffic log.
+#
+# Currently on-demand only. See the PAUSED note below the name.
 #
 # Separate from ci.yml on purpose. That file's first rule is that it verifies
 # and never deploys; this one writes to the repository, which is a different
 # kind of job and should not be buried inside the build.
 #
-# The schedule is 00:07 UTC on the 3rd, which is 10:07 Brisbane the same day
+# The schedule, when re-enabled, is 00:07 UTC on the 3rd, 10:07 Brisbane the same day
 # (UTC+10, no daylight saving). The 3rd rather than the 1st because Search
 # Console data lags two to three days, so a run on the 1st would read an
 # incomplete final week. The 7 rather than the 0 because every scheduled job
@@ -16,11 +18,26 @@
 
 name: SEO log
 
+# PAUSED 2026-08-19, having never run. The schedule below is commented out
+# deliberately, not broken.
+#
+# Paused on instruction. Commented out rather than left live because the
+# GSC_SERVICE_ACCOUNT_KEY secret was never set, so every month it would have
+# done nothing except email a failure.
+#
+# Read docs/seo/traffic-log.md before deciding to leave this off. The case for
+# pausing was that nothing was moving; the 2026-08-16 reading showed pages
+# drawing impressions going 4 to 11, named queries 1 to 16, and the first two
+# clicks the site has ever had. That is a better argument for a cadence than
+# against one.
+#
+# To restart: uncomment the two schedule lines and set the secret, per the
+# Credentials section of the log. Until then the job runs on demand from the
+# Actions tab, which is how both existing readings were taken.
+
 on:
-  schedule:
-    - cron: '7 0 3 * *'
-  # So the first run does not have to wait for the 3rd, and so a failed month
-  # can be retried without editing the cron.
+  # schedule:
+  #   - cron: '7 0 3 * *'
   workflow_dispatch:
     inputs:
       start_date:
