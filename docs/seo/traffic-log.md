@@ -38,6 +38,7 @@ newest reading is always the last one in each section.
 | --- | --- | --- | --- | --- | --- | --- |
 | 2026-08-08 | all data to date (2026-07-03 to 2026-08-05) | 25 | 0 | 15.1 | 1 | 4 |
 | 2026-08-16 | since the last reading (2026-08-06 to 2026-08-13) | 70 | 2 | 36.8 | 16 | 11 |
+| 2026-08-20 | since the last reading (2026-08-16 to 2026-08-18, final) | 42 | 1 | 46.7 | 6 | 11 |
 <!-- readings:row -->
 
 Trailing 28 days at the first reading (2026-07-09 to 2026-08-05): 23
@@ -156,6 +157,124 @@ has almost no ranking authority to lend: two clicks, ever, and an average
 position in the thirties. The canonical link closed a real gap and cost little,
 but nobody should expect it to move the listing on its own. Next reading is the
 one that tests it.
+
+### 2026-08-20, the first reading that could show the SEO work
+
+The reading the 2026-08-16 entry said would be the test. **It does not show an
+effect, and the honest summary is that nothing detectable has changed.**
+
+**Coverage.** Final data reaches 2026-08-18. The API returned
+`firstIncompleteDate: 2026-08-19`, so the 19th is provisional and the 20th has
+nothing at all. The row above is the three final days only. Including the
+provisional 19th, the same window is 52 impressions, 1 click, average position
+47.3. Do not quote that second set as settled.
+
+**Daily.** 16th 13 impressions at 53.8, 17th 11 at 46.5 with the one click,
+18th 18 at 41.7, and provisionally 19th 10 at 49.9.
+
+**The rate did not move.** That is the finding. 42 impressions over three final
+days is 14.0/day, against 13.3/day across 9 to 15 August. Within noise on these
+numbers. The section headings went live on 16 August at about 13:00 UTC and the
+hero screenshot on the 17th, so there are two full final days after the change,
+and they look like the two before it. Average position went from 36.8 to 46.7,
+which is the wrong direction, though see below on why that number is weak.
+
+This is not yet evidence the changes failed. Headings do not create pages, they
+modify pages already indexed, so the mechanism is re-crawl and re-evaluation
+rather than first discovery. That is slower and quieter than the two-day
+publish-to-surface lag the poet cluster showed on 7 to 9 August, and it is the
+wrong benchmark to hold this against. What can be said is that after two days
+there is no signal, and that the next reading needs a longer window to say
+anything at all.
+
+**Cumulative to 2026-08-18: 160 impressions, 3 clicks, average position 37.5.**
+
+**`/fal-e-hafez/`, and why it is still not a win.** It sits at position 9,
+against 27.1 in the previous reading. That looks like the result the headings
+were for, and it should not be read that way yet, for a reason worth writing
+down: **its impressions fell while its position improved**, 14 down to 4 (5 with
+the provisional day). A page that ranks better on far fewer impressions is not
+obviously winning. It may be matching a narrower and better-targeted set of
+queries, or the earlier 14 may have been deep-position matches that have simply
+gone. Four impressions cannot separate those. Position 9 has now held across two
+consecutive windows, which is more than noise usually manages, so this is the
+one thing here worth watching -- but the test is whether impressions recover to
+the earlier volume while the position holds, and that has not happened.
+
+**Pages.** `/poets/hafez/` is now the whole story: 14 impressions, position
+59.5, more than a third of the window. Deep, and on the least winnable term.
+
+| URL | Impressions | Avg position |
+| --- | --- | --- |
+| `/poets/hafez/` | 14 | 59.5 |
+| `/poets/rumi/` | 7 | 60.0 |
+| `/fal-e-hafez/` | 4 | 9.0 |
+| `/privacy/` | 4 | 5.0 |
+| `/fa/privacy/` | 3 | 8.3 (the one click) |
+| `/poets/khayyam/` | 3 | 61.3 |
+| `/` | 2 | 48.0 |
+| `/poets/parvin-etesami/` | 2 | 53.0 |
+| `/poets/saadi/` | 1 | 99.0 |
+| `/moments/yalda/` | 1 | 6.0 |
+| `/fa/` | 1 | 136.0 |
+
+**Two things in that table need naming.**
+
+First, **the legal pages are back**, and the previous entry's explanation for
+them no longer holds. `/privacy/` at position 5 and `/fa/privacy/` at 8.3 are
+the two best-ranking pages on the site, and the only click in this window came
+from one of them. The 2026-08-16 note called legal pages surfacing "an artefact
+of having nothing else indexed". Eleven pages are indexed now and the legal
+pages rank better than any of them, so that explanation was wrong, or at least
+incomplete. Worth understanding rather than dismissing twice.
+
+Second, **`/fa/` appeared at position 136.** The Farsi homepage, on roughly page
+fourteen of results. One impression, so it is not a measurement of anything, but
+it is the first time the Farsi homepage has surfaced at all and 136 is a strange
+place to do it.
+
+**Queries.** Six are named, against sixteen last time, but the two are not
+comparable: this window is three days against eight, and only 10 of the 42
+impressions belong to named queries at all. The rest are withheld, which is the
+trap the 2026-08-08 entry recorded. `hafez` is still the biggest single term at
+5 impressions, position 63.8. New this window: `hafiz ghazal` at 57 and
+`hafez famous poems` at 77, both the same deep long-tail as before.
+
+`ganjoor rumi` at 6 and `ganjoor khayyam` at 10 are steady across every window
+now, and still at zero clicks lifetime. That combination is the signature of
+navigational intent: someone typing `ganjoor rumi` has named the site they want,
+and it is not this one. Steady is the expected behaviour, not a promising one.
+Recorded so nobody reads these positions as an opening.
+
+**Average position, again.** 36.8 to 46.7 reads as a regression and mostly is
+not one, for the same reason the last entry gave: the site keeps surfacing for
+more and harder queries, and each deep one drags an impression-weighted mean
+down. `/poets/saadi/` at 99 and `/fa/` at 136 alone account for much of the
+move. The number to watch is not the mean but whether any page holds a
+single-digit position on a query with real intent behind it.
+
+**Countries.** Iran 4 (3 mobile, carrying the click, and 1 tablet), United
+States 6, Vietnam 4, Austria 4, Australia 3, Mexico 3, then a long tail through
+India, Turkey, Morocco, Algeria and others. Vietnam and Mexico are new and do
+not fit the diaspora shape the first two readings had. On 42 impressions that is
+as likely to be scraping or incidental as it is to be anything, and it is noted
+rather than interpreted.
+
+**What this reading cannot see, stated plainly.** Search Console covers
+`hamdam.com.au` and nothing else. The iOS app 1.2 was released on 2026-08-17 at
+10:03 UTC, and this reading says nothing whatsoever about it: not downloads, not
+App Store impressions, not product page views, not conversion. Those live in App
+Store Connect, which is not reachable from this repository. Any question of the
+form "how are we doing since 1.2" cannot be answered from this file.
+
+**A method correction that cost something.** On 2026-08-17 the Composio
+`time_info` field reported the date as two days earlier than it was, and a
+session took it at face value. That produced a report describing two-day-old
+figures as "today, incomplete" and a release from two days earlier as "1.7 hours
+ago". The date in this heading was verified against `date -u`, Apple's HTTP
+`date:` header and Cloudflare's, all three agreeing on 2026-08-20 before
+anything was written. Verify the date from the system clock, never from a tool's
+own report of it.
 
 <!-- readings:notes -->
 
