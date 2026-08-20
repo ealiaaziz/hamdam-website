@@ -367,25 +367,34 @@ def build(base, verse_id, mood_key, audio, out, pages_dir=None, report=True):
         for i, p in enumerate(pages):
             p.save(os.path.join(pages_dir, f'page-{i}.png'))
 
+    # Frames go to ffmpeg's stdin as raw RGB. Writing 450 full-resolution PNGs
+    # to disk first was the slow step - slow enough that the render outran the
+    # remote sandbox's execution limit - and none of those files were ever read
+    # by anything else.
     tmp = tempfile.mkdtemp(prefix='hamdam-short-')
+    silent = os.path.join(tmp, 'silent.mp4')
+    enc = subprocess.Popen(
+        ['ffmpeg', '-y', '-loglevel', 'error', '-f', 'rawvideo', '-pix_fmt', 'rgb24',
+         '-s', '1080x1920', '-framerate', str(FPS), '-i', 'pipe:0',
+         '-c:v', 'libx264', '-profile:v', 'high', '-pix_fmt', 'yuv420p',
+         '-crf', '17', '-r', str(FPS), silent], stdin=subprocess.PIPE)
+
     n = 0
     for i, p in enumerate(pages):
         total = int(round(HOLDS[i] * FPS))
         dis = 0 if i == 0 else int(round(DISSOLVE * FPS))
+        held = p.tobytes()
         for k in range(total):
             if k < dis:
-                fr = Image.blend(pages[i - 1], p, (k + 1) / (dis + 1))
+                enc.stdin.write(Image.blend(pages[i - 1], p, (k + 1) / (dis + 1)).tobytes())
             else:
-                fr = p
-            fr.save(os.path.join(tmp, f'f{n:05d}.png'))
+                enc.stdin.write(held)
             n += 1
+    enc.stdin.close()
+    if enc.wait() != 0:
+        raise SystemExit('ffmpeg failed to encode the frame stream')
 
     dur = n / FPS
-    silent = os.path.join(tmp, 'silent.mp4')
-    subprocess.run(['ffmpeg', '-y', '-loglevel', 'error', '-framerate', str(FPS),
-                    '-i', os.path.join(tmp, 'f%05d.png'),
-                    '-c:v', 'libx264', '-profile:v', 'high', '-pix_fmt', 'yuv420p',
-                    '-crf', '17', '-r', str(FPS), silent], check=True)
 
     tgt = json.load(open(os.path.join(base, 'audio', 'manifest.json'), encoding='utf-8'))
     subprocess.run(['ffmpeg', '-y', '-loglevel', 'error',
