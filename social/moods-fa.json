@@ -1,0 +1,101 @@
+{
+  "_status": "Seven mood lines, written and reviewed by Ealia (Persian speaker) on 20 August 2026. These are Hamdam's own copy, not verse text; they are NOT sourced from verse-queue.json and must never be treated as poetry. Do not regenerate, translate or paraphrase these lines. Any change requires a Persian speaker's review. Page 0 of the YouTube Short reads the `line` field byte-exact.",
+  "_register": "Second person informal (تو). A statement about the viewer, never an instruction. No imperative verbs. No wellness vocabulary. Persian-form ی and ک (the reflections' convention), not the verse bank's Arabic forms.",
+  "moods": {
+    "unsettled": {
+      "line": "امروز هیچ‌چیز سرِ جایش نیست.",
+      "themes": [
+        "philosophical",
+        "impermanence",
+        "mortality",
+        "doubt",
+        "mystery",
+        "wisdom"
+      ]
+    },
+    "light": {
+      "line": "حالت خوش است.",
+      "themes": [
+        "joy",
+        "gratitude",
+        "grace",
+        "beauty",
+        "spring",
+        "celebration",
+        "contentment"
+      ]
+    },
+    "missing": {
+      "line": "جای کسی خالی است.",
+      "themes": [
+        "longing",
+        "the-beloved",
+        "exile",
+        "separation",
+        "nostalgia",
+        "yearning",
+        "absence"
+      ]
+    },
+    "slow": {
+      "line": "دلت می‌خواهد همه‌چیز کمی آهسته‌تر شود.",
+      "themes": [
+        "presence",
+        "present-moment",
+        "carpe-diem",
+        "freedom",
+        "liberation",
+        "simplicity"
+      ]
+    },
+    "others": {
+      "line": "فکرت پیش کسی دیگر است.",
+      "themes": [
+        "compassion",
+        "generosity",
+        "humility",
+        "dignity",
+        "kindness",
+        "justice",
+        "unity"
+      ]
+    },
+    "restless": {
+      "line": "چشم به راه هستی.",
+      "themes": [
+        "patience",
+        "hope",
+        "waiting",
+        "uncertainty",
+        "perseverance",
+        "endurance"
+      ]
+    },
+    "worn": {
+      "line": "خسته‌ای، بی‌آنکه بدانی از چه.",
+      "themes": [
+        "acceptance",
+        "surrender",
+        "weariness",
+        "consolation",
+        "comfort",
+        "solace",
+        "resilience"
+      ]
+    }
+  },
+  "_rotation": [
+    "unsettled",
+    "light",
+    "missing",
+    "slow",
+    "others",
+    "restless",
+    "worn"
+  ],
+  "_excluded_themes": [
+    "wine",
+    "intoxication",
+    "tavern"
+  ]
+}
