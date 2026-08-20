@@ -41,7 +41,7 @@ Usage
         --out /tmp/short.mp4 \
         --pages-dir /tmp/pages   # optional, writes page-0..4.png
 """
-import argparse, json, math, os, random, subprocess, sys, tempfile
+import argparse, gc, json, math, os, subprocess, tempfile
 from PIL import Image, ImageDraw, ImageFont, ImageFilter, features
 
 assert features.check('raqm'), 'raqm missing - Persian would render unshaped. ABORT'
@@ -121,13 +121,24 @@ def vgrad(stops):
     return row.resize((W, H))
 
 
+GLOW_DIV = 6   # the glow mask is built and blurred small, then scaled up
+
+
 def glow(img, cx, cy, rad, colour):
-    g = Image.new('L', (W, H), 0)
+    """A wide soft mask. Built at 1/GLOW_DIV and scaled up: a Gaussian blur
+    with a 200px radius over a 2160x3840 mask peaked around 800MB, and the
+    sandbox this runs in kills a process at roughly 250MB. Scaled up, the
+    result is visually identical - the mask has no detail to lose."""
+    w, h = W // GLOW_DIV, H // GLOW_DIV
+    g = Image.new('L', (w, h), 0)
     gd = ImageDraw.Draw(g)
+    cx, cy, rad = cx / GLOW_DIV, cy / GLOW_DIV, rad / GLOW_DIV
     for m, a in ((5.4, 16), (3.8, 30), (2.6, 48), (1.7, 72), (1.1, 96)):
         gd.ellipse([cx - rad * m, cy - rad * m, cx + rad * m, cy + rad * m], fill=a)
-    g = g.filter(ImageFilter.GaussianBlur(int(rad * 1.2)))
-    return Image.composite(Image.new('RGB', (W, H), colour), img, g)
+    g = g.filter(ImageFilter.GaussianBlur(rad * 1.2)).resize((W, H), Image.BILINEAR)
+    out = Image.composite(Image.new('RGB', (W, H), colour), img, g)
+    del g
+    return out
 
 
 def shamseh(draw, cx, cy, ro, ri, col, width, points=8):
@@ -140,12 +151,20 @@ def shamseh(draw, cx, cy, ro, ri, col, width, points=8):
 
 
 def grain(img, strength=7):
-    """Unseeded film grain. A re-render is therefore not byte-identical to the
-    file that ships, which is why the visual gate reads the shipping MP4's own
-    frames and never a second render."""
-    n = Image.effect_noise((W // 4, H // 4), strength).resize((W, H)).convert('L')
-    return Image.blend(img, Image.composite(
-        Image.new('RGB', (W, H), CREAM), img, n), 0.045)
+    """Unseeded film grain, applied at delivery resolution after the page has
+    been downscaled - grain added at 2x is averaged back out by the downscale,
+    and the 2x buffers it needed were the largest single cost in the render.
+
+    Unseeded is deliberate: a re-render is not byte-identical to the file that
+    ships, which is why the visual gate reads the shipping MP4's own frames
+    and never a second render."""
+    w, h = img.size
+    n = Image.effect_noise((max(1, w // 4), max(1, h // 4)), strength)
+    n = n.resize((w, h)).convert('L')
+    out = Image.blend(img, Image.composite(
+        Image.new('RGB', (w, h), CREAM), img, n), 0.045)
+    del n
+    return out
 
 
 def field(plain=False):
@@ -257,7 +276,7 @@ def page_mood(line):
     f, px = fit_one_line(d, line, int(W * 0.82), 108 * S)
     fa(d, (W // 2, int(H * 0.400)), line, f, INK)
     footer(img, d)
-    return grain(img), {'page': 0, 'fa_px': px // S, 'lines': 1}
+    return img, {'page': 0, 'fa_px': px // S, 'lines': 1}
 
 
 def page_persian(persian):
@@ -271,7 +290,7 @@ def page_persian(persian):
     for i, ln in enumerate(lines):
         fa(d, (W // 2, y0 + i * lh), ln, f, INK)
     footer(img, d)
-    return grain(img), {'page': 1, 'fa_px': px // S, 'lines': len(lines)}
+    return img, {'page': 1, 'fa_px': px // S, 'lines': len(lines)}
 
 
 def page_english(english, poet_line):
@@ -288,7 +307,7 @@ def page_english(english, poet_line):
            fill=lerp(INK, PEACH, 0.55), width=max(1, S))
     en(d, (W // 2, ybase + lh * 1.85), poet_line, en_font_semi(34 * S), INK_SOFT)
     footer(img, d)
-    return grain(img), {'page': 2, 'en_px': px // S, 'lines': len(lines)}
+    return img, {'page': 2, 'en_px': px // S, 'lines': len(lines)}
 
 
 def page_question(question_fa):
@@ -298,7 +317,7 @@ def page_question(question_fa):
     f, px = fit_fa_block(d, lines, int(W * 0.80), 78 * S)
     fa(d, (W // 2, int(H * 0.400)), question_fa, f, INK)
     footer(img, d)
-    return grain(img), {'page': 3, 'fa_px': px // S, 'lines': 1, 'plain': True}
+    return img, {'page': 3, 'fa_px': px // S, 'lines': 1, 'plain': True}
 
 
 def page_cta():
@@ -310,7 +329,7 @@ def page_cta():
     en(d, (W // 2, int(H * 0.520)), 'hamdam.com.au', en_font(34 * S),
        lerp(INK, PEACH, 0.30))
     footer(img, d)
-    return grain(img), {'page': 4, 'lines': 3}
+    return img, {'page': 4, 'lines': 3}
 
 
 # ---------------------------------------------------------------- checks
@@ -353,51 +372,75 @@ def build(base, verse_id, mood_key, audio, out, pages_dir=None, report=True):
 
     poet_line = POETS[entry['poetEn']]
 
-    pages, meta = [], []
-    for img, m in (page_mood(line), page_persian(persian),
-                   page_english(english, poet_line), page_question(question_fa),
-                   page_cta()):
-        img = img.resize((1080, 1920), Image.LANCZOS)
-        m['indigo_fraction'] = round(indigo_fraction(img), 4)
-        pages.append(img)
-        meta.append(m)
-
-    if pages_dir:
-        os.makedirs(pages_dir, exist_ok=True)
-        for i, p in enumerate(pages):
-            p.save(os.path.join(pages_dir, f'page-{i}.png'))
-
-    # Frames go to ffmpeg's stdin as raw RGB. Writing 450 full-resolution PNGs
-    # to disk first was the slow step - slow enough that the render outran the
-    # remote sandbox's execution limit - and none of those files were ever read
-    # by anything else.
+    # One page is built, downscaled, written and freed before the next begins.
+    # The remote sandbox this runs in caps a process at roughly 250MB and kills
+    # it without a Python traceback; holding five supersampled pages at once,
+    # or streaming 2.8GB of raw frames through a pipe, both crossed that line.
+    # Peak here is one page under construction.
     tmp = tempfile.mkdtemp(prefix='hamdam-short-')
+    meta, page_paths = [], []
+    for i, make in enumerate((lambda: page_mood(line),
+                              lambda: page_persian(persian),
+                              lambda: page_english(english, poet_line),
+                              lambda: page_question(question_fa),
+                              page_cta)):
+        img, m = make()
+        img = img.resize((1080, 1920), Image.LANCZOS)
+        img = grain(img)
+        m['indigo_fraction'] = round(indigo_fraction(img), 4)
+        p = os.path.join(tmp, f'page-{i}.png')
+        img.save(p)
+        if pages_dir:
+            os.makedirs(pages_dir, exist_ok=True)
+            img.save(os.path.join(pages_dir, f'page-{i}.png'))
+        page_paths.append(p)
+        meta.append(m)
+        del img
+        gc.collect()
+
+    # Frames stream to x264 as raw RGB, read back from the page files two at a
+    # time. Everything drawn above has already been freed, so this stage costs
+    # about two pages of memory. The alternatives both broke the sandbox:
+    # ffmpeg's xfade over five looped stills peaked near 800MB, and building
+    # the timeline while the pages were still in memory peaked over 250MB.
     silent = os.path.join(tmp, 'silent.mp4')
     enc = subprocess.Popen(
         ['ffmpeg', '-y', '-loglevel', 'error', '-f', 'rawvideo', '-pix_fmt', 'rgb24',
          '-s', '1080x1920', '-framerate', str(FPS), '-i', 'pipe:0',
          '-c:v', 'libx264', '-profile:v', 'high', '-pix_fmt', 'yuv420p',
-         '-crf', '17', '-r', str(FPS), silent], stdin=subprocess.PIPE)
+         '-preset', 'veryfast', '-tune', 'stillimage', '-crf', '17',
+         # x264's defaults hold a 40-frame lookahead of 1080x1920 planes plus a
+         # buffer set per thread - measured at 243MB here, against a sandbox
+         # that kills a process near 250MB. Lookahead, reference frames and
+         # B-frames buy nothing across five stills and one dissolve, so they go;
+         # this measures at 158MB and CRF still governs quality.
+         '-threads', '1', '-thread_queue_size', '2',
+         '-x264-params', 'rc-lookahead=4:sync-lookahead=0:ref=1:bframes=0',
+         '-r', str(FPS), silent], stdin=subprocess.PIPE)
 
-    n = 0
-    for i, p in enumerate(pages):
+    n, prev = 0, None
+    for i, path in enumerate(page_paths):
+        cur = Image.open(path).convert('RGB')
+        held = cur.tobytes()
         total = int(round(HOLDS[i] * FPS))
         dis = 0 if i == 0 else int(round(DISSOLVE * FPS))
-        held = p.tobytes()
         for k in range(total):
             if k < dis:
-                enc.stdin.write(Image.blend(pages[i - 1], p, (k + 1) / (dis + 1)).tobytes())
+                enc.stdin.write(Image.blend(prev, cur, (k + 1) / (dis + 1)).tobytes())
             else:
                 enc.stdin.write(held)
             n += 1
+        del prev, held
+        prev = cur
+        gc.collect()
+    del prev
     enc.stdin.close()
     if enc.wait() != 0:
         raise SystemExit('ffmpeg failed to encode the frame stream')
 
     dur = n / FPS
-
     tgt = json.load(open(os.path.join(base, 'audio', 'manifest.json'), encoding='utf-8'))
-    subprocess.run(['ffmpeg', '-y', '-loglevel', 'error',
+    subprocess.run(['ffmpeg', '-y', '-loglevel', 'error', '-threads', '1',
                     '-i', silent, '-i', os.path.join(base, audio),
                     '-filter_complex',
                     f'[1:a]atrim=0:{dur},afade=t=in:st=0:d=0.6,'
