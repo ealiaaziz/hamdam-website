@@ -1,26 +1,20 @@
 #!/usr/bin/env python3
-"""Hamdam reel frame renderer, v7 - six pages, argument early, persistent CTA.
+"""Hamdam reel frame renderer, v8 - six pages, argument early, CTA with a reason.
 
     python3 hamdam_reel_render.py <conceptId> <stage 0..5> [outDir]
 
-  0  scene only
+  0  scene only  (NOT USED - the task renders 1..5; see Step 5 of the task)
   1  headline
   2  the philological point - insightFa then insightEn
   3  Persian verse, alone
   4  English translation, alone, same type size, poet line beneath
-  5  the lesson, who to send it to, and the product line
+  5  the lesson, who to send it to, and the posting schedule
 
-WHY THIS SHAPE. Instagram's own insights say attention ends early: the reels
-average a 4 second watch against a 30 second runtime, and slides 4-5 of every
-carousel this account published received zero views. Two independent formats,
-the same answer.
-
+WHY THIS SHAPE. Attention ends early: average watch is 5.6 s on a 14 s reel,
+and slides 4-5 of every carousel this account published received zero views.
 So the argument - the one page no other account can produce - is second,
-landing around 3 seconds. And the follow ask is NOT on the last page; it sits
-in the footer strip that appears on every page, visible from second one. A CTA
-on page six is a CTA for the people who least need it.
-
-Target runtime 15 seconds. Page starts: 0.0, 0.8, 3.0, 6.5, 10.0, 12.5.
+landing at 2 s. And the follow ask is NOT on the last page; it sits in the
+footer strip on every page, with the REASON attached. See CTA.md.
 
 Pages 3 and 4 share one computed type size so the two languages carry equal
 weight. Every page shares one frame and one layout, so consecutive pages
@@ -265,7 +259,7 @@ def common_size():
 BLOCK_MID = 0.660 if FOUR else 0.700
 
 if STAGE == 2:
-    # The philological point. Second page, ~3 seconds in, because that is
+    # The philological point. Second page, ~2 seconds in, because that is
     # the only part of the runtime most viewers actually see.
     inf, ine = C.get('insightFa',''), C.get('insightEn','')
     szf = 34
@@ -324,37 +318,36 @@ if STAGE == 5:
     rtl(d, (cx, int(IH*0.655)), sf, f_sf, hx('DCD0B8'))
     for i, l in enumerate(wrap(d, se, f_se, IW*0.86)[:1]):
         d.text((cx, int(IH*0.700)), l, font=f_se, fill=hx('CFC3AA'), anchor='mm')
-    # The follow ask now lives in the persistent strip below, visible from
-    # page one. This page carries the product line instead.
-    rtl(d, (cx, int(IH*0.795)), '\u0647\u0631 \u0631\u0648\u0632 \u06cc\u06a9 \u0628\u06cc\u062a\u060c \u06cc\u06a9 \u0644\u062d\u0638\u0647 \u0645\u06a9\u062b',
+    # The ask itself is in the persistent strip. This page carries the
+    # schedule - the concrete reason to expect something tomorrow. Never
+    # name the next poet: rotation and the Rumi tripwire can change it.
+    rtl(d, (cx, int(IH*0.790)), '\u062f\u0648\u0634\u0646\u0628\u0647 \u00b7 \u0686\u0647\u0627\u0631\u0634\u0646\u0628\u0647 \u00b7 \u062c\u0645\u0639\u0647',
         ImageFont.truetype(FZ+'Vazirmatn-SemiBold.ttf', S*30), hx('FFF6E4'))
-    d.text((cx, int(IH*0.845)), 'A verse a day, in Persian. Free on iPhone.',
-           font=ImageFont.truetype(SS+'SourceSerif4-Light.otf', S*24),
+    d.text((cx, int(IH*0.840)), 'A new verse every Monday, Wednesday, Friday',
+           font=ImageFont.truetype(SS+'SourceSerif4-Light.otf', S*23),
            fill=hx('EFE4CC'), anchor='mm')
 
 card_w = IW + FB*2
-card_h = IH + FB*2 + int(H*0.052)
+card_h = IH + FB*2 + int(H*0.070)
 card = Image.new('RGB', (card_w, card_h), FRAME_BR)
 card.paste(vgrad(card_w, card_h, [(0, hx('4A3A28')), (1, hx('2C2118'))]), (0, 0))
 card.paste(inner, (FB, FB))
 cd = ImageDraw.Draw(card)
 cd.rectangle([FB-S, FB-S, FB+IW+S-1, FB+IH+S-1], outline=hx('1A140E'), width=S)
 
-# Persistent follow strip, present on every page. Instagram's insights show
-# slides 4-5 of every carousel got zero views and the reels average a 4 second
-# watch, so a CTA that lives only on the last page reaches almost nobody.
-f_ff = ImageFont.truetype(FZ+'Vazirmatn-Medium.ttf', S*24)
-f_fl = ImageFont.truetype(SS+'SourceSerif4-Bold.otf', S*23)
-_fa, _dot, _en = '\u062f\u0646\u0628\u0627\u0644 \u06a9\u0646\u06cc\u062f', '  \u00b7  ', '@hamdam_au'
-_wfa = cd.textlength(_fa, font=f_ff, direction='rtl', language='fa')
-_wd  = cd.textlength(_dot, font=f_fl)
-_wen = cd.textlength(_en, font=f_fl)
-_x   = card_w//2 - (_wfa + _wd + _wen)/2
-_fy  = FB + IH + int(H*0.028)
-cd.text((_x, _fy), _fa, font=f_ff, fill=hx('E8DCC2'), anchor='lm',
+# Persistent follow strip, present on every page. Average watch is 5.6s of a
+# 14s reel, so page 5 is never reached by most viewers - the ask AND the
+# reason to act on it both have to live here, visible from second one.
+# Instagram already shows the handle above the reel, so repeating it wastes
+# the space that the reason needs.
+f_ff = ImageFont.truetype(FZ+'Vazirmatn-Medium.ttf', S*23)
+_line = '\u062f\u0646\u0628\u0627\u0644 \u06a9\u0646\u06cc\u062f  \u00b7  \u0647\u0631 \u0631\u0648\u0632 \u06cc\u06a9 \u0628\u06cc\u062a'
+_fy = FB + IH + int(H*0.024)
+cd.text((card_w//2, _fy), _line, font=f_ff, fill=hx('F2E8D2'), anchor='mm',
         direction='rtl', language='fa', features=['kern', 'liga'])
-cd.text((_x + _wfa, _fy), _dot, font=f_fl, fill=hx('9C8C6E'), anchor='lm')
-cd.text((_x + _wfa + _wd, _fy), _en, font=f_fl, fill=hx('F2E8D2'), anchor='lm')
+cd.text((card_w//2, _fy + int(H*0.026)), 'Follow for a verse a day',
+        font=ImageFont.truetype(SS+'SourceSerif4-Light.otf', S*20),
+        fill=hx('C9BCA2'), anchor='mm')
 
 shadow = Image.new('L', (W, H), 0)
 ImageDraw.Draw(shadow).rectangle([IX-FB, IY-FB, IX-FB+card_w, IY-FB+card_h], fill=150)
