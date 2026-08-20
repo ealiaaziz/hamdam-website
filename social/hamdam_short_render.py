@@ -398,45 +398,51 @@ def build(base, verse_id, mood_key, audio, out, pages_dir=None, report=True):
         del img
         gc.collect()
 
-    # Frames stream to x264 as raw RGB, read back from the page files two at a
-    # time. Everything drawn above has already been freed, so this stage costs
-    # about two pages of memory. The alternatives both broke the sandbox:
-    # ffmpeg's xfade over five looped stills peaked near 800MB, and building
-    # the timeline while the pages were still in memory peaked over 250MB.
+    # The timeline is 450 frames drawn from 37 distinct images: five pages and
+    # eight blended frames per dissolve. Every frame is a symlink to one of
+    # those 37, and ffmpeg reads the sequence as ordinary files.
+    #
+    # Two earlier shapes both died on the sandbox. Piping raw RGB to ffmpeg's
+    # stdin cost 268MB on its side alone - the rawvideo input path, not the
+    # encoder - against a ceiling near 250MB, and x264 reading the same frames
+    # as files measures 149MB. ffmpeg's xfade over five looped stills peaked
+    # near 800MB. Symlinks keep the frame-exact timing of the raw pipe at the
+    # memory cost of the file path, and write 37 images instead of 450.
+    fdir = os.path.join(tmp, 'frames')
+    os.makedirs(fdir)
+    n, prev_path = 0, None
+    for i, path in enumerate(page_paths):
+        total = int(round(HOLDS[i] * FPS))
+        dis = 0 if i == 0 else int(round(DISSOLVE * FPS))
+        if dis:
+            a = Image.open(prev_path).convert('RGB')
+            b = Image.open(path).convert('RGB')
+            for k in range(dis):
+                d = os.path.join(tmp, f'dis-{i}-{k:02d}.png')
+                Image.blend(a, b, (k + 1) / (dis + 1)).save(d)
+                os.symlink(d, os.path.join(fdir, f'f{n:05d}.png'))
+                n += 1
+            del a, b
+            gc.collect()
+        for k in range(total - dis):
+            os.symlink(path, os.path.join(fdir, f'f{n:05d}.png'))
+            n += 1
+        prev_path = path
+
     silent = os.path.join(tmp, 'silent.mp4')
-    enc = subprocess.Popen(
-        ['ffmpeg', '-y', '-loglevel', 'error', '-f', 'rawvideo', '-pix_fmt', 'rgb24',
-         '-s', '1080x1920', '-framerate', str(FPS), '-i', 'pipe:0',
+    subprocess.run(
+        ['ffmpeg', '-y', '-loglevel', 'error', '-framerate', str(FPS),
+         '-i', os.path.join(fdir, 'f%05d.png'),
          '-c:v', 'libx264', '-profile:v', 'high', '-pix_fmt', 'yuv420p',
          '-preset', 'veryfast', '-tune', 'stillimage', '-crf', '17',
          # x264's defaults hold a 40-frame lookahead of 1080x1920 planes plus a
-         # buffer set per thread - measured at 243MB here, against a sandbox
-         # that kills a process near 250MB. Lookahead, reference frames and
-         # B-frames buy nothing across five stills and one dissolve, so they go;
-         # this measures at 158MB and CRF still governs quality.
-         '-threads', '1', '-thread_queue_size', '2',
+         # buffer set per thread - 301MB measured on the sandbox, which kills at
+         # roughly 250MB. Lookahead, reference frames and B-frames buy nothing
+         # across five stills and four dissolves. This measures 149MB there and
+         # CRF still governs quality.
+         '-threads', '1', '-filter_threads', '1',
          '-x264-params', 'rc-lookahead=4:sync-lookahead=0:ref=1:bframes=0',
-         '-r', str(FPS), silent], stdin=subprocess.PIPE)
-
-    n, prev = 0, None
-    for i, path in enumerate(page_paths):
-        cur = Image.open(path).convert('RGB')
-        held = cur.tobytes()
-        total = int(round(HOLDS[i] * FPS))
-        dis = 0 if i == 0 else int(round(DISSOLVE * FPS))
-        for k in range(total):
-            if k < dis:
-                enc.stdin.write(Image.blend(prev, cur, (k + 1) / (dis + 1)).tobytes())
-            else:
-                enc.stdin.write(held)
-            n += 1
-        del prev, held
-        prev = cur
-        gc.collect()
-    del prev
-    enc.stdin.close()
-    if enc.wait() != 0:
-        raise SystemExit('ffmpeg failed to encode the frame stream')
+         '-r', str(FPS), silent], check=True)
 
     dur = n / FPS
     tgt = json.load(open(os.path.join(base, 'audio', 'manifest.json'), encoding='utf-8'))
