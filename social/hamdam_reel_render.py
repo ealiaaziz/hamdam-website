@@ -1,24 +1,28 @@
 #!/usr/bin/env python3
-"""Hamdam reel frame renderer, v8 - six pages, argument early, CTA with a reason.
+"""Hamdam reel frame renderer, v9 - recognition first, argument second.
 
     python3 hamdam_reel_render.py <conceptId> <stage 0..5> [outDir]
 
-  0  scene only  (NOT USED - the task renders 1..5; see Step 5 of the task)
+  0  scene only  (NOT USED - the task renders 1..5)
   1  headline
-  2  the philological point - insightFa then insightEn
-  3  Persian verse, alone
-  4  English translation, alone, same type size, poet line beneath
-  5  the lesson, who to send it to, and the posting schedule
+  2  the lesson, then the send or reflect prompt
+  3  the philological point - insightFa then insightEn
+  4  Persian verse, alone
+  5  English translation, same type size, poet line beneath
 
-WHY THIS SHAPE. Attention ends early: average watch is 5.6 s on a 14 s reel,
-and slides 4-5 of every carousel this account published received zero views.
-So the argument - the one page no other account can produce - is second,
-landing at 2 s. And the follow ask is NOT on the last page; it sits in the
-footer strip on every page, with the REASON attached. See CTA.md.
+WHY THIS ORDER. Average watch is 5.6 s on a 14 s reel, so page 2 is the only
+page most viewers reach after the headline. What gets forwarded is a line
+someone RECOGNISES, not a line that informs them - so the lesson and the send
+prompt go there, and the argument moves to page 3 where it rewards whoever
+stays and still does the credibility work.
 
-Pages 3 and 4 share one computed type size so the two languages carry equal
-weight. Every page shares one frame and one layout, so consecutive pages
-cross-dissolve without the image seeming to move.
+See _prompt_principles in reel-concepts.json before editing any prompt copy.
+The short version: name the relationship, never the recipient's flaw. A
+prompt that diagnoses the recipient is an insult wearing a poem and nobody
+forwards it.
+
+The follow ask sits in the footer strip on every page, with the reason
+attached. See CTA.md.
 
 If HAMDAM_BG_DIR contains bg-<mood>.jpg for the concept's mood, that photo is
 used: blurred and dimmed as the full-bleed exterior, sharp inside the framed
@@ -231,7 +235,7 @@ cx = IW//2
 HEAD_Y = 0.470 if FOUR else 0.520
 POET_Y = 0.950
 
-if STAGE == 1 or 3 <= STAGE <= 4:
+if STAGE == 1 or 4 <= STAGE <= 5:
     hl = C['headline']
     hsz = 26 if FOUR else 30
     while hsz > 15:
@@ -259,8 +263,36 @@ def common_size():
 BLOCK_MID = 0.660 if FOUR else 0.700
 
 if STAGE == 2:
-    # The philological point. Second page, ~2 seconds in, because that is
-    # the only part of the runtime most viewers actually see.
+    # Recognition, not scholarship. Average watch is 5.6s of a 14s reel, so
+    # this is the only page most viewers reach after the headline - and a
+    # line someone recognises is what gets forwarded. See _prompt_principles
+    # in reel-concepts.json before editing any of this copy.
+    lf, le = C.get('lessonFa',''), C.get('lessonEn','')
+    sf, se = C.get('sendFa',''),   C.get('sendEn','')
+    szl = 34
+    while szl > 20:
+        f_lf = ImageFont.truetype(FZ+'Vazirmatn-Medium.ttf', S*szl)
+        if len(wrap_fa(d, lf, f_lf, IW*0.86)) <= 2: break
+        szl -= 2
+    lf_lines = wrap_fa(d, lf, f_lf, IW*0.86)[:2]
+    for i, l in enumerate(lf_lines):
+        rtl(d, (cx, int(IH*(0.470 + i*0.050))), l, f_lf, hx('FBF6EA'))
+    f_le = ImageFont.truetype(SS+'SourceSerif4-It.otf', S*26)
+    ey = 0.470 + len(lf_lines)*0.050 + 0.030
+    for i, l in enumerate(wrap(d, le, f_le, IW*0.86)[:2]):
+        d.text((cx, int(IH*(ey + i*0.038))), l, font=f_le, fill=hx('F0E8D4'), anchor='mm')
+    ry = ey + 0.075
+    d.line([cx-IW*0.07, int(IH*ry), cx+IW*0.07, int(IH*ry)], fill=hx('9C8C6E'), width=S)
+    f_sf = ImageFont.truetype(FZ+'Vazirmatn-Regular.ttf', S*26)
+    f_se = ImageFont.truetype(SS+'SourceSerif4-Light.otf', S*23)
+    sy = ry + 0.055
+    for i, l in enumerate(wrap_fa(d, sf, f_sf, IW*0.86)[:2]):
+        rtl(d, (cx, int(IH*(sy + i*0.042))), l, f_sf, hx('EFE4CC'))
+    for i, l in enumerate(wrap(d, se, f_se, IW*0.86)[:2]):
+        d.text((cx, int(IH*(sy + 0.052 + i*0.036))), l, font=f_se, fill=hx('CFC3AA'), anchor='mm')
+
+if STAGE == 3:
+    # The philological point - the page no other account can produce.
     inf, ine = C.get('insightFa',''), C.get('insightEn','')
     szf = 34
     while szf > 20:
@@ -283,14 +315,14 @@ if STAGE == 2:
     for i, l in enumerate(en_lines):
         d.text((cx, int(IH*(ey + i*0.040))), l, font=f_ie, fill=hx('F0E8D4'), anchor='mm')
 
-if STAGE == 3:
+if STAGE == 4:
     sz, f_fa, _, _ = common_size()
     gap = (sz*1.75)/(IH/S)
     y0 = BLOCK_MID - (len(FA)-1)*gap/2
     for i, line in enumerate(FA):
         rtl(d, (cx, int(IH*(y0 + i*gap))), line, f_fa, hx('F8F2E4'))
 
-if STAGE == 4:
+if STAGE == 5:
     sz, _, f_en, en_lines = common_size()
     gap = (sz*1.60)/(IH/S)
     y0 = BLOCK_MID - (len(en_lines)-1)*gap/2
@@ -298,34 +330,6 @@ if STAGE == 4:
         d.text((cx, int(IH*(y0 + i*gap))), line, font=f_en, fill=hx('F4EEDE'), anchor='mm')
     f_poet = ImageFont.truetype(SS+'SourceSerif4-Light.otf', S*20)
     track(d, (cx, int(IH*POET_Y)), C.get('poetLineEn', C['poet']), f_poet, hx('C8BCA4'), S*4)
-
-if STAGE == 5:
-    lf, le = C.get('lessonFa',''), C.get('lessonEn','')
-    sf, se = C.get('sendFa',''),   C.get('sendEn','')
-    szl = 34
-    while szl > 20:
-        f_lf = ImageFont.truetype(FZ+'Vazirmatn-Medium.ttf', S*szl)
-        if len(wrap_fa(d, lf, f_lf, IW*0.86)) <= 2: break
-        szl -= 2
-    for i, l in enumerate(wrap_fa(d, lf, f_lf, IW*0.86)[:2]):
-        rtl(d, (cx, int(IH*(0.430 + i*0.050))), l, f_lf, hx('FBF6EA'))
-    f_le = ImageFont.truetype(SS+'SourceSerif4-It.otf', S*26)
-    for i, l in enumerate(wrap(d, le, f_le, IW*0.86)[:2]):
-        d.text((cx, int(IH*(0.535 + i*0.038))), l, font=f_le, fill=hx('F0E8D4'), anchor='mm')
-    d.line([cx-IW*0.07, int(IH*0.605), cx+IW*0.07, int(IH*0.605)], fill=hx('9C8C6E'), width=S)
-    f_sf = ImageFont.truetype(FZ+'Vazirmatn-Regular.ttf', S*25)
-    f_se = ImageFont.truetype(SS+'SourceSerif4-Light.otf', S*22)
-    rtl(d, (cx, int(IH*0.655)), sf, f_sf, hx('DCD0B8'))
-    for i, l in enumerate(wrap(d, se, f_se, IW*0.86)[:1]):
-        d.text((cx, int(IH*0.700)), l, font=f_se, fill=hx('CFC3AA'), anchor='mm')
-    # The ask itself is in the persistent strip. This page carries the
-    # schedule - the concrete reason to expect something tomorrow. Never
-    # name the next poet: rotation and the Rumi tripwire can change it.
-    rtl(d, (cx, int(IH*0.790)), '\u062f\u0648\u0634\u0646\u0628\u0647 \u00b7 \u0686\u0647\u0627\u0631\u0634\u0646\u0628\u0647 \u00b7 \u062c\u0645\u0639\u0647',
-        ImageFont.truetype(FZ+'Vazirmatn-SemiBold.ttf', S*30), hx('FFF6E4'))
-    d.text((cx, int(IH*0.840)), 'A new verse every Monday, Wednesday, Friday',
-           font=ImageFont.truetype(SS+'SourceSerif4-Light.otf', S*23),
-           fill=hx('EFE4CC'), anchor='mm')
 
 card_w = IW + FB*2
 card_h = IH + FB*2 + int(H*0.070)
@@ -336,10 +340,9 @@ cd = ImageDraw.Draw(card)
 cd.rectangle([FB-S, FB-S, FB+IW+S-1, FB+IH+S-1], outline=hx('1A140E'), width=S)
 
 # Persistent follow strip, present on every page. Average watch is 5.6s of a
-# 14s reel, so page 5 is never reached by most viewers - the ask AND the
-# reason to act on it both have to live here, visible from second one.
-# Instagram already shows the handle above the reel, so repeating it wastes
-# the space that the reason needs.
+# 14s reel, so the ask AND the reason to act on it both have to live here,
+# visible from second one. Instagram already shows the handle above the reel,
+# so repeating it wastes the space the reason needs. See CTA.md.
 f_ff = ImageFont.truetype(FZ+'Vazirmatn-Medium.ttf', S*23)
 _line = '\u062f\u0646\u0628\u0627\u0644 \u06a9\u0646\u06cc\u062f  \u00b7  \u0647\u0631 \u0631\u0648\u0632 \u06cc\u06a9 \u0628\u06cc\u062a'
 _fy = FB + IH + int(H*0.024)
