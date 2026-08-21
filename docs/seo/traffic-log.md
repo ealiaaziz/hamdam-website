@@ -276,6 +276,30 @@ ago". The date in this heading was verified against `date -u`, Apple's HTTP
 anything was written. Verify the date from the system clock, never from a tool's
 own report of it.
 
+**App Store localisations went from 2 to 10 on 2026-08-21, on the 1.3 draft.**
+This is an App Store change, not a website one, so it will not show in any row
+of this table. It is recorded here because it is the largest single marketing
+intervention since launch and the next reading needs to know it happened: the
+binding constraint was never conversion, it was that 2,325 App Store
+impressions is a small number, and eight new storefronts each carry their own
+100 character keyword field. Territories already sending unlocalised
+impressions were DE, AE, GB, TR and NL. Added: en-GB, en-CA, de-DE, nl-NL,
+fr-FR, sv, tr, ar-SA. Visible copy is the English copy verbatim in every one;
+only the keyword fields differ, and no Persian or other language was authored.
+Apple has no Farsi metadata locale, so a Persian listing is not available at
+any effort. Effect is measurable only once 1.3 ships and only in App Store
+analytics by territory, not in Search Console.
+
+Two Apple behaviours worth not rediscovering, both in
+`hamdam-analytics/scripts/add_localisations.py`. Creating an
+`appInfoLocalization` makes Apple auto-create an empty matching
+`appStoreVersionLocalization`, so a create-only script 409s against a row it
+just caused and leaves the locale attached with no description: worse than
+absent, because an empty localisation fails review. And Apple's metadata
+locale codes are not BCP 47, so `de-DE` and `fr-FR` are right while `sv-SE`
+and `tr-TR` are rejected in favour of bare `sv` and `tr`. Nothing lists the
+valid set; the only way to learn one is to try it and read the error.
+
 <!-- readings:notes -->
 
 ## What to watch, in priority order
