@@ -1,5 +1,25 @@
 # Instagram caption remediation, for Ealia and Sima
 
+> **CORRECTED 2026-08-21. Read this before applying anything below.**
+>
+> The replacement text this document originally proposed, "with an English
+> translation alongside", is itself a false claim and is now hard-blocked.
+> The app shows one language at a time, chosen by the app-wide language
+> setting, and in Farsi mode deliberately shows no English at all. That was
+> established on 2026-08-16 by reading hamdam-ios; see FACTS.md, "Verse
+> display", for the file-and-line sources.
+>
+> All four replacements below now read "in Persian, or in English". The
+> blocked wording is caught by `audit_lint.py` as of 2026-08-21
+> (`PRESENTATION_PATTERNS`, pinned by tests t27 to t29), so a future draft
+> cannot reintroduce it the way this document did.
+>
+> **Two of the four captions were already published with the wrong
+> replacement**: the Parvin reel of 11 August and the Rumi ney reel of
+> 7 August both currently carry "with an English translation alongside" and
+> need editing again. The launch post of 2 August still carries the original
+> "doesn't flatten" wording and has not been touched at all.
+
 Prepared 13 August 2026. **English only. Drafts only. Nothing here has been posted, edited or sent.**
 
 Instagram is Sima's channel and Persian copy is Ealia's. This document is a review artefact: it proposes replacement text for four published captions and stops there. No caption has been touched.
@@ -35,7 +55,7 @@ By reach. The three reels first, the launch post last.
 
 **Replace the sign off block with:**
 
-> One verse a day, in Persian, with an English translation alongside. Hamdam is free to download on iPhone and Apple Watch. Link in bio.
+> One verse a day, in Persian, or in English. Hamdam is free to download on iPhone and Apple Watch. Link in bio.
 
 ---
 
@@ -49,7 +69,7 @@ By reach. The three reels first, the launch post last.
 
 **Replace the sign off block with:**
 
-> One verse a day, in Persian, with an English translation alongside. Hamdam is free to download on iPhone and Apple Watch. Link in bio.
+> One verse a day, in Persian, or in English. Hamdam is free to download on iPhone and Apple Watch. Link in bio.
 
 ---
 
@@ -63,7 +83,7 @@ This post has **two** separate problems. The sign off, same as the others, and a
 
 **Replace the sign off block with:**
 
-> One verse a day, in Persian, with an English translation alongside. Hamdam is free to download on iPhone and Apple Watch. Link in bio.
+> One verse a day, in Persian, or in English. Hamdam is free to download on iPhone and Apple Watch. Link in bio.
 
 **Offending text, body:**
 
@@ -87,7 +107,7 @@ This post has **two** separate problems. The sign off, same as the others, and a
 
 **Replace the sign off block with:**
 
-> One verse a day, in Persian, with an English translation alongside. Hamdam is free to download on iPhone and Apple Watch. Link in bio.
+> One verse a day, in Persian, or in English. Hamdam is free to download on iPhone and Apple Watch. Link in bio.
 
 **Offending text, closing line:**
 

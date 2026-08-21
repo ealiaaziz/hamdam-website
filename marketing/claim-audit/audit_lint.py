@@ -81,6 +81,32 @@ CONTESTED_PATTERNS = [
     r"properly\s+translated",
 ]
 
+# Hard-blocked presentation claims per FACTS.md "Verse display", added
+# 2026-08-21. Separate from the quality block above and simpler: the app shows
+# one language at a time, chosen by the app-wide language setting, so any
+# construction asserting the two are shown together is false rather than
+# unsubstantiated. Read out of hamdam-ios on 2026-08-16; see FACTS.md for the
+# file-and-line sources.
+#
+# This group exists because of how the last one failed. FACTS.md blocked these
+# words on 2026-08-16 and this file was not updated, so the gate kept passing
+# them for five days. Worse, the contested-phrase message below actively
+# recommended "with an English translation alongside" as the safe rewrite, and
+# tests/t25 pinned that string as ALLOWED. The 2026-08-13 caption remediation
+# took that advice and put the claim onto two live reels.
+#
+# Deliberately scoped rather than a bare \balongside\b: verse translations in
+# social/verse-queue.json legitimately contain the word ("it soars alongside
+# the bird of fortune"). Each pattern requires a language or translation word,
+# so poetry passes and claims do not. tests/t29 pins that.
+PRESENTATION_PATTERNS = [
+    r"translation\s+along\s?side",
+    r"along\s?side\s+(?:an?\s+|the\s+)?(?:english|persian|translation)\b",
+    r"beside\s+(?:an?\s+|the\s+)?(?:english|persian|translation)\b",
+    r"\bside[\s\u2010-]?by[\s\u2010-]?side\b",
+    r"next\s+to\s+(?:an?\s+|the\s+)?(?:english|persian)\b",
+]
+
 # Hard-blocked phrases per FACTS.md "CONTESTED: privacy claims", added
 # 2026-08-13. These are whole-app claims. The narrow ones FACTS.md marks
 # ALLOWED ("no account required", "no sign up", "no ads") are deliberately not
@@ -196,7 +222,23 @@ def lint(text, mode="draft"):
                     f"Hard-blocked wording per FACTS.md 'CONTESTED: translation quality': "
                     f"'{m.group(0)}'. Translation quality, fidelity and comparison claims are "
                     f"blocked until cited public domain translations ship. Descriptive presence "
-                    f"is allowed, e.g. 'in Persian, with an English translation alongside'."
+                    f"is allowed, e.g. 'in Persian, or in English'. Do NOT rewrite to "
+                    f"'with an English translation alongside': that is a presentation "
+                    f"claim the app does not support and is blocked separately below."
+                ),
+            })
+
+    for pat in PRESENTATION_PATTERNS:
+        m = re.search(pat, phrase_text, re.IGNORECASE)
+        if m:
+            violations.append({
+                "rule": "presentation-claim",
+                "line": _line_of(phrase_text, m.start()),
+                "detail": (
+                    f"Hard-blocked wording per FACTS.md 'Verse display': "
+                    f"'{m.group(0)}'. The app shows one language at a time, chosen by the "
+                    f"app-wide language setting, so claiming the Persian and the English "
+                    f"appear together is false. Write 'in Persian, or in English'."
                 ),
             })
 

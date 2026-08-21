@@ -43,6 +43,9 @@ t23_privacy_no_data_collected.txt        FAIL
 t24_bare_free.txt                        FAIL
 t25_allowed_phrasing.txt                 PASS
 t26_translation_curly_apostrophe.txt     FAIL
+t27_presentation_alongside.txt           FAIL
+t28_presentation_beside.txt              FAIL
+t29_verse_alongside_ok.txt               PASS
 "
 
 fails=0
