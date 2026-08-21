@@ -48,20 +48,44 @@ counterpart.
 
 ## Paste these
 
-**Instagram bio, English:**
+**Instagram bio. This is the one to use:**
+
+```
+https://apps.apple.com/au/app/id6784461990?ppid=c17f1f9b-5632-49ee-a913-63e65c306ca9&ct=ig-bio
+```
+
+That `ppid` is the **Faal e Hafez, Instagram** custom product page, and it went
+live at Apple between 2026-08-17 and 2026-08-21. Verified 2026-08-21 by
+fetching it: both the AU and US storefronts serve the custom page rather than
+the default one, and adding `ct` alongside `ppid` does not break it.
+
+It is a better destination than the plain listing for three reasons. It opens on
+the fal, which is what the Instagram audience arrives having just watched. It
+carries its own promotional text, "Ask the Faal a question, and let Hafez answer
+the way he has for centuries", instead of the generic one. And it deep links to
+`hamdam://roots`, so anyone who already has the app lands on the feature rather
+than the home screen.
+
+It also gives a second, independent attribution path: Apple reports custom
+product pages separately, so `ppid` traffic is identifiable even where the `ct`
+campaign column is redacted. Use both.
+
+**Farsi variant, if the bio link is localised:**
+
+```
+https://apps.apple.com/au/app/id6784461990?ppid=c17f1f9b-5632-49ee-a913-63e65c306ca9&l=fa&ct=ig-bio-fa
+```
+
+**Plain listing, if a link should not open on the fal:**
 
 ```
 https://apps.apple.com/au/app/id6784461990?ct=ig-bio
 ```
 
-**Instagram bio, Farsi:**
-
-```
-https://apps.apple.com/au/app/id6784461990?l=fa&ct=ig-bio-fa
-```
-
-Both resolve to the same listing. The `l=fa` parameter asks Apple for the
-Farsi localisation of the product page; the `ct` is what shows up in reporting.
+The `l=fa` parameter asks Apple for the Farsi localisation of the product page.
+Note that as of 2026-08-21 the listing has only `en-AU` and `en-US`
+localisations, so `l=fa` currently changes nothing; it is harmless and will
+start working if Persian-adjacent locales are ever added.
 
 ## Two things to know before trusting the numbers
 
