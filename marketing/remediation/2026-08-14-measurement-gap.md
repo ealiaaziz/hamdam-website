@@ -1,5 +1,37 @@
 # The measurement gap, for Ealia
 
+> **SUPERSEDED 2026-08-21. The gap this document describes is closed.**
+>
+> Everything below was written on 13 August and is preserved as the reasoning
+> that led to the fix. It is no longer an accurate description of the world.
+>
+> **App Store Connect is connected.** `ealiaaziz/hamdam-analytics` runs a daily
+> GitHub Actions workflow at 19:00 UTC that pulls Apple's sales and analytics
+> reports with an ASC API key and commits the raw TSVs. Ealia built it; the
+> four secrets it needs are documented in that repo's README. Downloads,
+> product page views, source breakdown and conversion are all readable from
+> the committed data without any credential.
+>
+> Option 2 in the list below, "the App Store Connect API, with a key you
+> generate", is the one that happened.
+>
+> **Two claims below are now answerable and were answered on 2026-08-21.**
+> "There is no way to know whether that produced three installs or three
+> hundred" is no longer true: 64 first-time downloads between 19 July and
+> 16 August, of which 8 came from App referrer and 1 from Web referrer. And
+> the iOS floor question the document calls unsizeable is sizeable, because
+> `Platform Version` is a column in the downloads report.
+>
+> **One recommendation below still stands and is still not done.** The bio
+> link carries no campaign token. See `marketing/attribution.md` for the
+> paste-ready URLs. Note the caveat found on 2026-08-21: Apple leaves the
+> `Campaign` and `Source Info` columns entirely empty at current volume,
+> redacting below a privacy threshold, so tagging will not produce visible
+> campaign rows until volume rises. `Source Type` does populate, which is
+> what separates social from search today.
+>
+> **The LinkedIn question below is still open.** Nobody has opened the URL.
+
 Prepared 13 August 2026. **Report only. Nothing has been connected, and nothing should be until you have decided which of these you want.**
 
 ---
