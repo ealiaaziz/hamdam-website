@@ -238,3 +238,69 @@ describe('the iOS floor has one source', () => {
     expect(APP_STORE.MINIMUM_IOS).toMatch(/^\d+(\.\d+)*$/);
   });
 });
+
+// Added 2026-08-21. Four live pages carried '@type': 'PrivacyPolicy' and
+// 'TermsAndConditions', neither of which is a schema.org type. Both resolve
+// 404 on schema.org, the same as a nonsense string, and neither is in the
+// pending vocabulary. An unrecognised @type raises nothing and shows nothing:
+// consumers simply ignore the entity, so those pages published structured data
+// that did no work at all for weeks.
+//
+// This locks the vocabulary rather than the pages, so a new page inventing a
+// plausible-sounding type fails here instead of shipping. The list is types
+// verified to resolve on schema.org, and it is deliberately small: adding an
+// entry means checking https://schema.org/<Type> returns 200 first, not
+// guessing that a name sounds official.
+describe('structured data uses real schema.org types', () => {
+  const VERIFIED = new Set([
+    'AggregateRating', 'Article', 'BreadcrumbList', 'ContactPoint',
+    'CreativeWork', 'DigitalDocument', 'ImageObject', 'ItemList',
+    'ListItem', 'Offer', 'Organization', 'Person', 'PostalAddress',
+    'SoftwareApplication', 'WebPage', 'WebSite',
+  ]);
+
+  const typesIn = (node, found = []) => {
+    if (Array.isArray(node)) {
+      node.forEach((n) => typesIn(n, found));
+    } else if (node && typeof node === 'object') {
+      if (typeof node['@type'] === 'string') found.push(node['@type']);
+      Object.values(node).forEach((v) => typesIn(v, found));
+    }
+    return found;
+  };
+
+  const pages = import.meta.glob('../../pages/**/*.astro', {
+    eager: true,
+    query: '?raw',
+    import: 'default',
+  });
+
+  // Without this, the check below passes vacuously if the glob ever resolves
+  // to nothing, which is the quiet way a guard like this stops guarding.
+  it('actually finds the page sources it claims to scan', () => {
+    expect(Object.keys(pages).length).toBeGreaterThan(10);
+    const all = Object.values(pages).flatMap((src) =>
+      [...String(src).matchAll(/'@type':\s*'([A-Za-z]+)'/g)].map((m) => m[1]));
+    expect(all).toContain('WebPage');
+  });
+
+  it('declares no @type outside the verified list', () => {
+    const offenders = [];
+    for (const [file, source] of Object.entries(pages)) {
+      for (const m of String(source).matchAll(/'@type':\s*'([A-Za-z]+)'/g)) {
+        if (!VERIFIED.has(m[1])) offenders.push(`${file}: ${m[1]}`);
+      }
+    }
+    expect(offenders).toEqual([]);
+  });
+
+  it('rejects the two invented types specifically', () => {
+    expect(VERIFIED.has('PrivacyPolicy')).toBe(false);
+    expect(VERIFIED.has('TermsAndConditions')).toBe(false);
+  });
+
+  it('walks nested @type values, not just the top level', () => {
+    expect(typesIn({ '@type': 'WebPage', publisher: { '@type': 'Person' } }))
+      .toEqual(['WebPage', 'Person']);
+  });
+});

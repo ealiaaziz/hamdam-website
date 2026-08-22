@@ -11,7 +11,14 @@ const description =
 
 const jsonLd = {
   '@context': 'https://schema.org',
-  '@type': 'PrivacyPolicy',
+  // WebPage, not 'PrivacyPolicy'. schema.org has no PrivacyPolicy type and never
+  // has: https://schema.org/PrivacyPolicy returns 404, the same as a nonsense
+  // string, and it is not in the pending vocabulary either. An unrecognised
+  // @type is not an error anyone sees, it just means the entity is silently
+  // ignored, so this page published structured data that did nothing. Found
+  // 2026-08-21 by resolving every @type on the live site against schema.org
+  // rather than by reading it and assuming.
+  '@type': 'WebPage',
   name: 'Hamdam Privacy Policy',
   description,
   url: 'https://hamdam.com.au/privacy/',

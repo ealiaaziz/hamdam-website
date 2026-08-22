@@ -11,7 +11,10 @@ const description =
 
 const jsonLd = {
   '@context': 'https://schema.org',
-  '@type': 'TermsAndConditions',
+  // WebPage, not 'TermsAndConditions'. See the note in privacy.astro: neither
+  // type exists in schema.org, both resolve 404, and an unrecognised @type is
+  // ignored in silence rather than flagged.
+  '@type': 'WebPage',
   name: 'شرایط استفاده‌ی همدم',
   description,
   url: 'https://hamdam.com.au/fa/terms/',
