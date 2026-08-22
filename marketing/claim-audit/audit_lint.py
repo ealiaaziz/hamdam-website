@@ -65,7 +65,11 @@ ARABIC_RANGES = (
 # strings themselves and so does this file, because layer 2 is a model and a
 # model is the wrong place for a rule that can be spelled out.
 CONTESTED_PATTERNS = [
-    r"careful(?:ly)?\s+(?:english\s+)?translat",   # careful translation / carefully translated
+    # Was `careful(ly)? (english )?translat`, which required the word
+    # "translat" and so missed the bare "careful English" live on YouTube.
+    # FACTS.md blocks "careful English translation" and anything implying
+    # scholarly or human-translated text; the noun is not load bearing.
+    r"\bcareful(?:ly)?\s+(?:\w+\s+){0,2}(?:english|persian|translat)",   # careful translation / carefully translated
     r"expert(?:ly)?\s+translat",
     r"scholar(?:ly)?\s+translat",
     r"hand[\s\u2010-]?translated",
@@ -118,10 +122,16 @@ CONTESTED_PATTERNS = [
 # so poetry passes and claims do not. tests/t29 pins that.
 PRESENTATION_PATTERNS = [
     r"translation\s+along\s?side",
-    r"along\s?side\s+(?:an?\s+|the\s+)?(?:english|persian|translation)\b",
-    r"beside\s+(?:an?\s+|the\s+)?(?:english|persian|translation)\b",
+    # {0,2} intervening words, not just an article. The YouTube channel
+    # description read "In original Persian beside careful English" and this
+    # group missed it, because an adjective sat between "beside" and "English"
+    # where the pattern only allowed "a", "an" or "the". Validated against all
+    # 238 entries in social/verse-queue.json: zero false positives, because the
+    # language word is still required as an anchor.
+    r"along\s?side\s+(?:\w+\s+){0,2}(?:english|persian|translation)\b",
+    r"beside\s+(?:\w+\s+){0,2}(?:english|persian|translation)\b",
     r"\bside[\s\u2010-]?by[\s\u2010-]?side\b",
-    r"next\s+to\s+(?:an?\s+|the\s+)?(?:english|persian)\b",
+    r"next\s+to\s+(?:\w+\s+){0,2}(?:english|persian)\b",
 ]
 
 # Hard-blocked phrases per FACTS.md "CONTESTED: privacy claims", added

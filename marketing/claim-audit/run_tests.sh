@@ -48,6 +48,8 @@ t28_presentation_beside.txt              FAIL
 t29_verse_alongside_ok.txt               PASS
 t30_undiminished_blocked.txt             FAIL      translation-quality claim found live in the Instagram bio 2026-08-22
 t31_diminish_in_verse_ok.txt             PASS      the same word inside real verse text must not trip it
+t32_beside_careful_english.txt           FAIL      two claims in one line, live on the YouTube channel 2026-08-22
+t33_alongside_no_language_ok.txt         PASS      alongside with no language word is ordinary prose
 "
 
 fails=0
