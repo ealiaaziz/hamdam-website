@@ -102,9 +102,20 @@ token has been issued and Ealia has it. This paragraph said it was a value only
 App Store Connect can issue, which is true, and left the impression nobody had
 it, which was not. Setting `PUBLIC_ASC_PROVIDER_TOKEN=127843867` in the build
 environment would complete the site's tagging; that is a Cloudflare build
-variable rather than a repository change, so it is Ealia's to set. Confirm the
-value against App Store Connect before wiring it in: it is read here off a link
-someone hand-built, which is evidence it exists, not proof it is right.
+variable rather than a repository change, so it is Ealia's to set.
+
+Corroborated in two independent places, which is worth more than one: the live
+YouTube channel link, and `social/YOUTUBE-SHORT-TASK.md` line 139, which
+records `?pt=127843867&ct=youtube_short&mt=8` for the Shorts task. Same value,
+written down separately.
+
+It cannot be set from a session. Workers Builds environment variables are not
+exposed on any Cloudflare API path reachable with this account's token: the
+Worker's `settings`, `services` and `versions` endpoints all return cleanly and
+none of them carries build configuration, and `builds/triggers` answers 204
+with an empty body. Confirmed 2026-08-22, and it matches what CLAUDE.md already
+recorded about the Workers Builds connection being dashboard only. The route is
+Workers and Pages, hamdam-website, Settings, Build, Variables and Secrets.
 
 **Reporting still needs App Store Connect.** These tokens make the data
 separable at Apple's end; they do not make it visible from here. Somebody still
