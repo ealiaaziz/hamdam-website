@@ -9,11 +9,22 @@ deferred rather than owed.
 
 Three items remained. None blocked the site; all three were found while doing the
 work above. **Items 4 and 5 were both fixed later the same day** — item 4 is
-deployed and live, item 5 is built and verified but its output still has to be
-uploaded to App Store Connect by hand. Their sections are kept in full below,
+deployed and live, item 5 built and verified. Their sections are kept in full below,
 because item 4's original write-up contained a wrong measurement that sent the
-investigation the wrong way, and that is worth recording. **Only item 6 remains,
-and it is Ealia's to do.**
+investigation the wrong way, and that is worth recording.
+
+**All three are now closed, 2026-08-22.** Item 4 is deployed and live. Item 6
+was closed as a deliberate decision to keep the credential rather than as work
+done, and its section records what was weighed. Item 5's "Still owed" line was
+stale: the App Store listing carries a seven-shot set per locale committed to
+`hamdam-analytics/assets/screenshots/` on 2026-08-17 and uploaded from there,
+three weeks after the 2026-07-25 export that section describes. Verified
+against the live listing, not inferred.
+
+**But one thing this document never tracked is still open, and it is worse than
+anything above:** the listing's first screenshot, `01-hero-en.png`, shows a
+screen the app cannot display. See "the hero screenshot" in FACTS.md. The
+website's copy of it was replaced on 2026-08-16; the App Store's was not.
 
 ---
 
@@ -113,28 +124,54 @@ twelve are still exactly 1290x2796.** The raw website set was re-exported from t
 same build and compared against what is live: mean absolute pixel difference
 0.002, i.e. unchanged, so this work did not disturb the site.
 
-**Still owed:** the new set has NOT been uploaded to App Store Connect. That is
-Ealia's to do, at the next listing refresh. The twelve PNGs are in the
+**Was owed, now closed 2026-08-22.** This said the new set had not been
+uploaded and that it was Ealia's to do. That stopped being true and nobody
+updated it. The listing carries seven shots per locale, uploaded from
+`hamdam-analytics/assets/screenshots/`, committed there 2026-08-17, three weeks
+after the export below. Checked against the live listing rather than inferred
+from the dates.
+
+Note what is NOT fixed by that upload: the first of those seven,
+`01-hero-en.png`, is a synthetic composition of a screen the app cannot
+display. That is a separate defect from this section's crop bug, it is still
+live, and it is recorded under "the hero screenshot" in FACTS.md. The twelve PNGs are in the
 `hamdam-ios` repo at `marketing/app-store-screenshots-2026-07-25/{EN,FA}/`
 (untracked, so they will not bloat the repo unless she adds them).
 
 ---
 
-## 6. Revoke the Cloudflare API token
+## 6. The Cloudflare API token: CLOSED 2026-08-22, kept deliberately
 
-**What:** the token at `~/.config/hamdam-audit/cf-token` was created 2026-07-21
-as a short-lived, narrowly-scoped custom token (Account: Workers Scripts Edit;
-Zone: redirect-rules/Rulesets Edit, this zone only) and was meant to be revoked
-the same day. Ealia chose on 2026-07-25 to keep it active **until the website
-redesign is done**, which is what this document is the end of.
+**Decision: Ealia keeps the token as it is. Nothing to do. Do not reopen this.**
 
-**Action:** revoke it at dash.cloudflare.com, My Profile, API Tokens. Mint a
-fresh short-lived one for the next deploy rather than letting a "temporary"
-credential become permanent. It is a user action; a session cannot do it.
+The token at `~/.config/hamdam-audit/cf-token` was created 2026-07-21 as a
+short-lived, narrowly-scoped custom token (Account: Workers Scripts Edit; Zone:
+redirect-rules/Rulesets Edit, this zone only) and was meant to be revoked the
+same day. It was kept through the redesign, and on 2026-08-22 Ealia decided to
+keep it indefinitely because it is useful and re-minting one each time is
+friction for no real gain.
 
-**Note:** the user-level deploy hook in `~/.claude/settings.json` references the
-repo path, not the token, so revoking breaks nothing except the next deploy,
-which will fail with an auth error until a new token is supplied.
+It is closed rather than left open because an item nobody intends to action
+stops being read, and takes the items around it down with it. That is the same
+failure `docs/app-store/pre-upload-checklist.md` records in its own closing
+section.
+
+**What was weighed, so nobody has to re-derive it.** The website is a Worker,
+so Workers Scripts Edit means the holder can replace hamdam.com.au with
+anything, and Rulesets Edit means they can redirect its traffic. That is the
+real blast radius: not a data leak, but the domain serving someone else's
+content. Against that: the token is a file on Ealia's own Mac, it is in no
+repository, and the scopes are narrow rather than account-wide. A middle path
+was offered, a fresh token carrying a 90 day expiry and optionally an IP
+restriction, which keeps the convenience and stops a temporary credential
+becoming permanent by default. Ealia declined it. That is a legitimate call on
+a low-likelihood risk and it is recorded here as a decision, not a debt.
+
+**If it ever does need replacing:** revoke at dash.cloudflare.com, My Profile,
+API Tokens, then mint a new one with the same two scopes. The user-level deploy
+hook in `~/.claude/settings.json` references the repo path and not the token,
+so nothing breaks except the next manual deploy, which fails with an auth error
+until a new token is supplied.
 
 ---
 
