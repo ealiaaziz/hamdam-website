@@ -94,8 +94,17 @@ every rendered store link carries `ct=` and none carries `pt=`, because
 `PUBLIC_ASC_PROVIDER_TOKEN` is unset at build time. Apple's campaign reporting
 generally expects the provider token alongside the campaign token, so tagging
 may be incomplete until that value is supplied. It is an account specific value
-only App Store Connect can issue. Worth confirming what Apple actually reports
-with `ct` alone before concluding the tagging works.
+only App Store Connect can issue.
+
+**Corrected 2026-08-22: the value is already in use.** The YouTube channel's
+App Store link carries `pt=127843867&ct=youtube_channel&mt=8`, so the provider
+token has been issued and Ealia has it. This paragraph said it was a value only
+App Store Connect can issue, which is true, and left the impression nobody had
+it, which was not. Setting `PUBLIC_ASC_PROVIDER_TOKEN=127843867` in the build
+environment would complete the site's tagging; that is a Cloudflare build
+variable rather than a repository change, so it is Ealia's to set. Confirm the
+value against App Store Connect before wiring it in: it is read here off a link
+someone hand-built, which is evidence it exists, not proof it is right.
 
 **Reporting still needs App Store Connect.** These tokens make the data
 separable at Apple's end; they do not make it visible from here. Somebody still
