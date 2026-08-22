@@ -89,7 +89,9 @@ start working if Persian-adjacent locales are ever added.
 
 ## Two things to know before trusting the numbers
 
-**The provider token is not set.** Checked in the built site on 2026-08-21:
+**The provider token is set as of 2026-08-22.** `PUBLIC_ASC_PROVIDER_TOKEN` is now `127843867` in the Cloudflare build variables, added by Ealia as a plain text variable rather than a secret, which is right: the `PUBLIC_` prefix means the value is compiled into every page and is readable by anyone viewing source, it is already public in the YouTube channel link, and it grants no access. The paragraph below is kept because the reasoning still applies to anyone re-checking it.
+
+**Previously, and for the record: the provider token was not set.** Checked in the built site on 2026-08-21:
 every rendered store link carries `ct=` and none carries `pt=`, because
 `PUBLIC_ASC_PROVIDER_TOKEN` is unset at build time. Apple's campaign reporting
 generally expects the provider token alongside the campaign token, so tagging
