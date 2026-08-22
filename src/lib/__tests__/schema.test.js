@@ -239,7 +239,7 @@ describe('the iOS floor has one source', () => {
   });
 });
 
-// Added 2026-08-21. Four live pages carried '@type': 'PrivacyPolicy' and
+// Added 2026-08-22. Four live pages carried '@type': 'PrivacyPolicy' and
 // 'TermsAndConditions', neither of which is a schema.org type. Both resolve
 // 404 on schema.org, the same as a nonsense string, and neither is in the
 // pending vocabulary. An unrecognised @type raises nothing and shows nothing:

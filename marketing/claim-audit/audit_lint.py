@@ -79,6 +79,23 @@ CONTESTED_PATTERNS = [
     r"\buncompromising\b",
     r"true\s+to\s+the\s+original",
     r"properly\s+translated",
+    # Added 2026-08-22, found live in the Instagram bio, which read "Persian
+    # poetry, undiminished" over a Persian line meaning "a translation that
+    # does not diminish the verse". Neither gate caught it.
+    #
+    # This is the "alongside" failure repeating in a new vocabulary. FACTS.md
+    # blocks a CLASS, "any claim about the quality, fidelity, richness or
+    # faithfulness of the English translation", and marks its list non
+    # exhaustive. This file enumerated instances. A fresh phrasing of the same
+    # claim therefore passed layer 1 and shipped, exactly as "alongside" did.
+    # Enumerating harder is not a fix, but it is the fix available: the
+    # remedy for the gap in principle is that a human reads the class in
+    # FACTS.md, not that this list ever becomes complete.
+    r"\bundiminished\b",
+    r"(?:does\s?n['\u2019]?t|do(?:es)?\s+not|never|without)\s+diminish",
+    r"\bdiminish(?:es|ing)?\s+(?:the\s+)?(?:verse|poem|line|original|meaning|poetry)\b",
+    r"(?:loses?|lost)\s+nothing",
+    r"nothing\s+is\s+lost",
 ]
 
 # Hard-blocked presentation claims per FACTS.md "Verse display", added

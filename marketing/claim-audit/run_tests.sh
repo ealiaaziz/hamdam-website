@@ -46,12 +46,18 @@ t26_translation_curly_apostrophe.txt     FAIL
 t27_presentation_alongside.txt           FAIL
 t28_presentation_beside.txt              FAIL
 t29_verse_alongside_ok.txt               PASS
+t30_undiminished_blocked.txt             FAIL      translation-quality claim found live in the Instagram bio 2026-08-22
+t31_diminish_in_verse_ok.txt             PASS      the same word inside real verse text must not trip it
 "
 
 fails=0
 checked=0
 
-while read -r fixture expected; do
+# Three fields, not two. The header above has always described a third "what it
+# pins" column, but the parser read only two, so `expected` swallowed the note
+# and every annotated row failed to match. Nothing used the column, so nothing
+# noticed until 2026-08-22.
+while read -r fixture expected _note; do
   [ -z "${fixture:-}" ] && continue
   if [ ! -f "tests/$fixture" ]; then
     echo "MISSING  tests/$fixture"
