@@ -215,3 +215,39 @@ deliberate and recorded in the closing section of
 `support/docs/build-record.md`. A security review the same day is recorded in
 the section below it: read that before deciding a control is missing, because
 some of them are there now and some were weighed and left alone.
+
+## Sandbox worker (`computer/`, added 2026-08-24)
+
+A third Worker, `hamdam-computer`, built on `@cloudflare/computer`: a Durable
+Object with a persistent SQLite-backed filesystem and a shell that runs against
+it, behind a small HTTP surface. It exists so that runtime can be evaluated
+without the question touching anything that matters.
+
+**It is not deployed and nothing deploys it.** No route, no `deploy` script,
+`workers_dev` and `preview_urls` both off. It is not the marketing site, so the
+Workers Builds connection does not build it, and a push to `main` publishes the
+site exactly as before.
+
+The package is a Cloudflare preview: its own README says it is not suitable for
+production and that its API is unstable. That is the whole reason it lives in
+its own directory rather than as an import in `support/`, which handles real
+mail, or at the repo root, which has no Durable Object to put a Workspace in.
+
+Three things to know before touching it, all expanded in `computer/README.md`:
+
+1. **`POST /exec` runs a shell command, and `SANDBOX_TOKEN` is the only thing
+   in front of it.** Unset denies everything, the same closed-by-default shape
+   as the console's `ADMIN_EMAILS`. A wrong token gets 404 rather than 401.
+2. **The shell has no network.** The backend is configured `egress: { mode:
+   "none" }` and no `curl` command group is imported. Both are one line to
+   change and neither should change by accident.
+3. **It is a separate package.** Root `npm test` excludes `computer/**` for the
+   same reason it excludes `support/**`, and CI gives it its own job running
+   typecheck, tests and a `wrangler deploy --dry-run` bundle check. That last
+   one is the point: the failure worth catching on a preview dependency is the
+   version that no longer builds.
+
+`scripts/check-dashes.mjs` now walks `computer/` too, and skips `.wrangler/`
+everywhere while it is at it: that directory is generated local dev state, so
+walking it failed the check on a machine that had run `wrangler dev` and passed
+in CI.

@@ -80,6 +80,41 @@ jobs:
       - name: Dash check
         run: npm run check:dashes
 
+  # The sandbox Worker built on @cloudflare/computer. A third package, a third
+  # dependency tree, and a third job, for the same reason support/ has its own:
+  # the root `npm ci` does not install it.
+  #
+  # The bundle check is the point of this job. This package tracks a preview
+  # runtime whose author says the API is unstable, so the failure worth catching
+  # early is not a wrong answer, it is the version that no longer builds. Same
+  # rule as every other job here: it verifies, it never deploys. `--dry-run`
+  # needs no Cloudflare credentials and this repository holds none.
+  computer:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: computer
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: computer/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Bundle check
+        run: npm run build
+
   # The support desk is a separate package with its own dependencies, its own
   # wrangler config, and its own manual deploy. It deliberately does not ride
   # along on the site's build or test run (see vitest.config.js for why), so

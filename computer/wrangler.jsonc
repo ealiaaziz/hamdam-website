@@ -1,0 +1,40 @@
+{
+  "name": "hamdam-computer",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-07-01",
+  // nodejs_compat is required by @cloudflare/computer itself. `experimental`
+  // and the Worker Loader binding below are required only by the worker-shell
+  // backend, which is what makes `exec` work without a container; remove the
+  // backend from src/index.ts and both can go with it, leaving a Workspace
+  // that is a durable filesystem and nothing more.
+  "compatibility_flags": ["nodejs_compat", "experimental"],
+
+  // No hostname, by configuration rather than by omission.
+  //
+  // This Worker executes shell commands that arrive over HTTP. There is no
+  // deployment of it where a *.workers.dev address is the right answer, and
+  // `preview_urls` is the half of that pair which is easy to forget: it
+  // publishes every uploaded version at its own address whether or not the
+  // deployment has a route. Adding a route to this file should be a decision
+  // somebody makes in a diff, not a default anyone inherits.
+  "workers_dev": false,
+  "preview_urls": false,
+
+  "observability": { "enabled": true, "head_sampling_rate": 1 },
+
+  // The Workspace lives in the Durable Object's own SQLite storage, so the
+  // class has to be created as a SQLite-backed one. `new_sqlite_classes` is
+  // not interchangeable with `new_classes`: a class created without SQLite
+  // storage cannot be converted to it later, it has to be renamed and
+  // recreated, which discards whatever the old one was holding.
+  "durable_objects": {
+    "bindings": [{ "name": "AGENT", "class_name": "Agent" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Agent"] }],
+
+  // The worker-shell backend runs just-bash inside a Dynamic Worker that this
+  // binding loads. The shell's filesystem calls come back to the same Durable
+  // Object over RPC, so there is no second copy of the files and nothing to
+  // synchronise.
+  "worker_loaders": [{ "binding": "LOADER" }]
+}

@@ -12,8 +12,13 @@ import { configDefaults, defineConfig } from 'vitest/config';
 // So: the root suite covers the site, support/ runs its own suite with its
 // own deps (see the support steps in .github/workflows/ci.yml). Both run in
 // CI; neither pretends to be the other.
+//
+// computer/ was added on 2026-08-24 and is excluded for exactly the same
+// reason, before it could repeat the same discovery: it is a third package
+// with a third dependency tree, and @cloudflare/computer is not installed by
+// the root `npm ci` either.
 export default defineConfig({
   test: {
-    exclude: [...configDefaults.exclude, 'support/**'],
+    exclude: [...configDefaults.exclude, 'support/**', 'computer/**'],
   },
 });

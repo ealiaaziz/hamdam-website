@@ -22,7 +22,11 @@ import { join, relative } from 'node:path';
 // the rule: the desk ships user-facing copy (ack emails, portal pages) in
 // support/src, and four em dashes went in there unnoticed because this walk
 // never reached them.
-const ROOTS = ['src', 'public', 'support'];
+//
+// `computer` added 2026-08-24 for the same reason: it ships a README and a
+// worker whose responses are read by a person, and a directory that is not
+// walked is a rule enforced by nobody.
+const ROOTS = ['src', 'public', 'support', 'computer'];
 const EXTENSIONS = /\.(astro|ts|js|mjs|css|html|json|md)$/;
 
 // src/data/verses.ts is extracted byte-exact from the iOS app's bundled verse
@@ -49,7 +53,12 @@ function* walk(dir) {
       // Build output, not writing. `wrangler deploy --dry-run --outdir=dist`
       // bundles the Anthropic SDK, whose vendored prose is full of em dashes
       // and none of which anyone reads.
-      if (entry === 'node_modules' || entry === 'dist') continue;
+      // `.wrangler` is wrangler's local dev state: generated JSON that no
+      // person writes or reads, present only on a machine that has run
+      // `wrangler dev`, and gitignored. Walking it makes this check fail on a
+      // developer's machine and pass in CI, which is the worst arrangement
+      // available.
+      if (entry === 'node_modules' || entry === 'dist' || entry === '.wrangler') continue;
       yield* walk(full);
     } else if (EXTENSIONS.test(entry)) {
       yield full;

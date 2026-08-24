@@ -1,0 +1,8 @@
+# Copy to .dev.vars for `npm run dev`. Never commit the copy: .dev.vars and
+# .dev.vars.* are gitignored at the repository root, this template is the one
+# exception.
+#
+# Any value will do locally. In a deployment it is a real secret, set with
+# `npx wrangler secret put SANDBOX_TOKEN`, because it is the only thing between
+# a caller and a shell.
+SANDBOX_TOKEN=local-development-only
