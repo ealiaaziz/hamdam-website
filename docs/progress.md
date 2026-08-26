@@ -131,3 +131,49 @@ an assertion that no article tells anyone to sign in to Hamdam.
 | Escalation notice delivered | Pass |
 | Geo block outside the allow-list, main site unaffected | Pass |
 | `npm test`, `check:persian`, `check-dashes` | Pass |
+
+## Removed — `circuitenergy.hamdam.com.au` (2026-08-26)
+
+Deleted on request, with the four Cloudflare objects that made it up. Nothing
+in this repository referenced it: the search for `circuitenergy` across the
+tree returns nothing, so there was no code to remove and no test to update.
+It was a second, white-labelled copy of the support desk, deployed on
+2026-08-06 from a source tree that is not in any repository on this account,
+and it was still serving 200 on the morning it was deleted.
+
+**Deleted:**
+
+| Object | Identifier |
+|---|---|
+| Worker | `circuitenergy-support`, uploaded 2026-08-06, never redeployed |
+| Workers custom domain | `circuitenergy.hamdam.com.au` → `circuitenergy-support` |
+| DNS record | `AAAA circuitenergy 100::`, proxied (removed with the custom domain, not separately) |
+| D1 database | `circuitenergy-support-db`, `1a8227fd-152e-4449-8f10-f62fa72c55f6` |
+
+The database was empty. Tickets, comments, requesters, inbound and outbound
+mail all counted zero; the only row anywhere was a single `assistant_usage`
+entry, which is a model call from a smoke test. The Worker held no secrets, so
+its Microsoft Graph path had never been configured and it had never sent or
+received mail. Its bindings were the Workers AI catalogue, the D1 database
+above, and six plain-text values: `BRAND_NAME` "Circuit Energy IT",
+`TICKET_PREFIX` `CE`, `SUPPORT_MAILBOX` `circuitenergy@hamdam.com.au`,
+`REQUESTER_ALLOWLIST` `circuitenergy.org`, `PUBLIC_BASE_URL`, and the same ten
+country `ALLOWED_COUNTRIES` list the Hamdam desk uses. Two cron triggers, one
+every minute and one every two hours, are gone with the Worker.
+
+The bundle, its settings, its schedules, the DNS record and the D1 schema were
+copied to the session scratchpad before anything was deleted. That scratchpad
+does not survive the session, so treat this table as the record.
+
+**Verified after:** `hamdam.com.au` 200, `support.hamdam.com.au` 200,
+`circuitenergy.hamdam.com.au` no longer resolving. The account lists four
+Workers, four custom domains and three D1 databases, none of them Circuit
+Energy's, and the zone is down to 24 records.
+
+**Two loose ends, both outside Cloudflare and outside this repository.** The
+mailbox or alias `circuitenergy@hamdam.com.au` lives in Exchange Online and is
+untouched by any of the above; deleting it is a Microsoft 365 admin action.
+And the API token available here cannot read the zone's rulesets or its email
+routing rules, so neither was checked for a hostname reference. The zone's MX
+points at Exchange, not at Cloudflare Email Routing, which makes a routing rule
+unlikely; a WAF rule naming the hostname is worth a look in the dashboard.
