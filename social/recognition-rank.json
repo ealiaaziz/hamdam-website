@@ -1,0 +1,143 @@
+{
+  "_what": "Verse selection order for the Hamdam YouTube Short, most recognised first.",
+  "_why": "The channel's own numbers: 1,126 views on Saadi's Bani Adam and 488 on Khayyam's jug rubai, against 96, 40 and 16 for verses only a reader of the poet would know. Recognition in the first half-second decides reach. This file inverts the old rule: pick the verse by recognition first, then render whichever mood bucket it belongs to. The five pages do not change.",
+  "_authorship": "Ranked by Claude on 27 August 2026 from the first hemistich of each entry. This is a judgement about what ordinary Persian speakers recognise, not a measurement. Ealia should reorder it freely; the task reads this file and does not re-derive it.",
+  "_wine_screen": {
+    "_note": "Hard rule 5 excludes wine allegory. The queue's wine/intoxication/tavern tags miss many of the most famous lines, so these ids are excluded by text even though they carry no wine tag. hafez-001 is the opening of the Divan and among the best known lines in Persian; it is disqualified by the rule, not by obscurity.",
+    "ids": [
+      "hafez-001",
+      "hafez-005",
+      "hafez-006",
+      "hafez-009",
+      "hafez-013",
+      "rumi-008",
+      "rumi-013",
+      "khayyam-027",
+      "khayyam-031",
+      "khayyam-034",
+      "khayyam-035"
+    ]
+  },
+  "ranked": [
+    {
+      "id": "hafez-002",
+      "poet": "Hafez",
+      "why": "The best known ghazal opening in Hafez; quoted, sung and translated for centuries."
+    },
+    {
+      "id": "khayyam-050",
+      "poet": "Khayyam",
+      "why": "Proverbial quatrain on the futility of coming and going."
+    },
+    {
+      "id": "hafez-035",
+      "poet": "Hafez",
+      "why": "From Ghazal 1; the storm-at-sea couplet is quoted on its own constantly."
+    },
+    {
+      "id": "parvin-002",
+      "poet": "Parvin",
+      "why": "Iranian school curriculum. Already used on Instagram 20 Aug, never on YouTube."
+    },
+    {
+      "id": "saadi-021",
+      "poet": "Saadi",
+      "why": "Everyday proverb about youth being a five-day market."
+    },
+    {
+      "id": "khayyam-021",
+      "poet": "Khayyam",
+      "why": "Proverbial: no hold on tomorrow."
+    },
+    {
+      "id": "hafez-019",
+      "poet": "Hafez",
+      "why": "Opening of Ghazal 3, widely recognised."
+    },
+    {
+      "id": "parvin-014",
+      "poet": "Parvin",
+      "why": "The Socrates poem; school anthology staple."
+    },
+    {
+      "id": "khayyam-025",
+      "poet": "Khayyam",
+      "why": "Proverbial on the brevity of a life's turn."
+    },
+    {
+      "id": "saadi-003",
+      "poet": "Saadi",
+      "why": "Famous ghazal opening addressed to the dawn breeze."
+    },
+    {
+      "id": "hafez-021",
+      "poet": "Hafez",
+      "why": "Widely quoted opening asking where the beloved rests."
+    },
+    {
+      "id": "khayyam-043",
+      "poet": "Khayyam",
+      "why": "Proverbial on arriving and leaving without profit."
+    },
+    {
+      "id": "saadi-043",
+      "poet": "Saadi",
+      "why": "Very widely quoted love opening."
+    },
+    {
+      "id": "rumi-051",
+      "poet": "Rumi",
+      "why": "Best recognised of the Rumi entries in this queue."
+    },
+    {
+      "id": "parvin-008",
+      "poet": "Parvin",
+      "why": "The sparrow and dove fable; commonly taught."
+    },
+    {
+      "id": "hafez-040",
+      "poet": "Hafez",
+      "why": "'Someone inside me' — quoted well outside poetry readers."
+    },
+    {
+      "id": "khayyam-046",
+      "poet": "Khayyam",
+      "why": "On companions lost; in general circulation."
+    },
+    {
+      "id": "parvin-003",
+      "poet": "Parvin",
+      "why": "Opens with a direct question, high recall."
+    },
+    {
+      "id": "saadi-022",
+      "poet": "Saadi",
+      "why": "Aphoristic and quotable."
+    },
+    {
+      "id": "hafez-011",
+      "poet": "Hafez",
+      "why": "Proverbial counsel while you still stand on the earth."
+    },
+    {
+      "id": "khayyam-024",
+      "poet": "Khayyam",
+      "why": "The world as an old caravanserai; widely known image."
+    },
+    {
+      "id": "parvin-031",
+      "poet": "Parvin",
+      "why": "The king and the passer-by; narrative and memorable."
+    },
+    {
+      "id": "saadi-018",
+      "poet": "Saadi",
+      "why": "Aphorism on gratitude for today."
+    },
+    {
+      "id": "rumi-034",
+      "poet": "Rumi",
+      "why": "The drum of departure; recognisable Rumi image."
+    }
+  ]
+}
