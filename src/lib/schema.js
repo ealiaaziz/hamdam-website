@@ -57,6 +57,10 @@ export const APPLICATION_ID = `${SITE}/#app`;
  */
 export const FEATURE_LIST = Object.freeze([
   'A daily verse from Hafez, Rumi, Saadi, Khayyam or Parvin Etesami',
+  'A library of five hundred verses, one hundred from each of the five poets',
+  'Reading mode: the whole poem for all five poets, with its themes named',
+  'Many verses can be heard, read by a named Persian reciter',
+  'The Garden: coaches for mind, movement and sleep, a habit bed, and a daily riddle',
   'A reflection chosen by how the day feels, on a five-point mood slider',
   'Private journal, favourites, and a streak that forgives a missed day',
   'Cultural calendar: Yalda, Norooz, Chaharshanbe Suri, Mehregan and more',

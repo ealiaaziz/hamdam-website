@@ -16,6 +16,7 @@ import {
   skyProgressForScroll,
   skyColorForProgress,
   skyToneForProgress,
+  SKY_RAMP,
   SKY_TONE,
 } from '../cinematic.js';
 
@@ -194,11 +195,24 @@ describe('skyColorForProgress', () => {
   });
 });
 
+// Anchors derived from the ramp, so a section growing does not break these.
+// Scoped to after the hero resolves: the hero's own sunrise passes through
+// dusk, first light and dawn on its way to morning, so those colours appear
+// twice in the ramp and a plain `find` lands on the hero's copy, not the
+// day's. That is exactly what a first attempt at this did.
+const heroEndsAt = SKY_RAMP.find((r) => r.color === '#F4EDD8').at;
+const dayStops = SKY_RAMP.filter((r) => r.at >= heroEndsAt);
+const stopFor = (hex) => dayStops.find((r) => r.color === hex).at;
+const troughAt = stopFor('#2A2140');                    // the poets, darkest of the day
+const rootsAt = stopFor('#5A3A4A');                     // roots exit, still night
+const deadZoneAt =                                      // midway across the ascent bridge
+  (stopFor('#5A3A4A') + stopFor('#C77E4E')) / 2;
+
 describe('skyToneForProgress (luminance-derived, day arc)', () => {
   it('is NIGHT at the page top and at the poets/roots trough', () => {
     expect(skyToneForProgress(0, SKY_TONE.MORNING)).toBe(SKY_TONE.NIGHT);
-    expect(skyToneForProgress(0.47, SKY_TONE.MORNING)).toBe(SKY_TONE.NIGHT);
-    expect(skyToneForProgress(0.66, SKY_TONE.MORNING)).toBe(SKY_TONE.NIGHT);
+    expect(skyToneForProgress(troughAt, SKY_TONE.MORNING)).toBe(SKY_TONE.NIGHT);
+    expect(skyToneForProgress(rootsAt, SKY_TONE.MORNING)).toBe(SKY_TONE.NIGHT);
   });
 
   it('is MORNING once the hero resolves and again at the ceremony', () => {
@@ -216,14 +230,14 @@ describe('skyToneForProgress (luminance-derived, day arc)', () => {
   });
 
   it('holds the previous tone inside the dead zone rather than flickering', () => {
-    // ~0.70 sits on the firstlight-to-dawn bridge, the range tokens.css
+    // Midway across the firstlight-to-dawn bridge, the range tokens.css
     // reserves for SectionDivider because neither text colour is safe there.
-    expect(skyToneForProgress(0.7, SKY_TONE.NIGHT)).toBe(SKY_TONE.NIGHT);
-    expect(skyToneForProgress(0.7, SKY_TONE.MORNING)).toBe(SKY_TONE.MORNING);
+    expect(skyToneForProgress(deadZoneAt, SKY_TONE.NIGHT)).toBe(SKY_TONE.NIGHT);
+    expect(skyToneForProgress(deadZoneAt, SKY_TONE.MORNING)).toBe(SKY_TONE.MORNING);
   });
 
   it('defaults to NIGHT when no previous tone is given', () => {
-    expect(skyToneForProgress(0.7)).toBe(SKY_TONE.NIGHT);
+    expect(skyToneForProgress(deadZoneAt)).toBe(SKY_TONE.NIGHT);
   });
 });
 
@@ -268,8 +282,17 @@ describe('SKY_RAMP shape (the day arc)', () => {
   });
 
   it('puts the darkest point of the day at the poets, and the brightest at the ceremony', () => {
-    expect(luminance(skyColorForProgress(0.47))).toBeLessThan(luminance(skyColorForProgress(0.42)));
-    expect(luminance(skyColorForProgress(0.47))).toBeLessThan(luminance(skyColorForProgress(0.56)));
+    // Anchored to the ramp, not to copied numbers: whichever stop is darkest
+    // must be the poets' dusk, with lighter surfaces on both sides of it.
+    // "Of the day" excludes the hero's pre-dawn night at progress 0, which is
+    // darker than anything after it and is not part of the day's arc.
+    const darkest = dayStops.reduce((a, b) =>
+      luminance(skyColorForProgress(b.at)) < luminance(skyColorForProgress(a.at)) ? b : a);
+    expect(darkest.color).toBe('#2A2140');
+    const before = dayStops.filter((r) => r.at < darkest.at).pop();
+    const after = dayStops.find((r) => r.at > darkest.at && r.color !== darkest.color);
+    expect(luminance(skyColorForProgress(darkest.at))).toBeLessThan(luminance(skyColorForProgress(before.at)));
+    expect(luminance(skyColorForProgress(darkest.at))).toBeLessThan(luminance(skyColorForProgress(after.at)));
     expect(luminance(skyColorForProgress(1))).toBeGreaterThan(luminance(skyColorForProgress(0.95)));
   });
 });

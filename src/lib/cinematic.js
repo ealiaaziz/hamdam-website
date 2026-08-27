@@ -157,7 +157,9 @@ export const SKY_TONE = Object.freeze({ NIGHT: 'night', MORNING: 'morning' });
 // --arc-* values, positioned at each section's own scroll offset.
 //
 // Positions are each section's measured scroll offset over the ceremony's
-// offset, taken in-browser from the built English page at 1440x900. That
+// offset, taken in-browser from the built English page at 1440x900. Re-measured
+// 2026-08-27 after the 1.3 copy update grew the second section: the largest
+// stop had drifted 0.020, ten times the 0.002 the previous measurement held to. That
 // makes --sky-color at any scroll position resolve to the colour of whatever
 // section is currently at the top of the viewport, which is what the nav bar
 // reads to tint itself.
@@ -169,34 +171,32 @@ export const SKY_TONE = Object.freeze({ NIGHT: 'night', MORNING: 'morning' });
 // sections paint their own surfaces, and the nav's text tone is decided by
 // luminance with a hysteresis band wide enough to absorb it. Re-measure with
 // the same method if section heights change materially.
-const SKY_RAMP = [
-  // The hero's own sunrise, in four steps rather than one. A single leg from
-  // night to morning looks right as numbers and is wrong on screen: lerping
-  // #141430 to #F4EDD8 in RGB passes through desaturated grey, so the nav bar
-  // -- which tints itself from this ramp -- rendered as a flat grey slab over
-  // a warm orange hero for most of the first viewport, and the language
-  // toggle sat on it at 3.85:1. Routing through dusk, first light and dawn
-  // follows the sunrise the hero is actually painting behind it, and keeps
-  // the bar's tone on the night side of the dead zone while it does.
+// Exported so the tests can anchor to the real stops instead of copying
+// magic numbers out of it. Three of them did copy, and all three broke the
+// first time a section's height changed -- a copy update on 2026-08-27 moved
+// the poets' trough from 0.470 to 0.482 and the assertions were still asking
+// about 0.47. A test that duplicates the data it checks fails for the wrong
+// reason and teaches nothing when it does.
+export const SKY_RAMP = [
   { at: 0.000, color: '#141430' }, // --surface-night, hero top: deepest, pre-dawn
   { at: 0.045, color: '#2A2140' }, // --surface-dusk
   { at: 0.075, color: '#5A3A4A' }, // --surface-firstlight
-  { at: 0.098, color: '#C77E4E' }, // --surface-dawn
-  { at: 0.115, color: '#F4EDD8' }, // --arc-morning, hero resolves
-  { at: 0.197, color: '#F4EDD8' }, // mood demo holds full morning
-  { at: 0.260, color: '#F7E7CE' }, // --arc-forenoon, copy section exit
-  { at: 0.342, color: '#E3AE82' }, // --arc-afternoon, journey exit
-  { at: 0.350, color: '#D08F63' }, // --arc-lateday, after the first bridge
-  { at: 0.448, color: '#C98B63' }, // --arc-goldenhour, verse showcase exit
-  { at: 0.470, color: '#2A2140' }, // --arc-dusk, after the descent bridge
-  { at: 0.551, color: '#2A2140' }, // poets hold the trough
-  { at: 0.557, color: '#3E2A42' }, // --arc-eveplum, roots entry
-  { at: 0.687, color: '#5A3A4A' }, // --arc-firstlight, roots exit
-  { at: 0.709, color: '#C77E4E' }, // --arc-dawn, after the ascent bridge
-  { at: 0.790, color: '#DDA075' }, // --arc-sunrise, companions exit
+  { at: 0.098, color: '#C77E4E' }, // --surface-dawn / --arc-dawn
+  { at: 0.113, color: '#F4EDD8' }, // --arc-morning
+  { at: 0.193, color: '#F4EDD8' }, // --arc-morning
+  { at: 0.280, color: '#F7E7CE' }, // --arc-forenoon, copy section exit
+  { at: 0.360, color: '#E3AE82' }, // --arc-afternoon, journey exit
+  { at: 0.368, color: '#D08F63' }, // --arc-lateday, after the first bridge
+  { at: 0.464, color: '#C98B63' }, // --arc-goldenhour, verse showcase exit
+  { at: 0.482, color: '#2A2140' }, // --surface-dusk
+  { at: 0.561, color: '#2A2140' }, // --surface-dusk
+  { at: 0.567, color: '#3E2A42' }, // --arc-eveplum, roots entry
+  { at: 0.694, color: '#5A3A4A' }, // --surface-firstlight
+  { at: 0.712, color: '#C77E4E' }, // --surface-dawn / --arc-dawn
+  { at: 0.792, color: '#DDA075' }, // --arc-sunrise, companions exit
   { at: 0.902, color: '#E8B98D' }, // --arc-apricot, privacy exit
   { at: 0.970, color: '#EFCFA4' }, // --arc-daybreak, plans exit
-  { at: 1.000, color: '#F4EDD8' }, // --arc-morning, ceremony: brightest point
+  { at: 1.000, color: '#F4EDD8' }, // --arc-morning
 ];
 
 // Relative luminance (WCAG 2.x) of an 'rgb(r g b)' string, which is what

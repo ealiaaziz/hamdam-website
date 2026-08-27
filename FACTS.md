@@ -42,6 +42,30 @@ Rule for all generation tasks: a claim may appear in marketing output ONLY if it
 - Cultural moments: Iranian (Yalda, Norooz, Chaharshanbe Suri, Mehregan, Sepandarmazgan, Tirgan, Sizdah Bedar), Afghan/Tajik heritage options, and Australian holidays by state. (Source: hamdam.com.au)
 - UK, US, Netherlands, Germany regions marked "coming soon" — do not claim as available. (Source: hamdam.com.au)
 
+## Version 1.3 — VERIFIED 2026-08-27
+- Shipped version is **1.3**, released 2026-08-27. (Sources: iTunes Lookup API for id 6784461990, fetched 2026-08-27 — `version: 1.3`, `currentVersionReleaseDate: 2026-08-27T14:18:59Z`; and hamdam-ios at `d75f379`, `MARKETING_VERSION = 1.3`, `CURRENT_PROJECT_VERSION = 110`.)
+- Minimum iOS is still **26.0**, unchanged by this release, so `iOS 26+` on the site remains correct and needs no edit. (Source: `IPHONEOS_DEPLOYMENT_TARGET = 26.0` in the 1.3 project file; the listing reports `minimumOsVersion: 26.0`.) watchOS deployment target is also 26.0.
+
+## Verse library — VERIFIED 2026-08-27, corrects an earlier number
+- The bundled library is **500 verses**, one hundred from each of the five poets. Counted directly: `Hamdam/Hamdam/Content/Verses/Verses_{Hafez,Rumi,Saadi,Khayyam,Parvin}.json` hold 100 entries each. Corroborated by six independent statements of "500 verses" in the Swift sources and by the App Store description ("Five hundred verses from the five poets, yours from day one").
+- **This corrects "235 bundled verses"**, which was stated in `/terms/` section 3 and `/fa/terms/` and is now wrong. The number grew with the library; nothing about it was ever a claim anyone checked again. Fixed on the site 2026-08-27.
+
+## The Garden — VERIFIED 2026-08-27
+The largest change in 1.3, and the feature the marketing site had no mention of at all. What was called Discover is now the Garden.
+- **Three coaches — Mind, Move and Sleep** — turn the day's line into a plan, reading from Health, the calendar and the weather. (Source: `Hamdam/Hamdam/Garden/Coaches/` with `Engine/`, `Health/`, `Sessions/`, `UI/`; release notes for 1.3.)
+- **A garden bed for habits**: plant one small thing, say when it happens and what you will do on the day it does not. (Source: `Hamdam/Hamdam/Garden/Habits/`, `GardenHabit.swift`, `GardenHabitCueSidecar.swift`.)
+- **A daily riddle**, alongside the existing picks. (Source: `Hamdam/Hamdam/Garden/Riddle/`, `RiddleEngine.swift`, `RiddleCorpus.swift`.)
+- The Garden makes **no network requests of its own** — checked across `Garden/`, `MentalCompanion/` and `FitnessCompanion/` for `URLSession`/`URLRequest`, none present. It reads Health, calendar and WeatherKit through Apple frameworks on device. That matters because it means the Garden adds no host to the outbound list.
+
+## Reading mode and recitation — VERIFIED 2026-08-27
+- **Reading mode opens the whole poem for all five poets**, not Hafez alone as in earlier versions, in Persian and English with the themes named beneath. (Source: 1.3 release notes; `Hamdam/Hamdam/Core/Localization.swift` discusses the whole-ghazal wording.)
+- **Recitation: 368 of the 500 verses can be heard**, across 266 whole poems, with one named reciter per poet, credited on the verse. Coverage is deliberately partial and depends on whether a volunteer recorded that poem. (Source: `Hamdam/Hamdam/Audio/VerseRecitation.swift`, which states all three numbers.)
+- **No synthetic speech anywhere** — the same source file records this as a standing rule, since iOS ships no Persian voice.
+- Marketing phrasing must not imply every verse can be heard. "Many verses can be heard" (the App Store's own wording) is safe; "every verse" is false.
+
+## Fal-e Hafez in 1.3 — VERIFIED 2026-08-27
+- The faal now **explains itself and asks you to type nothing**, and answers with a full ghazal. Earlier versions asked for a typed question. (Source: 1.3 release notes; App Store description, "It explains itself, and asks you to type nothing.")
+
 ## Privacy — VERIFIED (as claimed on live site; see audit note)
 - No accounts, no sign-up, no email collection. (Source: hamdam.com.au)
 - No analytics, no advertising, no tracking claimed on site. (Source: hamdam.com.au)
@@ -51,7 +75,14 @@ Rule for all generation tasks: a claim may appear in marketing output ONLY if it
 - Partial corroboration from source, 2026-08-13. The hamdam-ios project has **no Swift Package or other third-party dependency of any kind** (`project.pbxproj` contains no `XCRemoteSwiftPackageReference`), and a search of the Swift sources finds no analytics or attribution SDK (Firebase, Amplitude, Mixpanel, Segment, AppsFlyer, Adjust, Sentry, PostHog, OneSignal all absent; the apparent matches are the ordinary English words "segment" and "adjust"). On the question the label actually answers, no third-party SDK is collecting anything, the code agrees with the label.
 - CONTRADICTED, and this is the part that matters: the published privacy policy's own list of outbound hosts is incomplete, so the site is not currently an accurate description of the app. See the outbound-host finding below.
 
-## Outbound hosts — CONTESTED, site is out of date as of 2026-08-13
+## Outbound hosts — RESOLVED 2026-08-27, site is accurate and matches 1.3
+**Re-checked against version 1.3 on 2026-08-27 and the site is now correct.** All seven non-Apple hosts are disclosed in `/privacy/` section 5 and `/terms/` section 12, in both locales — verified by reading all four documents, not one. The 1.3 sources contact the same seven and no others: the four once missing (`www.wikidata.org`, `commons.wikimedia.org`, `api.inaturalist.org`, `inaturalist-open-data.s3.amazonaws.com`) are still live in `Roots/SymbolImageSources.swift`, and are now named in the policy. The Garden, the coaches and the habit bed add nothing, since none of them makes a network request.
+
+One trap worth keeping. Grepping only files that contain `URLSession` misses these four, because they are built in `SymbolImageSources.swift` and fetched elsewhere. Enumerate call sites (`URLSession`, `dataTask`, `AsyncImage`, `WKWebView`, `NWConnection`, `openURL`) as the 2026-08-13 pass did, or read every host literal in the sources and rule them out one by one. A first pass on 2026-08-27 made exactly this mistake and reported the set unchanged and complete before the second pass found the file.
+
+The original finding is kept below for the trail.
+
+## Outbound hosts — original finding, 2026-08-13 (now resolved above)
 The privacy policy (`/privacy/` section 5, mirrored in `/terms/` section 12) presents itself as the exhaustive list of every host the app contacts, and AGENTS.md makes keeping it exhaustive a standing rule. It is not exhaustive. Read from the hamdam-ios Swift sources on 2026-08-13, the app makes network requests to:
 
 | Host | In the policy? | Where in the app |
