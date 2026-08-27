@@ -25,6 +25,30 @@ and compare the hashes against your own `dist/`. Different hashes, or a
 stylesheet present locally and absent live, means it did not deploy. That check
 takes ten seconds and would have caught this immediately.
 
+**Observation added 2026-08-27, deliberately not a fourth rewrite of the line
+above.** `main` was fast-forwarded and pushed at 21:07 UTC and the live site was
+still serving the previous build 14 minutes later, polled every 45 seconds
+against the new markup. `npm run deploy` then published it in under 10 seconds
+and the hashes matched `dist/` immediately. That is one data point and it does
+not prove Workers Builds is disconnected: the build could have been queued,
+slow, or firing after the manual deploy had already made the result
+indistinguishable. What it does establish is that a push to `main` is not a
+deploy you can stand behind on a timescale anyone is waiting on. Push `main` so
+the repo and production agree, then deploy by hand and verify, rather than
+telling anyone it is live because the push succeeded.
+
+**Observation added 2026-08-27, deliberately not a fourth rewrite of the line
+above.** `main` was fast-forwarded and pushed at 21:07 UTC and the live site was
+still serving the previous build 14 minutes later, polled every 45 seconds
+against the new markup. `npm run deploy` then published it in under 10 seconds
+and the hashes matched `dist/` immediately. That is one data point and it does
+not prove Workers Builds is disconnected: the build could have been queued,
+slow, or firing after the manual deploy had already made the result
+indistinguishable. What it does establish is that a push to `main` is not a
+deploy you can stand behind on a timescale anyone is waiting on. Push `main` so
+the repo and production agree, then deploy by hand and verify, rather than
+telling anyone it is live because the push succeeded.
+
 The likely reading of 2026-08-02 is that those five builds ran while the
 feature branch was itself the configured production branch, or that they were
 preview deployments whose dashboard URL was misread as production. The Workers
