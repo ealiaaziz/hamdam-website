@@ -57,6 +57,13 @@ The largest change in 1.3, and the feature the marketing site had no mention of 
 - **A daily riddle**, alongside the existing picks. (Source: `Hamdam/Hamdam/Garden/Riddle/`, `RiddleEngine.swift`, `RiddleCorpus.swift`.)
 - The Garden makes **no network requests of its own** — checked across `Garden/`, `MentalCompanion/` and `FitnessCompanion/` for `URLSession`/`URLRequest`, none present. It reads Health, calendar and WeatherKit through Apple frameworks on device. That matters because it means the Garden adds no host to the outbound list.
 
+## Homepage screenshots — VERIFIED 2026-08-27
+The English hero and the Garden section both use assets from the **published 1.3 App Store listing** (`id6784461990`), pulled from `itunes.apple.com/lookup` at 1290x2796 and byte-identical to what the store serves. They are screens Ealia has already approved and published, which is the strongest provenance available from this repo: no macOS or Xcode is reachable here, so the ScreenshotOrchestrator cannot be run.
+- **The App Store filenames do not describe their contents.** Their `05-journey-en.png` is the Today screen; their `08-today-fa.png` is the English Garden screen; their `01-today-en.png` is the launch splash. Match on what the image shows, never on what it is called.
+- The hero screenshot **must show the current tab bar**. 1.3 renamed Discover to the Garden and the hero sat on the old name for the whole of the day the site was updated to describe 1.3. It was the first image on the page, and Ealia found it, not any check here. Any release that renames or moves a tab invalidates this asset.
+- The Farsi hero is **still the 2026-07-26 capture and still reads the old tab name**. The store's only Farsi Today capture is a mid-scroll frame with a card fragment over the status bar. One clean Farsi capture of Today, and one of the Garden screen, are the two assets `/fa/` is waiting on.
+- Claims are taken from the **1.3 release notes**, which Apple publishes in both languages, so the Persian half is Ealia's own authored text and can be quoted byte-exact rather than translated here.
+
 ## Reading mode and recitation — VERIFIED 2026-08-27
 - **Reading mode opens the whole poem for all five poets**, not Hafez alone as in earlier versions, in Persian and English with the themes named beneath. (Source: 1.3 release notes; `Hamdam/Hamdam/Core/Localization.swift` discusses the whole-ghazal wording.)
 - **Recitation: 368 of the 500 verses can be heard**, across 266 whole poems, with one named reciter per poet, credited on the verse. Coverage is deliberately partial and depends on whether a volunteer recorded that poem. (Source: `Hamdam/Hamdam/Audio/VerseRecitation.swift`, which states all three numbers.)

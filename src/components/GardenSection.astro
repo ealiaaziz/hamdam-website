@@ -1,0 +1,242 @@
+---
+import { Image } from 'astro:assets';
+import deviceFrame from '../assets/website-redesign/device-frame-iphone.png';
+import gardenScreenshotEn from '../assets/website-redesign/screenshots/EN/07-garden-en.png';
+
+// Added 2026-08-27. The Garden is the largest thing in version 1.3 and the
+// site carried it as the third paragraph of a prose block -- present, correct,
+// and invisible. Ealia's report was "I can't see anything about garden", which
+// is a layout finding, not a copy one: the words were live, nothing showed
+// them. That paragraph moves here and gets a picture.
+//
+// Every sentence below is Ealia's own, lifted from the 1.3 release notes he
+// published on the App Store, and every claim in it is already VERIFIED in
+// FACTS.md ("The Garden"): three coaches reading Health, the calendar and the
+// weather; the habit bed and its on-the-day-it-does-not cue; the daily riddle.
+// Nothing here is a new claim, which is the point -- the section needed a
+// design, not an argument.
+//
+// Deliberately NOT claimed, though both are plainly visible in the screenshot:
+// the "Today I am / Unwell, Injured, Travelling, On a deadline" chips, and
+// anything about where the coaches' inputs go. The first is unrecorded in
+// FACTS.md and a published screenshot is not the source FACTS.md asks for; the
+// second would be a privacy claim, and WeatherKit does reach Apple, so the
+// honest version of that sentence is longer than this section wants to be.
+
+interface Props {
+  lang: 'en' | 'fa';
+}
+
+const { lang } = Astro.props;
+
+// Farsi is not wired yet, and the gap is an asset one rather than a copy one:
+// Ealia's published Persian for all of this exists (the 1.3 release notes carry
+// a full Farsi half), but the store publishes no Farsi capture of the Garden
+// screen, and this repo does not author Persian. Rather than ship the section
+// with an English screenshot on a Persian page, /fa/ keeps its divider until
+// one Farsi capture exists. Guarded rather than assumed so that a `lang="fa"`
+// added by a future edit fails loudly here instead of quietly rendering
+// English.
+const copy =
+  lang === 'fa'
+    ? null
+    : {
+        eyebrow: 'The Garden',
+        heading: 'Nothing is asked of you that the day cannot carry.',
+        body: 'Three coaches, Mind, Move and Sleep, turn today’s one line into a plan for the whole day, reading from your Health data, your calendar and the weather.',
+        items: [
+          {
+            title: 'A garden bed for habits',
+            body: 'Plant one small thing, say when it happens and what you will do on the day it does not, then watch it grow on every day you tend it.',
+          },
+          {
+            title: 'A riddle each morning',
+            body: 'A new one waits every day, beside the verse you already came for.',
+          },
+        ],
+        shotAlt:
+          'The Hamdam Garden screen: a gentler start for the day, and the Mind, Move and Sleep coaches.',
+      };
+
+// Same cutout geometry as the hero and JourneyPair -- measured from the
+// frame's own alpha channel, not eyeballed. See HeroCinematic.astro.
+const FRAME_DISPLAY_WIDTH = 480;
+const FRAME_DISPLAY_HEIGHT = Math.round((FRAME_DISPLAY_WIDTH / deviceFrame.width) * deviceFrame.height);
+---
+
+{
+  copy && (
+    <section class="garden" aria-labelledby="garden-title">
+      <div class="garden__inner">
+        <div class="garden__frame" role="img" aria-label={copy.shotAlt}>
+          <Image
+            src={gardenScreenshotEn}
+            alt=""
+            width={630}
+            height={1366}
+            quality={80}
+            class="garden__frame-screen"
+          />
+          <Image
+            src={deviceFrame}
+            alt=""
+            width={FRAME_DISPLAY_WIDTH}
+            height={FRAME_DISPLAY_HEIGHT}
+            quality={72}
+            class="garden__frame-img"
+          />
+        </div>
+
+        <div class="garden__copy" data-reveal>
+          <p class="garden__eyebrow">{copy.eyebrow}</p>
+          <h2 id="garden-title" class="garden__heading text-balance">
+            {copy.heading}
+          </h2>
+          <p class="garden__body">{copy.body}</p>
+
+          <ul class="garden__items">
+            {copy.items.map((item) => (
+              <li class="garden__item">
+                <h3 class="garden__item-title">{item.title}</h3>
+                <p class="garden__item-body">{item.body}</p>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+<style>
+  /* Day arc, afternoon into late day. This section takes over the step the
+     `afternoon-lateday` SectionDivider used to make on its own: the divider
+     existed because nothing else crossed that gap, and a section that crosses
+     it is a better bridge than 220px of empty gradient. Both stops are warm
+     mid-tones where only --hamdam-text clears 4.5:1 (afternoon 8.37:1), so
+     every colour below is that token or a translucent cream panel -- no
+     --hamdam-text-soft, no opacity steps. See tokens.css. */
+  .garden {
+    padding-block: var(--spacing-section-mobile);
+    padding-inline: 1.5rem;
+    background: linear-gradient(to bottom, var(--arc-afternoon), var(--arc-lateday));
+    color: var(--hamdam-text);
+  }
+  @media (min-width: 640px) {
+    .garden {
+      padding-block: var(--spacing-section-desktop);
+    }
+  }
+
+  .garden__inner {
+    max-width: 1200px;
+    margin-inline: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2.5rem;
+  }
+
+  .garden__frame {
+    position: relative;
+    flex-shrink: 0;
+    width: min(260px, 64vw);
+    aspect-ratio: 1290 / 2796;
+    border-radius: var(--radius-device);
+    background: linear-gradient(to bottom, var(--surface-dusk), var(--surface-firstlight));
+    box-shadow: var(--shadow-rest);
+    overflow: hidden;
+  }
+
+  .garden__frame-img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
+  /* Explicit width/height rather than four insets: an absolutely positioned
+     replaced element with all four insets and auto sizing is over-constrained
+     and browsers fall back to the intrinsic size, so the insets silently do
+     nothing. Confirmed live once already -- see JourneyPair.astro. */
+  .garden__frame-screen {
+    position: absolute;
+    top: 5.97%;
+    left: 6.43%;
+    width: 87.5%;
+    height: 87.62%;
+    object-fit: cover;
+    border-radius: 8%;
+  }
+
+  .garden__eyebrow {
+    font-family: var(--font-sans);
+    font-size: var(--text-meta);
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .garden__heading {
+    margin-top: 0.75rem;
+    font-family: var(--font-serif);
+    font-size: var(--text-h2);
+    font-weight: 600;
+  }
+
+  .garden__body {
+    margin-top: 1.25rem;
+    max-width: 40rem;
+    font-size: var(--text-body);
+    line-height: 1.7;
+  }
+
+  .garden__items {
+    margin-top: 2rem;
+    display: grid;
+    gap: 1rem;
+    list-style: none;
+    padding: 0;
+  }
+
+  .garden__item {
+    border-radius: var(--radius-panel);
+    padding: 1.5rem;
+    background: rgb(244 237 216 / 0.42);
+    border: 1px solid rgb(36 30 21 / 0.12);
+  }
+
+  .garden__item-title {
+    font-family: var(--font-serif);
+    font-size: var(--text-h3);
+    font-weight: 600;
+  }
+
+  .garden__item-body {
+    margin-top: 0.5rem;
+    font-size: var(--text-body);
+    line-height: 1.6;
+  }
+
+  /* Frame first in the source order and first in the row, so the page
+     alternates: JourneyPair above puts its copy on the leading side and its
+     phones on the trailing one. `row` (not row-reverse) means RTL mirrors this
+     for free if a Farsi capture ever arrives. */
+  @media (min-width: 900px) {
+    .garden__inner {
+      flex-direction: row;
+      align-items: center;
+      gap: 4rem;
+    }
+    .garden__frame {
+      width: min(300px, 30vw);
+    }
+    .garden__copy {
+      flex: 1 1 auto;
+    }
+    .garden__items {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+</style>

@@ -5,6 +5,7 @@ import MoodDemo from '../components/MoodDemo.astro';
 import VerseShowcase from '../components/VerseShowcase.astro';
 import PoetsBand from '../components/PoetsBand.astro';
 import JourneyPair from '../components/JourneyPair.astro';
+import GardenSection from '../components/GardenSection.astro';
 import RootsMoments from '../components/RootsMoments.astro';
 import PrivacyTrust from '../components/PrivacyTrust.astro';
 import PlansAndFoundingCompanion from '../components/PlansAndFoundingCompanion.astro';
@@ -176,43 +177,31 @@ const jsonLd = homepageSchema({
           as read, in the voice of a named Persian reciter.
         </p>
         {
-          /* The Garden, added 2026-08-27 with version 1.3, where it is the
-             largest change and had no mention here at all. Every clause is
-             VERIFIED in FACTS.md against both the App Store listing and the
-             1.3 sources: the three coaches read Health, the calendar and
-             WeatherKit on device (Garden/Coaches/), the habit bed and its
-             on-the-day-it-does-not cue are Garden/Habits/, the riddle is
-             Garden/Riddle/.
-
-             Two wordings here are deliberate and both were nearly got wrong.
-
-             The sentence above keeps "in its original Persian, or in English"
-             from the 2026-08-16 correction. The 1.3 draft of this paragraph
-             was written against the pre-correction text and would have put
-             "beside an English translation" back on the page -- the exact
-             claim FACTS.md blocks, because the daily verse shows one language
-             at a time. Reading Mode does stack both, but FACTS.md says to
-             claim the default and not the exceptions, so the reading-mode
-             sentence describes the whole poem and its themes and makes no
-             claim about how the two languages are laid out.
-
-             "Many verses can be heard" is the App Store's own wording: 368 of
-             the 500 have a recording, so "every verse" would be false.
-             FACTS.md records the number and the trap. */
+          /* The Garden's paragraph used to sit here, added 2026-08-27 with
+             version 1.3 and moved out the same day. It was accurate and it was
+             the third paragraph of a prose block, which is how the largest
+             feature in the release ended up invisible: Ealia's report was "I
+             can't see anything about garden" while every word of it was live.
+             It is now <GardenSection>, below JourneyPair, with a screenshot.
+             The wording, the sources and the two traps that paragraph recorded
+             (one language at a time, "many verses" and not "every verse") are
+             carried in that component's header and in FACTS.md. */
         }
-        <p>
-          And there is the Garden. Three quiet companions, for mind, movement and sleep, read
-          what your day already holds and offer one small thing it can carry. Plant a habit in
-          the garden bed, say what you will do on the day it does not happen, and watch it grow
-          each day you tend it. A riddle waits each morning.
-        </p>
       </div>
     </div>
   </section>
 
   <JourneyPair lang="en" />
 
-  <SectionDivider variant="afternoon-lateday" />
+  {
+    /* The Garden (2026-08-27). It sits on the arc step the
+       `afternoon-lateday` divider used to cross by itself, and replaces it:
+       that divider was 220px of gradient carrying nothing, added only because
+       no section spanned the gap. One that does is a better bridge. /fa/ still
+       has the divider, because the section is English-only until a Farsi
+       capture of the Garden screen exists -- see GardenSection.astro. */
+  }
+  <GardenSection lang="en" />
 
   {
     /* 3. FIVE POETS

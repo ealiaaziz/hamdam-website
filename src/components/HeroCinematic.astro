@@ -45,7 +45,41 @@ const stars = starField(40, 42);
 // The poetry claim now lives entirely in the h1 and the copy, which can carry
 // it honestly, rather than in a picture that could not. See FACTS.md, "The
 // homepage hero screenshot", for the full record.
+//
+// Replaced again 2026-08-27, and this time because the picture had gone stale
+// rather than false. 1.3 renamed the Discover tab to the Garden, and the
+// 2026-07-26 capture still showed a tab bar reading "Discover" -- the first
+// thing anyone sees on the site, contradicting the release the page had just
+// been updated to describe. Ealia noticed it before any check here did.
+//
+// The English hero is now Apple's own `05-journey-en.png` from the published
+// 1.3 App Store listing (id6784461990), pulled at 1290x2796 and byte-identical
+// to what the store serves. Using the store's asset rather than a fresh
+// orchestrator render is deliberate: no Xcode is reachable from this repo, and
+// a screenshot Ealia has already published is a screen he has already approved.
+// Note the ASC filenames do NOT describe their contents -- their `05-journey`
+// is the Today screen and their `08-today-fa` is the English Garden screen --
+// so match on what the image shows, never on what it is called.
+//
+// It also retires the caveat above: this one IS a real Today screen with a
+// real verse on it (Parvin), so the hero no longer has to make the poetry
+// claim in text alone.
+//
+// The Farsi hero is NOT updated and still shows the old tab name. The store's
+// only Farsi Today capture (`07-garden-fa.png`) is a mid-scroll frame with a
+// card fragment floating over the status bar, which would read as a broken
+// screenshot inside the device frame. It needs one clean capture from the app;
+// cropping the glitch out pushes the status bar hard against the frame's
+// rounded top, which looks no better.
 const heroScreenshot = lang === 'fa' ? heroScreenshotFa : heroScreenshotEn;
+// 945 is the render width the retired asset happened to be stored at, kept as
+// the budget size (on-page display never exceeds 360px CSS). The height is
+// derived from whichever source this locale uses, because EN is now 1290x2796
+// and FA is still 945x2052: declaring one pair for both would letterbox one of
+// them. object-fit: cover would have hidden the 0.2% aspect difference, which
+// is exactly why it is worth not writing a wrong number down.
+const HERO_SHOT_WIDTH = 945;
+const heroShotHeight = Math.round((HERO_SHOT_WIDTH / heroScreenshot.width) * heroScreenshot.height);
 // The Farsi alt lost "با شعری صبحگاهی از حافظ" (with a morning verse by Hafez)
 // and gained nothing: deletion only, because the replacement image has no verse
 // and this repo bars authoring Persian. Every remaining character is from the
@@ -53,7 +87,7 @@ const heroScreenshot = lang === 'fa' ? heroScreenshotFa : heroScreenshotEn;
 const deviceAlt =
   lang === 'fa'
     ? 'نمای صفحه اصلی همدم'
-    : 'The Hamdam Today screen: an evening greeting, the sky where you live, and the day’s reflection.';
+    : 'The Hamdam Today screen: a morning greeting, the day’s verse from Parvin Etesami, and a gentle nudge for the day ahead.';
 ---
 
 <section id="hero" class="hero" aria-labelledby="hero-title">
@@ -161,8 +195,8 @@ const deviceAlt =
         <Image
           src={heroScreenshot}
           alt=""
-          width={945}
-          height={2052}
+          width={HERO_SHOT_WIDTH}
+          height={heroShotHeight}
           quality={80}
           class="hero__device-screen"
         />
