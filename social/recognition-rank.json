@@ -22,122 +22,154 @@
     {
       "id": "hafez-002",
       "poet": "Hafez",
-      "why": "The best known ghazal opening in Hafez; quoted, sung and translated for centuries."
+      "why": "The best known ghazal opening in Hafez; quoted, sung and translated for centuries.",
+      "bucket": "light"
     },
     {
       "id": "khayyam-050",
       "poet": "Khayyam",
-      "why": "Proverbial quatrain on the futility of coming and going."
+      "why": "Proverbial quatrain on the futility of coming and going.",
+      "bucket": "unsettled"
     },
     {
       "id": "hafez-035",
       "poet": "Hafez",
-      "why": "From Ghazal 1; the storm-at-sea couplet is quoted on its own constantly."
+      "why": "From Ghazal 1; the storm-at-sea couplet is quoted on its own constantly.",
+      "bucket": "unsettled",
+      "bucket_note": "themes match no bucket; assigned by hand — dark night, fear of waves, whirlpool"
     },
     {
       "id": "parvin-002",
       "poet": "Parvin",
-      "why": "Iranian school curriculum. Already used on Instagram 20 Aug, never on YouTube."
+      "why": "Iranian school curriculum. Already used on Instagram 20 Aug, never on YouTube.",
+      "bucket": "restless",
+      "bucket_note": "themes match no bucket; assigned by hand — the fledgling eager to fly"
     },
     {
       "id": "saadi-021",
       "poet": "Saadi",
-      "why": "Everyday proverb about youth being a five-day market."
+      "why": "Everyday proverb about youth being a five-day market.",
+      "bucket": "slow"
     },
     {
       "id": "khayyam-021",
       "poet": "Khayyam",
-      "why": "Proverbial: no hold on tomorrow."
+      "why": "Proverbial: no hold on tomorrow.",
+      "bucket": "unsettled"
     },
     {
       "id": "hafez-019",
       "poet": "Hafez",
-      "why": "Opening of Ghazal 3, widely recognised."
+      "why": "Opening of Ghazal 3, widely recognised.",
+      "bucket": "missing"
     },
     {
       "id": "parvin-014",
       "poet": "Parvin",
-      "why": "The Socrates poem; school anthology staple."
+      "why": "The Socrates poem; school anthology staple.",
+      "bucket": "unsettled"
     },
     {
       "id": "khayyam-025",
       "poet": "Khayyam",
-      "why": "Proverbial on the brevity of a life's turn."
+      "why": "Proverbial on the brevity of a life's turn.",
+      "bucket": "unsettled"
     },
     {
       "id": "saadi-003",
       "poet": "Saadi",
-      "why": "Famous ghazal opening addressed to the dawn breeze."
+      "why": "Famous ghazal opening addressed to the dawn breeze.",
+      "bucket": "missing"
     },
     {
       "id": "hafez-021",
       "poet": "Hafez",
-      "why": "Widely quoted opening asking where the beloved rests."
+      "why": "Widely quoted opening asking where the beloved rests.",
+      "bucket": "missing"
     },
     {
       "id": "khayyam-043",
       "poet": "Khayyam",
-      "why": "Proverbial on arriving and leaving without profit."
+      "why": "Proverbial on arriving and leaving without profit.",
+      "bucket": "unsettled"
     },
     {
       "id": "saadi-043",
       "poet": "Saadi",
-      "why": "Very widely quoted love opening."
+      "why": "Very widely quoted love opening.",
+      "bucket": "missing",
+      "bucket_note": "themes match no bucket; assigned by hand — no peace without your face"
     },
     {
       "id": "rumi-051",
       "poet": "Rumi",
-      "why": "Best recognised of the Rumi entries in this queue."
+      "why": "Best recognised of the Rumi entries in this queue.",
+      "bucket": "light",
+      "bucket_note": "themes match no bucket; assigned by hand — sudden, boundless"
     },
     {
       "id": "parvin-008",
       "poet": "Parvin",
-      "why": "The sparrow and dove fable; commonly taught."
+      "why": "The sparrow and dove fable; commonly taught.",
+      "bucket": "slow"
     },
     {
       "id": "hafez-040",
       "poet": "Hafez",
-      "why": "'Someone inside me' — quoted well outside poetry readers."
+      "why": "'Someone inside me' — quoted well outside poetry readers.",
+      "bucket": "worn",
+      "bucket_note": "themes match no bucket; assigned by hand — the mood line all but repeats the verse"
     },
     {
       "id": "khayyam-046",
       "poet": "Khayyam",
-      "why": "On companions lost; in general circulation."
+      "why": "On companions lost; in general circulation.",
+      "bucket": "unsettled"
     },
     {
       "id": "parvin-003",
       "poet": "Parvin",
-      "why": "Opens with a direct question, high recall."
+      "why": "Opens with a direct question, high recall.",
+      "bucket": "others"
     },
     {
       "id": "saadi-022",
       "poet": "Saadi",
-      "why": "Aphoristic and quotable."
+      "why": "Aphoristic and quotable.",
+      "bucket": "slow"
     },
     {
       "id": "hafez-011",
       "poet": "Hafez",
-      "why": "Proverbial counsel while you still stand on the earth."
+      "why": "Proverbial counsel while you still stand on the earth.",
+      "bucket": "light"
     },
     {
       "id": "khayyam-024",
       "poet": "Khayyam",
-      "why": "The world as an old caravanserai; widely known image."
+      "why": "The world as an old caravanserai; widely known image.",
+      "bucket": "unsettled"
     },
     {
       "id": "parvin-031",
       "poet": "Parvin",
-      "why": "The king and the passer-by; narrative and memorable."
+      "why": "The king and the passer-by; narrative and memorable.",
+      "bucket": "others",
+      "bucket_note": "themes match no bucket; assigned by hand — attention on another person"
     },
     {
       "id": "saadi-018",
       "poet": "Saadi",
-      "why": "Aphorism on gratitude for today."
+      "why": "Aphorism on gratitude for today.",
+      "bucket": "light"
     },
     {
       "id": "rumi-034",
       "poet": "Rumi",
-      "why": "The drum of departure; recognisable Rumi image."
+      "why": "The drum of departure; recognisable Rumi image.",
+      "bucket": "restless",
+      "bucket_note": "themes match no bucket; assigned by hand — the drum of departure"
     }
-  ]
+  ],
+  "_bucket": "Page 0's mood line comes from moods-fa.json using the `bucket` named here. Seventeen of these resolve by intersecting the verse's themes with a bucket's themes. Seven do not intersect any bucket and were assigned by hand, marked bucket_note — including hafez-035, one of the best known couplets in Persian. The durable fix is to widen the theme lists in moods-fa.json, which only Ealia should edit; until then these assignments hold."
 }
