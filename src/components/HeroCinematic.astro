@@ -65,12 +65,18 @@ const stars = starField(40, 42);
 // real verse on it (Parvin), so the hero no longer has to make the poetry
 // claim in text alone.
 //
-// The Farsi hero is NOT updated and still shows the old tab name. The store's
-// only Farsi Today capture (`07-garden-fa.png`) is a mid-scroll frame with a
-// card fragment floating over the status bar, which would read as a broken
-// screenshot inside the device frame. It needs one clean capture from the app;
-// cropping the glitch out pushes the status bar hard against the frame's
-// rounded top, which looks no better.
+// The Farsi hero followed the same day, from the store's only Farsi capture
+// (`07-garden-fa.png`), which is the 1.3 Today screen and reads the Garden tab
+// correctly. It is mid-scroll: a cream card fragment floats over the status bar
+// through the top 103px, and the status bar's own glyphs are drawn across it
+// down to 121px, so there is no crop that keeps the clock and drops the
+// fragment. It is cropped to `left 29, top 124, 1233x2672`, which takes both
+// away and lands back on the frame's exact 1290/2796 aspect so `object-fit:
+// cover` has nothing left to trim. A crop and nothing else -- no repainting, no
+// compositing, no element moved or relabelled -- and the one visible
+// consequence is that the Farsi phone has no status bar where the English one
+// does. Measured, not eyeballed: the two bands were found by counting cream and
+// near-black pixels per row.
 const heroScreenshot = lang === 'fa' ? heroScreenshotFa : heroScreenshotEn;
 // 945 is the render width the retired asset happened to be stored at, kept as
 // the budget size (on-page display never exceeds 360px CSS). The height is

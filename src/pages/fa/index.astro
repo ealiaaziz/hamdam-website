@@ -10,6 +10,7 @@ import RootsMoments from '../../components/RootsMoments.astro';
 import PrivacyTrust from '../../components/PrivacyTrust.astro';
 import PlansAndFoundingCompanion from '../../components/PlansAndFoundingCompanion.astro';
 import FinalCeremony from '../../components/FinalCeremony.astro';
+import GardenSection from '../../components/GardenSection.astro';
 import SectionDivider from '../../components/SectionDivider.astro';
 import FeatureIcon from '../../components/FeatureIcon.astro';
 import HamdamLogotype from '../../components/HamdamLogotype.astro';
@@ -132,7 +133,15 @@ const jsonLd = homepageSchema({
 
   <JourneyPair lang="fa" />
 
-  <SectionDivider variant="afternoon-lateday" />
+  {
+    /* The Garden (2026-08-27), on the same arc step and in place of the same
+       `afternoon-lateday` divider as on the English page. The copy is Ealia's
+       own Persian from the 1.3 release notes, in src/data/siteCopy.ts. It
+       renders without the phone, because the 1.3 App Store listing publishes
+       exactly one Farsi capture and it is the Today screen, which the hero
+       above already uses. See GardenSection.astro. */
+  }
+  <GardenSection lang="fa" />
 
   {/* 3. FIVE POETS */}
   <VerseShowcase lang="fa" intro={faCopy.verseIntro} sceneImage={dawn} />
