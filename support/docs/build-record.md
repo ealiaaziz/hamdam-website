@@ -1226,24 +1226,76 @@ it. Recorded because it is a deliberate choice and not an oversight.
 `npx wrangler secret delete OWNER_EMAILS`. The gate fails closed and the desk
 carries on as an ordinary desk.
 
-## A wrong marker cost a real report its answer (2026-08-28)
+## The night the cron stopped, and the wrong answer given first (2026-08-28)
 
 The first live bot report reached the agent, which read the whole path it
 named, found no fault, and asked the owner a clarifying question rather than
 guessing. That was the right call and she never saw it.
 
+**Read the correction below before the diagnosis.** The heading of this
+section said "a wrong marker cost a real report its answer" for about an hour,
+and the marker was not what cost her the answer. What follows is kept in the
+order it happened, because the order is the lesson.
+
+### What the evidence looked like, and the story built on it
+
 The agent is handed three markers and told to pick one: `desk:fa` for "here is
 the change I made", `desk:ask` for a question, `desk:blocked` for a stand-down.
-It wrapped the question in `desk:fa`. Everything downstream then did exactly
-what it was written to do. No pull request existed, so `parseAgentReport`
-found nothing to propose. No `ask` or `blocked` marker existed, so
-`parseAgentOutcome` found nothing to relay. The workflow's guaranteed-marker
-step saw a marker and correctly stayed quiet. The follow-up pass ran every
-minute, did nothing, and logged nothing, because it only logged when it acted.
-An acknowledgement followed by silence, which is the one outcome this whole
-flow exists to prevent, produced by three correct components agreeing.
+The theory was that it had wrapped the question in `desk:fa`, and that theory
+explained everything visible: no pull request existed, so `parseAgentReport`
+found nothing to propose; no `ask` marker, so `parseAgentOutcome` found nothing
+to relay; the workflow's guaranteed-marker step saw a marker and correctly
+stayed quiet; and `ticket_bot_changes.last_outcome` was `NULL`, which is
+exactly what a parse that found nothing leaves behind.
 
-Three changes, and the first is the one that matters:
+That last column was read as proof and reported as "confirmed, not guessed". It
+was not proof. `NULL` is equally what a follow-up pass that never ran leaves
+behind, and the two readings were never distinguished before the conclusion was
+announced. A single value consistent with two hypotheses is evidence for
+neither.
+
+### What was actually wrong
+
+Every scheduled Worker on the Cloudflare account stopped firing at 20:55 UTC.
+Not the desk's crons: all of them, on every script in the account at the same
+instant, `nl-events-bot` included, so the bot's own timed jobs were down too.
+HTTP was unaffected throughout, which is what made it invisible: the portal
+answered 200, the Worker looked alive, and nothing anywhere raised its hand.
+
+Three things established it, and it is worth recording how, because the same
+three answer the same question next time:
+
+- `wrangler tail` showed zero scheduled events across eight minutes of
+  watching, while catching an unrelated live HTTP request in the same window.
+  That is what rules out a broken tail rather than assuming one.
+- The GraphQL analytics API (`workersInvocationsAdaptive`, per minute) showed
+  exactly one invocation a minute through 20:55 and then nothing.
+- The same query across every script showed the stop was account-wide, which is
+  what moved the cause out of this codebase entirely.
+
+The agent, incidentally, said so itself. Told on the issue that it had used the
+wrong marker, it checked the claim against the workflow file and the thread and
+answered that it had not. It was right, and being right was treated as
+something to work around rather than as evidence. A component that disagrees
+with your diagnosis is data.
+
+Neither a redeploy, nor re-registering the schedule through the API, nor
+writing a brand-new schedule with a different expression brought it back.
+
+### Still open
+
+Nothing in this system noticed. The desk writes an ingest heartbeat to
+`sync_state` on every pass and nothing reads it, so "the desk has not run for
+an hour" is a fact sitting in a table that no code and no person consults. A
+health route that reports the age of that heartbeat, watched from somewhere
+that is not this account, is the missing piece. It is deliberately not built
+here: the thing that failed was the account's ability to run scheduled work, so
+a monitor living inside that same account would have stopped at 20:55 too.
+
+### The changes that were made anyway, and why they are still right
+
+The marker theory was wrong about this outage and the fixes it produced are
+worth keeping, because each closes a real path to the same silence:
 
 1. Marker choice now decides only the wording of the email, never whether she
    gets one. A Farsi block with no pull request beside it is the agent talking

@@ -90,14 +90,12 @@ describe('parseAgentOutcome', () => {
   });
 
   /**
-   * The one that cost a real report its answer.
+   * The marker the agent picks must not decide whether she hears anything.
    *
-   * The agent is handed three markers and told to pick. On the first live
-   * report it wrote its Farsi question inside `desk:fa`, the marker that
-   * means "here is the change I made". No pull request existed, so there was
-   * nothing to propose; no `ask` existed, so there was nothing to relay; and
-   * she got an acknowledgement and then nothing, which is the exact outcome
-   * the three markers were introduced to prevent.
+   * Three markers, and picking wrong used to be silent: a question tagged
+   * `desk:fa` has no pull request to propose and no `ask` to relay, so it
+   * reached nobody, which is the exact outcome the three markers were
+   * introduced to prevent.
    *
    * A Farsi block with no pull request beside it is the agent talking to her.
    * It reaches her as a question, because a question invites the reply that

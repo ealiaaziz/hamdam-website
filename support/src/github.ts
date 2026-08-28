@@ -206,14 +206,17 @@ export function parseAgentReport(comments: readonly IssueComment[]): {
  * Newest wins, and a report of any kind supersedes an older one: a question
  * answered and then built is a pull request now, not an open question.
  *
- * `desk:fa` counts too, and that is the correction this function needed. The
- * agent is given three markers and told to pick the right one, and on the
- * first live report it wrote its Farsi question inside `desk:fa`, the marker
- * that means "here is the change I made". Every check downstream then behaved
- * correctly and she heard nothing: no pull request existed, so there was
- * nothing to propose, and no `ask` marker existed, so there was nothing to
- * relay. A wrong marker cost her the answer, silently, which is precisely the
- * outcome the three markers were introduced to make impossible.
+ * `desk:fa` counts too. The agent is given three markers and told to pick the
+ * right one, and picking wrong used to be silent: with no pull request there
+ * was nothing to propose, and with no `ask` marker there was nothing to relay,
+ * so a question tagged `desk:fa` reached nobody. That is precisely the outcome
+ * the three markers were introduced to make impossible.
+ *
+ * Recorded honestly, because this was written believing it had just happened:
+ * the silence that prompted it turned out to be the account's scheduled
+ * invocations stopping, not a marker at all (see the build record for
+ * 2026-08-28). The hazard here is real and was reachable in one wrong word
+ * from a model; it simply was not that night's fault.
  *
  * So marker choice now decides only the wording of the email, never whether
  * she gets one. A Farsi block with no pull request beside it is, by
