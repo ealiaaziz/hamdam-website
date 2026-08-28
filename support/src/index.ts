@@ -23,7 +23,7 @@ import { adminAllowlist, isAllowedAgent } from './adminAccess.js';
 import { detectLocale, localePath, parseLocale, type Locale } from './i18n.js';
 import { ingestInbox, queueAndSend as queueAndSendFromCron } from './ingest.js';
 import { followUpBotChanges } from './botFollowUp.js';
-import { tickWork } from './tick.js';
+import { requestedJobs, tickAuthorised, tickWork } from './tick.js';
 import { notifyEscalation, unmeteredRecipients } from './escalation.js';
 import { requestedClosure } from './agentPolicy.js';
 
@@ -428,6 +428,43 @@ app.get('/health', async (c) => {
     // staleness is invisible against a ten minute threshold.
     'cache-control': 'public, max-age=30',
   });
+});
+
+// Drive a tick by hand, when whatever normally drives it has stopped.
+//
+// Above the country check, like /health, because the thing calling this runs
+// wherever it runs and the desk being unreachable from it is the situation
+// this exists for.
+//
+// Every guard is in tickAuthorised and it fails closed: no TICK_SECRET, no
+// route. See tick.ts for why this is here at all, and why the job is
+// selectable rather than doing everything at once.
+//
+// Not metered. The recipient ceiling still applies to every email this
+// causes, because that lives at the act of sending and everything crosses it;
+// what is deliberately absent is a per-caller limit, because the caller is
+// whoever holds the secret and rate limiting a bearer secret protects nobody.
+app.post('/internal/tick', async (c) => {
+  if (!tickAuthorised(c.env.TICK_SECRET, c.req.header('x-desk-tick') ?? null)) {
+    // 404 rather than 401. An unauthenticated caller learns nothing about
+    // whether this route exists, and there is no legitimate caller who needs
+    // to be told they got the secret wrong.
+    return c.notFound();
+  }
+
+  const work = requestedJobs(c.req.query('job') ?? null);
+  const done: Record<string, unknown> = {};
+
+  if (work.purge) {
+    await purgeRateLimits(c.env.DB);
+    done.purge = 'done';
+  }
+  if (work.ingest) done.ingest = await ingestInbox(c.env);
+  if (work.followUp) {
+    done.followUp = await followUpBotChanges(c.env, (email) => queueAndSendFromCron(c.env, email));
+  }
+
+  return c.json(done);
 });
 
 // Serve only where Hamdam is sold.

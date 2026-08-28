@@ -58,3 +58,52 @@ export function tickWork(scheduledTime: number): TickWork {
     purge: minute % PURGE_EVERY === 0,
   };
 }
+
+/**
+ * Whether a request may drive a tick by hand.
+ *
+ * Exists because Cloudflare stopped invoking this account's scheduled Workers
+ * at 20:55 UTC on 2026-08-28 while continuing to serve their HTTP traffic
+ * perfectly. The desk stopped reading its mailbox for hours and there was no
+ * way in: the work was reachable only from a trigger nobody outside
+ * Cloudflare controls. This is the way in, and it is worth having permanently,
+ * because a scheduler is a dependency like any other and this one failed
+ * silently.
+ *
+ * Fails closed. Unset means nobody, which is the opposite of the console's
+ * `ADMIN_EMAILS` and right for the opposite reason: an unset console list
+ * admits whoever Access already admits, and an unset secret here would admit
+ * the entire internet to a route that spends model calls and sends email.
+ *
+ * Compared in constant time. The comparison is cheap and the habit is worth
+ * more than the microseconds: this is a bearer secret in a header, and the
+ * one attack it is actually exposed to is guessing.
+ */
+export function tickAuthorised(secret: string | undefined, presented: string | null): boolean {
+  if (!secret || !presented) return false;
+  if (secret.length !== presented.length) return false;
+
+  let differences = 0;
+  for (let i = 0; i < secret.length; i += 1) {
+    differences |= secret.charCodeAt(i) ^ presented.charCodeAt(i);
+  }
+  return differences === 0;
+}
+
+/**
+ * Which jobs a hand-driven tick should run.
+ *
+ * Selectable, and that is not a convenience. An HTTP invocation is charged the
+ * same 10 ms of CPU as a scheduled one, and a tick doing every job was
+ * measured at 9.274 ms, so a single call asking for all of it is a call that
+ * may be killed halfway. Asking for one job at a time keeps each request well
+ * inside the budget, and the caller can make three.
+ */
+export function requestedJobs(job: string | null): TickWork {
+  switch (job) {
+    case 'ingest': return { ingest: true, followUp: false, purge: false };
+    case 'followup': return { ingest: false, followUp: true, purge: false };
+    case 'purge': return { ingest: false, followUp: false, purge: true };
+    default: return { ingest: true, followUp: true, purge: true };
+  }
+}

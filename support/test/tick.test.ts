@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { tickWork } from '../src/tick.js';
+import { requestedJobs, tickAuthorised, tickWork } from '../src/tick.js';
 
 /** Epoch milliseconds for a given whole minute, so the maths is visible. */
 const at = (minute: number) => minute * 60_000;
@@ -56,5 +56,44 @@ describe('tickWork', () => {
     // divide evenly and nothing here counts from a deploy.
     const aDayLater = at(100 + 60 * 24);
     expect(tickWork(aDayLater).followUp).toBe(tickWork(at(100)).followUp);
+  });
+});
+
+describe('tickAuthorised', () => {
+  it('refuses when no secret is configured, whatever is presented', () => {
+    expect(tickAuthorised(undefined, 'anything')).toBe(false);
+    expect(tickAuthorised('', 'anything')).toBe(false);
+  });
+
+  it('refuses when nothing is presented', () => {
+    expect(tickAuthorised('s3cret', null)).toBe(false);
+    expect(tickAuthorised('s3cret', '')).toBe(false);
+  });
+
+  it('accepts the secret and nothing else', () => {
+    expect(tickAuthorised('s3cret', 's3cret')).toBe(true);
+    expect(tickAuthorised('s3cret', 's3creT')).toBe(false);
+    expect(tickAuthorised('s3cret', 's3cret ')).toBe(false);
+    expect(tickAuthorised('s3cret', 's3cre')).toBe(false);
+    expect(tickAuthorised('s3cret', 's3cretlonger')).toBe(false);
+  });
+});
+
+describe('requestedJobs', () => {
+  it('runs one job when one is named', () => {
+    expect(requestedJobs('ingest')).toEqual({ ingest: true, followUp: false, purge: false });
+    expect(requestedJobs('followup')).toEqual({ ingest: false, followUp: true, purge: false });
+    expect(requestedJobs('purge')).toEqual({ ingest: false, followUp: false, purge: true });
+  });
+
+  /**
+   * An unrecognised job runs everything rather than nothing. A caller reaching
+   * for this route is a caller whose scheduler has stopped, and a typo that
+   * silently does no work is the wrong way to greet them.
+   */
+  it('runs everything when nothing recognisable is asked for', () => {
+    for (const asked of [null, '', 'INGEST', 'nonsense']) {
+      expect(requestedJobs(asked)).toEqual({ ingest: true, followUp: true, purge: true });
+    }
   });
 });

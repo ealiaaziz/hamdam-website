@@ -1284,13 +1284,25 @@ writing a brand-new schedule with a different expression brought it back.
 
 ### Still open
 
-Nothing in this system noticed. The desk writes an ingest heartbeat to
-`sync_state` on every pass and nothing reads it, so "the desk has not run for
-an hour" is a fact sitting in a table that no code and no person consults. A
-health route that reports the age of that heartbeat, watched from somewhere
-that is not this account, is the missing piece. It is deliberately not built
-here: the thing that failed was the account's ability to run scheduled work, so
-a monitor living inside that same account would have stopped at 20:55 too.
+This first said nothing in the system noticed, and that the missing piece was a
+health route reading the ingest heartbeat. Both halves were wrong, and checking
+would have taken one request. `/health` has existed since 2026-08-02, built for
+exactly this failure, and it was answering `503 stale` within ten minutes of
+the cron stopping and kept answering it all night. The console shows its banner
+too.
+
+What is actually missing is a subscriber. The endpoint is designed to be
+watched by an uptime monitor outside this account, and no such monitor is
+pointed at it, so a correct alarm rang in an empty room for three hours. That
+is a five-minute job with any free uptime service and it is the single highest
+value thing left on this list.
+
+Also open, and the reason this outage could not be worked around at all: the
+desk's work was reachable only from a trigger nobody here controls. HTTP was
+healthy throughout while scheduled invocations were not, so the mailbox could
+have been read at any point by anything able to ask. `POST /internal/tick`
+exists now for that, secret-gated and failing closed, and the same monitor that
+watches `/health` can drive it if the scheduler stops again.
 
 ### The changes that were made anyway, and why they are still right
 

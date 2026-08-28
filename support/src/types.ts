@@ -141,6 +141,8 @@ export interface Env {
   GITHUB_TOKEN?: string;
   /** owner/name of the bot repository. */
   GITHUB_REPO?: string;
+  /** Bearer secret for POST /internal/tick. Unset means the route does not exist. */
+  TICK_SECRET?: string;
   /**
    * Microsoft Graph app-only credentials, so the Worker can send mail as
    * developer@hamdam.com.au the moment there is something to send, instead
