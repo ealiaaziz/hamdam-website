@@ -3,7 +3,7 @@ import { ticketPublicId } from './ids.js';
 import { addComment, getBotChange, recordApproval, recordDispatch, recordRefusal } from './db.js';
 import { consumeRateLimit } from './rateLimit.js';
 import { runDispatchGate } from './dispatch.js';
-import { commentOnIssue, canReachRepo, openIssue } from './github.js';
+import { commentOnIssue, canReachRepo, openIssue, postApproval } from './github.js';
 import { isOwner } from './owner.js';
 import { approvalVerdict, approvesChange } from './changeApproval.js';
 
@@ -135,6 +135,28 @@ export async function relayReply(env: Env, facts: InboundFacts): Promise<void> {
             ? `Owner approved ${change.pending_change_ref}.`
             : `Approval did not apply: ${change.pending_change_ref} is no longer the pending change.`,
         );
+
+        // Only once the database agrees, and only with the sha that was put to
+        // her. `took` is false when the pending change moved underneath the
+        // reply, and telling the repository she approved something the desk
+        // itself refused to record is how the two sides drift apart.
+        if (took && change.pr_number && change.head_sha && canReachRepo(env)) {
+          const posted = await postApproval(
+            env,
+            change.pr_number,
+            change.head_sha,
+            change.pending_change_ref,
+          );
+          if (!posted.ok) {
+            await addComment(
+              env.DB,
+              facts.ticketId,
+              'system',
+              null,
+              `Approval recorded but not delivered to the repository: ${posted.reason}. It will not merge until this is retried.`,
+            );
+          }
+        }
       }
     }
 

@@ -147,3 +147,36 @@ export async function commentOnIssue(
     body: ['A further message from the channel owner on this ticket.', '', quoteUntrusted(text)].join('\n'),
   });
 }
+
+/**
+ * Tell the repository that the owner approved this change.
+ *
+ * A comment rather than a merge, because the token here cannot merge and
+ * should not be able to: an email must never be one step from pushing. The
+ * workflow that reads this comment runs from the default branch, so a pull
+ * request cannot edit the rules that decide whether it gets merged, and it
+ * re-checks everything that matters rather than trusting this message.
+ *
+ * The sha is the load-bearing part. Consent names the commit it consents to,
+ * so an agent that pushes again after she has said yes cannot ride in on an
+ * approval she gave to something earlier.
+ */
+export async function postApproval(
+  env: Env,
+  prNumber: number,
+  headSha: string,
+  changeRef: string,
+): Promise<GitHubResult<{ id: number }>> {
+  return call(env, `/issues/${prNumber}/comments`, {
+    body: [
+      '<!-- desk:approved -->',
+      `<!-- desk:sha=${headSha} -->`,
+      '',
+      `The channel owner approved **${changeRef}** by email.`,
+      '',
+      'Merging this deploys to the live channel. The workflow refuses if the head',
+      'has moved since she saw it, if CI is not green, or if the change touches',
+      'migrations, the Farsi strings or the post format.',
+    ].join('\n'),
+  });
+}

@@ -131,11 +131,18 @@ describe('relayReply', () => {
   const pending = {
     ticket_id: 12,
     issue_number: 7,
+    pr_number: 9,
+    head_sha: 'a3f9c1d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0',
     pending_change_ref: 'HAM-12/a3f9c1',
     approved_ref: null,
     approved_at: null,
     refused_at: null,
   };
+
+  /** The bodies of every GitHub comment the desk posted in a test. */
+  const postedBodies = () =>
+    (fetch as unknown as { mock: { calls: [string, { body: string }][] } }).mock.calls
+      .map((call) => JSON.parse(call[1].body).body as string);
 
   it('does nothing on a ticket that never dispatched', async () => {
     const { env } = fakeEnv({}, null);
@@ -175,5 +182,46 @@ describe('relayReply', () => {
     await relayReply(env, { ...ownerMail, fromEmail: 'stranger@example.com', body: 'بله' });
 
     expect(comments.join('\n')).not.toContain('approved');
+  });
+
+  /**
+   * The approval reaches the repository as a comment naming the commit, never
+   * as a merge: the desk's token cannot merge and should not be able to, so an
+   * email is never one step from a push. The workflow re-checks everything.
+   */
+  it('posts an approval naming the exact commit', async () => {
+    const { env } = fakeEnv({}, pending);
+    await relayReply(env, { ...ownerMail, body: 'بله، انجام بده' });
+
+    const approval = postedBodies().find((body) => body.includes('desk:approved'));
+    expect(approval).toBeDefined();
+    expect(approval).toContain(`desk:sha=${pending.head_sha}`);
+  });
+
+  it('posts no approval when she refused', async () => {
+    const { env } = fakeEnv({}, pending);
+    await relayReply(env, { ...ownerMail, body: 'نه' });
+
+    expect(postedBodies().some((body) => body.includes('desk:approved'))).toBe(false);
+  });
+
+  /**
+   * The desk and the repository must not disagree about what was approved. If
+   * the pending change moved underneath her reply the database refuses the
+   * approval, and the repository must not be told otherwise.
+   */
+  it('posts no approval when the database refused to record one', async () => {
+    const { env } = fakeEnv({}, pending);
+    // recordApproval reports false by scoping its UPDATE to the pending ref.
+    (env.DB as unknown as { prepare: (sql: string) => unknown }).prepare = (sql: string) => ({
+      bind: () => ({
+        run: async () => ({ meta: { changes: sql.includes('approved_ref = ?2') ? 0 : 1 } }),
+        first: async () => (sql.includes('ticket_bot_changes') ? pending : { id: 1 }),
+        all: async () => ({ results: [] }),
+      }),
+    });
+
+    await relayReply(env, { ...ownerMail, body: 'بله' });
+    expect(postedBodies().some((body) => body.includes('desk:approved'))).toBe(false);
   });
 });
