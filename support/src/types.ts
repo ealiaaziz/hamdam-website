@@ -137,6 +137,10 @@ export interface Env {
   OWNER_EMAILS?: string;
   /** Copied on the owner's thread only, never on a stranger's. */
   DEVELOPER_CC_EMAIL?: string;
+  /** Fine-grained PAT, issues:write on the bot repo only. See src/github.ts. */
+  GITHUB_TOKEN?: string;
+  /** owner/name of the bot repository. */
+  GITHUB_REPO?: string;
   /**
    * Microsoft Graph app-only credentials, so the Worker can send mail as
    * developer@hamdam.com.au the moment there is something to send, instead
