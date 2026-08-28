@@ -211,3 +211,50 @@ Rationale: a comparative claim about translation quality is a claim about compet
 - No dashes or hyphens in drafted outbound copy.
 - Australian English throughout.
 - Every generated draft must pass claim audit against this file before entering any review queue.
+
+## App Store Connect commercial state — VERIFIED 2026-08-28
+
+Source: `ealiaaziz/hamdam-analytics`, `data/analytics/ONGOING/`, read 2026-08-28. Latest daily
+file is `App_Downloads_Standard/DAILY_2026-08-27.csv`. These are ASC report exports committed by
+the scheduled pipeline, not a live API read, so treat everything here as accurate to 27 August.
+
+**Hamdam has paying subscribers. Any statement that it has none is false.**
+- `App_Store_Purchases_Standard/DAILY_2026-08-22.csv`: one in-app purchase of Hamdam Plus Monthly
+  on 2026-08-20, territory AU, one paying user. Source type App referrer, page type Product page.
+  App download date 2026-08-13, so a seven day gap between install and purchase.
+- `App_Store_Subscription_State_Report_Standard/DAILY_2026-08-26.csv`: one Full price Hamdam Plus
+  Monthly on 2026-08-24, AU, again App referrer into Product page.
+
+**The free trial population is promo seeded, not organic demand.**
+- Same file: seven free trials on 2026-08-24 (AU) and one on 2026-08-25 (GB), all Hamdam Plus
+  Yearly, all carrying Offer Type "Offer code", offer name "Yearly Promo", vanity code
+  `FRIENDSYEARLY`. These are codes handed out, not conversions won.
+- Voluntary churn of two on 2026-08-25 (AU), cancellation reason "Turned off auto-renew".
+- **Marketing consequence:** trial counts must never be presented as traction, adoption, demand or
+  popularity. The only defensible statement is that Hamdam Plus has full price subscribers, and
+  even that is a small number that should not be quantified in outbound copy.
+
+**An App Store in-app event is already live.**
+- `App_Store_Discovery_and_Engagement_Standard/DAILY_2026-08-26.csv` records impressions with page
+  type "In-app event" arriving from App Store search (AU, 2026-08-25). Any plan proposing to
+  "start using in-app events" is describing something already running and should check the
+  existing event first.
+
+**Download data still reports version 1.2.**
+- `App_Downloads_Standard/DAILY_2026-08-26.csv` and `DAILY_2026-08-27.csv` both record App Version
+  1.2 for first-time downloads, redownloads and manual updates. As of the last committed report,
+  1.3 does not yet appear in download data. Do not claim 1.3 adoption from these files.
+
+**Listing state, from `data/listing/current.json`.**
+- App state READY_FOR_SALE / READY_FOR_DISTRIBUTION. A second appInfo record sits in
+  PREPARE_FOR_SUBMISSION.
+- Localisations present: `en-AU` and `en-US` only. There is no Farsi App Store locale, which is why
+  Persian copy is carried inside the English description field rather than its own localisation.
+- Name `Hamdam: Daily Persian Poetry`, subtitle `Hafez fal, ghazal and journal`, both locales
+  identical. Privacy policy URL points at `www.hamdam.com.au/privacy`.
+- **Note the `www.` prefix.** The site canonical is bare-domain. Worth confirming the redirect
+  holds, since this URL is what Apple shows on the product page.
+
+**Amounts deliberately omitted.** The purchases report carries proceeds and sales figures. They are
+not reproduced here, consistent with the existing pricing entry recording structure only, and with
+the standing rule against dollar amounts in copy.
