@@ -2,6 +2,7 @@
 import { Image } from 'astro:assets';
 import deviceFrame from '../assets/website-redesign/device-frame-iphone.png';
 import gardenScreenshotEn from '../assets/website-redesign/screenshots/EN/07-garden-en.png';
+import gardenPanelFa from '../assets/website-redesign/garden-panel-fa.png';
 import { faCopy } from '../data/siteCopy';
 
 // Added 2026-08-27. The Garden is the largest thing in version 1.3 and the
@@ -35,17 +36,37 @@ const { lang } = Astro.props;
 // split into fields by script rather than retyped -- see src/data/siteCopy.ts,
 // which is where this repo keeps Persian it did not author.
 //
-// What Farsi does NOT get is the phone, and the reason is worth stating so the
-// asymmetry does not read as an oversight. The 1.3 App Store listing publishes
-// exactly one Farsi capture, and it is the Today screen; there is no Farsi
-// capture of the Garden screen anywhere -- not in the listing, not in
-// hamdam-ios/marketing (whose newest set is 2026-07-26 and still says
-// Discover), and no macOS is reachable here to make one. The three remaining
-// options were an English screenshot on a Persian page, a second copy of the
-// Farsi Today shot that the hero already uses, or no picture. No picture is
-// the only one of the three that is not a small lie, and a centred column
-// reads as a decision rather than a gap. One Farsi capture of the Garden
-// screen turns this back into the two-column layout with no other change.
+// Farsi does not get the phone, and what it gets instead was Ealia's call on
+// 2026-08-28. There is no Farsi capture of the Garden screen on iPhone: the
+// listing's iPhone set is six English screens, the Farsi Today screen and the
+// English Garden screen, and hamdam-ios/marketing's newest set is 2026-07-26
+// and still says Discover. No macOS is reachable here to make one.
+//
+// The App Store product page carries a second set the lookup API does not
+// return -- four iPad panels at 2048x2732 -- and one of them, `03-garden-fa`,
+// is the Farsi Garden screen. That is the asset here, and it is a finished
+// marketing composite rather than a screenshot: its own Persian caption, its
+// own gradient, and a device that bleeds off the bottom edge, so there is no
+// screen to lift out into the site's phone frame. It is used as a panel
+// instead, which is why this component has two shapes of picture.
+//
+// Cropped to `left 247, top 505, 1553x2227`, which is the device plus a thin
+// margin of its own gradient. Two reasons, and the first is the one that
+// matters: an iPad screenshot carries about twice the interface in the same
+// width as a phone, so at the 420px the uncropped composite needed, none of
+// the Persian was readable and the panel was a dark rectangle. Cropped, the
+// same 460px column shows گلستان, مربی‌های تو, باغچهٔ تو and بازی. The second
+// is that his caption is headline-weight Persian and would have sat beside
+// this section's own h2, two headlines arguing over one idea.
+//
+// The consequence to know: it is an iPad, on a site whose badge says
+// "برای آیفون" and whose JSON-LD says `availableOnDevice: 'iPhone'`. Ealia
+// chose this over shipping the section with no picture, having been shown that
+// trade. FACTS.md's platform block was corrected the same day and now records
+// iPad as verified, on `TARGETED_DEVICE_FAMILY = "1,2"` in all eight
+// configurations plus Apple publishing four iPad-native screenshots. Extending
+// that to the site's own platform wording was deliberately NOT done here; it
+// is a separate decision he has not taken.
 const copy =
   lang === 'fa'
     ? {
@@ -70,14 +91,20 @@ const copy =
         ],
       };
 
-// The screenshot and its description travel together, so that the one branch
-// with a picture is also the one branch with a description of it: a Farsi
-// `shotAlt` would be a Persian string this repo authored for markup that never
-// renders.
+// The picture and its description travel together, so the branch with an image
+// is also the branch that describes it. `kind` is what the template switches
+// on: 'device' composites a screenshot behind the iPhone frame's cutout,
+// 'panel' renders a finished composite whole.
+//
+// The Farsi alt is the one word Ealia's own published text supplies for this
+// screen. The panel's baked-in caption would be a better description, but it
+// exists only as pixels, and transcribing Persian out of an image is exactly
+// the authoring this repo does not do.
 const shot =
   lang === 'fa'
-    ? null
+    ? { kind: 'panel', src: gardenPanelFa, alt: faCopy.garden.eyebrow }
     : {
+        kind: 'device',
         src: gardenScreenshotEn,
         alt: 'The Hamdam Garden screen: a gentler start for the day, and the Mind, Move and Sleep coaches.',
       };
@@ -86,12 +113,16 @@ const shot =
 // frame's own alpha channel, not eyeballed. See HeroCinematic.astro.
 const FRAME_DISPLAY_WIDTH = 480;
 const FRAME_DISPLAY_HEIGHT = Math.round((FRAME_DISPLAY_WIDTH / deviceFrame.width) * deviceFrame.height);
+
+// The panel is wider on the page than the phone is (3:4 against 1290:2796) and
+// never exceeds 420px CSS, so 840px is its 2x budget.
+const PANEL_DISPLAY_WIDTH = 840;
 ---
 
-<section class:list={['garden', !shot && 'garden--text-only']} aria-labelledby="garden-title">
+<section class:list={['garden', `garden--${shot.kind}`]} aria-labelledby="garden-title">
   <div class="garden__inner">
     {
-      shot && (
+      shot.kind === 'device' ? (
         <div class="garden__frame" role="img" aria-label={shot.alt}>
           <Image
             src={shot.src}
@@ -110,6 +141,15 @@ const FRAME_DISPLAY_HEIGHT = Math.round((FRAME_DISPLAY_WIDTH / deviceFrame.width
             class="garden__frame-img"
           />
         </div>
+      ) : (
+        <Image
+          src={shot.src}
+          alt={shot.alt}
+          width={PANEL_DISPLAY_WIDTH}
+          height={Math.round((PANEL_DISPLAY_WIDTH / shot.src.width) * shot.src.height)}
+          quality={78}
+          class="garden__panel"
+        />
       )
     }
 
@@ -263,26 +303,18 @@ const FRAME_DISPLAY_HEIGHT = Math.round((FRAME_DISPLAY_WIDTH / deviceFrame.width
     line-height: 1.6;
   }
 
-  /* No screenshot (Farsi, until a Farsi capture of the Garden screen exists):
-     one centred column at reading measure, so the section reads as composed
-     rather than as a two-column layout with a hole where the phone was. The
-     cards stay side by side on desktop, which is what keeps it from looking
-     like a stack of paragraphs. */
-  .garden--text-only .garden__inner {
-    /* Wider than --container-reading (65ch), which is a measure for one column
-       of running text and leaves the two cards huddled in the middle of a
-       1440px viewport. The heading and body are still held to a reading width
-       of their own; only the row of cards uses the extra room. */
-    max-width: 54rem;
-    text-align: center;
-  }
-  .garden--text-only .garden__heading,
-  .garden--text-only .garden__body {
-    max-width: var(--container-reading);
-    margin-inline: auto;
-  }
-  .garden--text-only .garden__item {
-    text-align: start;
+  /* The panel (Farsi) is a finished composite with its own gradient behind it,
+     so it needs an edge of its own or it reads as a rectangle pasted onto the
+     arc. Rounded to the same radius as the section's cards and given the same
+     resting shadow the device frame carries, it reads as one more object on
+     the surface. No border: the composite's own gradient is close enough to
+     afternoon that a line would be the only hard edge in the section. */
+  .garden__panel {
+    flex-shrink: 0;
+    width: min(380px, 78vw);
+    height: auto;
+    border-radius: var(--radius-panel);
+    box-shadow: var(--shadow-rest);
   }
 
   /* Frame first in the source order and first in the row, so the page
@@ -297,6 +329,11 @@ const FRAME_DISPLAY_HEIGHT = Math.round((FRAME_DISPLAY_WIDTH / deviceFrame.width
     }
     .garden__frame {
       width: min(300px, 30vw);
+    }
+    /* Wider than the phone at the same height, since 3:4 next to 1290:2796 at
+       equal width would tower over the copy. */
+    .garden__panel {
+      width: min(460px, 36vw);
     }
     .garden__copy {
       flex: 1 1 auto;
