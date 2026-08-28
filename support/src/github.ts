@@ -8,16 +8,22 @@ import type { Env } from './types.js';
  * runs inside the ingest loop and an exception in that loop is how one message
  * stopped all email in August.
  *
- * The token is a fine-grained personal access token scoped to the one
- * repository, held as a secret:
+ * The token is held as a secret:
  *
  *   npx wrangler secret put GITHUB_TOKEN
  *   npx wrangler secret put GITHUB_REPO   # owner/name
  *
- * It needs issues:write and nothing else. It deliberately does not need
- * contents:write: this file opens issues, and the agent that acts on them runs
- * in GitHub Actions with its own credentials. A token here that could push
- * would mean an email could push, with only this Worker's logic in between.
+ * It wants issues:write, pull_requests:read, and nothing else. It does not
+ * want contents:write: this file opens issues, and the agent that acts on them
+ * runs in GitHub Actions with its own credentials. A token here that could
+ * push would mean an email could push, with only this Worker's logic in
+ * between.
+ *
+ * A wider token is a decision somebody made, not a thing this file can undo:
+ * reach belongs to the token. What is enforced here instead is that the desk
+ * never uses more of it than it needs. Every request goes through `repoUrl`
+ * and lands under the one configured repository or does not happen. See there
+ * for what that does and does not buy.
  */
 
 const API = 'https://api.github.com';
@@ -29,15 +35,61 @@ const MAX_QUOTED_CHARS = 8_000;
 
 export type GitHubResult<T> = { ok: true; value: T } | { ok: false; reason: string };
 
+/**
+ * `owner/name`, and nothing that could be talked into meaning anything else.
+ *
+ * No slashes beyond the one, no dots that could climb a path, no encoded
+ * characters. A repo of `a/b/../../orgs/x` or `a/b?` would otherwise build a
+ * URL pointing somewhere this desk has no business being.
+ */
+const SEGMENT = /^[A-Za-z0-9._-]+$/;
+
+/**
+ * A segment that is nothing but dots climbs, and passes a character class.
+ *
+ * `..` is spelled entirely from characters a repository name may legitimately
+ * contain, so `../other` satisfies an owner/name pattern written as one regex.
+ * It was caught by its own test rather than in review, which is the argument
+ * for the test existing.
+ */
+const CLIMBS = /^\.+$/;
+
 export function canReachRepo(env: Env): boolean {
-  return Boolean(env.GITHUB_TOKEN && env.GITHUB_REPO?.includes('/'));
+  if (!env.GITHUB_TOKEN || !env.GITHUB_REPO) return false;
+
+  const parts = env.GITHUB_REPO.split('/');
+  return parts.length === 2 && parts.every((part) => SEGMENT.test(part) && !CLIMBS.test(part));
+}
+
+/**
+ * Build the URL for one call, and refuse to build one that leaves the repo.
+ *
+ * The token this desk holds may be scoped more widely than the desk is: a
+ * token's reach is a property of the token, and no amount of code here shrinks
+ * it. What this does shrink is the desk's own reach. Every request it can make
+ * is under `/repos/<the one configured repo>/`, checked on the assembled URL
+ * rather than on the pieces, so a path that escapes by any route (a `..`, an
+ * encoded slash, an absolute URL smuggled in as a path) fails to build instead
+ * of succeeding somewhere unintended.
+ *
+ * That does not protect the token if the secret leaks. It protects against the
+ * likelier thing: this Worker reads email written by strangers, and the one
+ * failure that matters is it being aimed at a repository nobody meant.
+ */
+function repoUrl(env: Env, path: string): string | null {
+  const base = `${API}/repos/${env.GITHUB_REPO}/`;
+  const url = new URL(path.replace(/^\//, ''), base).toString();
+  return url.startsWith(base) ? url : null;
 }
 
 async function call<T>(env: Env, path: string, body: unknown): Promise<GitHubResult<T>> {
   if (!canReachRepo(env)) return { ok: false, reason: 'github credentials not configured' };
 
+  const url = repoUrl(env, path);
+  if (!url) return { ok: false, reason: `refusing to call outside ${env.GITHUB_REPO}: ${path}` };
+
   try {
-    const response = await fetch(`${API}/repos/${env.GITHUB_REPO}${path}`, {
+    const response = await fetch(url, {
       method: 'POST',
       headers: {
         authorization: `Bearer ${env.GITHUB_TOKEN}`,
@@ -63,8 +115,11 @@ async function call<T>(env: Env, path: string, body: unknown): Promise<GitHubRes
 async function read<T>(env: Env, path: string): Promise<GitHubResult<T>> {
   if (!canReachRepo(env)) return { ok: false, reason: 'github credentials not configured' };
 
+  const url = repoUrl(env, path);
+  if (!url) return { ok: false, reason: `refusing to call outside ${env.GITHUB_REPO}: ${path}` };
+
   try {
-    const response = await fetch(`${API}/repos/${env.GITHUB_REPO}${path}`, {
+    const response = await fetch(url, {
       headers: {
         authorization: `Bearer ${env.GITHUB_TOKEN}`,
         accept: 'application/vnd.github+json',

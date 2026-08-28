@@ -1141,6 +1141,37 @@ code she never saw.
 The same rule is enforced again on the side that merges: the approval comment
 names a sha, and the workflow refuses if the head has moved.
 
+### The token is wider than the desk, by decision
+
+`GITHUB_TOKEN` should be a fine-grained token carrying `issues:write` and
+`pull_requests:read` on the one repository. On 2026-08-28 the developer chose
+to reuse an existing token with broader permissions instead, having been told
+what that costs, so this is a recorded exception rather than an oversight.
+
+What it costs, plainly: a classic token is not repository-scoped, so it
+reaches every repository the account owns, this one included; and with write
+scope the desk could push to the bot's `main` and edit its workflows,
+including the deploy guard that stands in for branch protection there. The
+design's claim that "an email is never one step from a push" is weaker than
+it reads while that is true.
+
+Reach belongs to the token and no code here shrinks it. What the code does
+enforce is that the desk never uses more of one than it needs. `canReachRepo`
+accepts only a plain `owner/name`, and `repoUrl` assembles every request and
+then refuses any that does not land under that one repository. The check is on
+the finished URL rather than on the pieces, so a `..`, an encoded slash or an
+absolute URL passed as a path fails to build instead of succeeding somewhere
+nobody meant.
+
+That does not protect the token if the secret leaks. It protects against the
+likelier failure: this Worker reads mail written by strangers, and the thing
+to prevent is it being aimed at a repository nobody intended.
+
+Worth knowing for whoever tightens this later: the first version of the repo
+check was a single character-class regex, and `../other` satisfied it, because
+`..` is spelled entirely from characters a repository name may legitimately
+contain. Its own test caught it rather than review did.
+
 ### Why the desk's token cannot push
 
 `GITHUB_TOKEN` is scoped to `issues:write` and `pull_requests:read`. The desk
