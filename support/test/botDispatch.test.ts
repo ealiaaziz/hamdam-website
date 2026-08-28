@@ -110,20 +110,38 @@ describe('maybeDispatch', () => {
    * the checkpoint only advances on a clean pass, the same message returns
    * every minute forever. One email stopped all email that way in August.
    */
-  it('never throws when GitHub fails, and records why', async () => {
+  /**
+   * Returning false is the load-bearing half. The caller keeps the assistant
+   * out of a ticket the bot flow owns, so a dispatch that failed must not
+   * claim ownership: otherwise she gets nothing from the change flow and
+   * nothing from the desk either, which is silence on a report she made.
+   */
+  it('never throws when GitHub fails, records why, and does not claim the ticket', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response('boom', { status: 500 })));
     const { env, comments } = fakeEnv();
 
-    await expect(maybeDispatch(env, ownerMail)).resolves.toBeUndefined();
+    await expect(maybeDispatch(env, ownerMail)).resolves.toBe(false);
     expect(comments.join('\n')).toContain('Dispatch failed');
   });
 
-  it('never throws when the network dies', async () => {
+  it('never throws when the network dies, and does not claim the ticket', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => { throw new Error('connection reset'); }));
     const { env, comments } = fakeEnv();
 
-    await expect(maybeDispatch(env, ownerMail)).resolves.toBeUndefined();
+    await expect(maybeDispatch(env, ownerMail)).resolves.toBe(false);
     expect(comments.join('\n')).toContain('Dispatch failed');
+  });
+
+  it('claims the ticket only when an issue was actually opened', async () => {
+    const { env } = fakeEnv();
+    await expect(maybeDispatch(env, ownerMail)).resolves.toBe(true);
+  });
+
+  it('does not claim a ticket it declined to dispatch', async () => {
+    const { env } = fakeEnv();
+    await expect(
+      maybeDispatch(env, { ...ownerMail, fromEmail: 'stranger@example.com' }),
+    ).resolves.toBe(false);
   });
 });
 

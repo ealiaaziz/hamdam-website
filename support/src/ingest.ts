@@ -412,7 +412,7 @@ async function handleMessage(env: Env, message: InboundMessage, summary: IngestS
     // A reply on a ticket that has already dispatched may answer the change
     // last put to her, and may tell the agent something it needs. Both are
     // handled inside, and neither depends on the assistant having run.
-    await relayReply(env, {
+    const botFlowOwns = await relayReply(env, {
       ticketId: plan.ticketId,
       subject: message.subject,
       body: plan.body,
@@ -420,8 +420,13 @@ async function handleMessage(env: Env, message: InboundMessage, summary: IngestS
       senderAuthenticated,
     });
 
+    // One voice per ticket. The assistant answers from articles about the app
+    // and holds none about the bot, so on a ticket the change flow owns it can
+    // only produce something generic or a handover to a person who is not
+    // coming, on top of the desk's own reply. Both are noise, and the second
+    // is worse than noise because it is untrue.
     if (quiet) await noteSuppressed(env, plan.ticketId, summary, suppression, verdict.reason);
-    else await replyWithAssistant(env, plan.ticketId);
+    else if (!botFlowOwns) await replyWithAssistant(env, plan.ticketId);
     return 'appended';
   }
 
@@ -625,7 +630,7 @@ async function handleAsNew(
   // After the acknowledgement, so she is answered whatever happens here, and
   // before the assistant, so the console shows the dispatch above the reply
   // that talks about it.
-  await maybeDispatch(env, {
+  const botFlowOwns = await maybeDispatch(env, {
     ticketId,
     subject,
     body,
@@ -633,7 +638,10 @@ async function handleAsNew(
     senderAuthenticated,
   });
 
-  await replyWithAssistant(env, ticketId);
+  // See the same decision on the reply path: the acknowledgement above already
+  // told her the desk has it, and the next thing she should hear is the change
+  // itself, in Farsi, rather than an article about the app.
+  if (!botFlowOwns) await replyWithAssistant(env, ticketId);
   return 'created';
 }
 
