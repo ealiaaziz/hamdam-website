@@ -75,3 +75,76 @@ ${WRAP_CLOSE}`;
 
   return { subject: `[${publicId}] تغییر ربات اعمال شد`, html };
 }
+
+/**
+ * A question from the agent, or a reason it is not building what she asked.
+ *
+ * Both exist so a request never ends in silence. She replies to this email
+ * like any other, the desk relays her answer onto the issue, and the agent
+ * picks it up from there.
+ *
+ * Deliberately not dressed up as an apology or as a decision that has been
+ * made for her. A question is a question; a stand-down says what will not
+ * happen and who to talk to, so she knows the next move is hers or Ealia's
+ * rather than wondering whether anything is happening at all.
+ */
+export function agentQuestionEmail(opts: {
+  ticketId: number;
+  question: string;
+}): { subject: string; html: string } {
+  const publicId = ticketPublicId(opts.ticketId);
+  const html = `${WRAP_OPEN}
+<p>سلام،</p>
+<p>برای اینکه درست انجامش بدهیم، یک سؤال داریم:</p>
+${textToSafeHtml(opts.question)}
+<p>در پاسخ به همین ایمیل بنویسید. تا وقتی جواب ندهید هیچ تغییری اعمال
+نمی‌شود.</p>
+${RULE}
+${FOOTER}
+${WRAP_CLOSE}`;
+
+  return { subject: `[${publicId}] یک سؤال دربارهٔ درخواست شما`, html };
+}
+
+/**
+ * The token the bot repo's workflow posts when a run died without saying why.
+ *
+ * The workflow guarantees a marker so she is never left in silence, but it
+ * does not write her Farsi: that lives here, with the rest of it. A run that
+ * crashed is not something to explain to her in technical terms, so this says
+ * what it means for her instead, which is that it is being looked at.
+ */
+const RUN_FAILED = 'AGENT_RUN_FAILED';
+
+export function agentBlockedEmail(opts: {
+  ticketId: number;
+  reason: string;
+}): { subject: string; html: string } {
+  const publicId = ticketPublicId(opts.ticketId);
+
+  if (opts.reason.trim() === RUN_FAILED) {
+    return {
+      subject: `[${publicId}] درخواست شما در حال بررسی است`,
+      html: `${WRAP_OPEN}
+<p>سلام،</p>
+<p>درخواست شما ثبت شد، ولی این بار نتوانستیم خودکار انجامش دهیم. ایلیا
+نگاهش می‌کند و خبر می‌دهیم.</p>
+<p>لازم نیست دوباره بفرستید.</p>
+${RULE}
+${FOOTER}
+${WRAP_CLOSE}`,
+    };
+  }
+
+  const html = `${WRAP_OPEN}
+<p>سلام،</p>
+<p>این مورد را نمی‌توانیم همین‌طور انجام دهیم. دلیلش این است:</p>
+${textToSafeHtml(opts.reason)}
+<p>اگر باز هم می‌خواهید انجام شود، در پاسخ به همین ایمیل بنویسید تا با ایلیا
+در میان بگذاریم.</p>
+${RULE}
+${FOOTER}
+${WRAP_CLOSE}`;
+
+  return { subject: `[${publicId}] دربارهٔ درخواست شما`, html };
+}

@@ -195,6 +195,36 @@ export function parseAgentReport(comments: readonly IssueComment[]): {
 }
 
 /**
+ * A run that ended in something other than a pull request.
+ *
+ * The agent asks a question when her request is not specific enough to build
+ * from, and stands down when the thing should not be done at all or needs the
+ * developer. Both have to reach her, because the alternative is an
+ * acknowledgement followed by nothing, which is the complaint this system was
+ * built to answer.
+ *
+ * Newest wins, and a report of any kind supersedes an older one: a question
+ * answered and then built is a pull request now, not an open question.
+ */
+export type AgentOutcome =
+  | { kind: 'ask'; text: string }
+  | { kind: 'blocked'; text: string };
+
+export function parseAgentOutcome(comments: readonly IssueComment[]): AgentOutcome | null {
+  for (const comment of [...comments].reverse()) {
+    // A pull request report supersedes anything earlier, including a question.
+    if (/<!--\s*desk:pr=\d+\s*-->/.test(comment.body)) return null;
+
+    const ask = /<!--\s*desk:ask\s*-->([\s\S]*?)<!--\s*desk:end\s*-->/.exec(comment.body);
+    if (ask) return { kind: 'ask', text: ask[1]!.trim() };
+
+    const blocked = /<!--\s*desk:blocked\s*-->([\s\S]*?)<!--\s*desk:end\s*-->/.exec(comment.body);
+    if (blocked) return { kind: 'blocked', text: blocked[1]!.trim() };
+  }
+  return null;
+}
+
+/**
  * Wrap text written by somebody else so it cannot be read as instructions.
  *
  * This is the whole reason the dispatch path is safe to have at all. The body

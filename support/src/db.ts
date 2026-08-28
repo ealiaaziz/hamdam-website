@@ -882,6 +882,9 @@ export interface BotChangeRow {
   approved_at: string | null;
   refused_at: string | null;
   deployed_at: string | null;
+  /** Identifies the last question or stand-down already sent to her. */
+  last_outcome: string | null;
+  last_outcome_at: string | null;
   dispatched_at: string;
   updated_at: string;
 }
@@ -1041,4 +1044,30 @@ export async function ticketsAwaitingBotFollowUp(db: D1Database, limit = 20): Pr
     .bind(limit)
     .all<{ ticket_id: number }>();
   return (result.results ?? []).map((row) => row.ticket_id);
+}
+
+/**
+ * Remember that this question or stand-down has been sent.
+ *
+ * Keyed on the text so a different one later still reaches her, and so the
+ * cron does not mail the same question every sixty seconds. Scoped in the
+ * WHERE clause to the value we believed was current, so two passes racing
+ * cannot both send.
+ */
+export async function recordAgentOutcome(
+  db: D1Database,
+  ticketId: number,
+  outcome: string,
+): Promise<boolean> {
+  const result = await db
+    .prepare(
+      `UPDATE ticket_bot_changes
+          SET last_outcome = ?2,
+              last_outcome_at = strftime('%Y-%m-%dT%H:%M:%fZ','now'),
+              updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')
+        WHERE ticket_id = ?1 AND (last_outcome IS NULL OR last_outcome != ?2)`,
+    )
+    .bind(ticketId, outcome)
+    .run();
+  return (result.meta.changes ?? 0) > 0;
 }

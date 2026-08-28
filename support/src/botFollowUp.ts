@@ -7,13 +7,26 @@ import {
   markDeployed,
   mayDeploy,
   proposeChange,
+  recordAgentOutcome,
   ticketsAwaitingBotFollowUp,
   type BotChangeRow,
 } from './db.js';
 import { changeRef } from './changeApproval.js';
-import { canReachRepo, getPull, listIssueComments, parseAgentReport } from './github.js';
+import {
+  canReachRepo,
+  getPull,
+  listIssueComments,
+  parseAgentOutcome,
+  parseAgentReport,
+  type IssueComment,
+} from './github.js';
 import { ticketPublicId } from './ids.js';
-import { changeProposalEmail, changeShippedEmail } from './render/botEmail.js';
+import {
+  agentBlockedEmail,
+  agentQuestionEmail,
+  changeProposalEmail,
+  changeShippedEmail,
+} from './render/botEmail.js';
 
 /**
  * The half of the change flow that nobody's email triggers.
@@ -93,7 +106,15 @@ async function checkProposal(
   }
 
   const report = parseAgentReport(comments.value);
-  if (!report) return;
+  if (!report) {
+    // No pull request, which is not the same as nothing happened. The agent
+    // asks when her request is not specific enough to build from, and stands
+    // down when the thing should not be done at all. Either has to reach her:
+    // an acknowledgement followed by silence is the complaint this whole flow
+    // was built to answer, and a feature request used to end exactly there.
+    await relayOutcome(env, send, ticketId, comments.value, summary);
+    return;
+  }
   if (report.headSha === change.head_sha) return; // already asked about this one
 
   const ref = changeRef(ticketPublicId(ticketId), report.headSha);
@@ -162,4 +183,55 @@ async function checkShipped(
 
   await addComment(env.DB, ticketId, 'system', null, `${change.approved_ref} merged and deployed. Owner told.`);
   summary.shipped += 1;
+}
+
+/**
+ * Send her the agent's question, or its reason for not building.
+ *
+ * Sent once. `recordAgentOutcome` only reports true when the text differs from
+ * what was last sent, so the minute cron does not mail her the same question
+ * sixty times an hour, while a genuinely new question still gets through.
+ *
+ * Recorded before the send, for the reason markDeployed is: a send that fails
+ * leaves a note on the ticket that a person can act on, and recording after a
+ * failure would retry every minute forever.
+ */
+async function relayOutcome(
+  env: Env,
+  send: SendEmail,
+  ticketId: number,
+  comments: readonly IssueComment[],
+  summary: FollowUpSummary,
+): Promise<void> {
+  const outcome = parseAgentOutcome(comments);
+  if (!outcome) return;
+
+  const fresh = await recordAgentOutcome(env.DB, ticketId, `${outcome.kind}:${outcome.text}`);
+  if (!fresh) return;
+
+  const ticket = await getTicketById(env.DB, ticketId);
+  const email = outcome.kind === 'ask'
+    ? agentQuestionEmail({ ticketId, question: outcome.text })
+    : agentBlockedEmail({ ticketId, reason: outcome.text });
+
+  await send({
+    ticketId,
+    commentId: null,
+    kind: 'agent_reply',
+    toEmail: ticket?.requester_email ?? '',
+    subject: email.subject,
+    bodyHtml: email.html,
+    inReplyToMessageId: null,
+  });
+
+  await addComment(
+    env.DB,
+    ticketId,
+    'system',
+    null,
+    outcome.kind === 'ask'
+      ? 'Asked the owner a question from the agent; nothing changes until she answers.'
+      : 'Told the owner this will not be built, with the reason.',
+  );
+  summary.proposed += 1;
 }
