@@ -1312,3 +1312,38 @@ worth keeping, because each closes a real path to the same silence:
    mark now comes off when the send does not happen, and `last_outcome_at`
    bounds the retry to an hour so a permanent failure writes a comment on the
    ticket instead of a dead outbound row every minute.
+
+### The tick was running at 93 per cent of the CPU ceiling (added 2026-08-28)
+
+The dashboard's cron log gave the number this section was missing. The last
+four scheduled invocations before everything stopped used 8.655, 8.788, 9.011
+and 9.274 ms of CPU, against the Workers Free plan's limit of 10 ms per
+invocation. Climbing, and then nothing.
+
+That is not proof of what stopped the account: CPU on this Worker does not
+explain `nl-events-bot` stopping in the same minute, and no documented
+behaviour says a Worker over its CPU limit gets unscheduled rather than
+terminated. It is proof of something else, which needed fixing regardless. The
+desk had about half a millisecond of headroom and was spending it: from the
+moment a ticket dispatched, every tick fetched and parsed an issue thread from
+GitHub on top of the Graph request it already made, so the expensive path was
+the one that ran while somebody was waiting.
+
+`src/tick.ts` splits the tick by how much latency each job can bear. Ingest
+stays on the minute, because the acknowledgement inside a minute is what the
+cron is for and an empty mailbox is cheap. The bot follow-up moves to every
+fifth minute, which is where four fifths of the cost goes and where nothing is
+waiting on seconds: the next step is a person reading an email. The rate limit
+sweep moves to every fifteenth, because the rows it deletes are already dead.
+Four ticks in five now do mail and nothing else, and a test asserts that count
+so a later change cannot quietly undo it.
+
+**The next lever, unmeasured and deliberately not pulled tonight.** `wrangler
+deploy` reports a Worker startup time of 6 ms. If script evaluation on a cold
+isolate is charged to the same 10 ms budget, then a cold tick starts with under
+4 ms to spend and no amount of scheduling helps. The fix would be to stop
+building the Hono app and its routes at module scope when a scheduled
+invocation will never call `fetch`, which is a real refactor of the largest
+file here and not a thing to do at midnight on the mail path. What is worth
+doing first is the measurement: compare the CPU of a cold tick against a warm
+one in the cron log.
