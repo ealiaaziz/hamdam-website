@@ -61,17 +61,47 @@ export function words(text: string): string[] {
     .filter(Boolean);
 }
 
-/** Unambiguous consent, as a whole word. */
+/**
+ * Unambiguous consent, as a whole word.
+ *
+ * Widened deliberately, and only in one direction. The email asks her to reply
+ * "بله", and people answering a yes/no question rarely use the word they were
+ * offered: they write خوبه, حتماً, قبوله, or send a thumbs-up. Every one of
+ * those used to be UNCLEAR, which is safe and reads to her exactly like the
+ * bot ignoring her, which is the complaint that started all of this.
+ *
+ * What is deliberately NOT here is درسته. It looks like consent and is not:
+ * "درسته که مشکل داره" means "it is true that it has a problem", so matching
+ * it would read a bug report as permission to deploy. Anything that can open a
+ * sentence rather than close one stays out. A false refusal costs one more
+ * email; a false approval ships code to a live channel.
+ */
 const APPROVE_WORDS = [
   'بله', 'بلی', 'اره', 'آره', 'اوکی', 'اوکیه', 'باشه', 'موافقم', 'تایید', 'تأیید',
-  'yes', 'yep', 'ok', 'okay', 'approved', 'agreed',
+  'خوبه', 'حتما', 'حتماً', 'قبوله', 'بفرست', 'بفرستید', 'بزن', 'بزنید',
+  'yes', 'yep', 'yeah', 'ok', 'okay', 'approve', 'approved', 'agreed',
 ];
 
 const APPROVE_PHRASES = [
-  'انجام بده', 'انجامش بده', 'اعمال کن', 'اعمالش کن', 'برو جلو', 'تایید می کنم',
-  'تایید میکنم', 'مشکلی نیست', 'go ahead', 'do it', 'please do', 'ship it',
+  'انجام بده', 'انجامش بده', 'انجام بدید', 'انجام بدهید', 'اعمال کن', 'اعمالش کن',
+  'اعمال کنید', 'برو جلو', 'تایید می کنم', 'تایید میکنم', 'تاییده', 'مشکلی نیست',
+  'ایرادی نداره', 'go ahead', 'do it', 'please do', 'ship it',
   'looks good', 'sounds good',
 ];
+
+/**
+ * Consent sent as an emoji, which `words()` cannot see.
+ *
+ * It splits on everything that is not a letter or a digit, so a reply of
+ * nothing but 👍 tokenises to nothing at all and reads as UNCLEAR. Somebody
+ * answering "shall I apply this?" with a thumbs-up has answered it, and on a
+ * phone it is the most natural way to.
+ *
+ * Only the three that mean assent and nothing else. 🙏 is absent on purpose:
+ * it is thanks or please, it ends most of her messages, and reading it as
+ * consent would approve a deploy off the back of someone being polite.
+ */
+const APPROVE_EMOJI = ['👍', '✅', '👌'];
 
 /**
  * Anything that means "not this, or not yet".
@@ -81,14 +111,19 @@ const APPROVE_PHRASES = [
  * live channel, and reading consent as a refusal sends one more email.
  */
 const REFUSE_WORDS = [
-  'نه', 'نخیر', 'خیر', 'نکن', 'نفرست', 'صبر', 'فعلا', 'فعلاً', 'مخالفم',
+  'نه', 'نخیر', 'خیر', 'نکن', 'نفرست', 'نزن', 'صبر', 'فعلا', 'فعلاً', 'مخالفم',
+  'بعدا', 'بعداً', 'نمیخوام', 'نخواستم',
   'no', 'nope', 'dont', 'stop', 'wait', 'hold', 'not',
 ];
 
 const REFUSE_PHRASES = [
-  'انجام نده', 'اعمال نکن', 'صبر کن', 'هنوز نه', 'الان نه',
+  'انجام نده', 'انجام ندید', 'اعمال نکن', 'اعمال نکنید', 'صبر کن', 'صبر کنید',
+  'نمی خوام', 'هنوز نه', 'الان نه', 'فعلا نه',
   'do not', 'don t', 'not yet', 'hold off', 'back out', 'undo',
 ];
+
+/** A refusal sent as an emoji, held to the same refusals-first rule. */
+const REFUSE_EMOJI = ['👎', '❌', '🛑'];
 
 export type ApprovalVerdict = 'approved' | 'refused' | 'unclear';
 
@@ -111,9 +146,15 @@ function hasPhrase(text: string, list: readonly string[]): boolean {
  */
 export function approvalVerdict(text: string): ApprovalVerdict {
   const tokens = words(text);
+  const normalised = normalisePersian(text);
+  const hasEmoji = (list: readonly string[]) => list.some((emoji) => normalised.includes(emoji));
 
-  if (hasWord(tokens, REFUSE_WORDS) || hasPhrase(text, REFUSE_PHRASES)) return 'refused';
-  if (hasWord(tokens, APPROVE_WORDS) || hasPhrase(text, APPROVE_PHRASES)) return 'approved';
+  if (hasWord(tokens, REFUSE_WORDS) || hasPhrase(text, REFUSE_PHRASES) || hasEmoji(REFUSE_EMOJI)) {
+    return 'refused';
+  }
+  if (hasWord(tokens, APPROVE_WORDS) || hasPhrase(text, APPROVE_PHRASES) || hasEmoji(APPROVE_EMOJI)) {
+    return 'approved';
+  }
   return 'unclear';
 }
 

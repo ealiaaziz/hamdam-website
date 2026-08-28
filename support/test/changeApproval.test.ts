@@ -75,6 +75,69 @@ describe('silence and small talk never approve', () => {
   });
 });
 
+describe('the words she is likely to actually use', () => {
+  /**
+   * The email asks her to reply "بله" and almost nobody answers a yes/no
+   * question with the word they were offered. Each of these used to be
+   * unclear, which is safe and reads exactly like the bot ignoring her: the
+   * complaint that started this whole piece of work.
+   */
+  it('reads ordinary Farsi assent', () => {
+    for (const reply of ['خوبه', 'حتماً', 'قبوله', 'بفرست', 'اعمال کنید', 'ایرادی نداره']) {
+      expect(approvalVerdict(reply)).toBe('approved');
+    }
+  });
+
+  it('reads ordinary Farsi refusal', () => {
+    for (const reply of ['بعداً', 'نمی‌خوام', 'فعلا نه', 'صبر کنید', 'نزن']) {
+      expect(approvalVerdict(reply)).toBe('refused');
+    }
+  });
+
+  /**
+   * Kept out on purpose. "درسته" reads as agreement on its own and opens a
+   * sentence that is often the opposite: "درسته که مشکل داره" is "it is true
+   * that it has a problem", which is a bug report, not permission to deploy.
+   * A false refusal costs one more email; a false approval ships code to a
+   * live channel, so anything that can open a sentence stays out.
+   */
+  it('does not accept agreement that can open a sentence', () => {
+    expect(approvalVerdict('درسته')).toBe('unclear');
+    expect(approvalVerdict('درسته که مشکل داره')).toBe('unclear');
+  });
+});
+
+describe('an answer sent as an emoji', () => {
+  /**
+   * words() splits on everything that is not a letter or a digit, so a reply
+   * of nothing but 👍 tokenised to nothing at all. On a phone it is the most
+   * natural way to answer a yes/no question.
+   */
+  it('reads a thumbs-up as consent', () => {
+    expect(approvalVerdict('👍')).toBe('approved');
+    expect(approvalVerdict('✅')).toBe('approved');
+    expect(approvalVerdict('👌 ممنون')).toBe('approved');
+  });
+
+  it('reads a thumbs-down as refusal', () => {
+    expect(approvalVerdict('👎')).toBe('refused');
+    expect(approvalVerdict('❌')).toBe('refused');
+  });
+
+  /**
+   * 🙏 ends most of her messages. It is thanks or please, never consent, and
+   * reading it as consent would deploy off the back of someone being polite.
+   */
+  it('never reads a folded-hands as consent', () => {
+    expect(approvalVerdict('🙏')).toBe('unclear');
+    expect(approvalVerdict('ممنون 🙏')).toBe('unclear');
+  });
+
+  it('still lets a refusal outrank an approving emoji', () => {
+    expect(approvalVerdict('👍 ولی فعلا نه')).toBe('refused');
+  });
+});
+
 describe('keyboard and encoding differences', () => {
   it('folds Arabic yeh and kaf onto their Persian forms', () => {
     // "بلي" typed on an Arabic keyboard is the same word as "بلی".
