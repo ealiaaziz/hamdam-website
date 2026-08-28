@@ -39,8 +39,16 @@ export interface InboundFacts {
  * in and nothing happened" has to be answerable from the ticket a week later
  * without re-deriving it from mail logs, and the reasons are the difference
  * between a desk that declined and a desk that broke.
+ *
+ * Returns whether the bot flow now owns this ticket, which the caller uses to
+ * keep the ordinary assistant out of it. The two must not both answer: the
+ * assistant is grounded in a knowledge base about the iOS app and holds no
+ * article about the Telegram bot, so on a bot report it can only say
+ * something generic or hand over to a person, and both are wrong here. The
+ * next thing she should hear is the change itself, in Farsi, from the
+ * follow-up pass.
  */
-export async function maybeDispatch(env: Env, facts: InboundFacts): Promise<void> {
+export async function maybeDispatch(env: Env, facts: InboundFacts): Promise<boolean> {
   try {
     // Fails closed, unlike the console's ADMIN_EMAILS which deliberately fails
     // open when unset. Opposite defaults, opposite consequences: an unset
@@ -48,7 +56,7 @@ export async function maybeDispatch(env: Env, facts: InboundFacts): Promise<void
     // an unset owner list here would let any authenticated sender put an agent
     // on the repository. Unconfigured means nobody.
     const senderIsOwner = isOwner(env, facts.fromEmail);
-    if (!senderIsOwner && !facts.senderAuthenticated) return;
+    if (!senderIsOwner && !facts.senderAuthenticated) return false;
 
     const decision = await runDispatchGate(
       {
@@ -68,12 +76,12 @@ export async function maybeDispatch(env: Env, facts: InboundFacts): Promise<void
       } else if (senderIsOwner && facts.senderAuthenticated) {
         await addComment(env.DB, facts.ticketId, 'system', null, `Not dispatched: ${decision.reason}`);
       }
-      return;
+      return false;
     }
 
     if (!canReachRepo(env)) {
       await addComment(env.DB, facts.ticketId, 'system', null, 'Would have dispatched, but GITHUB_TOKEN and GITHUB_REPO are not set.');
-      return;
+      return false;
     }
 
     const result = await openIssue(env, {
@@ -85,7 +93,7 @@ export async function maybeDispatch(env: Env, facts: InboundFacts): Promise<void
 
     if (!result.ok) {
       await addComment(env.DB, facts.ticketId, 'system', null, `Dispatch failed: ${result.reason}`);
-      return;
+      return false;
     }
 
     await recordDispatch(env.DB, facts.ticketId, result.value.number);
@@ -94,10 +102,14 @@ export async function maybeDispatch(env: Env, facts: InboundFacts): Promise<void
       facts.ticketId,
       'system',
       null,
-      `Dispatched to the bot repository as issue #${result.value.number}: ${result.value.html_url}`,
+      `Dispatched to the bot repository as issue #${result.value.number}: ${result.value.html_url}. `
+        + 'The assistant stands down on this ticket: it answers from articles about the app and '
+        + 'holds none about the bot, so the next message here is the change itself.',
     );
+    return true;
   } catch (error) {
     await noteFailure(env, facts.ticketId, error);
+    return false;
   }
 }
 
@@ -107,17 +119,22 @@ export async function maybeDispatch(env: Env, facts: InboundFacts): Promise<void
  * Two things can be true of the same reply and both are handled: it may
  * answer the change last put to her, and it may say something the agent needs
  * to see. A "بله، ولی دکمه هنوز اشتباه است" is an approval and a bug report.
+ *
+ * Returns whether the bot flow owns this ticket, for the same reason
+ * maybeDispatch does: the assistant must not also answer here. Her reply on a
+ * dispatched ticket is an answer to a question the desk asked, and an article
+ * about the app is not a response to it.
  */
-export async function relayReply(env: Env, facts: InboundFacts): Promise<void> {
+export async function relayReply(env: Env, facts: InboundFacts): Promise<boolean> {
   try {
     const change = await getBotChange(env.DB, facts.ticketId);
-    if (!change) return;
+    if (!change) return false;
 
     // The same two locks as the dispatch itself. A ticket that has dispatched
     // is a ticket where a reply can approve a deploy, so the sender of that
     // reply has to be the owner and Exchange has to have said so. The ticket
     // id in the subject is a routing hint and never a credential.
-    if (!facts.senderAuthenticated || !isOwner(env, facts.fromEmail)) return;
+    if (!facts.senderAuthenticated || !isOwner(env, facts.fromEmail)) return false;
 
     if (change.pending_change_ref) {
       const verdict = approvalVerdict(facts.body);
@@ -166,8 +183,11 @@ export async function relayReply(env: Env, facts: InboundFacts): Promise<void> {
         await addComment(env.DB, facts.ticketId, 'system', null, `Relay to issue #${change.issue_number} failed: ${relayed.reason}`);
       }
     }
+
+    return true;
   } catch (error) {
     await noteFailure(env, facts.ticketId, error);
+    return false;
   }
 }
 
