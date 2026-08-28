@@ -110,8 +110,15 @@ function dailyCallLimit(env: Env): number {
   return Number.isInteger(configured) && configured > 0 ? configured : DEFAULT_DAILY_CALL_LIMIT;
 }
 
-/** Queue a row, then try to deliver it now. Same contract as the portal's. */
-async function queueAndSend(env: Env, email: NewOutboundEmail): Promise<void> {
+/**
+ * Queue a row, then try to deliver it now. Same contract as the portal's.
+ *
+ * Exported because the bot follow-up pass sends through it too. It is the one
+ * place the recipient ceiling, the copy to the developer and the failure
+ * bookkeeping all live, and a second sender that skipped them would be the one
+ * outbound path with no limit on it.
+ */
+export async function queueAndSend(env: Env, email: NewOutboundEmail): Promise<void> {
   // Decided here rather than at each call site, because here is the one place
   // every outbound path already passes through, and a copy that depends on a
   // caller remembering is a copy that is missing from whichever path is added

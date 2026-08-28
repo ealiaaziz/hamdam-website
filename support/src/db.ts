@@ -1018,3 +1018,27 @@ export async function markDeployed(db: D1Database, ticketId: number): Promise<vo
     .bind(ticketId)
     .run();
 }
+
+/**
+ * Tickets the follow-up pass still has something to do about.
+ *
+ * Anything dispatched that has not shipped. Deliberately not filtered on
+ * ticket status: a ticket can be closed while a change is still in flight,
+ * and abandoning her change because the conversation ended would leave a pull
+ * request approved and never merged, with nobody told.
+ *
+ * Bounded, because this runs every minute and an unbounded scan of a growing
+ * table on a cron is a bill that arrives quietly.
+ */
+export async function ticketsAwaitingBotFollowUp(db: D1Database, limit = 20): Promise<number[]> {
+  const result = await db
+    .prepare(
+      `SELECT ticket_id FROM ticket_bot_changes
+        WHERE deployed_at IS NULL
+        ORDER BY updated_at ASC
+        LIMIT ?1`,
+    )
+    .bind(limit)
+    .all<{ ticket_id: number }>();
+  return (result.results ?? []).map((row) => row.ticket_id);
+}

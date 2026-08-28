@@ -21,7 +21,8 @@ import { viaCloudflareEdge } from './edge.js';
 import { HEARTBEAT_KEY, readHeartbeat } from './heartbeat.js';
 import { adminAllowlist, isAllowedAgent } from './adminAccess.js';
 import { detectLocale, localePath, parseLocale, type Locale } from './i18n.js';
-import { ingestInbox } from './ingest.js';
+import { ingestInbox, queueAndSend as queueAndSendFromCron } from './ingest.js';
+import { followUpBotChanges } from './botFollowUp.js';
 import { notifyEscalation, unmeteredRecipients } from './escalation.js';
 import { requestedClosure } from './agentPolicy.js';
 
@@ -1382,6 +1383,23 @@ export default {
         })
         .catch((error) => {
           console.error('ingest failed:', error instanceof Error ? error.message : String(error));
+        }),
+    );
+
+    // The half of the bot change flow that no email triggers: the agent
+    // opening a pull request, and a merge shipping it. Neither tells the desk
+    // anything, so the desk looks. Separate from the ingest chain on purpose,
+    // so a mailbox outage does not also stop her being told her change is
+    // live, and so a failure here cannot stop the mail.
+    ctx.waitUntil(
+      followUpBotChanges(env, async (email) => { await queueAndSendFromCron(env, email); })
+        .then((summary) => {
+          if (summary.proposed > 0 || summary.shipped > 0 || summary.failures > 0) {
+            console.log('bot follow-up', JSON.stringify(summary));
+          }
+        })
+        .catch((error) => {
+          console.error('bot follow-up failed:', error instanceof Error ? error.message : String(error));
         }),
     );
   },

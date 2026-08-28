@@ -60,6 +60,85 @@ async function call<T>(env: Env, path: string, body: unknown): Promise<GitHubRes
   }
 }
 
+async function read<T>(env: Env, path: string): Promise<GitHubResult<T>> {
+  if (!canReachRepo(env)) return { ok: false, reason: 'github credentials not configured' };
+
+  try {
+    const response = await fetch(`${API}/repos/${env.GITHUB_REPO}${path}`, {
+      headers: {
+        authorization: `Bearer ${env.GITHUB_TOKEN}`,
+        accept: 'application/vnd.github+json',
+        'user-agent': 'hamdam-support-desk',
+      },
+      signal: AbortSignal.timeout(TIMEOUT_MS),
+    });
+
+    if (response.status >= 200 && response.status < 300) {
+      return { ok: true, value: (await response.json()) as T };
+    }
+    return { ok: false, reason: `github ${response.status}: ${(await response.text()).slice(0, 200)}` };
+  } catch (error) {
+    return { ok: false, reason: error instanceof Error ? error.message : String(error) };
+  }
+}
+
+export interface IssueComment {
+  id: number;
+  body: string;
+  user: { login: string };
+}
+
+export async function listIssueComments(
+  env: Env,
+  issueNumber: number,
+): Promise<GitHubResult<IssueComment[]>> {
+  return read(env, `/issues/${issueNumber}/comments?per_page=100`);
+}
+
+export interface PullState {
+  number: number;
+  state: 'open' | 'closed';
+  merged: boolean;
+  head: { sha: string };
+}
+
+export async function getPull(env: Env, prNumber: number): Promise<GitHubResult<PullState>> {
+  return read(env, `/pulls/${prNumber}`);
+}
+
+/**
+ * What the agent reported back about the pull request it opened.
+ *
+ * The numbers come from a workflow step rather than from the agent's prose,
+ * because a model writing a sha into a sentence is a sha that is sometimes
+ * wrong, and this one decides what gets merged. The workflow looks the pull
+ * request up by branch and prints the markers; the agent's own words are the
+ * plain-Farsi description underneath, which is prose and is allowed to be.
+ *
+ * The newest report wins. The agent pushes again after a review comment or a
+ * red build and reports again, and the change she should be asked about is the
+ * one that exists now.
+ */
+export function parseAgentReport(comments: readonly IssueComment[]): {
+  prNumber: number;
+  headSha: string;
+  description: string;
+} | null {
+  for (const comment of [...comments].reverse()) {
+    const pr = /<!--\s*desk:pr=(\d+)\s*-->/.exec(comment.body);
+    const sha = /<!--\s*desk:sha=([0-9a-f]{40})\s*-->/.exec(comment.body);
+    if (!pr || !sha) continue;
+
+    const described = /<!--\s*desk:fa\s*-->([\s\S]*?)<!--\s*desk:end\s*-->/.exec(comment.body);
+    return {
+      prNumber: Number(pr[1]),
+      headSha: sha[1]!,
+      description: (described?.[1] ?? '').trim(),
+    };
+  }
+  return null;
+}
+
 /**
  * Wrap text written by somebody else so it cannot be read as instructions.
  *
