@@ -13,6 +13,8 @@ const base: BotChangeRow = {
   approved_at: '2026-08-28T10:05:00.000Z',
   refused_at: null,
   deployed_at: null,
+  last_outcome: null,
+  last_outcome_at: null,
   dispatched_at: '2026-08-28T09:00:00.000Z',
   updated_at: '2026-08-28T10:05:00.000Z',
 };

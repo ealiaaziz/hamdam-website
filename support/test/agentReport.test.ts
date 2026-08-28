@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseAgentReport, type IssueComment } from '../src/github.js';
+import { parseAgentOutcome, parseAgentReport, type IssueComment } from '../src/github.js';
 
 const SHA_A = 'a3f9c1d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0';
 const SHA_B = 'bbbb11d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0';
@@ -50,5 +50,41 @@ describe('parseAgentReport', () => {
   it('reports an empty description rather than inventing one', () => {
     const parsed = parseAgentReport([comment(`<!-- desk:pr=9 -->\n<!-- desk:sha=${SHA_A} -->`)]);
     expect(parsed).toEqual({ prNumber: 9, headSha: SHA_A, description: '' });
+  });
+});
+
+describe('parseAgentOutcome', () => {
+  const ask = (text: string) => comment(`<!-- desk:ask -->\n${text}\n<!-- desk:end -->`);
+  const blocked = (text: string) => comment(`<!-- desk:blocked -->\n${text}\n<!-- desk:end -->`);
+
+  it('finds nothing on an ordinary comment', () => {
+    expect(parseAgentOutcome([comment('looking into it')])).toBeNull();
+  });
+
+  it('reads a question', () => {
+    expect(parseAgentOutcome([ask('کدام دکمه؟')])).toEqual({ kind: 'ask', text: 'کدام دکمه؟' });
+  });
+
+  it('reads a stand-down', () => {
+    expect(parseAgentOutcome([blocked('این کار ریسک دارد')]))
+      .toEqual({ kind: 'blocked', text: 'این کار ریسک دارد' });
+  });
+
+  /**
+   * The one that keeps her from being asked something already answered. A
+   * pull request report is the newest word on the ticket, so a question that
+   * came before it has been resolved by the work itself.
+   */
+  it('is superseded by a later pull request report', () => {
+    expect(parseAgentOutcome([ask('کدام دکمه؟'), report(9, SHA_A)])).toBeNull();
+  });
+
+  it('still reads a question asked after a pull request', () => {
+    const parsed = parseAgentOutcome([report(9, SHA_A), ask('این درست است؟')]);
+    expect(parsed).toEqual({ kind: 'ask', text: 'این درست است؟' });
+  });
+
+  it('takes the newest of several', () => {
+    expect(parseAgentOutcome([ask('اول'), ask('دوم')])).toEqual({ kind: 'ask', text: 'دوم' });
   });
 });
