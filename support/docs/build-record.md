@@ -1347,3 +1347,39 @@ invocation will never call `fetch`, which is a real refactor of the largest
 file here and not a thing to do at midnight on the mail path. What is worth
 doing first is the measurement: compare the CPU of a cold tick against a warm
 one in the cron log.
+
+### A marker quoted in a sentence is not a marker (added 2026-08-28)
+
+Accepting `desk:fa` as an outcome, two sections above, opened a hole that the
+same night walked straight into. Told on the issue that it had used the wrong
+marker, the agent checked, disagreed, and said so in a comment that quoted
+`<!-- desk:fa -->` mid-sentence while explaining what it had not done. The
+pattern matching outcomes did not care about lines, so it matched that quote,
+ran non-greedily to the real terminator at the end of the comment, and returned
+a thousand and two characters: the whole English argument about markers,
+followed by the Farsi question. That was queued to be emailed to a
+non-technical Persian speaker as the answer to her bug report. It did not reach
+her only because the platform's cron had already stopped an hour earlier.
+
+Worth stating plainly, because it is the useful part: the hole was opened by
+the fix for the bug that never existed, aimed at a diagnosis that was wrong,
+and the comment that exposed it was the agent correctly refusing that
+diagnosis.
+
+Markers now count only on a line of their own, and only outside fenced code
+blocks, which is how both halves of this system quote the protocol at each
+other. The same reading applies to `desk:pr` and `desk:sha`, so a commit id
+mentioned in prose cannot be read as a report. Against the real thread the
+extraction went from 1002 characters to 243, which is the question and nothing
+else.
+
+Two judgements are recorded in tests rather than left to the next reader:
+
+- **Priority by kind, not by position.** A comment carrying more than one block
+  is the agent saying more than one thing. A stand-down outranks a question and
+  a question outranks a description, because a description with no pull request
+  beside it describes a change that does not exist.
+- **A merely indented marker still counts.** The asymmetry is deliberate: a
+  quoted example read as real sends her something odd, and a real marker read
+  as quoted sends her nothing at all. Only an explicit fence is treated as
+  quoting.

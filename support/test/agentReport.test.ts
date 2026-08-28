@@ -117,6 +117,44 @@ describe('parseAgentOutcome', () => {
     expect(parseAgentOutcome([both])).toEqual({ kind: 'ask', text: 'سؤال' });
   });
 
+  /**
+   * The real comment that would have been emailed to her, reduced to its
+   * shape. An agent disputing a claim about markers quoted one mid-sentence,
+   * and a pattern that did not care about lines matched the quote, ran to the
+   * real terminator, and made a thousand characters of English argument the
+   * body of her answer. It never reached her only because the platform's cron
+   * had stopped an hour earlier.
+   *
+   * A marker inside a sentence is somebody talking about the protocol. A
+   * marker alone on its line is somebody using it.
+   */
+  it('ignores a marker quoted inside a sentence', () => {
+    const disputing = comment(
+      'They claim my question was wrapped in `<!-- desk:fa -->` (the wrong marker),\n'
+      + 'and that is not true: my prior comment used `<!-- desk:ask -->`, above.\n'
+      + '\n'
+      + '<!-- desk:ask -->\n'
+      + 'کدام دکمه؟\n'
+      + '<!-- desk:end -->',
+    );
+    expect(parseAgentOutcome([disputing])).toEqual({ kind: 'ask', text: 'کدام دکمه؟' });
+  });
+
+  it('ignores markers inside a fenced code block, which is how they get quoted', () => {
+    const quoting = comment('Write it like this:\n\n```\n<!-- desk:ask -->\n...\n<!-- desk:end -->\n```');
+    expect(parseAgentOutcome([quoting])).toBeNull();
+  });
+
+  /**
+   * The other half of that asymmetry, asserted so nobody tightens it later
+   * without meeting the argument: a quoted example read as real sends her
+   * something odd, a real marker read as quoted sends her nothing.
+   */
+  it('still reads a marker that is merely indented', () => {
+    const sloppy = comment('  <!-- desk:ask -->\n  کدام دکمه؟\n  <!-- desk:end -->');
+    expect(parseAgentOutcome([sloppy])).toEqual({ kind: 'ask', text: 'کدام دکمه؟' });
+  });
+
   it('still prefers a stand-down over a description in the same comment', () => {
     const both = comment(
       '<!-- desk:fa -->\nتوضیح\n<!-- desk:end -->\n<!-- desk:blocked -->\nنمی‌شود\n<!-- desk:end -->',
