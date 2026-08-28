@@ -1172,17 +1172,23 @@ would end the block early and drop a stranger's words where instructions go.
 ### Unproven
 
 Nothing here has been through a real email. Every piece has unit tests and
-none of them have met Exchange, GitHub or her writing. Two specific gaps:
+none of them have met Exchange, GitHub or her writing. The developer decided
+on 2026-08-28 that the first real run would be the owner's own, rather than a
+rehearsal by him first: she is the actual user, the guards that matter are in
+code, and he is copied on every message the desk sends her, so a first cycle
+that goes wrong is visible to him as it happens and one secret deletion stops
+it. Recorded because it is a deliberate choice and not an oversight.
 
 - **The approval vocabulary is guessed.** بله، آره، اوکی، باشه، موافقم and a
   few phrases. If she writes "خوبه" or "حتماً" or sends 👍, the verdict is
   `unclear`, nothing happens, and to her that looks like the bot is broken
   again. It fails safe and it will still annoy her. Widen it once real replies
   exist rather than guessing further now.
-- **The Farsi in `render/botEmail.ts` has not been read by a native speaker**,
-  the same status the rest of `i18n.ts` carries. It is the text she reads to
-  decide whether to ship code to a live channel, which is a bad place for a
-  translation nobody has checked.
+- **The Farsi in `render/botEmail.ts` was reviewed by the developer and
+  accepted on 2026-08-28.** That closes the translation question and not the
+  vocabulary one, which is a different thing: `changeApproval.ts` can only
+  recognise the words it lists, so the risk left is not that her email reads
+  badly but that her reply is not recognised as an answer.
 
 ### Turning it off
 
