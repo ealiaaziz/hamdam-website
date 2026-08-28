@@ -216,6 +216,7 @@ export interface NewOutboundEmail {
   commentId: number | null;
   kind: OutboundKind;
   toEmail: string;
+  ccEmail?: string | null;
   subject: string;
   bodyHtml: string;
   inReplyToMessageId: string | null;
@@ -224,11 +225,14 @@ export interface NewOutboundEmail {
 export async function queueOutboundEmail(db: D1Database, e: NewOutboundEmail): Promise<number> {
   const row = await db
     .prepare(
-      `INSERT INTO outbound_emails (ticket_id, comment_id, kind, to_email, subject, body_html, in_reply_to_message_id)
-       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)
+      `INSERT INTO outbound_emails (ticket_id, comment_id, kind, to_email, cc_email, subject, body_html, in_reply_to_message_id)
+       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)
        RETURNING id`,
     )
-    .bind(e.ticketId, e.commentId, e.kind, e.toEmail, e.subject, e.bodyHtml, e.inReplyToMessageId)
+    .bind(
+      e.ticketId, e.commentId, e.kind, e.toEmail, e.ccEmail ?? null,
+      e.subject, e.bodyHtml, e.inReplyToMessageId,
+    )
     .first<{ id: number }>();
   if (!row) throw new Error('queueOutboundEmail: insert did not return an id');
   return row.id;
@@ -566,12 +570,12 @@ export async function queueAssistantDraft(
   await db
     .prepare(
       `INSERT INTO outbound_emails
-         (ticket_id, comment_id, kind, to_email, subject, body_html, in_reply_to_message_id,
+         (ticket_id, comment_id, kind, to_email, cc_email, subject, body_html, in_reply_to_message_id,
           status, assistant_reason, assistant_article_id)
-       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 'draft', ?8, ?9)`,
+       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, 'draft', ?9, ?10)`,
     )
     .bind(
-      e.ticketId, e.commentId, e.kind, e.toEmail, e.subject, e.bodyHtml,
+      e.ticketId, e.commentId, e.kind, e.toEmail, e.ccEmail ?? null, e.subject, e.bodyHtml,
       e.inReplyToMessageId, e.assistantReason, e.assistantArticleId,
     )
     .run();

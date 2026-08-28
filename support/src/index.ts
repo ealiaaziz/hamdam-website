@@ -216,7 +216,12 @@ async function queueAndSend(
         return;
       }
     }
-    const result = await sendMail(c.env, { toEmail: email.toEmail, subject: email.subject, bodyHtml: email.bodyHtml });
+    const result = await sendMail(c.env, {
+      toEmail: email.toEmail,
+      ccEmail: email.ccEmail ?? null,
+      subject: email.subject,
+      bodyHtml: email.bodyHtml,
+    });
     if (result.sent) await markOutboundSent(c.env.DB, id);
     else await markOutboundFailed(c.env.DB, id, result.reason);
   };

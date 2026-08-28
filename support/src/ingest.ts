@@ -122,7 +122,18 @@ async function queueAndSend(env: Env, email: NewOutboundEmail): Promise<void> {
     return;
   }
 
-  const result = await sendMail(env, { toEmail: email.toEmail, subject: email.subject, bodyHtml: email.bodyHtml });
+  // The copy rides along with the message and is deliberately not metered
+  // separately. The ceiling above exists to stop a stranger being mailed more
+  // than they agreed to; the developer copied on his own desk's mail is not
+  // that, and counting him would make the ceiling a mute button on the trail
+  // he is copied in to read, which is the same mistake unmeteredRecipients
+  // exists to prevent.
+  const result = await sendMail(env, {
+    toEmail: email.toEmail,
+    ccEmail: email.ccEmail ?? null,
+    subject: email.subject,
+    bodyHtml: email.bodyHtml,
+  });
   if (result.sent) await markOutboundSent(env.DB, id);
   else await markOutboundFailed(env.DB, id, result.reason);
 }

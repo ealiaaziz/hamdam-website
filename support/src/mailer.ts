@@ -30,6 +30,8 @@ const SEND_ENDPOINT = `https://graph.microsoft.com/v1.0/users/${encodeURICompone
 
 export interface MailToSend {
   toEmail: string;
+  /** Copied on this message, when a copy has been configured. */
+  ccEmail?: string | null;
   subject: string;
   bodyHtml: string;
 }
@@ -107,6 +109,11 @@ export async function sendMail(env: Env, mail: MailToSend, now = Date.now()): Pr
           subject: mail.subject,
           body: { contentType: 'HTML', content: mail.bodyHtml },
           toRecipients: [{ emailAddress: { address: mail.toEmail } }],
+          // Omitted entirely when there is no copy, rather than sent as an
+          // empty array: Graph accepts both, and a message with no ccRecipients
+          // key is the one that matches what every message before this looked
+          // like.
+          ...(mail.ccEmail ? { ccRecipients: [{ emailAddress: { address: mail.ccEmail } }] } : {}),
         },
         // Keep it in Sent Items. A support desk where half the outgoing mail
         // is invisible to the person running it is worse than one that is
