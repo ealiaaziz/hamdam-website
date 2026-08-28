@@ -205,6 +205,22 @@ export function parseAgentReport(comments: readonly IssueComment[]): {
  *
  * Newest wins, and a report of any kind supersedes an older one: a question
  * answered and then built is a pull request now, not an open question.
+ *
+ * `desk:fa` counts too, and that is the correction this function needed. The
+ * agent is given three markers and told to pick the right one, and on the
+ * first live report it wrote its Farsi question inside `desk:fa`, the marker
+ * that means "here is the change I made". Every check downstream then behaved
+ * correctly and she heard nothing: no pull request existed, so there was
+ * nothing to propose, and no `ask` marker existed, so there was nothing to
+ * relay. A wrong marker cost her the answer, silently, which is precisely the
+ * outcome the three markers were introduced to make impossible.
+ *
+ * So marker choice now decides only the wording of the email, never whether
+ * she gets one. A Farsi block with no pull request beside it is, by
+ * construction, not a change to approve: it is the agent talking to her, and
+ * the email that fits is the one that invites a reply. Deliberately not fixed
+ * by sharpening the instruction in the prompt, because a rule a model has to
+ * remember is not a rule.
  */
 export type AgentOutcome =
   | { kind: 'ask'; text: string }
@@ -215,11 +231,14 @@ export function parseAgentOutcome(comments: readonly IssueComment[]): AgentOutco
     // A pull request report supersedes anything earlier, including a question.
     if (/<!--\s*desk:pr=\d+\s*-->/.test(comment.body)) return null;
 
-    const ask = /<!--\s*desk:ask\s*-->([\s\S]*?)<!--\s*desk:end\s*-->/.exec(comment.body);
-    if (ask) return { kind: 'ask', text: ask[1]!.trim() };
-
     const blocked = /<!--\s*desk:blocked\s*-->([\s\S]*?)<!--\s*desk:end\s*-->/.exec(comment.body);
     if (blocked) return { kind: 'blocked', text: blocked[1]!.trim() };
+
+    // `ask` first, then `fa`, so a comment carrying both is read as the
+    // question it is. `fa` reaching here at all means there is no pull
+    // request, since one would have returned above.
+    const spoke = /<!--\s*desk:(?:ask|fa)\s*-->([\s\S]*?)<!--\s*desk:end\s*-->/.exec(comment.body);
+    if (spoke) return { kind: 'ask', text: spoke[1]!.trim() };
   }
   return null;
 }

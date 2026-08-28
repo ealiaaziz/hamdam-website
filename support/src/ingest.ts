@@ -117,8 +117,15 @@ function dailyCallLimit(env: Env): number {
  * place the recipient ceiling, the copy to the developer and the failure
  * bookkeeping all live, and a second sender that skipped them would be the one
  * outbound path with no limit on it.
+ *
+ * Returns whether the message actually left. Every caller here is free to
+ * ignore it and most do, because the row and its reason are already written
+ * where a person can see them. The follow-up pass does not ignore it: that
+ * one records "she has been told this" before sending, to stop a minute cron
+ * mailing the same question sixty times an hour, and a send it believed had
+ * happened would make her never told and the desk certain she was.
  */
-export async function queueAndSend(env: Env, email: NewOutboundEmail): Promise<void> {
+export async function queueAndSend(env: Env, email: NewOutboundEmail): Promise<boolean> {
   // Decided here rather than at each call site, because here is the one place
   // every outbound path already passes through, and a copy that depends on a
   // caller remembering is a copy that is missing from whichever path is added
@@ -133,7 +140,7 @@ export async function queueAndSend(env: Env, email: NewOutboundEmail): Promise<v
   const allowance = await mayEmailRecipient(env.DB, withCopy.toEmail, unmeteredRecipients(env));
   if (!allowance.allowed) {
     await markOutboundFailed(env.DB, id, `recipient hourly limit reached (${allowance.count})`);
-    return;
+    return false;
   }
 
   // The copy rides along with the message and is deliberately not metered
@@ -150,6 +157,7 @@ export async function queueAndSend(env: Env, email: NewOutboundEmail): Promise<v
   });
   if (result.sent) await markOutboundSent(env.DB, id);
   else await markOutboundFailed(env.DB, id, result.reason);
+  return result.sent;
 }
 
 function ticketUrl(ticketId: number, token: string): string {

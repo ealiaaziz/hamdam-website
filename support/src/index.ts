@@ -1392,11 +1392,15 @@ export default {
     // so a mailbox outage does not also stop her being told her change is
     // live, and so a failure here cannot stop the mail.
     ctx.waitUntil(
-      followUpBotChanges(env, async (email) => { await queueAndSendFromCron(env, email); })
+      followUpBotChanges(env, (email) => queueAndSendFromCron(env, email))
         .then((summary) => {
-          if (summary.proposed > 0 || summary.shipped > 0 || summary.failures > 0) {
-            console.log('bot follow-up', JSON.stringify(summary));
-          }
+          // Logged whenever a change is in flight, not only when the pass did
+          // something. A pass that watches a ticket and does nothing is the
+          // state that hid a real fault for an hour: the desk was silent, the
+          // logs were silent, and silence read as "nothing is happening" when
+          // it meant "something is stuck". One line a minute, and only while a
+          // change is open, buys that back.
+          if (summary.watching > 0) console.log('bot follow-up', JSON.stringify(summary));
         })
         .catch((error) => {
           console.error('bot follow-up failed:', error instanceof Error ? error.message : String(error));

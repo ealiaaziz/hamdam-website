@@ -1225,3 +1225,38 @@ it. Recorded because it is a deliberate choice and not an oversight.
 
 `npx wrangler secret delete OWNER_EMAILS`. The gate fails closed and the desk
 carries on as an ordinary desk.
+
+## A wrong marker cost a real report its answer (2026-08-28)
+
+The first live bot report reached the agent, which read the whole path it
+named, found no fault, and asked the owner a clarifying question rather than
+guessing. That was the right call and she never saw it.
+
+The agent is handed three markers and told to pick one: `desk:fa` for "here is
+the change I made", `desk:ask` for a question, `desk:blocked` for a stand-down.
+It wrapped the question in `desk:fa`. Everything downstream then did exactly
+what it was written to do. No pull request existed, so `parseAgentReport`
+found nothing to propose. No `ask` or `blocked` marker existed, so
+`parseAgentOutcome` found nothing to relay. The workflow's guaranteed-marker
+step saw a marker and correctly stayed quiet. The follow-up pass ran every
+minute, did nothing, and logged nothing, because it only logged when it acted.
+An acknowledgement followed by silence, which is the one outcome this whole
+flow exists to prevent, produced by three correct components agreeing.
+
+Three changes, and the first is the one that matters:
+
+1. Marker choice now decides only the wording of the email, never whether she
+   gets one. A Farsi block with no pull request beside it is the agent talking
+   to her, whichever marker wraps it, and it reaches her as a question because
+   a question invites the reply that restarts the work. Deliberately not fixed
+   by sharpening the prompt: a rule a model has to remember is not a rule.
+2. The follow-up pass logs whenever a change is in flight, not only when it
+   acts. Silent logs read as "nothing is happening" and meant "something is
+   stuck", and that cost an hour of guessing at a system whose whole state was
+   three columns wide.
+3. A send that fails no longer leaves the desk certain she was told. The
+   outcome is recorded before the email goes, so two passes cannot both mail
+   her; the cost was that one failed send silenced the ticket permanently. The
+   mark now comes off when the send does not happen, and `last_outcome_at`
+   bounds the retry to an hour so a permanent failure writes a comment on the
+   ticket instead of a dead outbound row every minute.

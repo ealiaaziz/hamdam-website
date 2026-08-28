@@ -88,6 +88,43 @@ describe('parseAgentOutcome', () => {
   it('takes the newest of several', () => {
     expect(parseAgentOutcome([ask('اول'), ask('دوم')])).toEqual({ kind: 'ask', text: 'دوم' });
   });
+
+  /**
+   * The one that cost a real report its answer.
+   *
+   * The agent is handed three markers and told to pick. On the first live
+   * report it wrote its Farsi question inside `desk:fa`, the marker that
+   * means "here is the change I made". No pull request existed, so there was
+   * nothing to propose; no `ask` existed, so there was nothing to relay; and
+   * she got an acknowledgement and then nothing, which is the exact outcome
+   * the three markers were introduced to prevent.
+   *
+   * A Farsi block with no pull request beside it is the agent talking to her.
+   * It reaches her as a question, because a question invites the reply that
+   * gets the work moving again.
+   */
+  it('relays Farsi the agent tagged as a description when there is no pull request', () => {
+    const mistagged = comment('<!-- desk:fa -->\nکدام دکمه؟\n<!-- desk:end -->');
+    expect(parseAgentOutcome([mistagged])).toEqual({ kind: 'ask', text: 'کدام دکمه؟' });
+  });
+
+  it('does not relay the description of a pull request as a question', () => {
+    expect(parseAgentOutcome([report(9, SHA_A)])).toBeNull();
+  });
+
+  it('reads a comment carrying both markers as the question', () => {
+    const both = comment(
+      '<!-- desk:ask -->\nسؤال\n<!-- desk:end -->\n<!-- desk:fa -->\nتوضیح\n<!-- desk:end -->',
+    );
+    expect(parseAgentOutcome([both])).toEqual({ kind: 'ask', text: 'سؤال' });
+  });
+
+  it('still prefers a stand-down over a description in the same comment', () => {
+    const both = comment(
+      '<!-- desk:fa -->\nتوضیح\n<!-- desk:end -->\n<!-- desk:blocked -->\nنمی‌شود\n<!-- desk:end -->',
+    );
+    expect(parseAgentOutcome([both])).toEqual({ kind: 'blocked', text: 'نمی‌شود' });
+  });
 });
 
 describe('a run that died without saying why', () => {

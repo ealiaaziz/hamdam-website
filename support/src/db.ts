@@ -1054,6 +1054,34 @@ export async function ticketsAwaitingBotFollowUp(db: D1Database, limit = 20): Pr
  * WHERE clause to the value we believed was current, so two passes racing
  * cannot both send.
  */
+/**
+ * Undo the record above, because the email it was recording never left.
+ *
+ * The recording happens before the send, so that two passes racing cannot both
+ * mail her the same question. The cost of that ordering is this case: a send
+ * that fails leaves the desk certain she was told something she was never
+ * told, and every later pass returns early. Clearing the mark puts the ticket
+ * back in the queue and the next minute tries again.
+ *
+ * `last_outcome_at` is deliberately left where it was, and it is what stops
+ * this being an unbounded retry. It marks when the desk first had something to
+ * say, so a caller can give up on a send that has been failing for an hour
+ * rather than writing one dead outbound row a minute forever. A Graph blip
+ * clears in seconds; an address that will never accept mail is a person's
+ * problem and the ticket is where they will find it.
+ */
+export async function clearAgentOutcome(db: D1Database, ticketId: number): Promise<void> {
+  await db
+    .prepare(
+      `UPDATE ticket_bot_changes
+          SET last_outcome = NULL,
+              updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')
+        WHERE ticket_id = ?1`,
+    )
+    .bind(ticketId)
+    .run();
+}
+
 export async function recordAgentOutcome(
   db: D1Database,
   ticketId: number,
