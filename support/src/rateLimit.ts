@@ -142,6 +142,21 @@ export const RATE_LIMITS = {
    * to arrive, and metering it would let a busy hour silence the thing that
    * tells a person the hour is busy.
    */
+  /**
+   * Dispatches of an agent onto the bot's code, per sender, per day.
+   *
+   * Counted only once a message has already passed authentication, the owner
+   * allowlist and the "is this about the bot" check, so an ordinary email
+   * from her never spends a slot. That ordering is the whole point and
+   * `runDispatchGate` in dispatch.ts is what enforces it: the bot's own
+   * daily ad cap was charged at the tap that *started* an ad rather than at
+   * the ad, and three taps locked a seller out for a day having published
+   * nothing. A ceiling charged for looking is not a ceiling, it is a trap.
+   *
+   * Three, and a day rather than an hour, because this one bounds an
+   * afternoon of automated mail rather than a burst.
+   */
+  agent_dispatch: { limit: 3, windowSeconds: 86_400 },
   outbound_recipient: { limit: 10, windowSeconds: 3600 },
 } as const satisfies Record<string, RateLimitRule>;
 

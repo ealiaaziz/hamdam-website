@@ -216,6 +216,7 @@ export interface NewOutboundEmail {
   commentId: number | null;
   kind: OutboundKind;
   toEmail: string;
+  ccEmail?: string | null;
   subject: string;
   bodyHtml: string;
   inReplyToMessageId: string | null;
@@ -224,11 +225,14 @@ export interface NewOutboundEmail {
 export async function queueOutboundEmail(db: D1Database, e: NewOutboundEmail): Promise<number> {
   const row = await db
     .prepare(
-      `INSERT INTO outbound_emails (ticket_id, comment_id, kind, to_email, subject, body_html, in_reply_to_message_id)
-       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)
+      `INSERT INTO outbound_emails (ticket_id, comment_id, kind, to_email, cc_email, subject, body_html, in_reply_to_message_id)
+       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)
        RETURNING id`,
     )
-    .bind(e.ticketId, e.commentId, e.kind, e.toEmail, e.subject, e.bodyHtml, e.inReplyToMessageId)
+    .bind(
+      e.ticketId, e.commentId, e.kind, e.toEmail, e.ccEmail ?? null,
+      e.subject, e.bodyHtml, e.inReplyToMessageId,
+    )
     .first<{ id: number }>();
   if (!row) throw new Error('queueOutboundEmail: insert did not return an id');
   return row.id;
@@ -566,12 +570,12 @@ export async function queueAssistantDraft(
   await db
     .prepare(
       `INSERT INTO outbound_emails
-         (ticket_id, comment_id, kind, to_email, subject, body_html, in_reply_to_message_id,
+         (ticket_id, comment_id, kind, to_email, cc_email, subject, body_html, in_reply_to_message_id,
           status, assistant_reason, assistant_article_id)
-       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 'draft', ?8, ?9)`,
+       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, 'draft', ?9, ?10)`,
     )
     .bind(
-      e.ticketId, e.commentId, e.kind, e.toEmail, e.subject, e.bodyHtml,
+      e.ticketId, e.commentId, e.kind, e.toEmail, e.ccEmail ?? null, e.subject, e.bodyHtml,
       e.inReplyToMessageId, e.assistantReason, e.assistantArticleId,
     )
     .run();
@@ -862,4 +866,179 @@ export async function setCheckpoint(db: D1Database, value: string): Promise<void
     )
     .bind(value)
     .run();
+}
+
+// ---- bot changes ---------------------------------------------------------
+
+export interface BotChangeRow {
+  ticket_id: number;
+  issue_number: number | null;
+  pr_number: number | null;
+  branch: string | null;
+  head_sha: string | null;
+  pending_change_ref: string | null;
+  proposed_at: string | null;
+  approved_ref: string | null;
+  approved_at: string | null;
+  refused_at: string | null;
+  deployed_at: string | null;
+  dispatched_at: string;
+  updated_at: string;
+}
+
+export async function getBotChange(db: D1Database, ticketId: number): Promise<BotChangeRow | null> {
+  return db
+    .prepare('SELECT * FROM ticket_bot_changes WHERE ticket_id = ?')
+    .bind(ticketId)
+    .first<BotChangeRow>();
+}
+
+export async function ticketForIssue(db: D1Database, issueNumber: number): Promise<number | null> {
+  const row = await db
+    .prepare('SELECT ticket_id FROM ticket_bot_changes WHERE issue_number = ?')
+    .bind(issueNumber)
+    .first<{ ticket_id: number }>();
+  return row?.ticket_id ?? null;
+}
+
+/** Record that this ticket has been handed to the repository. */
+export async function recordDispatch(
+  db: D1Database,
+  ticketId: number,
+  issueNumber: number | null,
+): Promise<void> {
+  await db
+    .prepare(
+      `INSERT INTO ticket_bot_changes (ticket_id, issue_number, dispatched_at)
+       VALUES (?1, ?2, strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+       ON CONFLICT(ticket_id) DO UPDATE SET
+         issue_number = COALESCE(excluded.issue_number, ticket_bot_changes.issue_number),
+         updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')`,
+    )
+    .bind(ticketId, issueNumber)
+    .run();
+}
+
+/**
+ * Put a change to the owner, and clear any approval that came before it.
+ *
+ * The clearing is the point, and it is done here rather than left to a caller
+ * to remember. An agent pushes more commits after she has said yes: to fix a
+ * review comment, to make CI pass, or because she asked for something else in
+ * the same thread. Carrying her approval across that push would deploy code
+ * she never saw, under a "yes" she gave to something different. So proposing
+ * anything new resets the answer to unanswered, and she is asked again.
+ */
+export async function proposeChange(
+  db: D1Database,
+  ticketId: number,
+  change: { changeRef: string; prNumber: number | null; branch: string | null; headSha: string },
+): Promise<void> {
+  await db
+    .prepare(
+      `UPDATE ticket_bot_changes
+          SET pending_change_ref = ?2,
+              pr_number = COALESCE(?3, pr_number),
+              branch = COALESCE(?4, branch),
+              head_sha = ?5,
+              proposed_at = strftime('%Y-%m-%dT%H:%M:%fZ','now'),
+              approved_ref = NULL,
+              approved_at = NULL,
+              refused_at = NULL,
+              updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')
+        WHERE ticket_id = ?1`,
+    )
+    .bind(ticketId, change.changeRef, change.prNumber, change.branch, change.headSha)
+    .run();
+}
+
+/**
+ * Record her answer against the change it was given for.
+ *
+ * Scoped to the pending reference, so an approval that names an older change
+ * updates nothing rather than approving the current one. Returns whether it
+ * took, because "she replied yes and nothing happened" needs to be visible.
+ */
+export async function recordApproval(
+  db: D1Database,
+  ticketId: number,
+  changeRef: string,
+): Promise<boolean> {
+  const result = await db
+    .prepare(
+      `UPDATE ticket_bot_changes
+          SET approved_ref = ?2,
+              approved_at = strftime('%Y-%m-%dT%H:%M:%fZ','now'),
+              updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')
+        WHERE ticket_id = ?1 AND pending_change_ref = ?2`,
+    )
+    .bind(ticketId, changeRef)
+    .run();
+  return (result.meta.changes ?? 0) > 0;
+}
+
+export async function recordRefusal(db: D1Database, ticketId: number): Promise<void> {
+  await db
+    .prepare(
+      `UPDATE ticket_bot_changes
+          SET refused_at = strftime('%Y-%m-%dT%H:%M:%fZ','now'),
+              approved_ref = NULL,
+              approved_at = NULL,
+              updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')
+        WHERE ticket_id = ?1`,
+    )
+    .bind(ticketId)
+    .run();
+}
+
+/**
+ * Whether this change may be deployed right now.
+ *
+ * One question, one place, so no caller has to assemble it from three columns
+ * and get it right. The approval must exist, and it must name the change that
+ * is currently pending: an approval left over from a superseded proposal is
+ * not consent to this one, and `proposeChange` clears it anyway. Belt and
+ * braces on the only decision here that reaches production.
+ */
+export function mayDeploy(change: BotChangeRow | null): boolean {
+  if (!change) return false;
+  if (change.refused_at) return false;
+  if (!change.approved_at || !change.approved_ref) return false;
+  return change.approved_ref === change.pending_change_ref;
+}
+
+export async function markDeployed(db: D1Database, ticketId: number): Promise<void> {
+  await db
+    .prepare(
+      `UPDATE ticket_bot_changes
+          SET deployed_at = strftime('%Y-%m-%dT%H:%M:%fZ','now'),
+              updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')
+        WHERE ticket_id = ?1`,
+    )
+    .bind(ticketId)
+    .run();
+}
+
+/**
+ * Tickets the follow-up pass still has something to do about.
+ *
+ * Anything dispatched that has not shipped. Deliberately not filtered on
+ * ticket status: a ticket can be closed while a change is still in flight,
+ * and abandoning her change because the conversation ended would leave a pull
+ * request approved and never merged, with nobody told.
+ *
+ * Bounded, because this runs every minute and an unbounded scan of a growing
+ * table on a cron is a bill that arrives quietly.
+ */
+export async function ticketsAwaitingBotFollowUp(db: D1Database, limit = 20): Promise<number[]> {
+  const result = await db
+    .prepare(
+      `SELECT ticket_id FROM ticket_bot_changes
+        WHERE deployed_at IS NULL
+        ORDER BY updated_at ASC
+        LIMIT ?1`,
+    )
+    .bind(limit)
+    .all<{ ticket_id: number }>();
+  return (result.results ?? []).map((row) => row.ticket_id);
 }

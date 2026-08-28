@@ -10,6 +10,8 @@ import { detectLocale, strings } from './i18n.js';
 import { HEARTBEAT_KEY } from './heartbeat.js';
 import { composeAssistantReplyLive, ASSISTANT_NAME } from './assistantReply.js';
 import { requestedClosure } from './agentPolicy.js';
+import { maybeDispatch, relayReply } from './botDispatch.js';
+import { developerCc } from './owner.js';
 import { notifyEscalation } from './escalation.js';
 import { ackEmail } from './render/email.js';
 import { assistantWrittenEmail } from './render/agentEmail.js';
@@ -108,21 +110,44 @@ function dailyCallLimit(env: Env): number {
   return Number.isInteger(configured) && configured > 0 ? configured : DEFAULT_DAILY_CALL_LIMIT;
 }
 
-/** Queue a row, then try to deliver it now. Same contract as the portal's. */
-async function queueAndSend(env: Env, email: NewOutboundEmail): Promise<void> {
-  const id = await queueOutboundEmail(env.DB, email);
+/**
+ * Queue a row, then try to deliver it now. Same contract as the portal's.
+ *
+ * Exported because the bot follow-up pass sends through it too. It is the one
+ * place the recipient ceiling, the copy to the developer and the failure
+ * bookkeeping all live, and a second sender that skipped them would be the one
+ * outbound path with no limit on it.
+ */
+export async function queueAndSend(env: Env, email: NewOutboundEmail): Promise<void> {
+  // Decided here rather than at each call site, because here is the one place
+  // every outbound path already passes through, and a copy that depends on a
+  // caller remembering is a copy that is missing from whichever path is added
+  // next. developerCc returns null for everyone who is not the owner.
+  const withCopy = { ...email, ccEmail: email.ccEmail ?? developerCc(env, email.toEmail) };
+  const id = await queueOutboundEmail(env.DB, withCopy);
 
   // How much mail one address may receive from this desk, counted here
   // because here is the one place every path passes through. The row is
   // still written and still visible in the console: what stops is delivery,
   // and it stops with a reason attached rather than disappearing.
-  const allowance = await mayEmailRecipient(env.DB, email.toEmail, unmeteredRecipients(env));
+  const allowance = await mayEmailRecipient(env.DB, withCopy.toEmail, unmeteredRecipients(env));
   if (!allowance.allowed) {
     await markOutboundFailed(env.DB, id, `recipient hourly limit reached (${allowance.count})`);
     return;
   }
 
-  const result = await sendMail(env, { toEmail: email.toEmail, subject: email.subject, bodyHtml: email.bodyHtml });
+  // The copy rides along with the message and is deliberately not metered
+  // separately. The ceiling above exists to stop a stranger being mailed more
+  // than they agreed to; the developer copied on his own desk's mail is not
+  // that, and counting him would make the ceiling a mute button on the trail
+  // he is copied in to read, which is the same mistake unmeteredRecipients
+  // exists to prevent.
+  const result = await sendMail(env, {
+    toEmail: withCopy.toEmail,
+    ccEmail: withCopy.ccEmail,
+    subject: withCopy.subject,
+    bodyHtml: withCopy.bodyHtml,
+  });
   if (result.sent) await markOutboundSent(env.DB, id);
   else await markOutboundFailed(env.DB, id, result.reason);
 }
@@ -384,12 +409,23 @@ async function handleMessage(env: Env, message: InboundMessage, summary: IngestS
       return 'appended';
     }
 
+    // A reply on a ticket that has already dispatched may answer the change
+    // last put to her, and may tell the agent something it needs. Both are
+    // handled inside, and neither depends on the assistant having run.
+    await relayReply(env, {
+      ticketId: plan.ticketId,
+      subject: message.subject,
+      body: plan.body,
+      fromEmail: message.fromEmail,
+      senderAuthenticated,
+    });
+
     if (quiet) await noteSuppressed(env, plan.ticketId, summary, suppression, verdict.reason);
     else await replyWithAssistant(env, plan.ticketId);
     return 'appended';
   }
 
-  return handleAsNew(env, message, plan.body, summary, quiet, suppression, verdict.reason);
+  return handleAsNew(env, message, plan.body, summary, quiet, suppression, verdict.reason, senderAuthenticated);
 }
 
 /**
@@ -493,6 +529,7 @@ async function handleAsNew(
   quiet = false,
   suppression: SuppressionReason = 'rate',
   suppressionDetail = '',
+  senderAuthenticated = false,
 ): Promise<'created'> {
   // cleanSubject strips the [HAM-N] tag and the Re:/Fwd: prefix; cleanLine is
   // what makes the result safe to display, and the display is the point: the
@@ -583,6 +620,17 @@ async function handleAsNew(
     subject: ack.subject,
     bodyHtml: ack.html,
     inReplyToMessageId: message.internetMessageId,
+  });
+
+  // After the acknowledgement, so she is answered whatever happens here, and
+  // before the assistant, so the console shows the dispatch above the reply
+  // that talks about it.
+  await maybeDispatch(env, {
+    ticketId,
+    subject,
+    body,
+    fromEmail: message.fromEmail,
+    senderAuthenticated,
   });
 
   await replyWithAssistant(env, ticketId);
