@@ -106,11 +106,36 @@ ${WRAP_CLOSE}`;
   return { subject: `[${publicId}] یک سؤال دربارهٔ درخواست شما`, html };
 }
 
+/**
+ * The token the bot repo's workflow posts when a run died without saying why.
+ *
+ * The workflow guarantees a marker so she is never left in silence, but it
+ * does not write her Farsi: that lives here, with the rest of it. A run that
+ * crashed is not something to explain to her in technical terms, so this says
+ * what it means for her instead, which is that it is being looked at.
+ */
+const RUN_FAILED = 'AGENT_RUN_FAILED';
+
 export function agentBlockedEmail(opts: {
   ticketId: number;
   reason: string;
 }): { subject: string; html: string } {
   const publicId = ticketPublicId(opts.ticketId);
+
+  if (opts.reason.trim() === RUN_FAILED) {
+    return {
+      subject: `[${publicId}] درخواست شما در حال بررسی است`,
+      html: `${WRAP_OPEN}
+<p>سلام،</p>
+<p>درخواست شما ثبت شد، ولی این بار نتوانستیم خودکار انجامش دهیم. ایلیا
+نگاهش می‌کند و خبر می‌دهیم.</p>
+<p>لازم نیست دوباره بفرستید.</p>
+${RULE}
+${FOOTER}
+${WRAP_CLOSE}`,
+    };
+  }
+
   const html = `${WRAP_OPEN}
 <p>سلام،</p>
 <p>این مورد را نمی‌توانیم همین‌طور انجام دهیم. دلیلش این است:</p>

@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { parseAgentOutcome, parseAgentReport, type IssueComment } from '../src/github.js';
+import { agentBlockedEmail } from '../src/render/botEmail.js';
 
 const SHA_A = 'a3f9c1d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0';
 const SHA_B = 'bbbb11d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0';
@@ -86,5 +87,31 @@ describe('parseAgentOutcome', () => {
 
   it('takes the newest of several', () => {
     expect(parseAgentOutcome([ask('اول'), ask('دوم')])).toEqual({ kind: 'ask', text: 'دوم' });
+  });
+});
+
+describe('a run that died without saying why', () => {
+  /**
+   * The workflow guarantees a marker so she is never left in silence, and it
+   * posts a token rather than prose because the Farsi she reads lives in the
+   * desk. What she gets must say what it means for her, not that a job hit a
+   * turn limit.
+   */
+  it('renders the failure token as something a person can act on', () => {
+    const email = agentBlockedEmail({ ticketId: 46, reason: 'AGENT_RUN_FAILED' });
+
+    expect(email.html).not.toContain('AGENT_RUN_FAILED');
+    expect(email.html).toContain('ایلیا');
+    expect(email.html).toContain('لازم نیست دوباره بفرستید');
+  });
+
+  it('still passes a real reason through', () => {
+    const email = agentBlockedEmail({ ticketId: 46, reason: 'واتساپ ریسک دارد' });
+    expect(email.html).toContain('واتساپ ریسک دارد');
+  });
+
+  it('is parsed from the marker the workflow posts', () => {
+    const posted = comment('<!-- desk:blocked -->\nAGENT_RUN_FAILED\n<!-- desk:end -->');
+    expect(parseAgentOutcome([posted])).toEqual({ kind: 'blocked', text: 'AGENT_RUN_FAILED' });
   });
 });
