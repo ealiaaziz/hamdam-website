@@ -155,9 +155,21 @@ export function homepageSchema({ lang, name, description, url, downloadUrl, scre
     sameAs: [APP_STORE_CANONICAL_URL],
     // VERIFIED minimum, not a guess, and derived rather than retyped so it
     // cannot drift from the requirement line under the store badge.
-    operatingSystem: `iOS ${APP_STORE.MINIMUM_IOS}+`,
+    // Both names, one floor. iPadOS is a separate operating system and the
+    // listing states its requirement on its own line ("iPadOS 26.0 or later"),
+    // so naming only iOS understated what the app runs on. Still derived from
+    // APP_STORE.MINIMUM_IOS, never retyped.
+    operatingSystem: `iOS ${APP_STORE.MINIMUM_IOS}+, iPadOS ${APP_STORE.MINIMUM_IOS}+`,
     applicationCategory: 'LifestyleApplication',
-    availableOnDevice: 'iPhone',
+    // iPad added 2026-08-28. VERIFIED four ways in FACTS.md: the project sets
+    // TARGETED_DEVICE_FAMILY "1,2" in all eight configurations, it sets
+    // UISupportedInterfaceOrientations_iPad explicitly, fifteen views branch on
+    // a regular horizontalSizeClass, and Apple publishes four iPad-native
+    // screenshots at 2048x2732. Apple Watch is deliberately not in this list:
+    // the watch app is embedded in the iPhone app rather than separately
+    // installable, so it is a companion the prose names and not a device the
+    // app is "available on". That distinction is the field's, not a hedge.
+    availableOnDevice: ['iPhone', 'iPad'],
     // VERIFIED in FACTS.md ("Copyright Seyed Valiallah Azizollahi"), matched
     // by the footer copyright line, by `organizationSchema.founder` above and
     // by the App Store listing's own `artistName`/`sellerName`. A Person

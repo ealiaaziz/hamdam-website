@@ -37,10 +37,16 @@ const { lang = 'en', class: className = '', placement = 'badge', showRequirement
 // official badge for an app that is actually available. Deleting this branch would
 // mean re-authoring the pre-release pill, including its Farsi, under time pressure.
 const eyebrow = lang === 'fa' ? 'به‌زودی' : 'Coming soon';
-const headline = lang === 'fa' ? 'برای آیفون' : 'to iPhone';
+const headline = lang === 'fa' ? 'برای آیفون و آیپد' : 'to iPhone and iPad';
 
-// "iOS 26+" rather than a sentence, and identical in both locales. The number
-// comes from APP_STORE.MINIMUM_IOS, never a literal here.
+// "iOS / iPadOS 26+" rather than a sentence, and identical in both locales.
+// The number comes from APP_STORE.MINIMUM_IOS, never a literal here, and it
+// appears once for two operating systems because the listing states the same
+// floor for both.
+//
+// iPadOS joined it 2026-08-28 and needed no Farsi, which is the point of the
+// form: both names are Latin script in Persian too, exactly as the App Store
+// writes them.
 //
 // A sentence would need a Farsi half, and this repo bars authoring that. The
 // alternative pattern used elsewhere here is to omit the element on the Farsi
@@ -50,7 +56,7 @@ const headline = lang === 'fa' ? 'برای آیفون' : 'to iPhone';
 // and numerals, the convention every app listing already uses, so it needs no
 // verb and carries no asymmetry. Marked lang/dir so a screen reader announces
 // it in the right language and bidi never reorders the digits.
-const requirement = `iOS ${APP_STORE.MINIMUM_IOS}+`;
+const requirement = `iOS / iPadOS ${APP_STORE.MINIMUM_IOS}+`;
 
 // The wrapper below centres on the cross axis rather than aligning to start.
 // It is inline-flex, so it shrinks to the badge's own width, which means

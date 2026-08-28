@@ -24,8 +24,15 @@ export const APP_STORE = Object.freeze({
    * mistake, this one is the shipping build's own target. FACTS.md carries the
    * full distinction, and it is worth reading before assuming a regression.
    *
-   * Bare number, no `+` and no `iOS` -- both consumers add their own, and a
+   * Bare number, no `+` and no `iOS` -- every consumer adds its own, and a
    * test enforces the shape so `iOS iOS 26++` cannot happen.
+   *
+   * One number for two operating systems, added 2026-08-28. The listing states
+   * "Requires iOS 26.0" and "iPadOS 26.0 or later" separately, and they are the
+   * same floor, so `iOS / iPadOS 26+` is derived from this single constant
+   * rather than written out anywhere. If Apple ever splits them, this becomes
+   * two constants and the consumers stop sharing one -- do not paper over a
+   * split by hard-coding the second number at a call site.
    */
   MINIMUM_IOS: '26',
 });

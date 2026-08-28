@@ -59,14 +59,12 @@ const { lang } = Astro.props;
 // is that his caption is headline-weight Persian and would have sat beside
 // this section's own h2, two headlines arguing over one idea.
 //
-// The consequence to know: it is an iPad, on a site whose badge says
-// "برای آیفون" and whose JSON-LD says `availableOnDevice: 'iPhone'`. Ealia
-// chose this over shipping the section with no picture, having been shown that
-// trade. FACTS.md's platform block was corrected the same day and now records
-// iPad as verified, on `TARGETED_DEVICE_FAMILY = "1,2"` in all eight
-// configurations plus Apple publishing four iPad-native screenshots. Extending
-// that to the site's own platform wording was deliberately NOT done here; it
-// is a separate decision he has not taken.
+// It is an iPad, and for about an hour on 2026-08-28 that made it the only
+// iPad on a site that said iPhone everywhere else. Ealia took the picture over
+// no picture, and then closed the gap the other way: the site says "iPhone and
+// iPad" throughout as of the same day, and `availableOnDevice` is
+// `['iPhone', 'iPad']`. FACTS.md's platform entry carries the four legs of the
+// evidence and the approved Farsi.
 const copy =
   lang === 'fa'
     ? {

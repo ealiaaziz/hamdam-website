@@ -68,7 +68,7 @@ describe('homepageSchema', () => {
     const node = appNode(build());
     expect(node.author).toEqual({ '@type': 'Person', name: 'Seyed Valiallah Azizollahi' });
     expect(node.applicationCategory).toBe('LifestyleApplication');
-    expect(node.operatingSystem).toBe(`iOS ${APP_STORE.MINIMUM_IOS}+`);
+    expect(node.operatingSystem).toBe(`iOS ${APP_STORE.MINIMUM_IOS}+, iPadOS ${APP_STORE.MINIMUM_IOS}+`);
   });
 
   // `url` is this site's page for the app and must not be quietly repointed
@@ -118,9 +118,14 @@ describe('APP_STORE_CANONICAL_URL', () => {
 // because the failure it guards is a plausible-looking wrong number, not a
 // malformed one. '26.5', '17.0' and 'iOS' would all pass a loose regex and all
 // misstate what the app requires. Change it here only after FACTS.md changes.
+//
+// iPadOS joined the string 2026-08-28, after FACTS.md changed, which is the
+// order this comment asks for. The floor is one number for both: the listing
+// states "Requires iOS 26.0" and "iPadOS 26.0 or later" separately and they
+// agree. The number did not move, and a diff that shows it moving is a defect.
 describe('operatingSystem', () => {
   it('states the verified minimum exactly', () => {
-    expect(appNode(build()).operatingSystem).toBe('iOS 26+');
+    expect(appNode(build()).operatingSystem).toBe('iOS 26+, iPadOS 26+');
   });
 
   it('is identical on both locales, since a device floor is not localised', () => {
@@ -140,7 +145,16 @@ describe('operatingSystem', () => {
     const os = appNode(build()).operatingSystem;
     expect(os).not.toMatch(/\b17(\.0)?\b/);
     expect(os).not.toBe('iOS');
-    expect(os).toMatch(/^iOS \d+(\.\d+)*\+$/);
+    expect(os).toMatch(/^iOS \d+(\.\d+)*\+, iPadOS \d+(\.\d+)*\+$/);
+  });
+
+  // The two halves are one floor read twice, so they cannot be allowed to
+  // drift apart silently: a diff that bumped iOS and forgot iPadOS would still
+  // match the shape above and would still look deliberate.
+  it('states the same floor for both operating systems', () => {
+    const os = appNode(build()).operatingSystem;
+    const [ios, ipados] = os.split(', ');
+    expect(ios.replace('iOS ', '')).toBe(ipados.replace('iPadOS ', ''));
   });
 });
 
@@ -229,13 +243,35 @@ describe('organizationSchema', () => {
 // publish an unverified `iOS 26+`. This binds them to APP_STORE.MINIMUM_IOS.
 describe('the iOS floor has one source', () => {
   it('derives operatingSystem from APP_STORE.MINIMUM_IOS', () => {
-    expect(appNode(build()).operatingSystem).toBe(`iOS ${APP_STORE.MINIMUM_IOS}+`);
+    expect(appNode(build()).operatingSystem).toBe(`iOS ${APP_STORE.MINIMUM_IOS}+, iPadOS ${APP_STORE.MINIMUM_IOS}+`);
   });
 
   it('keeps MINIMUM_IOS a bare version, not a prefixed or suffixed string', () => {
     // The consumers add "iOS " and "+"; if the constant carried them too the
     // rendered result would read "iOS iOS 26++" and still typecheck.
     expect(APP_STORE.MINIMUM_IOS).toMatch(/^\d+(\.\d+)*$/);
+  });
+});
+
+// Added 2026-08-28 with the iPad claim. FACTS.md's platform entry said for a
+// fortnight that the project had no iPad target, which was wrong, and the site
+// said iPhone on the strength of it. Pinned here so the correction cannot be
+// undone by a tidy-up that reads 'iPhone' as the safer value.
+describe('availableOnDevice', () => {
+  it('names both devices the app installs on', () => {
+    expect(appNode(build()).availableOnDevice).toEqual(['iPhone', 'iPad']);
+  });
+
+  it('is the same on both locales, since a device list is not localised', () => {
+    const fa = build({ lang: 'fa', name: 'همدم', url: 'https://hamdam.com.au/fa/' });
+    expect(appNode(fa).availableOnDevice).toEqual(appNode(build()).availableOnDevice);
+  });
+
+  // The watch app ships embedded in the iPhone app rather than as its own
+  // install, so it belongs in the prose and the featureList, not here. Listed
+  // as an assertion because "add Apple Watch too" is the obvious-looking edit.
+  it('does not list Apple Watch, which is a companion and not an install', () => {
+    expect(appNode(build()).availableOnDevice).not.toContain('Apple Watch');
   });
 });
 
