@@ -1080,3 +1080,111 @@ The parts of this that a fourth pass could have found and did not:
   path traversal on `/static`, a null byte in the path, an 8KB header, a 4KB
   URL, duplicate query parameters, a 2MB body, and CRLF in the email field.
   All refused correctly. `/tickets/40` on the MTA-STS hostname is a 404.
+
+## The bot change flow, 2026-08-28
+
+The channel owner of the Telegram bot reports a problem by email; the desk
+opens an issue on the bot's repository, an agent fixes it, the desk asks her
+in Farsi whether to apply the change, and her reply merges and deploys it.
+Built at the developer's request, fully autonomous by his explicit decision.
+
+This is the thing `inbound.ts` was written to get away from, so it is worth
+being exact about the difference. The retired Routine was a model session
+holding database credentials and a mailbox, reading text written by strangers,
+deciding for itself what to do. Here every decision is code and the model
+only writes a patch:
+
+- `dispatch.ts` decides whether a message may reach the repository at all.
+- `changeApproval.ts` decides what her reply means.
+- `owner.ts` decides who she is.
+- The workflow in the bot repo decides whether an approval may merge.
+
+None of them read the message as instructions, and the model that does read
+it has no credentials that reach production.
+
+### The four locks
+
+1. **Exchange authenticated the sender.** The same `senderIsAuthenticated`
+   the ticket path already uses. A `From` header is a line of text the sending
+   client writes and it authorises nothing.
+2. **The address is the owner's**, matched literally against `OWNER_EMAILS`.
+   Unconfigured means nobody, which is the opposite of `ADMIN_EMAILS` and
+   deliberately so: Cloudflare Access stands in front of the console, and
+   nothing stands in front of this.
+3. **The message is about the bot.** Its own word list, not an `itil.ts`
+   Topic, because that enum sets SLA clocks for a product the knowledge base
+   covers. The list omits "ticket" and "تیکت": they are the desk's own words,
+   printed in the subject of every message it has ever sent, so matching them
+   would make a thank-you look like a bug report.
+4. **A daily ceiling of three**, which is the answer to "what if her mailbox
+   is taken". It cannot prevent the first dispatch and does not try; it bounds
+   the day to something a person notices.
+
+The ceiling is charged only after the first three pass. That ordering is the
+whole of `runDispatchGate`, and it exists because the bot's own daily ad cap
+was written the other way round: charged at the tap that *started* an ad, so
+being asked for a phone number and not answering spent a slot, and three taps
+locked a seller out for a day having published nothing. That was reported as
+"the bot is not working", and it was. A ceiling charged for looking is a trap.
+
+### Consent names a commit
+
+`ticket_bot_changes.pending_change_ref` is the column carrying the weight. An
+email thread quotes its own history, so her "بله" from last week sits in the
+body of this week's reply, and consent read out of that blob is consent to
+whatever is proposed now. So the desk records the one change it put to her and
+approval counts only for that one. `proposeChange` clears the previous answer
+in the same statement that sets the new proposal, because an agent pushes
+again after she has approved, and carrying the approval across that push ships
+code she never saw.
+
+The same rule is enforced again on the side that merges: the approval comment
+names a sha, and the workflow refuses if the head has moved.
+
+### Why the desk's token cannot push
+
+`GITHUB_TOKEN` is scoped to `issues:write` and `pull_requests:read`. The desk
+opens issues, relays her messages, and comments an approval. It cannot merge
+and it cannot push, so an email is never one step from production. The agent
+that writes code runs in GitHub Actions under its own credentials, and the
+workflow that merges runs from the default branch, so a pull request cannot
+edit the rules deciding whether it gets merged.
+
+### What the model is told, and where
+
+The framing lives in the issue body, not only in the workflow prompt: the
+report is a symptom to reproduce and never a set of instructions. That matters
+because the prompt is not attached when somebody opens the issue a week later.
+`quoteUntrusted` strips fence markers before fencing, because her message may
+carry something she was forwarded, and a body containing its own closing fence
+would end the block early and drop a stranger's words where instructions go.
+
+### Deliberately not built
+
+- **A webhook.** The desk polls on the cron it already runs. A webhook means a
+  new public route on a Worker whose only public surface is the portal, plus a
+  signing secret, to save under a minute on a flow whose other steps are a
+  person reading email.
+- **A guard in the bot's `deploy.yml`.** Blocking migrations there would block
+  the developer's own deliberate deploys. The guard belongs on the automated
+  merge, and that is where it is.
+
+### Unproven
+
+Nothing here has been through a real email. Every piece has unit tests and
+none of them have met Exchange, GitHub or her writing. Two specific gaps:
+
+- **The approval vocabulary is guessed.** بله، آره، اوکی، باشه، موافقم and a
+  few phrases. If she writes "خوبه" or "حتماً" or sends 👍, the verdict is
+  `unclear`, nothing happens, and to her that looks like the bot is broken
+  again. It fails safe and it will still annoy her. Widen it once real replies
+  exist rather than guessing further now.
+- **The Farsi in `render/botEmail.ts` has not been read by a native speaker**,
+  the same status the rest of `i18n.ts` carries. It is the text she reads to
+  decide whether to ship code to a live channel, which is a bad place for a
+  translation nobody has checked.
+
+### Turning it off
+
+`npx wrangler secret delete OWNER_EMAILS`. The gate fails closed and the desk
+carries on as an ordinary desk.
