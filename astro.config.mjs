@@ -14,6 +14,13 @@ console.log(describeBeaconDecision());
 // https://astro.build/config
 export default defineConfig({
   site: 'https://hamdam.com.au',
+  // 'always': without this Astro defaults to 'ignore', which serves the same
+  // page at /fa/terms and /fa/terms/ and lets Google index both. Search
+  // Console on 2026-08-27 showed exactly that split: /fa/terms at position 9
+  // with 2 impressions and /fa/terms/ at position 21 with 5, two entries
+  // competing for one page. One canonical shape, chosen to match the
+  // directory-style URLs Cloudflare already serves.
+  trailingSlash: 'always',
   integrations: [
     sitemap({
       i18n: {
