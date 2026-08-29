@@ -70,3 +70,31 @@ export function describeAge(ageMs: number | null): string {
   const hours = Math.floor(minutes / 60);
   return hours === 1 ? '1 hour ago' : `${hours} hours ago`;
 }
+
+/**
+ * Whether a request that noticed a stale desk should try to restart it.
+ *
+ * The desk's work was reachable only from Cloudflare's scheduler, and on
+ * 2026-08-28 that scheduler stopped invoking every Worker on the account at
+ * 20:55 UTC while the same Workers kept serving HTTP without a blip. `/health`
+ * reported it correctly for hours and nothing acted on the report, because
+ * reporting was all it could do.
+ *
+ * So the report now does something. `/health` already reads the heartbeat to
+ * answer the question, and a stale answer is exactly the condition under which
+ * running a pass is both safe and wanted, so the check kicks one. Any traffic
+ * at all then keeps the desk alive: an uptime monitor, a mail server fetching
+ * the MTA-STS policy, somebody opening the portal. No secret, no scheduler, no
+ * configuration.
+ *
+ * `unknown` counts. It means nothing has ever been recorded, which is a fresh
+ * deploy or an ingest that has never run, and both want a pass.
+ *
+ * Safe to fire concurrently because `ingestInbox` takes an atomic lock and a
+ * second caller returns immediately. Bounded too: once a pass succeeds the
+ * heartbeat is fresh and this stops answering true until the threshold passes
+ * again, so a flood of requests cannot become a flood of passes.
+ */
+export function shouldSelfHeal(beat: Heartbeat): boolean {
+  return beat.state !== 'ok';
+}

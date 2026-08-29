@@ -18,7 +18,7 @@ import { canSendDirectly, sendMail } from './mailer.js';
 import { isAllowedCountry, parseAllowedCountries } from './geo.js';
 import { mtaStsResponseFor } from './mtaSts.js';
 import { viaCloudflareEdge } from './edge.js';
-import { HEARTBEAT_KEY, readHeartbeat } from './heartbeat.js';
+import { HEARTBEAT_KEY, readHeartbeat, shouldSelfHeal } from './heartbeat.js';
 import { adminAllowlist, isAllowedAgent } from './adminAccess.js';
 import { detectLocale, localePath, parseLocale, type Locale } from './i18n.js';
 import { ingestInbox, queueAndSend as queueAndSendFromCron } from './ingest.js';
@@ -421,6 +421,26 @@ app.use('*', async (c, next) => {
 app.get('/health', async (c) => {
   const beat = readHeartbeat(await getSyncState(c.env.DB, HEARTBEAT_KEY));
   const healthy = beat.state === 'ok';
+
+  // A stale answer is not just reported, it is acted on. See shouldSelfHeal:
+  // the scheduler this desk depended on stopped for hours while HTTP stayed
+  // perfect, and /health described that correctly to nobody. Now any request
+  // that notices restarts the desk, so a monitor, a mail server fetching the
+  // MTA-STS policy, or somebody opening the portal is enough to keep it alive.
+  //
+  // In waitUntil, so the answer is not held up by the pass: the caller asked
+  // whether the desk is healthy, and the honest answer right now is that it is
+  // not, whatever this pass goes on to do about it.
+  if (shouldSelfHeal(beat)) {
+    c.executionCtx.waitUntil(
+      ingestInbox(c.env)
+        .then((summary) => console.log('self-heal ingest', JSON.stringify(summary)))
+        .catch((error) => {
+          console.error('self-heal ingest failed:', error instanceof Error ? error.message : String(error));
+        }),
+    );
+  }
+
   return c.text(healthy ? 'ok\n' : 'stale\n', healthy ? 200 : 503, {
     'content-type': 'text/plain; charset=utf-8',
     // Short, but not zero. A monitor polling every minute should not put a
