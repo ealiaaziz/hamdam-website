@@ -97,6 +97,12 @@ export const APP_REFERENCE: readonly AppReference[] = [
     "body": "On supported hardware, iPhone 15 Pro and later running iOS 26 or newer,\nreflections are generated on the device using Apple's Foundation Models. No\ntext and no personal data leaves the device for this.\n\nOn unsupported devices Hamdam falls back to a static, pre-written library of\ncontent.\n\nSo \"why are my reflections different from my friend's\" or \"why do these feel\nless personal\" usually comes down to device hardware, and that is worth\nchecking before anything else."
   },
   {
+    "id": "apple-watch",
+    "title": "The Apple Watch app",
+    "source": "FACTS.md \"Product identity\" and \"Version 1.3\", verified against hamdam-ios project targets",
+    "body": "There is an Apple Watch app, and it comes with Hamdam. It is not a separate\npurchase and it is not part of Hamdam Plus. Nothing on the watch is behind the\nsubscription.\n\nIt needs watchOS 26.5 or later. That is the same requirement the App Store\nlisting states under Compatibility.\n\nThe watch app is a companion to the phone rather than a standalone one. It is\ninstalled from the Watch app on iPhone, under My Watch, by finding Hamdam in\nthe list and turning on Show App on Apple Watch. If someone cannot find it\nthere, the usual causes are the phone app not being installed, the watch not\nbeing paired to that phone, or the watch still syncing after a fresh pair.\n\nComplications are available, so the verse of the day can sit on a watch face.\nThose are added by editing the face on the watch or in the Watch app on iPhone,\nthe same way any complication is added.\n\nLanguage follows the phone. Hamdam shows one language at a time rather than\nboth together, and the watch obeys the same setting as everything else.\n\nTwo things worth knowing before promising anything:\n\nThe watch reads what the phone has already worked out. If the phone has not\nbeen opened in a while, or the two have not been near each other, the watch can\nbe showing an older day. Opening Hamdam on the phone and waiting a moment is\nthe fix, and it is usually the whole answer to \"my watch is showing yesterday\".\n\nIf a requester asks about sending a movement session from the Garden to the\nwatch, that is not something to confirm. Take the ticket to a person rather\nthan describing behaviour, because the answer depends on the app version they\nare running."
+  },
+  {
     "id": "buying-plus",
     "title": "What Plus unlocks, and how buying works",
     "source": "src/components/PlansAndFoundingCompanion.astro, src/pages/terms.astro sections 3.1 to 3.3",
@@ -109,10 +115,10 @@ export const APP_REFERENCE: readonly AppReference[] = [
     "body": "Reading and writing the calendar are separate opt-ins. Turning one on does\nnot turn on the other.\n\nReading: free and busy time only. Never event titles, descriptions,\nattendees, or locations.\n\nWriting: optional reflection blocks and cultural moment reminders. Everything\nHamdam creates goes into a dedicated calendar named \"Hamdam\" and is prefixed\n\"Hamdam:\" so it is always distinguishable.\n\nHamdam identifies its own events by the calendar's identifier rather than by\nmatching title text. Renaming an event therefore does not put it beyond\nHamdam's reach, and does not pull one of the person's own events into it.\nHamdam never modifies an event it did not create."
   },
   {
-    "id": "discover-tab",
-    "title": "The Discover tab",
-    "source": "src/pages/privacy.astro section 1.6",
-    "body": "Discover refreshes once a day with books and podcasts from Apple's public\ncatalogue, through the iTunes Search API.\n\nThose requests go from the device straight to Apple. They never pass through\na Hamdam server, and no identifier tied to the person is sent with them.\n\nBecause it refreshes daily, \"the recommendations have not changed\" is\nexpected within a single day."
+    "id": "garden-tab",
+    "title": "The Garden tab, and the picks inside it",
+    "source": "FACTS.md \"The Garden\"; src/pages/privacy.astro section 1.6 for the network behaviour",
+    "body": "What was called Discover is now the Garden. Version 1.3 renamed it and grew it,\nso a requester on 1.3 or later has a Garden tab and one on an older version has\na Discover tab. Both are the same place.\n\nThe Garden holds four things:\n\nThree coaches, for mind, movement and sleep, which turn the day's line into a\nplan by reading Health, the calendar and the weather.\n\nA garden bed for habits, where someone plants one small thing, says when it\nhappens and what they will do on the day it does not.\n\nA daily riddle.\n\nThe picks, which were the whole of the old Discover tab and are still here.\n\nThe picks refresh once a day with books and podcasts from Apple's public\ncatalogue, through the iTunes Search API. Those requests go from the device\nstraight to Apple. They never pass through a Hamdam server, and no identifier\ntied to the person is sent with them. Because it refreshes daily, \"the\nrecommendations have not changed\" is expected within a single day.\n\nThe rest of the Garden makes no network requests at all. The coaches, the habit\nbed and the riddle read Health, the calendar and the weather through Apple\nframeworks on the device, so nothing about them leaves the phone.\n\nSome of the Garden's depth is part of Hamdam Plus rather than the free tier, so\n\"I cannot open that\" may be a subscription answer rather than a fault. Check\n`buying-plus.md` before treating it as a bug."
   },
   {
     "id": "getting-the-app",
