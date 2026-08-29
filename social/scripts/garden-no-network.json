@@ -1,0 +1,51 @@
+{
+  "id": "garden-no-network",
+  "shot": "src/assets/website-redesign/screenshots/EN/07-garden-en.png",
+  "note": "Crops are fractions of the source image: [x0, y0, x1, y1]. The load-bearing claim, 'the Garden makes no network requests of its own', is VERIFIED in FACTS.md. The sweeping version of it is blocked and is not used.",
+  "pages": [
+    {
+      "kind": "plain",
+      "text": "Your phone already knows you slept badly.",
+      "vo": "Your phone already knows you slept badly."
+    },
+    {
+      "kind": "shot",
+      "crop": [0.035, 0.125, 0.965, 0.445],
+      "caption": "Hamdam's Garden",
+      "vo": "So Hamdam asks less of you today."
+    },
+    {
+      "kind": "shot",
+      "crop": [0.035, 0.595, 0.965, 0.855],
+      "vo": "Three coaches. Mind, Move and Sleep."
+    },
+    {
+      "kind": "plain",
+      "text": "Reading your Health data.",
+      "text2": "Your calendar. The weather.",
+      "vo": "Reading your Health data. Your calendar. The weather."
+    },
+    {
+      "kind": "turn",
+      "text": "And the Garden makes",
+      "text2": "no network requests of its own.",
+      "vo": "And the Garden makes no network requests of its own."
+    },
+    {
+      "kind": "plain",
+      "text": "Not a promise.",
+      "text2": "A property of the code.",
+      "vo": "Not a promise. A property of the code."
+    },
+    {
+      "kind": "plain",
+      "text": "We read the source so we could say it.",
+      "vo": "We read the source so we could say it."
+    },
+    {
+      "kind": "cta",
+      "text": "Hamdam. On iPhone and Apple Watch.",
+      "vo": "Hamdam. On iPhone and Apple Watch."
+    }
+  ]
+}
