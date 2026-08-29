@@ -1,6 +1,7 @@
 import type { Env } from './types.js';
 import type { NewOutboundEmail } from './db.js';
 import {
+  clearAgentOutcome,
   getBotChange,
   getTicketById,
   addComment,
@@ -51,19 +52,33 @@ import {
  * duplicate those or skip them, and skipping them is how a path that "just
  * sends one email" becomes the one path with no limit on it.
  */
-export type SendEmail = (email: NewOutboundEmail) => Promise<void>;
+export type SendEmail = (email: NewOutboundEmail) => Promise<boolean>;
+
+/**
+ * How long a send may keep failing before the desk stops retrying it.
+ *
+ * An hour, measured from when the desk first had something to tell her. Long
+ * enough to ride out a Graph outage or a D1 blip, short enough that an address
+ * which will never accept mail does not write one dead outbound row a minute
+ * until somebody notices. What stops after an hour is the retrying; the ticket
+ * keeps the failure and the reason, which is where a person looks.
+ */
+const RETRY_SEND_FOR_MS = 60 * 60_000;
 
 export interface FollowUpSummary {
+  /** Tickets with a change in flight, whether or not this pass did anything. */
+  watching: number;
   proposed: number;
   shipped: number;
   failures: number;
 }
 
 export async function followUpBotChanges(env: Env, send: SendEmail): Promise<FollowUpSummary> {
-  const summary: FollowUpSummary = { proposed: 0, shipped: 0, failures: 0 };
+  const summary: FollowUpSummary = { watching: 0, proposed: 0, shipped: 0, failures: 0 };
   if (!canReachRepo(env)) return summary;
 
   const ticketIds = await ticketsAwaitingBotFollowUp(env.DB);
+  summary.watching = ticketIds.length;
 
   for (const ticketId of ticketIds) {
     try {
@@ -112,7 +127,7 @@ async function checkProposal(
     // down when the thing should not be done at all. Either has to reach her:
     // an acknowledgement followed by silence is the complaint this whole flow
     // was built to answer, and a feature request used to end exactly there.
-    await relayOutcome(env, send, ticketId, comments.value, summary);
+    await relayOutcome(env, send, ticketId, change, comments.value, summary);
     return;
   }
   if (report.headSha === change.head_sha) return; // already asked about this one
@@ -200,6 +215,7 @@ async function relayOutcome(
   env: Env,
   send: SendEmail,
   ticketId: number,
+  change: BotChangeRow,
   comments: readonly IssueComment[],
   summary: FollowUpSummary,
 ): Promise<void> {
@@ -214,7 +230,7 @@ async function relayOutcome(
     ? agentQuestionEmail({ ticketId, question: outcome.text })
     : agentBlockedEmail({ ticketId, reason: outcome.text });
 
-  await send({
+  const sent = await send({
     ticketId,
     commentId: null,
     kind: 'agent_reply',
@@ -223,6 +239,29 @@ async function relayOutcome(
     bodyHtml: email.html,
     inReplyToMessageId: null,
   });
+
+  if (!sent) {
+    summary.failures += 1;
+
+    // The mark says she has been told. She has not, so it comes off and the
+    // next pass tries again, unless this has been failing long enough that
+    // retrying is just writing dead rows. Either way the ticket says so out
+    // loud: the failed outbound row alone is a thing nobody is looking at.
+    const firstTried = Date.parse(change.last_outcome_at ?? '');
+    const giveUp = Number.isFinite(firstTried) && Date.now() - firstTried > RETRY_SEND_FOR_MS;
+
+    if (!giveUp) await clearAgentOutcome(env.DB, ticketId);
+    await addComment(
+      env.DB,
+      ticketId,
+      'system',
+      null,
+      giveUp
+        ? 'Could not email the owner the agent\u2019s message, and have stopped retrying. She has not been told; somebody needs to send it.'
+        : 'Could not email the owner the agent\u2019s message. Will try again on the next pass.',
+    );
+    return;
+  }
 
   await addComment(
     env.DB,

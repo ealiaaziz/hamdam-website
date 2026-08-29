@@ -162,6 +162,81 @@ export async function getPull(env: Env, prNumber: number): Promise<GitHubResult<
 }
 
 /**
+ * The comment's lines, with anything inside a fenced code block blanked out.
+ *
+ * Fencing something is the one unambiguous way to say "this is an example, not
+ * an instruction", and both halves of this system quote the marker protocol at
+ * each other in fenced blocks routinely. Blanked rather than removed so line
+ * numbers still line up with the body, which matters when reading it back.
+ *
+ * A merely indented marker still counts. That is deliberate and it is the
+ * asymmetry this file keeps coming back to: a quoted example read as real
+ * sends her something odd, and a real marker read as quoted sends her nothing
+ * at all, which is the failure the whole flow exists to prevent. So the strict
+ * reading is applied only where the intent to quote is explicit.
+ */
+function outsideCodeFences(body: string): string[] {
+  let fenced = false;
+  return body.split(/\r?\n/).map((line) => {
+    if (/^[ \t]*(```|~~~)/.test(line)) {
+      fenced = !fenced;
+      return '';
+    }
+    return fenced ? '' : line;
+  });
+}
+
+/**
+ * The text a marker wraps, when the marker is on a line of its own.
+ *
+ * Line based, and that is the whole point. The agent is told to put these
+ * markers "on their own lines, exactly", and a marker mentioned inside a
+ * sentence is somebody talking *about* the protocol rather than using it.
+ * Telling those apart is not fussiness: on 2026-08-28 an agent comment
+ * disputing a claim about markers quoted one mid-sentence, and a pattern that
+ * did not care about lines matched the quote, ran to the real closing marker,
+ * and produced a thousand characters of English argument to be emailed to a
+ * non-technical Persian speaker as her answer. It never reached her only
+ * because the platform's cron had stopped an hour earlier.
+ *
+ * Take the smallest thing that is unambiguously the protocol, and read
+ * everything else as prose.
+ */
+function markedBlock(body: string, names: readonly string[]): { name: string; text: string } | null {
+  const lines = outsideCodeFences(body);
+  const marker = (line: string): string | null => {
+    const found = /^[ \t]*<!--[ \t]*desk:([A-Za-z]+(?:=\d+)?)[ \t]*-->[ \t]*$/.exec(line);
+    return found ? found[1]! : null;
+  };
+
+  // `names` is a priority order, not a search order. A comment carrying more
+  // than one kind of block is the agent saying more than one thing at once,
+  // and which of them she is sent is a judgement rather than a matter of
+  // whichever came last: a stand-down outranks a question, and a question
+  // outranks a description, because a description with no pull request beside
+  // it describes a change that does not exist.
+  for (const name of names) {
+    let opener = -1;
+    for (let i = lines.length - 1; i >= 0; i -= 1) {
+      if (marker(lines[i]!) === name) { opener = i; break; }
+    }
+    if (opener < 0) continue;
+
+    for (let i = opener + 1; i < lines.length; i += 1) {
+      if (marker(lines[i]!) === 'end') {
+        return { name, text: lines.slice(opener + 1, i).join('\n').trim() };
+      }
+    }
+  }
+  return null;
+}
+
+/** Whether a marker of this exact name sits on a line of its own. */
+function hasMarker(body: string, pattern: RegExp): boolean {
+  return outsideCodeFences(body).some((line) => pattern.test(line.trim()));
+}
+
+/**
  * What the agent reported back about the pull request it opened.
  *
  * The numbers come from a workflow step rather than from the agent's prose,
@@ -180,15 +255,15 @@ export function parseAgentReport(comments: readonly IssueComment[]): {
   description: string;
 } | null {
   for (const comment of [...comments].reverse()) {
-    const pr = /<!--\s*desk:pr=(\d+)\s*-->/.exec(comment.body);
-    const sha = /<!--\s*desk:sha=([0-9a-f]{40})\s*-->/.exec(comment.body);
+    const lines = comment.body.split(/\r?\n/).map((line) => line.trim());
+    const pr = lines.map((line) => /^<!--\s*desk:pr=(\d+)\s*-->$/.exec(line)).find(Boolean);
+    const sha = lines.map((line) => /^<!--\s*desk:sha=([0-9a-f]{40})\s*-->$/.exec(line)).find(Boolean);
     if (!pr || !sha) continue;
 
-    const described = /<!--\s*desk:fa\s*-->([\s\S]*?)<!--\s*desk:end\s*-->/.exec(comment.body);
     return {
       prNumber: Number(pr[1]),
       headSha: sha[1]!,
-      description: (described?.[1] ?? '').trim(),
+      description: markedBlock(comment.body, ['fa'])?.text ?? '',
     };
   }
   return null;
@@ -205,6 +280,25 @@ export function parseAgentReport(comments: readonly IssueComment[]): {
  *
  * Newest wins, and a report of any kind supersedes an older one: a question
  * answered and then built is a pull request now, not an open question.
+ *
+ * `desk:fa` counts too. The agent is given three markers and told to pick the
+ * right one, and picking wrong used to be silent: with no pull request there
+ * was nothing to propose, and with no `ask` marker there was nothing to relay,
+ * so a question tagged `desk:fa` reached nobody. That is precisely the outcome
+ * the three markers were introduced to make impossible.
+ *
+ * Recorded honestly, because this was written believing it had just happened:
+ * the silence that prompted it turned out to be the account's scheduled
+ * invocations stopping, not a marker at all (see the build record for
+ * 2026-08-28). The hazard here is real and was reachable in one wrong word
+ * from a model; it simply was not that night's fault.
+ *
+ * So marker choice now decides only the wording of the email, never whether
+ * she gets one. A Farsi block with no pull request beside it is, by
+ * construction, not a change to approve: it is the agent talking to her, and
+ * the email that fits is the one that invites a reply. Deliberately not fixed
+ * by sharpening the instruction in the prompt, because a rule a model has to
+ * remember is not a rule.
  */
 export type AgentOutcome =
   | { kind: 'ask'; text: string }
@@ -213,13 +307,15 @@ export type AgentOutcome =
 export function parseAgentOutcome(comments: readonly IssueComment[]): AgentOutcome | null {
   for (const comment of [...comments].reverse()) {
     // A pull request report supersedes anything earlier, including a question.
-    if (/<!--\s*desk:pr=\d+\s*-->/.test(comment.body)) return null;
+    if (hasMarker(comment.body, /^<!--\s*desk:pr=\d+\s*-->$/)) return null;
 
-    const ask = /<!--\s*desk:ask\s*-->([\s\S]*?)<!--\s*desk:end\s*-->/.exec(comment.body);
-    if (ask) return { kind: 'ask', text: ask[1]!.trim() };
-
-    const blocked = /<!--\s*desk:blocked\s*-->([\s\S]*?)<!--\s*desk:end\s*-->/.exec(comment.body);
-    if (blocked) return { kind: 'blocked', text: blocked[1]!.trim() };
+    // `blocked` and `ask` name themselves; `fa` is accepted because a Farsi
+    // block with no pull request beside it is the agent talking to her, and a
+    // question is the email that invites the reply. The nearest opener to the
+    // terminator wins, so `blocked` and `ask` are read as themselves whichever
+    // order they appear in.
+    const spoke = markedBlock(comment.body, ['blocked', 'ask', 'fa']);
+    if (spoke) return { kind: spoke.name === 'blocked' ? 'blocked' : 'ask', text: spoke.text };
   }
   return null;
 }

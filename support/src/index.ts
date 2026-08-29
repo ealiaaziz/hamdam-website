@@ -23,6 +23,7 @@ import { adminAllowlist, isAllowedAgent } from './adminAccess.js';
 import { detectLocale, localePath, parseLocale, type Locale } from './i18n.js';
 import { ingestInbox, queueAndSend as queueAndSendFromCron } from './ingest.js';
 import { followUpBotChanges } from './botFollowUp.js';
+import { requestedJobs, tickAuthorised, tickWork } from './tick.js';
 import { notifyEscalation, unmeteredRecipients } from './escalation.js';
 import { requestedClosure } from './agentPolicy.js';
 
@@ -427,6 +428,43 @@ app.get('/health', async (c) => {
     // staleness is invisible against a ten minute threshold.
     'cache-control': 'public, max-age=30',
   });
+});
+
+// Drive a tick by hand, when whatever normally drives it has stopped.
+//
+// Above the country check, like /health, because the thing calling this runs
+// wherever it runs and the desk being unreachable from it is the situation
+// this exists for.
+//
+// Every guard is in tickAuthorised and it fails closed: no TICK_SECRET, no
+// route. See tick.ts for why this is here at all, and why the job is
+// selectable rather than doing everything at once.
+//
+// Not metered. The recipient ceiling still applies to every email this
+// causes, because that lives at the act of sending and everything crosses it;
+// what is deliberately absent is a per-caller limit, because the caller is
+// whoever holds the secret and rate limiting a bearer secret protects nobody.
+app.post('/internal/tick', async (c) => {
+  if (!tickAuthorised(c.env.TICK_SECRET, c.req.header('x-desk-tick') ?? null)) {
+    // 404 rather than 401. An unauthenticated caller learns nothing about
+    // whether this route exists, and there is no legitimate caller who needs
+    // to be told they got the secret wrong.
+    return c.notFound();
+  }
+
+  const work = requestedJobs(c.req.query('job') ?? null);
+  const done: Record<string, unknown> = {};
+
+  if (work.purge) {
+    await purgeRateLimits(c.env.DB);
+    done.purge = 'done';
+  }
+  if (work.ingest) done.ingest = await ingestInbox(c.env);
+  if (work.followUp) {
+    done.followUp = await followUpBotChanges(c.env, (email) => queueAndSendFromCron(c.env, email));
+  }
+
+  return c.json(done);
 });
 
 // Serve only where Hamdam is sold.
@@ -1370,12 +1408,16 @@ export default {
   fetch(request: Request, env: Env, ctx: ExecutionContext) {
     return app.fetch(withLocalePrefix(request), env, ctx);
   },
-  async scheduled(_event: ScheduledController, env: Env, ctx: ExecutionContext): Promise<void> {
-    // Housekeeping, on the pass that already runs every minute. Rate limit
-    // rows accumulate one per distinct caller and are dead the moment their
-    // window rolls; sweeping them here keeps that off the request path, where
-    // somebody is waiting.
-    ctx.waitUntil(purgeRateLimits(env.DB));
+  async scheduled(event: ScheduledController, env: Env, ctx: ExecutionContext): Promise<void> {
+    // Not every job on every tick. See tick.ts for which and why; the short
+    // version is that this Worker gets 10 ms of CPU per invocation and was
+    // measured using nine of them.
+    const work = tickWork(event.scheduledTime);
+
+    // Housekeeping. Rate limit rows accumulate one per distinct caller and are
+    // dead the moment their window rolls; sweeping them here keeps that off
+    // the request path, where somebody is waiting.
+    if (work.purge) ctx.waitUntil(purgeRateLimits(env.DB));
     ctx.waitUntil(
       ingestInbox(env)
         .then((summary) => {
@@ -1391,12 +1433,16 @@ export default {
     // anything, so the desk looks. Separate from the ingest chain on purpose,
     // so a mailbox outage does not also stop her being told her change is
     // live, and so a failure here cannot stop the mail.
-    ctx.waitUntil(
-      followUpBotChanges(env, async (email) => { await queueAndSendFromCron(env, email); })
+    if (work.followUp) ctx.waitUntil(
+      followUpBotChanges(env, (email) => queueAndSendFromCron(env, email))
         .then((summary) => {
-          if (summary.proposed > 0 || summary.shipped > 0 || summary.failures > 0) {
-            console.log('bot follow-up', JSON.stringify(summary));
-          }
+          // Logged whenever a change is in flight, not only when the pass did
+          // something. A pass that watches a ticket and does nothing is the
+          // state that hid a real fault for an hour: the desk was silent, the
+          // logs were silent, and silence read as "nothing is happening" when
+          // it meant "something is stuck". One line per follow-up pass, and
+          // only while a change is open, buys that back.
+          if (summary.watching > 0) console.log('bot follow-up', JSON.stringify(summary));
         })
         .catch((error) => {
           console.error('bot follow-up failed:', error instanceof Error ? error.message : String(error));

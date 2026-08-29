@@ -1,0 +1,84 @@
+name: Desk tick
+
+# Drives the support desk when Cloudflare's scheduler will not.
+#
+# On 2026-08-28 every scheduled Worker on the Cloudflare account stopped firing
+# at 20:55 UTC while the same Workers kept serving HTTP perfectly. The desk
+# stopped reading its mailbox for hours, /health reported it correctly the
+# whole time, and there was nothing anywhere that could make the work happen:
+# it was reachable only from a trigger nobody outside Cloudflare controls.
+#
+# This is a second, independent way to make it happen, deliberately living in a
+# different company's infrastructure. GitHub's scheduler is not precise and
+# skips runs under load, which is fine: the desk's jobs are idempotent, the
+# ingest checkpoint only advances on a clean pass, and a few minutes of extra
+# latency on an email is not an incident. What it buys is that a total failure
+# of one scheduler is no longer a total failure of the desk.
+#
+# Harmless while Cloudflare's cron is healthy. A tick that finds an empty
+# mailbox and no change in flight costs one Graph request and one D1 read.
+on:
+  schedule:
+    # Every five minutes. Not every minute: GitHub coalesces and delays short
+    # schedules anyway, and five is inside the ten minute threshold /health
+    # uses to call the desk stale, so a stall still gets noticed as one.
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: desk-tick
+  cancel-in-progress: false
+
+permissions: {}
+
+jobs:
+  tick:
+    runs-on: ubuntu-latest
+    steps:
+      # Merged before the secret exists, on purpose, so the workflow is in
+      # place and inert rather than waiting on a second action to be
+      # remembered. A missing secret skips the run with a note rather than
+      # failing it: 288 red runs a day is a notification channel nobody reads
+      # by the second morning, and a check that everyone mutes is worse than
+      # no check. Everything past this point still fails loudly.
+      - name: Check the secret is configured
+        id: configured
+        env:
+          SECRET: ${{ secrets.DESK_TICK_SECRET }}
+        run: |
+          if [ -z "$SECRET" ]; then
+            echo "::notice::DESK_TICK_SECRET is not set, so the desk is not being driven from here. Set it to the Worker's TICK_SECRET to switch this on."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      # One job per request, because a Cloudflare Worker on the Free plan gets
+      # 10 ms of CPU per invocation and a tick doing everything was measured at
+      # 9.274 ms. Two requests each stay well inside the budget; one would not.
+      #
+      # Ingest first: it is the one somebody is waiting on. The follow-up runs
+      # whether or not ingest succeeded, because a mailbox outage must not also
+      # stop the owner being told her change is live.
+      - name: Read the mailbox
+        if: steps.configured.outputs.ready == 'true'
+        run: |
+          curl --fail-with-body -sS -X POST \
+            "https://support.hamdam.com.au/internal/tick?job=ingest" \
+            -H "x-desk-tick: ${{ secrets.DESK_TICK_SECRET }}" \
+            --max-time 30 --retry 2 --retry-delay 5
+
+      - name: Follow up on bot changes
+        if: always() && steps.configured.outputs.ready == 'true'
+        run: |
+          curl --fail-with-body -sS -X POST \
+            "https://support.hamdam.com.au/internal/tick?job=followup" \
+            -H "x-desk-tick: ${{ secrets.DESK_TICK_SECRET }}" \
+            --max-time 30 --retry 2 --retry-delay 5
+
+      # Not a health check of the desk so much as of this workflow's own
+      # premise: if the secret is wrong or the route is gone, the steps above
+      # fail loudly rather than reporting green while the desk sits idle.
+      - name: Confirm the desk reports itself alive
+        if: always() && steps.configured.outputs.ready == 'true'
+        run: curl --fail-with-body -sS https://support.hamdam.com.au/health --max-time 15

@@ -1,0 +1,99 @@
+import { describe, it, expect } from 'vitest';
+import { requestedJobs, tickAuthorised, tickWork } from '../src/tick.js';
+
+/** Epoch milliseconds for a given whole minute, so the maths is visible. */
+const at = (minute: number) => minute * 60_000;
+
+describe('tickWork', () => {
+  it('reads the mailbox on every tick', () => {
+    for (let minute = 0; minute < 20; minute += 1) {
+      expect(tickWork(at(minute)).ingest).toBe(true);
+    }
+  });
+
+  it('follows up on the bot every fifth minute', () => {
+    const following = [];
+    for (let minute = 100; minute < 120; minute += 1) {
+      if (tickWork(at(minute)).followUp) following.push(minute);
+    }
+    expect(following).toEqual([100, 105, 110, 115]);
+  });
+
+  it('sweeps rate limits every fifteenth minute', () => {
+    const sweeping = [];
+    for (let minute = 300; minute < 340; minute += 1) {
+      if (tickWork(at(minute)).purge) sweeping.push(minute);
+    }
+    expect(sweeping).toEqual([300, 315, 330]);
+  });
+
+  /**
+   * The saving, stated as a number so a later change that quietly undoes it
+   * fails here rather than in a dashboard three weeks later.
+   */
+  it('leaves four ticks in five doing mail and nothing else', () => {
+    let bare = 0;
+    for (let minute = 0; minute < 60; minute += 1) {
+      const work = tickWork(at(minute));
+      if (work.ingest && !work.followUp && !work.purge) bare += 1;
+    }
+    expect(bare).toBe(48);
+  });
+
+  /**
+   * Skipping work to save CPU is a trade this is allowed to make. Skipping it
+   * because a number arrived malformed is not: an hour of unread mail costs
+   * more than a millisecond, and it costs it silently.
+   */
+  it('does everything when the tick carries no usable time', () => {
+    for (const bad of [Number.NaN, Infinity, -Infinity]) {
+      expect(tickWork(bad)).toEqual({ ingest: true, followUp: true, purge: true });
+    }
+  });
+
+  it('is aligned to the wall clock rather than to when the Worker started', () => {
+    // Two ticks a day apart land on the same footing, because epoch minutes
+    // divide evenly and nothing here counts from a deploy.
+    const aDayLater = at(100 + 60 * 24);
+    expect(tickWork(aDayLater).followUp).toBe(tickWork(at(100)).followUp);
+  });
+});
+
+describe('tickAuthorised', () => {
+  it('refuses when no secret is configured, whatever is presented', () => {
+    expect(tickAuthorised(undefined, 'anything')).toBe(false);
+    expect(tickAuthorised('', 'anything')).toBe(false);
+  });
+
+  it('refuses when nothing is presented', () => {
+    expect(tickAuthorised('s3cret', null)).toBe(false);
+    expect(tickAuthorised('s3cret', '')).toBe(false);
+  });
+
+  it('accepts the secret and nothing else', () => {
+    expect(tickAuthorised('s3cret', 's3cret')).toBe(true);
+    expect(tickAuthorised('s3cret', 's3creT')).toBe(false);
+    expect(tickAuthorised('s3cret', 's3cret ')).toBe(false);
+    expect(tickAuthorised('s3cret', 's3cre')).toBe(false);
+    expect(tickAuthorised('s3cret', 's3cretlonger')).toBe(false);
+  });
+});
+
+describe('requestedJobs', () => {
+  it('runs one job when one is named', () => {
+    expect(requestedJobs('ingest')).toEqual({ ingest: true, followUp: false, purge: false });
+    expect(requestedJobs('followup')).toEqual({ ingest: false, followUp: true, purge: false });
+    expect(requestedJobs('purge')).toEqual({ ingest: false, followUp: false, purge: true });
+  });
+
+  /**
+   * An unrecognised job runs everything rather than nothing. A caller reaching
+   * for this route is a caller whose scheduler has stopped, and a typo that
+   * silently does no work is the wrong way to greet them.
+   */
+  it('runs everything when nothing recognisable is asked for', () => {
+    for (const asked of [null, '', 'INGEST', 'nonsense']) {
+      expect(requestedJobs(asked)).toEqual({ ingest: true, followUp: true, purge: true });
+    }
+  });
+});

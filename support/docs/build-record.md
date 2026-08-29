@@ -1225,3 +1225,173 @@ it. Recorded because it is a deliberate choice and not an oversight.
 
 `npx wrangler secret delete OWNER_EMAILS`. The gate fails closed and the desk
 carries on as an ordinary desk.
+
+## The night the cron stopped, and the wrong answer given first (2026-08-28)
+
+The first live bot report reached the agent, which read the whole path it
+named, found no fault, and asked the owner a clarifying question rather than
+guessing. That was the right call and she never saw it.
+
+**Read the correction below before the diagnosis.** The heading of this
+section said "a wrong marker cost a real report its answer" for about an hour,
+and the marker was not what cost her the answer. What follows is kept in the
+order it happened, because the order is the lesson.
+
+### What the evidence looked like, and the story built on it
+
+The agent is handed three markers and told to pick one: `desk:fa` for "here is
+the change I made", `desk:ask` for a question, `desk:blocked` for a stand-down.
+The theory was that it had wrapped the question in `desk:fa`, and that theory
+explained everything visible: no pull request existed, so `parseAgentReport`
+found nothing to propose; no `ask` marker, so `parseAgentOutcome` found nothing
+to relay; the workflow's guaranteed-marker step saw a marker and correctly
+stayed quiet; and `ticket_bot_changes.last_outcome` was `NULL`, which is
+exactly what a parse that found nothing leaves behind.
+
+That last column was read as proof and reported as "confirmed, not guessed". It
+was not proof. `NULL` is equally what a follow-up pass that never ran leaves
+behind, and the two readings were never distinguished before the conclusion was
+announced. A single value consistent with two hypotheses is evidence for
+neither.
+
+### What was actually wrong
+
+Every scheduled Worker on the Cloudflare account stopped firing at 20:55 UTC.
+Not the desk's crons: all of them, on every script in the account at the same
+instant, `nl-events-bot` included, so the bot's own timed jobs were down too.
+HTTP was unaffected throughout, which is what made it invisible: the portal
+answered 200, the Worker looked alive, and nothing anywhere raised its hand.
+
+Three things established it, and it is worth recording how, because the same
+three answer the same question next time:
+
+- `wrangler tail` showed zero scheduled events across eight minutes of
+  watching, while catching an unrelated live HTTP request in the same window.
+  That is what rules out a broken tail rather than assuming one.
+- The GraphQL analytics API (`workersInvocationsAdaptive`, per minute) showed
+  exactly one invocation a minute through 20:55 and then nothing.
+- The same query across every script showed the stop was account-wide, which is
+  what moved the cause out of this codebase entirely.
+
+The agent, incidentally, said so itself. Told on the issue that it had used the
+wrong marker, it checked the claim against the workflow file and the thread and
+answered that it had not. It was right, and being right was treated as
+something to work around rather than as evidence. A component that disagrees
+with your diagnosis is data.
+
+Neither a redeploy, nor re-registering the schedule through the API, nor
+writing a brand-new schedule with a different expression brought it back.
+
+### Still open
+
+This first said nothing in the system noticed, and that the missing piece was a
+health route reading the ingest heartbeat. Both halves were wrong, and checking
+would have taken one request. `/health` has existed since 2026-08-02, built for
+exactly this failure, and it was answering `503 stale` within ten minutes of
+the cron stopping and kept answering it all night. The console shows its banner
+too.
+
+What is actually missing is a subscriber. The endpoint is designed to be
+watched by an uptime monitor outside this account, and no such monitor is
+pointed at it, so a correct alarm rang in an empty room for three hours. That
+is a five-minute job with any free uptime service and it is the single highest
+value thing left on this list.
+
+Also open, and the reason this outage could not be worked around at all: the
+desk's work was reachable only from a trigger nobody here controls. HTTP was
+healthy throughout while scheduled invocations were not, so the mailbox could
+have been read at any point by anything able to ask. `POST /internal/tick`
+exists now for that, secret-gated and failing closed, and the same monitor that
+watches `/health` can drive it if the scheduler stops again.
+
+### The changes that were made anyway, and why they are still right
+
+The marker theory was wrong about this outage and the fixes it produced are
+worth keeping, because each closes a real path to the same silence:
+
+1. Marker choice now decides only the wording of the email, never whether she
+   gets one. A Farsi block with no pull request beside it is the agent talking
+   to her, whichever marker wraps it, and it reaches her as a question because
+   a question invites the reply that restarts the work. Deliberately not fixed
+   by sharpening the prompt: a rule a model has to remember is not a rule.
+2. The follow-up pass logs whenever a change is in flight, not only when it
+   acts. Silent logs read as "nothing is happening" and meant "something is
+   stuck", and that cost an hour of guessing at a system whose whole state was
+   three columns wide.
+3. A send that fails no longer leaves the desk certain she was told. The
+   outcome is recorded before the email goes, so two passes cannot both mail
+   her; the cost was that one failed send silenced the ticket permanently. The
+   mark now comes off when the send does not happen, and `last_outcome_at`
+   bounds the retry to an hour so a permanent failure writes a comment on the
+   ticket instead of a dead outbound row every minute.
+
+### The tick was running at 93 per cent of the CPU ceiling (added 2026-08-28)
+
+The dashboard's cron log gave the number this section was missing. The last
+four scheduled invocations before everything stopped used 8.655, 8.788, 9.011
+and 9.274 ms of CPU, against the Workers Free plan's limit of 10 ms per
+invocation. Climbing, and then nothing.
+
+That is not proof of what stopped the account: CPU on this Worker does not
+explain `nl-events-bot` stopping in the same minute, and no documented
+behaviour says a Worker over its CPU limit gets unscheduled rather than
+terminated. It is proof of something else, which needed fixing regardless. The
+desk had about half a millisecond of headroom and was spending it: from the
+moment a ticket dispatched, every tick fetched and parsed an issue thread from
+GitHub on top of the Graph request it already made, so the expensive path was
+the one that ran while somebody was waiting.
+
+`src/tick.ts` splits the tick by how much latency each job can bear. Ingest
+stays on the minute, because the acknowledgement inside a minute is what the
+cron is for and an empty mailbox is cheap. The bot follow-up moves to every
+fifth minute, which is where four fifths of the cost goes and where nothing is
+waiting on seconds: the next step is a person reading an email. The rate limit
+sweep moves to every fifteenth, because the rows it deletes are already dead.
+Four ticks in five now do mail and nothing else, and a test asserts that count
+so a later change cannot quietly undo it.
+
+**The next lever, unmeasured and deliberately not pulled tonight.** `wrangler
+deploy` reports a Worker startup time of 6 ms. If script evaluation on a cold
+isolate is charged to the same 10 ms budget, then a cold tick starts with under
+4 ms to spend and no amount of scheduling helps. The fix would be to stop
+building the Hono app and its routes at module scope when a scheduled
+invocation will never call `fetch`, which is a real refactor of the largest
+file here and not a thing to do at midnight on the mail path. What is worth
+doing first is the measurement: compare the CPU of a cold tick against a warm
+one in the cron log.
+
+### A marker quoted in a sentence is not a marker (added 2026-08-28)
+
+Accepting `desk:fa` as an outcome, two sections above, opened a hole that the
+same night walked straight into. Told on the issue that it had used the wrong
+marker, the agent checked, disagreed, and said so in a comment that quoted
+`<!-- desk:fa -->` mid-sentence while explaining what it had not done. The
+pattern matching outcomes did not care about lines, so it matched that quote,
+ran non-greedily to the real terminator at the end of the comment, and returned
+a thousand and two characters: the whole English argument about markers,
+followed by the Farsi question. That was queued to be emailed to a
+non-technical Persian speaker as the answer to her bug report. It did not reach
+her only because the platform's cron had already stopped an hour earlier.
+
+Worth stating plainly, because it is the useful part: the hole was opened by
+the fix for the bug that never existed, aimed at a diagnosis that was wrong,
+and the comment that exposed it was the agent correctly refusing that
+diagnosis.
+
+Markers now count only on a line of their own, and only outside fenced code
+blocks, which is how both halves of this system quote the protocol at each
+other. The same reading applies to `desk:pr` and `desk:sha`, so a commit id
+mentioned in prose cannot be read as a report. Against the real thread the
+extraction went from 1002 characters to 243, which is the question and nothing
+else.
+
+Two judgements are recorded in tests rather than left to the next reader:
+
+- **Priority by kind, not by position.** A comment carrying more than one block
+  is the agent saying more than one thing. A stand-down outranks a question and
+  a question outranks a description, because a description with no pull request
+  beside it describes a change that does not exist.
+- **A merely indented marker still counts.** The asymmetry is deliberate: a
+  quoted example read as real sends her something odd, and a real marker read
+  as quoted sends her nothing at all. Only an explicit fence is treated as
+  quoting.
