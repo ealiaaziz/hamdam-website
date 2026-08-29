@@ -1,0 +1,49 @@
+{
+  "id": "why-this",
+  "shot": "UNFILED: in-app capture, Garden 1.3 FA, Move coach",
+  "note": "Sources are in-app captures taken 29 Aug 2026, not repo assets, so these paths do not resolve from a clone. Crops are fractions of the source image: [x0, y0, x1, y1]. Regions containing the 1h15m sleep value were rejected as an unrealistic simulator state.",
+  "pages": [
+    {
+      "kind": "plain",
+      "text": "Your health app has never once explained itself.",
+      "vo": "Your health app has never once explained itself."
+    },
+    {
+      "kind": "shot",
+      "src": "UNFILED: Move coach",
+      "crop": [0.04, 0.196, 0.556, 0.27],
+      "caption": "How I decided",
+      "vo": "Hamdam keeps a tab for how it decided."
+    },
+    {
+      "kind": "shot",
+      "src": "UNFILED: Move coach",
+      "crop": [0.04, 0.335, 0.96, 0.496],
+      "caption": "Today: fifteen minutes, at seven",
+      "vo": "It asks one thing of you. Fifteen minutes, at seven."
+    },
+    {
+      "kind": "plain",
+      "text": "Measured against your own two week normal.",
+      "vo": "Measured against your own two week normal."
+    },
+    {
+      "kind": "shot",
+      "src": "UNFILED: Garden home",
+      "crop": [0.35, 0.419, 0.968, 0.458],
+      "caption": "Unwell. Injured. Travelling.",
+      "vo": "And you can tell it that today is not a normal day."
+    },
+    {
+      "kind": "turn",
+      "text": "Not an app that knows better.",
+      "text2": "One that shows its working.",
+      "vo": "Not an app that knows better. One that shows its working."
+    },
+    {
+      "kind": "cta",
+      "text": "Hamdam. On iPhone and Apple Watch.",
+      "vo": "Hamdam. On iPhone and Apple Watch."
+    }
+  ]
+}
