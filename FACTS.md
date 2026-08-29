@@ -224,6 +224,56 @@ Rationale: a comparative claim about translation quality is a claim about compet
 - Current app version: never cite without checking the App Store listing at time of writing. 1.2 as of 2026-08-17, released that day; 1.1.1 before it. (iOS compatibility is resolved and moved to Product identity above.)
 - Farsi site parity: Farsi legal pages incomplete as of last review; do not link Farsi legal pages in campaigns until confirmed complete.
 
+## Domain and redirect state, VERIFIED 2026-08-30
+
+Asked because `marketingUrl`, `supportUrl` and the App Store privacy policy URL all use
+`https://www.hamdam.com.au` while the site canonical is the bare domain, and because Search
+Console shows `http://hamdam.com.au/` indexed separately from https.
+
+**Live behaviour, measured against production on 2026-08-30, not inferred:**
+
+| request | result |
+|---|---|
+| `https://www.hamdam.com.au/` | 301 to `https://hamdam.com.au/` |
+| `http://hamdam.com.au/` | 301 to `https://hamdam.com.au/` |
+| `https://hamdam.com.au/` | 200 |
+
+So the redirects work today and the App Store URLs resolve correctly. That is the good half.
+
+**The repository cannot guarantee any of it, and this is the part worth recording.**
+
+- `wrangler.jsonc` binds **both** hostnames as custom domains: `hamdam.com.au` and
+  `www.hamdam.com.au`, lines 10 and 11.
+- The Worker is **assets only**. It declares `assets.directory: ./dist` and no `main` script,
+  so there is no code path that could issue a redirect.
+- There is **no `public/_redirects`**, no `functions/` directory, and `public/_headers` carries
+  security headers only, with zero 301 or `Location` lines.
+
+Nothing in git produces the two 301s above. They are Cloudflare dashboard configuration, almost
+certainly a Redirect Rule for the www host and Always Use HTTPS for the scheme, and neither is
+versioned, reviewable or restorable from this repository.
+
+**The failure mode that follows.** Because `www` is bound as a custom domain to the same assets
+Worker, the dashboard rule is the only thing standing between the site and a full duplicate of
+itself at `www`. Delete or disable that rule and `www` stops redirecting and starts **serving**,
+which is a canonical split across every page at once. The `trailingSlash` work exists to close a
+two URL split on a handful of pages; this is the same class of problem with the whole site as its
+blast radius, and it is invisible in code review.
+
+**What is dashboard only, and therefore Ealia's to click:**
+
+- Confirming the www Redirect Rule and Always Use HTTPS exist and stay enabled.
+- The `http://` entry in Search Console. The 301 is already in place, so there is nothing further
+  the repository can do; it resolves as Google recrawls, and a removal request is dashboard work.
+
+**What is repo work, if it is ever wanted:** binding `www` at all is a choice. Removing the
+`www.hamdam.com.au` route from `wrangler.jsonc` would make the hostname fail rather than serve a
+duplicate, which is a worse visitor experience but a stronger guarantee. Not recommended while
+the App Store fields still point at `www`, since that would break them.
+
+**Related hostnames, for completeness:** `support.hamdam.com.au` and `mta-sts.hamdam.com.au` are
+routes of a **separate** Worker declared in `support/wrangler.jsonc`, not of this one.
+
 ## Standing rules (not claims — pipeline constraints)
 - Persian-language copy is authored by Ealia only. Generation tasks produce English drafts and may propose Persian only as clearly marked placeholders for Ealia to replace.
 - Instagram is Sima's channel: outputs are drafts to her queue, never direct posts.
