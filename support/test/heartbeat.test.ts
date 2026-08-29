@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { HEARTBEAT_STALE_AFTER_MS, describeAge, readHeartbeat } from '../src/heartbeat.js';
+import { HEARTBEAT_STALE_AFTER_MS, describeAge, readHeartbeat, shouldSelfHeal } from '../src/heartbeat.js';
 
 // "Is the desk still reading its mail?" had no answer, and the two ways this
 // system has gone quiet both looked identical to a slow week from outside.
@@ -57,5 +57,24 @@ describe('describeAge', () => {
     expect(describeAge(14 * 60_000)).toBe('14 minutes ago');
     expect(describeAge(3600_000)).toBe('1 hour ago');
     expect(describeAge(5 * 3600_000)).toBe('5 hours ago');
+  });
+});
+
+describe('shouldSelfHeal', () => {
+  it('acts on a stale desk', () => {
+    expect(shouldSelfHeal({ state: 'stale', ageMs: 900_000 })).toBe(true);
+  });
+
+  /** Never recorded is a fresh deploy or an ingest that has never run. Both want a pass. */
+  it('acts when nothing has ever been recorded', () => {
+    expect(shouldSelfHeal({ state: 'unknown', ageMs: null })).toBe(true);
+  });
+
+  /**
+   * The bound. Once a pass succeeds the heartbeat is fresh, so a flood of
+   * requests cannot become a flood of passes.
+   */
+  it('leaves a healthy desk alone', () => {
+    expect(shouldSelfHeal({ state: 'ok', ageMs: 30_000 })).toBe(false);
   });
 });
