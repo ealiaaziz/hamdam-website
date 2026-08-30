@@ -102,6 +102,7 @@ When sources disagree, resolve in this order:
 4. Existing website functionality and verified content
 5. Original Hamdam assets found through Canva
 6. The generic frontend-design skill
+7. External design references pulled with the refero-styles skill
 
 ## Required workflow
 
