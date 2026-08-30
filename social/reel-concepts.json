@@ -1,13 +1,18 @@
 {
  "_readme": "Concept bank for the Hamdam reel series. The agent READS this file and never writes to it. After a concept ships, set used=true by hand. When fewer than three entries have used=false, write more - do not let the agent improvise one.",
- "_verification_status": "DRAFT - arguments, insights and prompts drafted by Claude and must be read and approved by Ealia. Claims flagged in _check are the ones worth verifying.",
+ "_verification_status": "DRAFT - arguments and prompts drafted by Claude and must be read and approved by Ealia. USED FLAGS AUDITED 30 Aug 2026 against live Instagram captions: six of seven concepts had shipped while the file still said used:false, so an automated run would have republished one. The flag depends on a manual step that does not reliably happen - the task should verify against the last 30 captions before trusting it.",
  "_page_note": "Reel pages: 0 scene (unused - the task renders 1..5), 1 headline, 2 lesson + send/reflect prompt, 3 the philological point, 4 Persian verse, 5 English translation with poet line beneath. Recognition hooks; the argument rewards whoever stays. insightEn, lessonEn, sendEn and headline are Latin script ONLY - Source Serif has no Arabic glyphs, so Persian inside an English line renders as tofu boxes.",
  "_prompt_principles": "PAGE 2 carries lessonFa/lessonEn then sendFa/sendEn. Average watch is 5.6s of a 14s reel, so this is the only page most viewers see after the headline - it must carry recognition, not scholarship. PRINCIPLES for writing sendFa/sendEn: (1) Name the RELATIONSHIP, never the recipient's flaw. 'Someone who has always been on your side' works; 'someone who always says later' does not - a prompt that diagnoses the recipient is an insult wearing a poem, and nobody forwards it. (2) The sender must come out generous, not superior. Sending should feel like giving, never like delivering a verdict. (3) Test it by reading it as the RECIPIENT: chosen, or diagnosed? If diagnosed, rewrite. (4) Grow the prompt out of the verse's own imagery - Khayyam's cup gives 'someone you have shared a cup with'. Bolted-on prompts read as generic. (5) Not every verse should be sent. Verses that assert how things are get promptType 'reflect' - a question that earns a comment - instead of a send prompt. A poem about your body becoming clay is not a warm thing to put in someone's inbox. verseType guides the frame: feeling -> affection; consolation -> care; encouragement -> belief in them, never fear in them; wit -> shared humour; observation -> reflect; debate -> conversation. Universal fallback that accuses nobody: 'For the one who just came to mind'.",
  "_mood_key": "Pairs the concept with a background from make_backgrounds.py and a track from the Drive 11Labs folder. happy = bright Mahur; love = romantic Mahur; grave = restrained, sparse; wry = light but not celebratory. Never put a love or happy bed under a grave concept.",
  "concepts": [
   {
-   "id": "parvin-023-needle", "verseId": "parvin-023", "poet": "Parvin", "mood": "wry", "used": true,
-   "promptType": "send", "verseType": "consolation",
+   "id": "parvin-023-needle",
+   "verseId": "parvin-023",
+   "poet": "Parvin",
+   "mood": "wry",
+   "used": true,
+   "promptType": "send",
+   "verseType": "consolation",
    "headline": "THE NEEDLE ANSWERS BACK",
    "argument": "A shirt complains to a needle about the wounds it leaves. The needle replies: if you don't like my way, go and speak to the tailor.\n\nThis is the \u0645\u0646\u0627\u0638\u0631\u0647 - the debate poem, and Parvin's signature form. Two ordinary objects argue and one of them wins. She gives speech to needles, to thorns, to crows, to the smallest and least regarded thing in the room, and the wisdom almost always belongs to the humbler party.\n\nThe needle's answer is also a refusal to be blamed for a design it did not choose. It points past itself, to the hand that guides it.",
    "insightFa": "\u067e\u0631\u0648\u06cc\u0646 \u062d\u06a9\u0645\u062a \u0631\u0627 \u0628\u0647 \u0633\u0648\u0632\u0646 \u0645\u06cc\u200c\u062f\u0647\u062f\u060c \u0646\u0647 \u0628\u0647 \u067e\u06cc\u0631\u0627\u0647\u0646",
@@ -20,11 +25,16 @@
    "poetLineEn": "Parvin Etesami \u2014 Tabriz and Tehran, 20th century",
    "hashtagsFa": ["#\u0634\u0639\u0631_\u0641\u0627\u0631\u0633\u06cc", "#\u067e\u0631\u0648\u06cc\u0646_\u0627\u0639\u062a\u0635\u0627\u0645\u06cc", "#\u0627\u062f\u0628\u06cc\u0627\u062a_\u0641\u0627\u0631\u0633\u06cc"],
    "hashtagsEn": ["#persianpoetry", "#parvinetesami"],
-   "_check": "\u0645\u0646\u0627\u0638\u0631\u0647 as Parvin's signature form is well established. Published 12 Aug 2026: instagram.com/reel/Db6pltQmBrE/"
+   "_check": "\u0645\u0646\u0627\u0638\u0631\u0647 as Parvin's signature form is well established. Published 11 Aug 2026: instagram.com/reel/Db6pltQmBrE/"
   },
   {
-   "id": "khayyam-036-handle", "verseId": "khayyam-036", "poet": "Khayyam", "mood": "grave", "used": false,
-   "promptType": "send", "verseType": "feeling",
+   "id": "khayyam-036-handle",
+   "verseId": "khayyam-036",
+   "poet": "Khayyam",
+   "mood": "grave",
+   "used": true,
+   "promptType": "send",
+   "verseType": "feeling",
    "headline": "THAT HANDLE WAS SOMEONE'S ARM",
    "argument": "Khayyam looks at a clay jug and says: this was a lover once. The handle you are holding was an arm around someone's neck.\n\nIn English, Khayyam usually arrives softened - wistful, Victorian, a little melancholy. The Persian is not wistful. It is a plain observation delivered flat: the dead become the cup, and you are drinking from someone.\n\nRead that way it is not really about death. It is about worth that has stopped being noticed - the ordinary thing in your hands that was once somebody's whole world.",
    "insightFa": "\u062f\u0631 \u062a\u0631\u062c\u0645\u0647\u060c \u062e\u06cc\u0627\u0645 \u062d\u0633\u0631\u062a\u200c\u0632\u062f\u0647 \u0645\u06cc\u200c\u0634\u0648\u062f\u061b \u062f\u0631 \u0641\u0627\u0631\u0633\u06cc \u0641\u0642\u0637 \u062f\u0642\u06cc\u0642 \u0627\u0633\u062a",
@@ -37,11 +47,16 @@
    "poetLineEn": "Omar Khayyam \u2014 Nishapur, 11th century",
    "hashtagsFa": ["#\u0634\u0639\u0631_\u0641\u0627\u0631\u0633\u06cc", "#\u062e\u06cc\u0627\u0645", "#\u0627\u062f\u0628\u06cc\u0627\u062a_\u0641\u0627\u0631\u0633\u06cc"],
    "hashtagsEn": ["#persianpoetry", "#khayyam"],
-   "_check": "Khayyam of Nishapur, 11th-12th century - safe. That English translations soften him is a widely held critical view, phrased as comparison rather than a claim about any named translator. The 'unnoticed worth' reading is Ealia's and is interpretation, not assertion."
+   "_check": "The 'unnoticed worth' reading is Ealia's and is interpretation, not assertion. PUBLISHED 13 Aug 2026 instagram.com/reel/Db_rxnwDiD2/"
   },
   {
-   "id": "parvin-014-socrates", "verseId": "parvin-014", "poet": "Parvin", "mood": "grave", "used": false,
-   "promptType": "reflect", "verseType": "observation",
+   "id": "parvin-014-socrates",
+   "verseId": "parvin-014",
+   "poet": "Parvin",
+   "mood": "grave",
+   "used": true,
+   "promptType": "reflect",
+   "verseType": "observation",
    "headline": "SHE PUT SOCRATES IN A PERSIAN QASIDA",
    "argument": "Someone asks Socrates what he has learned of death. He answers with a question: why do you call this life?\n\nA 20th-century Iranian woman writing in classical Persian form, arguing with a Greek philosopher who died 2,300 years earlier. Persian poetry has always done this - absorbed what it met and answered back in its own metre.\n\nParvin is usually taught, when she is taught at all, as the gentle one who wrote about flowers and mothers. She was also this.",
    "insightFa": "\u0632\u0646\u06cc \u0627\u06cc\u0631\u0627\u0646\u06cc \u062f\u0631 \u0642\u0631\u0646 \u0628\u06cc\u0633\u062a\u0645\u060c \u062f\u0631 \u0648\u0632\u0646 \u06a9\u0644\u0627\u0633\u06cc\u06a9 \u0641\u0627\u0631\u0633\u06cc\u060c \u0628\u0627 \u0633\u0642\u0631\u0627\u0637 \u0628\u062d\u062b \u0645\u06cc\u200c\u06a9\u0646\u062f",
@@ -54,11 +69,16 @@
    "poetLineEn": "Parvin Etesami \u2014 Tabriz and Tehran, 20th century",
    "hashtagsFa": ["#\u0634\u0639\u0631_\u0641\u0627\u0631\u0633\u06cc", "#\u067e\u0631\u0648\u06cc\u0646_\u0627\u0639\u062a\u0635\u0627\u0645\u06cc", "#\u0627\u062f\u0628\u06cc\u0627\u062a_\u0641\u0627\u0631\u0633\u06cc"],
    "hashtagsEn": ["#persianpoetry", "#parvinetesami"],
-   "_check": "The poem itself names Socrates. Parvin lived 1907-1941. 'Usually taught as the gentle one' is a characterisation of reception - soften or cut if you disagree."
+   "_check": "The poem itself names Socrates. Parvin lived 1907-1941. PUBLISHED 16 Aug 2026 instagram.com/reel/DcHaQBnCKKF/"
   },
   {
-   "id": "khayyam-007-grass", "verseId": "khayyam-007", "poet": "Khayyam", "mood": "grave", "used": false,
-   "promptType": "send", "verseType": "encouragement",
+   "id": "khayyam-007-grass",
+   "verseId": "khayyam-007",
+   "poet": "Khayyam",
+   "mood": "grave",
+   "used": true,
+   "promptType": "send",
+   "verseType": "encouragement",
    "headline": "BEFORE THE GRASS GROWS FROM YOU",
    "argument": "Sit on the grass and live well for a few days - before the grass grows out of you.\n\nThe English phrase for this is carpe diem, and it flattens the poem. Horace says seize the day because time flies. Khayyam says something colder: you are the soil. The grass you are sitting on and the grass that will grow from you are the same grass.\n\nThe consolation and the threat are the same sentence.",
    "insightFa": "\u0627\u06cc\u0646 \u00ab\u062f\u0645 \u0631\u0627 \u062f\u0631\u06cc\u0627\u0628\u00bb \u0646\u06cc\u0633\u062a \u2014 \u062e\u06cc\u0627\u0645 \u0645\u06cc\u200c\u06af\u0648\u06cc\u062f \u062a\u0648 \u062e\u0648\u062f\u0650 \u062e\u0627\u06a9\u06cc",
@@ -71,11 +91,16 @@
    "poetLineEn": "Omar Khayyam \u2014 Nishapur, 11th century",
    "hashtagsFa": ["#\u0634\u0639\u0631_\u0641\u0627\u0631\u0633\u06cc", "#\u062e\u06cc\u0627\u0645", "#\u0627\u062f\u0628\u06cc\u0627\u062a_\u0641\u0627\u0631\u0633\u06cc"],
    "hashtagsEn": ["#persianpoetry", "#khayyam"],
-   "_check": "The Horace comparison is interpretation - cut it if it feels like showing off."
+   "_check": "The Horace comparison is interpretation. PUBLISHED 18 Aug 2026 instagram.com/reel/DcMloxKnGd0/"
   },
   {
-   "id": "parvin-008-sparrow", "verseId": "parvin-008", "poet": "Parvin", "mood": "happy", "used": false,
-   "promptType": "send", "verseType": "encouragement",
+   "id": "parvin-008-sparrow",
+   "verseId": "parvin-008",
+   "poet": "Parvin",
+   "mood": "happy",
+   "used": true,
+   "promptType": "send",
+   "verseType": "encouragement",
    "headline": "A SPARROW TELLS A PIGEON TO LEAVE",
    "argument": "At dawn a sparrow tells a pigeon: put your head out of the nest. The horizons are bright - why are you sleeping in the dark?\n\nNote which bird is speaking. The \u06af\u0646\u062c\u0634\u06a9 is the smallest and most ordinary bird in Persian verse, the one nobody writes about. The \u06a9\u0628\u0648\u062a\u0631 is the poet's bird, the noble one. Parvin hands the wisdom to the sparrow and the excuses to the pigeon.\n\nShe does this everywhere. The lesser party is right.",
    "insightFa": "\u06af\u0646\u062c\u0634\u06a9 \u0639\u0627\u062f\u06cc\u200c\u062a\u0631\u06cc\u0646 \u067e\u0631\u0646\u062f\u0647\u0654 \u0634\u0639\u0631 \u0641\u0627\u0631\u0633\u06cc \u0627\u0633\u062a\u060c \u0648 \u067e\u0631\u0648\u06cc\u0646 \u062d\u0631\u0641\u0650 \u062f\u0631\u0633\u062a \u0631\u0627 \u0628\u0647 \u0627\u0648 \u0645\u06cc\u200c\u062f\u0647\u062f",
@@ -88,11 +113,16 @@
    "poetLineEn": "Parvin Etesami \u2014 Tabriz and Tehran, 20th century",
    "hashtagsFa": ["#\u0634\u0639\u0631_\u0641\u0627\u0631\u0633\u06cc", "#\u067e\u0631\u0648\u06cc\u0646_\u0627\u0639\u062a\u0635\u0627\u0645\u06cc", "#\u0627\u062f\u0628\u06cc\u0627\u062a_\u0641\u0627\u0631\u0633\u06cc"],
    "hashtagsEn": ["#persianpoetry", "#parvinetesami"],
-   "_check": "The relative poetic status of \u06af\u0646\u062c\u0634\u06a9 vs \u06a9\u0628\u0648\u062a\u0631 is a judgement about convention - defensible but worth a native reader's eye."
+   "_check": "PUBLISHED 27 Aug 2026 instagram.com/reel/Dcjw47HjP9-/"
   },
   {
-   "id": "hafez-004-phoenix", "verseId": "hafez-004", "poet": "Hafez", "mood": "wry", "used": false,
-   "promptType": "send", "verseType": "wit",
+   "id": "hafez-004-phoenix",
+   "verseId": "hafez-004",
+   "poet": "Hafez",
+   "mood": "wry",
+   "used": false,
+   "promptType": "send",
+   "verseType": "wit",
    "headline": "THE PHOENIX IS NO ONE'S PREY",
    "argument": "The phoenix is nobody's prey. Take your trap back - all it ever catches is wind.\n\nThe bird is the \u0639\u0646\u0642\u0627, and the joke is that it does not exist. You cannot trap it because there is nothing there to trap. Hafez is not saying you have failed to catch it. He is saying the hunt was the mistake.\n\nHe wrote a great deal of this kind of line, and it is the part of him English quote accounts almost never carry - Hafez the sceptic, unimpressed, slightly amused at your equipment.",
    "insightFa": "\u0639\u0646\u0642\u0627 \u0648\u062c\u0648\u062f \u0646\u062f\u0627\u0631\u062f \u2014 \u0628\u0631\u0627\u06cc \u0647\u0645\u06cc\u0646 \u0628\u0647 \u062f\u0627\u0645 \u0646\u0645\u06cc\u200c\u0627\u0641\u062a\u062f",
@@ -105,11 +135,16 @@
    "poetLineEn": "Hafez \u2014 Shiraz, 14th century",
    "hashtagsFa": ["#\u0634\u0639\u0631_\u0641\u0627\u0631\u0633\u06cc", "#\u062d\u0627\u0641\u0638", "#\u0627\u062f\u0628\u06cc\u0627\u062a_\u0641\u0627\u0631\u0633\u06cc"],
    "hashtagsEn": ["#persianpoetry", "#hafez"],
-   "_check": "\u0639\u0646\u0642\u0627 confirmed present in the Persian of hafez-004. insightEn transliterates it because Source Serif cannot render Arabic script."
+   "_check": "\u0639\u0646\u0642\u0627 confirmed present in the Persian of hafez-004. THE ONLY UNUSED CONCEPT as of 30 Aug 2026. After this ships the bank is empty - the riddle format takes over."
   },
   {
-   "id": "rumi-050-home", "verseId": "rumi-050", "poet": "Rumi", "mood": "love", "used": true,
-   "promptType": "send", "verseType": "feeling",
+   "id": "rumi-050-home",
+   "verseId": "rumi-050",
+   "poet": "Rumi",
+   "mood": "love",
+   "used": true,
+   "promptType": "send",
+   "verseType": "feeling",
    "headline": "THE PART IS PULLED TOWARD ITS WHOLE",
    "argument": "This is homesickness - and not the metaphorical kind. Rumi's family fled Balkh ahead of the Mongols when he was a boy. He never went back. He died in Konya, about 3,000 km from where he was born.\n\nHe wrote about longing for home because he was someone who couldn't go home.",
    "insightFa": "\u0645\u0648\u0644\u0627\u0646\u0627 \u06a9\u0648\u062f\u06a9 \u0628\u0648\u062f \u06a9\u0647 \u0627\u0632 \u0628\u0644\u062e \u06af\u0631\u06cc\u062e\u062a\u060c \u0648 \u0647\u0631\u06af\u0632 \u0628\u0627\u0632\u0646\u06af\u0634\u062a",
