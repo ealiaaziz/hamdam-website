@@ -232,14 +232,102 @@ export function applyTopicFloor(priority: Priority, topic: Topic): Priority {
   return RANK[priority] <= RANK[HAMDAM_PRIORITY_FLOOR] ? priority : HAMDAM_PRIORITY_FLOOR;
 }
 
-/** Classification and the topic floor in one call, which is how callers want it. */
+/**
+ * Classification, the topic floor and the platform in one call, which is how
+ * callers want it.
+ *
+ * Platform rides along rather than getting its own call site because both
+ * ticket-creating paths -- the portal in index.ts and the mailbox in
+ * ingest.ts -- need it at exactly the moment they need the priority, and a
+ * second call is a second thing to forget. `detectPlatform` is exported
+ * anyway for the places that only have text.
+ */
 export function classifyTicket(
   impact: Impact,
   urgency: Urgency,
   text: string,
-): { priority: Priority; topic: Topic; floored: boolean } {
+): { priority: Priority; topic: Topic; platform: Platform; floored: boolean } {
   const base = classifyFromMatrix(impact, urgency);
   const topic = detectTopic(text);
   const priority = applyTopicFloor(base, topic);
-  return { priority, topic, floored: priority !== base };
+  return { priority, topic, platform: detectPlatform(text), floored: priority !== base };
+}
+
+// ---- which platform the requester is on ------------------------------------
+//
+// Added 2026-08-30, during Android testing.
+//
+// Detected in code, before the model, for the third time in this file and
+// the same reason as the other two: it decides whether the assistant is
+// allowed to answer at all. Everything the knowledge base says about where
+// to get the app, what the store looks like and how a purchase is restored
+// is written about iOS, because until now iOS was the only thing there was.
+// Handed an Android tester's bug report, that library's best match was
+// `getting-the-app`, whose first sentence is that there is no Android
+// version. So the desk took someone testing the Android build and told
+// them, in a reviewed and cited reply, that the thing in their hand did not
+// exist.
+//
+// The fix is not a better answer. It is no automatic answer: an Android
+// ticket is filed, tagged, acknowledged honestly and left for a person.
+
+export type Platform = 'android' | 'unspecified';
+
+/**
+ * Words that mean the person is on Android.
+ *
+ * Wide where the topic floor's list is narrow, and the asymmetry is
+ * deliberate. Reading an iPhone ticket as Android costs one automatic reply
+ * that does not go out, and a person answers it instead -- which is what
+ * happens to every escalated ticket anyway. Reading an Android ticket as
+ * iPhone costs what this whole change exists to stop: a confident, wrong,
+ * automated answer to a tester. So the errors are pushed in the survivable
+ * direction, exactly as the P1 keyword list pushes them.
+ *
+ * Handset makers are in here as bare names because someone reporting a bug
+ * writes "my Pixel crashes", not "my Android device running Android 15
+ * crashes". 'apk', 'play store' and 'internal testing' are what a tester in
+ * a closed track actually types.
+ */
+const ANDROID_TERMS = [
+  'android', 'androide',
+  'google play', 'play store', 'playstore', 'play console',
+  'apk', 'aab', 'sideload', 'side-load',
+  'internal testing', 'closed testing', 'open testing', 'beta track', 'testing track',
+  'pixel', 'samsung', 'galaxy', 'xiaomi', 'redmi', 'huawei', 'oppo', 'vivo',
+  'oneplus', 'one plus', 'realme', 'motorola', 'nokia', 'sony xperia',
+  'lineageos', 'grapheneos',
+  // The same words in Persian. A Persian-speaking tester saying "اندروید"
+  // and nothing else in Latin script is the exact case the Latin list above
+  // cannot see, and the topic floor's own Persian block exists because that
+  // oversight had already been made once on this desk.
+  'اندروید',
+  'آندروید',
+  'گوگل پلی',
+  'پلی استور',
+  'پلی‌استور',
+  'سامسونگ',
+  'شیائومی',
+  'پیکسل',
+  'هواوی',
+  'نسخه اندروید',
+  'نسخه‌ی اندروید',
+];
+
+export const PLATFORMS: readonly Platform[] = ['android', 'unspecified'];
+
+/**
+ * Validate a platform arriving in a query string, the same way parsePriority
+ * does and for the same reason: this one reaches the console's queue filter
+ * and a SQL bind. The bind makes injection a non-issue; the whitelist is what
+ * stops `?platform=nonsense` returning a silently empty queue that reads as
+ * "no Android tickets" to whoever is looking for them.
+ */
+export function parsePlatform(value: string | undefined | null): Platform | undefined {
+  return value && (PLATFORMS as readonly string[]).includes(value) ? (value as Platform) : undefined;
+}
+
+export function detectPlatform(text: string): Platform {
+  const haystack = text.toLowerCase();
+  return ANDROID_TERMS.some((term) => haystack.includes(term)) ? 'android' : 'unspecified';
 }

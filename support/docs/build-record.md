@@ -1395,3 +1395,89 @@ Two judgements are recorded in tests rather than left to the next reader:
   quoted example read as real sends her something odd, and a real marker read
   as quoted sends her nothing at all. Only an explicit fence is treated as
   quoting.
+
+### A knowledge base that describes one app, and a second app in testing (added 2026-08-30)
+
+The Android build went out to testers, testers emailed
+developer@hamdam.com.au, and the desk answered them about the iPhone app.
+
+This is worth writing down carefully because it is not the failure the second
+rule at the top of this file is about, and the difference is the whole
+lesson. Nothing was invented. Every article the desk reached for is reviewed,
+carries a `source:` pointing at a page in this repo, and is correct. The
+problem is that all of them were written when there was one app, so they
+describe iOS without ever saying so, and the reader they were written for is
+not the reader who turned up.
+
+Two routes produced two different wrong answers:
+
+- **The matchable articles.** `verse-not-loading` is what an Android tester
+  reporting a blank verse matches, confidently, and its steps are "swipe up
+  from the bottom of the screen and flick the Hamdam card away" and "check
+  for an app update in the App Store". Two gestures that do not exist on the
+  phone in their hand. Nothing in the article is false; it is answering a
+  question nobody asked.
+- **The app reference, through the model.** `getting-the-app` is not
+  matchable -- it is handed to the model as reviewed source material -- and
+  its first sentence is "Hamdam is an iPhone app ... There is no Android
+  version", with an App Store link under it. A model following its
+  instructions faithfully will therefore tell someone testing the Android
+  build, with a citation, that what they are testing does not exist. The
+  better the model behaves, the worse this gets, which is why no prompt
+  change would have fixed it.
+
+So the fix is not a better answer. It is no automatic answer.
+`detectPlatform` in `src/itil.ts` reads the platform off the text the same
+way `detectTopic` reads the subject, `classifyTicket` returns it, and it is
+stored on the ticket in a `platform` column (migration `0014`) rather than
+re-derived, because a later message in the thread that happens not to mention
+a handset must not put the requester back in front of the iOS library. From
+there:
+
+1. `decideAgentAction` escalates every Android ticket, above the severity
+   gate. A person answers it.
+2. `composeAssistantReplyLive` returns before the model is called at all. The
+   gate in (1) would escalate anyway; this is what makes the escalation copy
+   the requester's only reply rather than a paragraph stapled to a
+   model-written one.
+3. The requester gets `replyAndroidBeta`, in their own language: we have it,
+   it is with a person, and it names the platform it thinks they are on so
+   they can correct it in one line if the keyword pass got it wrong.
+
+Three decisions inside that are easy to reverse by accident:
+
+**The topic floor still applies.** An Android report is still a report about
+Hamdam, so it is still floored at P3 and a severe one still reads P1.
+Suppressing the automatic reply is not deprioritising the ticket, and a
+change that starts returning P4 here has done the opposite of what this was
+for. `test/platform.test.ts` pins it.
+
+**The term list is wide where the topic list is narrow.** Reading an iPhone
+ticket as Android costs one automatic reply that does not go out, and a
+person answers instead, which is what happens to every escalated ticket
+anyway. Reading an Android ticket as iPhone costs the thing above. The errors
+are pushed in the survivable direction, as they are in the P1 keywords.
+Handset names are in the list bare, because a tester writes "my Pixel
+crashes", not "my Android device".
+
+**`getting-the-app` was deliberately not edited.** It is still true of the
+public App Store, and it is still the only answer the desk is allowed to give
+while the Android build is in closed testing. An iPhone user asking "is there
+an Android version yet?" now also trips the detector and also reaches a
+person -- which is the point. Announcing an unreleased build to whoever asks
+is a decision for a person, not for an automatic reply, and the outbound-host
+rule in the root `CLAUDE.md` is the same instinct: the desk does not get to
+be the first place a fact about the product appears.
+
+The console grew an "Android only" filter and a badge on the queue row, which
+is the half that makes the rest work. A suppressed reply means a person
+supplies it instead, and a person cannot if the queue looks like every other
+day.
+
+Not done, and deliberately: there is no Android knowledge base. Writing one
+means writing articles about a build that is still changing, and a reviewed
+article that goes stale between releases is how the knowledge base this
+replaced ended up describing a sign-in screen that did not exist. When the
+build settles, `kb/reference/` gets Android files with `source:` fields like
+every other, and the gate above narrows from "escalate all Android" to
+"escalate Android we have nothing written about".

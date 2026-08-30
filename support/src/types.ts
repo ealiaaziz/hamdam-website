@@ -1,4 +1,4 @@
-import type { Impact, Priority, Topic, Urgency } from './itil.js';
+import type { Impact, Platform, Priority, Topic, Urgency } from './itil.js';
 import type { Locale } from './i18n.js';
 
 export type TicketStatus = 'new' | 'open' | 'pending' | 'resolved' | 'closed';
@@ -40,6 +40,7 @@ export interface TicketRow {
   category: string | null;
   channel: Channel;
   topic: Topic;
+  platform: Platform;
   locale: Locale;
   tracking_token: string;
   source_conversation_id: string | null;

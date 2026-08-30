@@ -1,7 +1,7 @@
 import { decideAgentAction, requestedAHuman, MAX_ASSISTANT_TURNS, type AgentContext } from './agentPolicy.js';
 import { matchArticles, KB_ARTICLES, type KbArticle } from './kb.js';
 import { generateModelReply, type ModelReply } from './assistantModel.js';
-import type { Topic } from './itil.js';
+import type { Platform, Topic } from './itil.js';
 import { strings, type Locale } from './i18n.js';
 
 // The assistant's visible reply in the ticket thread.
@@ -38,6 +38,15 @@ export interface AssistantReplyInput extends AgentContext {
   alreadyEscalated?: boolean;
   /** Whether this ticket is about the app or about general computing. */
   topic?: Topic;
+  /**
+   * Which platform the requester is on. 'android' stops the model being
+   * consulted at all -- see the guard in composeAssistantReplyLive.
+   *
+   * Declared here as well as on AgentContext because this is the interface
+   * both ticket-creating paths actually fill in, and a field they can forget
+   * to pass is a field that will be forgotten.
+   */
+  platform?: Platform;
   /** The language to answer in. */
   locale?: Locale;
 }
@@ -86,6 +95,20 @@ export function composeAssistantReply(
   // Everything else is an escalation. Which words depend on why, because a
   // single canned paragraph repeated at every turn is what makes an
   // assistant read as broken rather than honest.
+
+  // Android, and this is the first the requester has heard about it. Placed
+  // after the already-escalated check on purpose: the paragraph below names
+  // the platform and explains the handover, which is worth saying once and
+  // is exactly the "repeated canned paragraph" the comment above warns
+  // about if it is said on every turn of the thread.
+  if (input.platform === 'android' && !input.alreadyEscalated) {
+    return {
+      body: t.replyAndroidBeta,
+      action: 'escalate',
+      reason: decision.reason,
+      escalated: true,
+    };
+  }
 
   // Already handed over: acknowledge and stop re-announcing it. Seen live --
   // the same "handing it to a person" paragraph came back twice in a row,
@@ -320,6 +343,15 @@ export async function composeAssistantReplyLive(
   // Non-negotiable, and checked here rather than asked of the model. A
   // prompt can be talked out of a rule; an if statement cannot.
   if (requestedAHuman(input.conversationText)) return deterministic();
+  // Android never reaches the model, and not only to save the call. The
+  // prompt hands the model the article set as its source of truth, and on an
+  // Android ticket that set is a set of true statements about a different
+  // app -- so the better the model follows its instructions, the more
+  // confidently it tells a tester the build in their hand does not exist.
+  // `decideAgentAction` would escalate this anyway; stopping here is what
+  // makes the escalation copy the requester's *only* reply rather than a
+  // paragraph appended to a model-written one.
+  if (input.platform === 'android') return deterministic();
   if (input.priority === 'P1' || input.priority === 'P2') return deterministic();
   if (input.assistantTurns >= MAX_ASSISTANT_TURNS) return deterministic();
   if (!opts.ai) return deterministic();

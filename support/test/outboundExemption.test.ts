@@ -100,6 +100,7 @@ const TICKET: TicketWithRequester = {
   category: null,
   channel: 'portal',
   topic: 'general_it',
+  platform: 'unspecified',
   locale: 'en',
   tracking_token: 'x'.repeat(32),
   source_conversation_id: null,

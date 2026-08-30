@@ -157,6 +157,9 @@ textarea { resize: vertical; min-height: 8rem; }
 .badge--status { background: rgb(36 30 21 / 8%); color: var(--text-soft); }
 .badge--resolved { background: var(--ok-bg); color: var(--ok); }
 .badge--breach { background: var(--p1-bg); color: var(--p1); }
+/* Distinct from every priority colour on purpose: it is not a severity, it
+   is a note that the assistant stayed out of this one. */
+.badge--android { background: rgb(61 122 90 / 14%); color: #2F5F46; }
 
 .thread { margin: 1.5rem 0; display: flex; flex-direction: column; gap: 1rem; }
 .msg { border-radius: 0.6rem; padding: 0.9rem 1.1rem; border: 1px solid var(--line); }

@@ -1,7 +1,7 @@
 import { page, priorityBadge, statusBadge, formatDateTime, isOverdue } from './layout.js';
 import { describeAge, type Heartbeat } from '../heartbeat.js';
 import { escapeHtml, stripHtml, textToSafeHtml, ticketPublicId } from '../ids.js';
-import { PRIORITY_LABEL, SLA_POLICY, type Priority } from '../itil.js';
+import { PRIORITY_LABEL, SLA_POLICY, type Platform, type Priority } from '../itil.js';
 import type { CommentRow, TicketStatus, TicketWithRequester } from '../types.js';
 import type { DraftRow, UndeliveredOutbound } from '../db.js';
 
@@ -53,10 +53,22 @@ function allowlistNotice(configured: boolean): string {
   Set it with <code>npx wrangler secret put ADMIN_EMAILS</code> and redeploy.</div>`;
 }
 
+/**
+ * The one marker in the queue that says "the assistant did not answer this
+ * one, and will not". Rendered on the row rather than only on the ticket,
+ * because an Android report that nobody opens is a tester waiting: the whole
+ * point of suppressing the automatic reply is that a person supplies it
+ * instead, and a person cannot if the queue looks like every other day.
+ */
+function androidBadge(platform: Platform): string {
+  return platform === 'android' ? ' <span class="badge badge--android">Android</span>' : '';
+}
+
 export function adminQueuePage(opts: {
   tickets: TicketWithRequester[];
   filterStatus?: TicketStatus;
   filterPriority?: Priority;
+  filterPlatform?: Platform;
   agentEmail: string;
   /** Whether ADMIN_EMAILS is set. False means the console's second lock is off. */
   allowlistConfigured: boolean;
@@ -69,6 +81,9 @@ export function adminQueuePage(opts: {
   // into HTML injection, and a renderer should not depend on every caller
   // upstream having got its parsing right.
   const statusQuery = opts.filterStatus ? `status=${encodeURIComponent(opts.filterStatus)}` : '';
+  // Same treatment for the same reason: the platform links below carry the
+  // priority filter through, so it is interpolated into an href too.
+  const priorityQuery = opts.filterPriority ? `priority=${encodeURIComponent(opts.filterPriority)}` : '';
 
   const rows = opts.tickets
     .map((t) => {
@@ -76,7 +91,7 @@ export function adminQueuePage(opts: {
       return `<tr>
   <td>${priorityBadge(t.priority)}</td>
   <td><a class="subject" href="/admin/tickets/${t.id}">${escapeHtml(t.subject)}</a><br>
-      <span class="queue-sub">${ticketPublicId(t.id)} &middot; ${escapeHtml(t.requester_email)}</span></td>
+      <span class="queue-sub">${ticketPublicId(t.id)} &middot; ${escapeHtml(t.requester_email)}</span>${androidBadge(t.platform)}</td>
   <td>${statusBadge(t.status)}</td>
   <td>${overdue ? '<span class="badge badge--breach">Overdue</span>' : formatDateTime(t.sla_first_response_due)}</td>
   <td>${formatDateTime(t.updated_at)}</td>
@@ -99,6 +114,10 @@ ${allowlistNotice(opts.allowlistConfigured)}
         `<a class="${opts.filterPriority === p ? 'active' : ''}" href="/admin?${statusQuery}${statusQuery ? '&' : ''}priority=${p}">${escapeHtml(PRIORITY_LABEL[p])}</a>`,
     )
     .join('')}
+</div>
+<div class="filters">
+  <a class="${!opts.filterPlatform ? 'active' : ''}" href="/admin?${statusQuery}${statusQuery ? '&' : ''}${priorityQuery}">All platforms</a>
+  <a class="${opts.filterPlatform === 'android' ? 'active' : ''}" href="/admin?${statusQuery}${statusQuery ? '&' : ''}${priorityQuery}${priorityQuery ? '&' : ''}platform=android">Android only</a>
 </div>
 <div class="card">
   <table class="queue">
@@ -231,7 +250,7 @@ ${undeliveredMailNotice(opts.undeliveredOutbound ?? [])}
 <h1>${escapeHtml(ticket.subject)}</h1>
 <p class="lede">${publicId} &middot; ${escapeHtml(ticket.requester_name ?? ticket.requester_email)} &lt;${escapeHtml(ticket.requester_email)}&gt;
 &middot; opened ${formatDateTime(ticket.created_at)} &middot; via ${ticket.channel === 'email' ? 'email' : 'portal'}
-&middot; ${ticket.topic === 'hamdam' ? 'Hamdam app' : 'general IT'}</p>
+&middot; ${ticket.topic === 'hamdam' ? 'Hamdam app' : 'general IT'}${ticket.platform === 'android' ? ' &middot; <strong>Android</strong>' : ''}</p>
 
 <div class="grid-2">
   <div class="card">

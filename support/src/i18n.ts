@@ -146,6 +146,15 @@ export interface Strings {
   replyAlreadyEscalated: string;
   replyExhausted: string;
   replyOutsideWritten: string;
+  /**
+   * The one an Android tester gets (added 2026-08-30).
+   *
+   * It says which platform it thinks they are on, because the detection is a
+   * keyword pass and can be wrong, and a requester who reads "the Android
+   * build" on an iPhone ticket can correct it in one line. Silence about the
+   * guess would leave them with a handover and no idea why.
+   */
+  replyAndroidBeta: string;
   replyHamdamUnsourced: string;
   replyGeneralAdvice: string;
   replyClosed: string;
@@ -227,6 +236,8 @@ const EN: Strings = {
     'I have run out of things I know to try for this one, so I am handing it to a person on the team. They can see everything you have written here, so you will not need to repeat yourself.',
   replyOutsideWritten:
     'That is outside what I have written down, so I am passing it to a person rather than guessing at an answer. They can see this whole conversation.',
+  replyAndroidBeta:
+    'Thanks for this, and for testing. It reads as a report about the Android build. Everything I have written down describes the iPhone app, so rather than answer you with something that does not match what you are seeing, I am passing this straight to a person on the team. They can see everything you have written here, so you will not need to repeat any of it. If I have misread you and this is about the iPhone app, just say so and I will pick it back up.',
   replyHamdamUnsourced:
     'That is a question about Hamdam itself and I do not have it written down, so I am passing it to a person rather than guessing. They can see this whole conversation, so you will not need to repeat any of it.',
   replyGeneralAdvice:
@@ -313,6 +324,8 @@ const FA: Strings = {
     'هر چه بلد بودم برای این مورد امتحان شد، پس آن را به یکی از همکاران می‌سپارم. همه‌ی آنچه اینجا نوشته‌اید را می‌بیند و لازم نیست دوباره توضیح دهید.',
   replyOutsideWritten:
     'این موضوع بیرون از چیزی است که نزد ما نوشته شده، پس به جای حدس زدن آن را به یکی از همکاران می‌سپارم. کل این گفت‌وگو را می‌بیند.',
+  replyAndroidBeta:
+    'ممنون از پیام شما و از اینکه در آزمایش کمک می‌کنید. به نظر می‌رسد این گزارش درباره‌ی نسخه‌ی اندروید باشد. هر چه نزد من نوشته شده درباره‌ی برنامه‌ی آیفون است، پس به جای پاسخی که با آنچه می‌بینید جور نیست، این را مستقیم به یکی از همکاران می‌سپارم. همه‌ی آنچه اینجا نوشته‌اید را می‌بیند و لازم نیست چیزی را دوباره بگویید. اگر اشتباه فهمیده‌ام و پرسش شما درباره‌ی برنامه‌ی آیفون است، بگویید تا دوباره پی‌اش را بگیرم.',
   replyHamdamUnsourced:
     'این پرسشی درباره‌ی خود همدم است و پاسخ آن نزد ما نوشته نشده، پس به جای حدس زدن آن را به یکی از همکاران می‌سپارم. کل این گفت‌وگو را می‌بیند و لازم نیست چیزی را دوباره بگویید.',
   replyGeneralAdvice:

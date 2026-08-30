@@ -1,4 +1,4 @@
-import type { Priority } from './itil.js';
+import type { Platform, Priority } from './itil.js';
 import { clarifyingQuestionFor, matchArticles, type KbMatchResult } from './kb.js';
 
 // What the assistant is allowed to do, in one readable file.
@@ -78,6 +78,14 @@ export function requestedAHuman(text: string): boolean {
 
 export interface AgentContext {
   priority: Priority;
+  /**
+   * Which platform the requester is on, when the desk could tell.
+   *
+   * Optional so every existing caller and test keeps compiling and keeps its
+   * behaviour: absent means 'unspecified', which is what the desk knew about
+   * every ticket before 2026-08-30.
+   */
+  platform?: Platform;
   /** Subject + all requester text on the ticket so far. */
   conversationText: string;
   /** How many replies the assistant has already sent on this ticket. */
@@ -92,26 +100,53 @@ export function decideAgentAction(ctx: AgentContext, match: KbMatchResult = matc
     return { action: 'escalate', reason: 'requester asked for a person' };
   }
 
-  // 2. Severity gate. The assistant never touches a P1 or P2, however well
+  // 2. Platform gate. Every article in the knowledge base describes the
+  //    iOS app, because until the Android build went out for testing that
+  //    was the only app there was. Several of them say so in as many words:
+  //    `getting-the-app` opens with "Hamdam is an iPhone app ... there is no
+  //    Android version" and links to the App Store, and it is a *good*
+  //    article -- reviewed, sourced, and right about the public store.
+  //
+  //    It is also, on the symptoms an Android tester writes down, the one
+  //    that matched. So the desk answered people testing the Android build
+  //    by telling them, with a citation, that what they were testing did not
+  //    exist. That is the failure mode the build record's second rule is
+  //    about: not invention, but a reviewed fact repeated where it does not
+  //    hold.
+  //
+  //    Sits above the severity gate deliberately. A P1 escalates anyway, so
+  //    the order changes no outcome; what it changes is the reason recorded
+  //    on the ticket, and "Android" is the more useful thing for the person
+  //    picking it up to read. Nothing here is a judgement that the report is
+  //    unimportant -- it escalates, which on this desk means a person, which
+  //    is the fastest treatment the desk has.
+  if (ctx.platform === 'android') {
+    return {
+      action: 'escalate',
+      reason: 'Android: the knowledge base describes the iOS app, so a person answers this one',
+    };
+  }
+
+  // 3. Severity gate. The assistant never touches a P1 or P2, however well
   //    it thinks it knows the answer: those are the tickets where being
   //    wrong, or merely slow, costs the most.
   if (ctx.priority === 'P1' || ctx.priority === 'P2') {
     return { action: 'escalate', reason: `priority ${ctx.priority} is handled by a person` };
   }
 
-  // 3. A conversation that is not converging reaches a human on a fixed
+  // 4. A conversation that is not converging reaches a human on a fixed
   //    deadline rather than when the model runs out of ideas.
   if (ctx.assistantTurns >= MAX_ASSISTANT_TURNS) {
     return { action: 'escalate', reason: `reached ${MAX_ASSISTANT_TURNS} assistant turns without resolving` };
   }
 
-  // 4. Nothing in the knowledge base covers this. Escalating is the whole
+  // 5. Nothing in the knowledge base covers this. Escalating is the whole
   //    point: an unmatched ticket is exactly where invention would happen.
   if (match.best === null || match.confidence === 'none') {
     return { action: 'escalate', reason: 'no knowledge base article matches' };
   }
 
-  // 5. Confident match: propose the reviewed answer.
+  // 6. Confident match: propose the reviewed answer.
   if (match.confidence === 'confident') {
     return {
       action: 'send_solution',
@@ -120,7 +155,7 @@ export function decideAgentAction(ctx: AgentContext, match: KbMatchResult = matc
     };
   }
 
-  // 6. Plausible but not certain: ask, using the article's own question.
+  // 7. Plausible but not certain: ask, using the article's own question.
   const question = clarifyingQuestionFor(match.best, ctx.askedQuestions);
   if (question === null) {
     return { action: 'escalate', reason: 'partial match with no unasked clarifying question left' };

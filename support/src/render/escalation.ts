@@ -97,6 +97,7 @@ export function escalationEmail(input: EscalationInput): { subject: string; html
 <h1 style="margin:0 0 0.15rem 0;font-size:1.35rem">${escapeHtml(publicId)} &middot; ${escapeHtml(ticket.subject)}</h1>
 <p style="margin:0 0 1rem 0">
   <span style="display:inline-block;padding:0.12rem 0.5rem;border-radius:0.2rem;background:${PRIORITY_COLOUR[ticket.priority]};color:#fff;font-size:0.78rem;font-weight:600">${escapeHtml(PRIORITY_LABEL[ticket.priority])}</span>
+  ${ticket.platform === 'android' ? `<span style="display:inline-block;padding:0.12rem 0.5rem;border-radius:0.2rem;background:#2F5F46;color:#fff;font-size:0.78rem;font-weight:600">Android</span>` : ''}
   <span style="color:#574A38;font-size:0.86rem">&nbsp;${escapeHtml(topicLabel[ticket.topic])} &middot; via ${ticket.channel === 'email' ? 'email' : 'the portal'} &middot; opened ${escapeHtml(relative(ticket.created_at, now))}</span>
 </p>
 

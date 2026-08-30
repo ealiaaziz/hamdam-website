@@ -4,7 +4,7 @@ import { APP_CSS } from './render/styles.js';
 import { outOfRegionPage, submitFormPage, trackLookupPage } from './render/portal.js';
 import { ticketStatusPage } from './render/status.js';
 import { adminQueuePage, adminTicketPage } from './render/admin.js';
-import { classifyTicket, parseImpact, parsePriority, parseUrgency, slaDueDates } from './itil.js';
+import { classifyTicket, parseImpact, parsePlatform, parsePriority, parseUrgency, slaDueDates } from './itil.js';
 import { ackEmail, agentReplyEmail, conversationSummaryEmail, requesterReplyNotification, resolvedEmail } from './render/email.js';
 import { assistantWrittenEmail } from './render/agentEmail.js';
 import { generateTrackingToken, parseTicketPublicId, stripHtml, ticketPublicId, tokensMatch } from './ids.js';
@@ -606,7 +606,7 @@ app.post('/tickets', async (c) => {
   // about can only raise it. A Hamdam problem never sits in the "whenever we
   // get to it" band, however mildly the person described it, because they
   // are having trouble with the thing they paid for.
-  const { priority, topic } = classifyTicket(impact, urgency, `${subject}\n${description}`);
+  const { priority, topic, platform } = classifyTicket(impact, urgency, `${subject}\n${description}`);
   // The page they used decides the language of the ticket and every email on
   // it, except when they plainly wrote in the other one: a Persian speaker
   // who lands on the English form and types Persian meant Persian.
@@ -624,6 +624,7 @@ app.post('/tickets', async (c) => {
     category: null,
     channel: 'portal',
     topic,
+    platform,
     locale,
     trackingToken,
     sourceConversationId: null,
@@ -667,6 +668,7 @@ app.post('/tickets', async (c) => {
       askedQuestions: [],
       rejectedArticles: [],
       topic,
+      platform,
       locale,
     },
     {
@@ -956,6 +958,7 @@ app.post('/tickets/:id/reply', async (c) => {
         rejectedArticles: state.rejectedArticles,
         alreadyEscalated: state.escalated,
       topic: ticket.topic,
+      platform: ticket.platform,
       locale: ticket.locale,
       },
       {
@@ -1090,12 +1093,14 @@ app.get('/admin', async (c) => {
   const agentEmail = c.get('agentEmail');
   const statusParam = parseTicketStatus(c.req.query('status'));
   const priorityParam = parsePriority(c.req.query('priority'));
-  const tickets = await listQueue(c.env.DB, { status: statusParam, priority: priorityParam });
+  const platformParam = parsePlatform(c.req.query('platform'));
+  const tickets = await listQueue(c.env.DB, { status: statusParam, priority: priorityParam, platform: platformParam });
   return c.html(
     adminQueuePage({
       tickets,
       filterStatus: statusParam,
       filterPriority: priorityParam,
+      filterPlatform: platformParam,
       agentEmail,
       allowlistConfigured: adminAllowlist(c.env).length > 0,
       ingest: readHeartbeat(await getSyncState(c.env.DB, HEARTBEAT_KEY)),
@@ -1191,6 +1196,7 @@ app.post('/admin/tickets/:id/assistant-draft', async (c) => {
       rejectedArticles: state.rejectedArticles,
       alreadyEscalated: state.escalated,
       topic: ticket.topic,
+      platform: ticket.platform,
       locale: ticket.locale,
     },
     {

@@ -197,6 +197,12 @@ async function replyWithAssistant(env: Env, ticketId: number): Promise<void> {
       rejectedArticles: state.rejectedArticles,
       alreadyEscalated: state.escalated,
       topic: ticket.topic,
+      // Read from the ticket rather than re-derived from the thread. The
+      // platform was established when the ticket was created and does not
+      // change because a later message in the thread happened not to mention
+      // a handset; re-detecting per message would put an Android tester back
+      // in front of the iOS knowledge base on their second email.
+      platform: ticket.platform,
       locale: ticket.locale,
     },
     {
@@ -564,7 +570,7 @@ async function handleAsNew(
   // reading and the keywords do the rest. A Hamdam ticket still cannot fall
   // below P3, and a security report still reads as P1, exactly as from the
   // portal.
-  const { priority, topic } = classifyTicket('medium', 'medium', `${subject}\n${body}`);
+  const { priority, topic, platform } = classifyTicket('medium', 'medium', `${subject}\n${body}`);
   // Answer people in the language they wrote in. Email carries no locale, so
   // the text is the only signal there is.
   const locale = detectLocale(`${subject}\n${body}`);
@@ -581,6 +587,7 @@ async function handleAsNew(
     category: null,
     channel: 'email',
     topic,
+    platform,
     locale,
     trackingToken,
     sourceConversationId: message.conversationId,
