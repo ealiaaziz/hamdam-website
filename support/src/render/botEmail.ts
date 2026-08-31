@@ -148,3 +148,48 @@ ${WRAP_CLOSE}`;
 
   return { subject: `[${publicId}] دربارهٔ درخواست شما`, html };
 }
+
+/**
+ * She approved it and it has not shipped, because something is holding it.
+ *
+ * The gap this closes: the desk only ever watched for a merge, so a change
+ * that was approved and then refused by the merge guard produced nothing at
+ * all. On 2026-08-31 that happened on a change she had asked for, and she
+ * asked twice whether it had been applied while the answer sat on a pull
+ * request she has no reason to ever look at.
+ *
+ * The reason arrives as a token from the workflow, because the Farsi lives
+ * here. Anything unrecognised still reaches her: the words matter less than
+ * her knowing it is stuck and that a person has been told.
+ */
+const HELD_REASONS: Record<string, string> = {
+  NEEDS_A_PERSON: 'این تغییر بخشی را عوض می‌کند که باید یک نفر قبلش ببیند.',
+  CHECKS_FAILED: 'آزمایش‌های خودکار روی این تغییر رد شدند، و تغییری که آزمایش‌ها را رد کند روی ربات اعمال نمی‌شود.',
+  CHECKS_RUNNING: 'آزمایش‌های خودکار هنوز تمام نشده‌اند.',
+  CONFLICT: 'این تغییر با نسخهٔ فعلی ربات همخوانی ندارد و باید دوباره ساخته شود.',
+};
+
+export function changeHeldEmail(opts: {
+  ticketId: number;
+  reason: string;
+}): { subject: string; html: string } {
+  const publicId = ticketPublicId(opts.ticketId);
+  const token = opts.reason.split(':')[0]?.trim() ?? '';
+  const explained = HELD_REASONS[token];
+
+  const because = explained
+    ? `<p>${explained}</p>`
+    : '<p>یک مانع فنی جلوی اعمال شدنش را گرفته است.</p>';
+
+  const html = `${WRAP_OPEN}
+<p>سلام،</p>
+<p>تغییری که تأیید کردید هنوز روی ربات اعمال نشده است.</p>
+${because}
+<p>ایلیا خبر دارد و پیگیری می‌کند. لازم نیست کاری بکنید؛ همین‌جا به شما خبر
+می‌دهیم که اعمال شد.</p>
+${RULE}
+${FOOTER}
+${WRAP_CLOSE}`;
+
+  return { subject: `[${publicId}] تغییر ربات هنوز اعمال نشده`, html };
+}

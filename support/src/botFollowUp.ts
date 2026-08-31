@@ -19,12 +19,14 @@ import {
   listIssueComments,
   parseAgentOutcome,
   parseAgentReport,
+  parseHeldReason,
   type IssueComment,
 } from './github.js';
 import { ticketPublicId } from './ids.js';
 import {
   agentBlockedEmail,
   agentQuestionEmail,
+  changeHeldEmail,
   changeProposalEmail,
   changeShippedEmail,
 } from './render/botEmail.js';
@@ -172,7 +174,18 @@ async function checkShipped(
     summary.failures += 1;
     return;
   }
-  if (!pull.value.merged) return;
+
+  // Approved and not merged is a state this pass used to have no name for. It
+  // returned here and waited, every minute, for a merge that in one real case
+  // was never coming: the merge guard had declined the change on purpose and
+  // said so on the pull request, which she has no reason to open. She asked
+  // twice whether it had been applied. Silence on a change she authorised is
+  // the same failure as silence on a change she asked for, and it is not
+  // allowed either.
+  if (!pull.value.merged) {
+    await relayHeld(env, send, ticketId, change, summary);
+    return;
+  }
 
   // Marked before the email, not after. A send that fails is a person not
   // told, which the ticket records and a person can fix; marking after a
@@ -272,5 +285,59 @@ async function relayOutcome(
       ? 'Asked the owner a question from the agent; nothing changes until she answers.'
       : 'Told the owner this will not be built, with the reason.',
   );
+  summary.proposed += 1;
+}
+
+/**
+ * Tell her a change she approved is stuck, once, with the reason.
+ *
+ * Deduplicated through `last_outcome` like the agent's questions are, so the
+ * minute cron does not mail her the same holdup repeatedly, while a genuinely
+ * different one still gets through. Recorded before the send for the reason
+ * everything here is: a failed send that had already been recorded would go
+ * quiet forever, so `relayOutcome`'s rollback applies to this too.
+ */
+async function relayHeld(
+  env: Env,
+  send: SendEmail,
+  ticketId: number,
+  change: BotChangeRow,
+  summary: FollowUpSummary,
+): Promise<void> {
+  if (!change.pr_number) return;
+
+  const comments = await listIssueComments(env, change.pr_number);
+  if (!comments.ok) {
+    summary.failures += 1;
+    return;
+  }
+
+  const reason = parseHeldReason(comments.value);
+  if (!reason) return;
+
+  const fresh = await recordAgentOutcome(env.DB, ticketId, `held:${reason}`);
+  if (!fresh) return;
+
+  const ticket = await getTicketById(env.DB, ticketId);
+  const email = changeHeldEmail({ ticketId, reason });
+
+  const sent = await send({
+    ticketId,
+    commentId: null,
+    kind: 'status_change',
+    toEmail: ticket?.requester_email ?? '',
+    subject: email.subject,
+    bodyHtml: email.html,
+    inReplyToMessageId: null,
+  });
+
+  if (!sent) {
+    summary.failures += 1;
+    await clearAgentOutcome(env.DB, ticketId);
+    await addComment(env.DB, ticketId, 'system', null, 'Could not tell the owner her approved change is held. Will try again.');
+    return;
+  }
+
+  await addComment(env.DB, ticketId, 'system', null, `Told the owner her approved change is held: ${reason}`);
   summary.proposed += 1;
 }
