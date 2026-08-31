@@ -134,7 +134,41 @@ export async function relayReply(env: Env, facts: InboundFacts): Promise<boolean
     // is a ticket where a reply can approve a deploy, so the sender of that
     // reply has to be the owner and Exchange has to have said so. The ticket
     // id in the subject is a routing hint and never a credential.
-    if (!facts.senderAuthenticated || !isOwner(env, facts.fromEmail)) return false;
+    //
+    // Both refusals now say so. On 2026-08-31 this returned false on a reply
+    // from the owner, on a ticket where it had returned true twenty minutes
+    // earlier for the same address, and there is still no explanation for it:
+    // every path that returns false here contradicts something else that was
+    // observed on the same message. Reasoning about it from the outside cost
+    // an hour and produced nothing, which is the same shape as the outage
+    // three days earlier, where a correct signal existed and nothing said it
+    // out loud.
+    //
+    // Booleans only, never the address. This runs on mail from a named
+    // person, and escalation.ts already records what writing a personal
+    // address into something durable costs.
+    const authorised = facts.senderAuthenticated && isOwner(env, facts.fromEmail);
+    if (!authorised) {
+      console.log(
+        `relayReply: standing down on ticket ${facts.ticketId}`,
+        JSON.stringify({ authenticated: facts.senderAuthenticated, owner: isOwner(env, facts.fromEmail) }),
+      );
+
+      // An authenticated sender who is not the owner, replying on a ticket
+      // that has dispatched, is worth a person seeing. It is either somebody
+      // else in her thread, or the owner's address failing to match the
+      // configured one, and the second silently stops her approvals working.
+      if (facts.senderAuthenticated) {
+        await addComment(
+          env.DB,
+          facts.ticketId,
+          'system',
+          null,
+          'A reply on this dispatched ticket came from an authenticated sender who is not the configured owner, so it was not read as an approval.',
+        );
+      }
+      return false;
+    }
 
     if (change.pending_change_ref) {
       const verdict = approvalVerdict(facts.body);
