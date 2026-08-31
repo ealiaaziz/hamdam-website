@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseAgentOutcome, parseAgentReport, type IssueComment } from '../src/github.js';
+import { parseAgentOutcome, parseAgentReport, parseHeldReason, type IssueComment } from '../src/github.js';
 import { agentBlockedEmail } from '../src/render/botEmail.js';
 
 const SHA_A = 'a3f9c1d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0';
@@ -186,5 +186,29 @@ describe('a run that died without saying why', () => {
   it('is parsed from the marker the workflow posts', () => {
     const posted = comment('<!-- desk:blocked -->\nAGENT_RUN_FAILED\n<!-- desk:end -->');
     expect(parseAgentOutcome([posted])).toEqual({ kind: 'blocked', text: 'AGENT_RUN_FAILED' });
+  });
+});
+
+describe('parseHeldReason', () => {
+  const held = (text: string) => comment(`<!-- desk:held -->\n${text}\n<!-- desk:end -->`);
+
+  it('finds nothing when nothing is holding the change', () => {
+    expect(parseHeldReason([comment('Merged on the owner approval.')])).toBeNull();
+  });
+
+  it('reads the reason the merge stood down', () => {
+    expect(parseHeldReason([held('NEEDS_A_PERSON: migrations/0007_x.sql')]))
+      .toBe('NEEDS_A_PERSON: migrations/0007_x.sql');
+  });
+
+  it('takes the newest, so a holdup that was fixed and hit again reads as the new one', () => {
+    expect(parseHeldReason([held('CHECKS_RUNNING: 2 still running'), held('CHECKS_FAILED: test (failure)')]))
+      .toBe('CHECKS_FAILED: test (failure)');
+  });
+
+  /** Same line rule as every other marker: quoting one is not raising one. */
+  it('ignores a reason quoted inside a fenced block', () => {
+    expect(parseHeldReason([comment('It posts:\n\n```\n<!-- desk:held -->\nCONFLICT\n<!-- desk:end -->\n```')]))
+      .toBeNull();
   });
 });

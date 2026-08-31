@@ -23,6 +23,7 @@ import {
   releaseIngestLock,
   DEFAULT_DAILY_CALL_LIMIT,
   getAgentState,
+  getBotChange,
   getCheckpoint,
   getTicketById,
   listComments,
@@ -417,10 +418,21 @@ async function handleMessage(env: Env, message: InboundMessage, summary: IngestS
       return 'appended';
     }
 
-    // A reply on a ticket that has already dispatched may answer the change
-    // last put to her, and may tell the agent something it needs. Both are
-    // handled inside, and neither depends on the assistant having run.
-    const botFlowOwns = await relayReply(env, {
+    // Whether the change flow owns this ticket is a question about the
+    // ticket, not about this message, and asking it the other way round is
+    // how the assistant got a word in on 2026-08-31. It answered "someone
+    // will look at this" on a ticket mid-change, in Farsi with Vietnamese
+    // characters spliced through it, to the channel owner. That happened
+    // because ownership was inferred from relayReply's return value, and
+    // relayReply returns false for its own reasons: an unauthenticated
+    // sender, an address that is not the owner's, a caught exception. None
+    // of those mean the assistant should speak. A dispatched ticket is the
+    // change flow's, full stop.
+    const botFlowOwns = (await getBotChange(env.DB, plan.ticketId)) !== null;
+
+    // Still called for its effects: it records her approval, relays her words
+    // onto the issue, and applies its own two locks before doing either.
+    await relayReply(env, {
       ticketId: plan.ticketId,
       subject: message.subject,
       body: plan.body,

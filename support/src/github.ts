@@ -320,6 +320,28 @@ export function parseAgentOutcome(comments: readonly IssueComment[]): AgentOutco
   return null;
 }
 
+
+/**
+ * Why a merge the owner approved did not happen.
+ *
+ * The merge workflow posts this on the pull request when it stands down, and
+ * the desk reads it so she is told. Before this, the only thing the desk
+ * watched for was the merge itself, so a refusal was indistinguishable from a
+ * change still in flight: on 2026-08-31 she approved something, the guard
+ * declined it correctly, and she asked twice whether it had been applied while
+ * the answer sat on a pull request she has no reason to open.
+ *
+ * Only the newest matters, and a merge supersedes it: a change that was held,
+ * fixed and then merged is not held any more.
+ */
+export function parseHeldReason(comments: readonly IssueComment[]): string | null {
+  for (const comment of [...comments].reverse()) {
+    const held = markedBlock(comment.body, ['held']);
+    if (held) return held.text;
+  }
+  return null;
+}
+
 /**
  * Wrap text written by somebody else so it cannot be read as instructions.
  *
