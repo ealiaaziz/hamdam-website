@@ -178,7 +178,17 @@ async function checkShipped(
   change: BotChangeRow,
   summary: FollowUpSummary,
 ): Promise<void> {
-  if (!change.pr_number || change.deployed_at) return;
+  // Not `|| change.deployed_at`. That field is a property of the ticket, not
+  // of this change: it records that something shipped for this ticket once.
+  // Since a second change on the same ticket is now ordinary, testing it here
+  // meant the second one could never be reported, and on HAM-54 it was not:
+  // she approved, it merged, and the desk had already decided this ticket was
+  // finished a day earlier.
+  //
+  // Nothing is needed in its place. This runs only while `mayDeploy` holds,
+  // and `markDeployed` empties the approval and the pull request as it sets
+  // `deployed_at`, so a shipped change stops satisfying that on its own.
+  if (!change.pr_number) return;
 
   const pull = await getPull(env, change.pr_number);
   if (!pull.ok) {
