@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseAgentOutcome, parseAgentReport, parseHeldReason, type IssueComment } from '../src/github.js';
+import { parseAgentOutcome, parseAgentReport, parseDeployOutcome, parseHeldReason, type IssueComment } from '../src/github.js';
 import { agentBlockedEmail } from '../src/render/botEmail.js';
 
 const SHA_A = 'a3f9c1d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0';
@@ -210,5 +210,32 @@ describe('parseHeldReason', () => {
   it('ignores a reason quoted inside a fenced block', () => {
     expect(parseHeldReason([comment('It posts:\n\n```\n<!-- desk:held -->\nCONFLICT\n<!-- desk:end -->\n```')]))
       .toBeNull();
+  });
+});
+
+describe('parseDeployOutcome', () => {
+  const shipped = () => comment('<!-- desk:shipped -->\nDeployed abc1234 to the live bot.');
+  const failed = () => comment('<!-- desk:held -->\nDEPLOY_FAILED\n<!-- desk:end -->');
+
+  it('finds nothing before the deploy has reported', () => {
+    expect(parseDeployOutcome([comment('Merged on the owner approval.')])).toBeNull();
+  });
+
+  it('reads a successful deploy', () => {
+    expect(parseDeployOutcome([shipped()])).toEqual({ kind: 'shipped' });
+  });
+
+  it('reads a failed one, with its reason', () => {
+    expect(parseDeployOutcome([failed()])).toEqual({ kind: 'held', reason: 'DEPLOY_FAILED' });
+  });
+
+  /** A failure that was re-run to success is shipped, and the reverse is held. */
+  it('takes the newest report in both directions', () => {
+    expect(parseDeployOutcome([failed(), shipped()])).toEqual({ kind: 'shipped' });
+    expect(parseDeployOutcome([shipped(), failed()])).toEqual({ kind: 'held', reason: 'DEPLOY_FAILED' });
+  });
+
+  it('ignores a marker quoted in a fenced block', () => {
+    expect(parseDeployOutcome([comment('It posts:\n\n```\n<!-- desk:shipped -->\n```')])).toBeNull();
   });
 });
