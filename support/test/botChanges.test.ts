@@ -96,9 +96,9 @@ describe('recordApproval is scoped to the pending change', () => {
 const shippedRow = (): BotChangeRow => ({
   ticket_id: 54,
   issue_number: 9,
-  pr_number: null,
+  pr_number: 13,
   branch: null,
-  head_sha: null,
+  head_sha: 'f'.repeat(40),
   pending_change_ref: null,
   proposed_at: '2026-08-31T10:05:00Z',
   approved_ref: null,
@@ -130,5 +130,18 @@ describe('a change slot emptied by shipping', () => {
 
   it('keeps the issue, because the conversation with the agent continues there', () => {
     expect(shipped.issue_number).toBe(9);
+  });
+
+  /**
+   * The commit stays too, and this is the one that bit. checkProposal decides
+   * a report is new by comparing it against head_sha, so clearing it made the
+   * pull request that had just shipped look like a fresh change: proposed
+   * again, approved again, then refused as already closed, and she was told
+   * the live change was not applied. A change that shipped is still the newest
+   * thing on the ticket.
+   */
+  it('remembers what shipped, so it is not proposed a second time', () => {
+    expect(shipped.pr_number).toBe(13);
+    expect(shipped.head_sha).toHaveLength(40);
   });
 });

@@ -1028,11 +1028,22 @@ export function mayDeploy(change: BotChangeRow | null): boolean {
  * message on that ticket, a new feature request, was read as a verdict on the
  * change that had already gone live, and recorded as her refusing it.
  *
- * So shipping clears the change: no pending reference, no approval, no
- * refusal, no pull request. What stays is `issue_number`, because the
- * conversation with the agent continues there, and `deployed_at`, because
- * "something shipped for this ticket" is worth knowing. The next change on
- * this ticket fills the slot again through `proposeChange`.
+ * So shipping clears the consent: no pending reference, no approval, no
+ * refusal. The next change on this ticket asks her again from scratch, and a
+ * later message cannot be read as a verdict on something already live.
+ *
+ * What deliberately stays is the record of what shipped: `pr_number` and
+ * `head_sha`, alongside `issue_number` and `deployed_at`. Clearing those was
+ * the first version of this and it was wrong in a way that reached her within
+ * ten minutes. `checkProposal` decides a report is new by comparing its commit
+ * against `head_sha`, so wiping it made the pull request that had just shipped
+ * look like a fresh change: the desk proposed it again, she approved again,
+ * and the merge workflow refused because the request was already closed, so
+ * she was told the change she had just been told was live was not applied.
+ * Three emails, ten minutes, two of them false.
+ *
+ * A change that shipped is still the newest thing on this ticket. Forgetting
+ * its commit is not tidiness, it is amnesia.
  */
 export async function markDeployed(db: D1Database, ticketId: number): Promise<void> {
   await db
@@ -1043,8 +1054,6 @@ export async function markDeployed(db: D1Database, ticketId: number): Promise<vo
               approved_ref = NULL,
               approved_at = NULL,
               refused_at = NULL,
-              pr_number = NULL,
-              head_sha = NULL,
               last_outcome = NULL,
               updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')
         WHERE ticket_id = ?1`,
