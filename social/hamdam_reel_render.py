@@ -1,32 +1,32 @@
 #!/usr/bin/env python3
-"""Hamdam reel frame renderer, v9 - recognition first, argument second.
+"""Hamdam reel frame renderer, v10.
 
-    python3 hamdam_reel_render.py <conceptId> <stage 0..5> [outDir]
+    python3 hamdam_reel_render.py <conceptId> <stage 1..5> [outDir]
 
-  0  scene only  (NOT USED - the task renders 1..5)
   1  headline
   2  the lesson, then the send or reflect prompt
   3  the philological point - insightFa then insightEn
   4  Persian verse, alone
   5  English translation, same type size, poet line beneath
 
-WHY THIS ORDER. Average watch is 5.6 s on a 14 s reel, so page 2 is the only
+Stage 0 exists but is NOT rendered by the task - a scene-only page consumed
+0.8s of a 3.5s average watch.
+
+WHY THIS ORDER. Average watch is 5.6s on a 14s reel, so page 2 is the only
 page most viewers reach after the headline. What gets forwarded is a line
 someone RECOGNISES, not a line that informs them - so the lesson and the send
 prompt go there, and the argument moves to page 3 where it rewards whoever
 stays and still does the credibility work.
 
-See _prompt_principles in reel-concepts.json before editing any prompt copy.
-The short version: name the relationship, never the recipient's flaw. A
-prompt that diagnoses the recipient is an insult wearing a poem and nobody
-forwards it.
+See _sendability_test and _cta_principle_addendum in reel-concepts.json before
+editing any prompt copy.
 
-The follow ask sits in the footer strip on every page, with the reason
-attached. See CTA.md.
+FOOTER carries the app, on every page, from second one. Instagram allows no
+links in reel captions, so the only path is profile -> link in bio; naming the
+app gives a reason to make that trip.
 
-If HAMDAM_BG_DIR contains bg-<mood>.jpg for the concept's mood, that photo is
-used: blurred and dimmed as the full-bleed exterior, sharp inside the framed
-print. Otherwise the procedural sunrise scene is drawn. See BACKGROUNDS.md.
+CONTRAST: secondary text is near-white and the scrim under it is deep. Dim
+cream on a mid-tone wash was unreadable on a phone - corrected 1 Sep 2026.
 
 Persian is read byte-exact from the queue and never typed.
 """
@@ -139,7 +139,6 @@ def birds(img, n, cxf, cyf, spread_f, col, scale):
         d.line([(x, y-s*0.10), (x+s*0.35, y-s*0.55), (x+s, y)], fill=col, width=max(1, int(s*0.20)))
     return img
 
-# ---- optional photographic background -------------------------------------
 BG_DIR = os.environ.get('HAMDAM_BG_DIR', '')
 MOOD   = C.get('mood', '')
 PHOTO  = None
@@ -154,7 +153,6 @@ if BG_DIR and MOOD:
             break
 
 def cover(img, tw, th):
-    """Scale-and-crop to fill tw x th without distorting."""
     iw, ih = img.size
     sc = max(tw/iw, th/ih)
     nw, nh = int(iw*sc+0.5), int(ih*sc+0.5)
@@ -194,11 +192,12 @@ if PHOTO is not None:
     inner = cover(PHOTO, IW, IH)
     inner = Image.blend(inner, Image.new('RGB', (IW, IH), (0, 0, 0)), 0.10)
 
+# Deep scrim so secondary text reads on any background brightness.
 sh = Image.new('L', (IW, IH), 0); sd = ImageDraw.Draw(sh)
-knee = 0.30 if FOUR else 0.34
+knee = 0.26 if FOUR else 0.30
 for i in range(IH):
     f = i/IH
-    sd.line([(0, i), (IW, i)], fill=int(220*ease(max(0.0, (f-knee)/(1-knee)))))
+    sd.line([(0, i), (IW, i)], fill=int(238*ease(max(0.0, (f-knee)/(1-knee)))))
 inner = Image.composite(Image.new('RGB', (IW, IH), hx('0A0A07')), inner, sh)
 d = ImageDraw.Draw(inner)
 
@@ -263,10 +262,7 @@ def common_size():
 BLOCK_MID = 0.660 if FOUR else 0.700
 
 if STAGE == 2:
-    # Recognition, not scholarship. Average watch is 5.6s of a 14s reel, so
-    # this is the only page most viewers reach after the headline - and a
-    # line someone recognises is what gets forwarded. See _prompt_principles
-    # in reel-concepts.json before editing any of this copy.
+    # Recognition, not scholarship. See _sendability_test in reel-concepts.json.
     lf, le = C.get('lessonFa',''), C.get('lessonEn','')
     sf, se = C.get('sendFa',''),   C.get('sendEn','')
     szl = 34
@@ -277,19 +273,19 @@ if STAGE == 2:
     lf_lines = wrap_fa(d, lf, f_lf, IW*0.86)[:2]
     for i, l in enumerate(lf_lines):
         rtl(d, (cx, int(IH*(0.470 + i*0.050))), l, f_lf, hx('FBF6EA'))
-    f_le = ImageFont.truetype(SS+'SourceSerif4-It.otf', S*26)
+    f_le = ImageFont.truetype(SS+'SourceSerif4-It.otf', S*28)
     ey = 0.470 + len(lf_lines)*0.050 + 0.030
     for i, l in enumerate(wrap(d, le, f_le, IW*0.86)[:2]):
-        d.text((cx, int(IH*(ey + i*0.038))), l, font=f_le, fill=hx('F0E8D4'), anchor='mm')
+        d.text((cx, int(IH*(ey + i*0.038))), l, font=f_le, fill=hx('FDFAF2'), anchor='mm')
     ry = ey + 0.075
     d.line([cx-IW*0.07, int(IH*ry), cx+IW*0.07, int(IH*ry)], fill=hx('9C8C6E'), width=S)
     f_sf = ImageFont.truetype(FZ+'Vazirmatn-Regular.ttf', S*26)
-    f_se = ImageFont.truetype(SS+'SourceSerif4-Light.otf', S*23)
+    f_se = ImageFont.truetype(SS+'SourceSerif4-Regular.otf', S*24)
     sy = ry + 0.055
     for i, l in enumerate(wrap_fa(d, sf, f_sf, IW*0.86)[:2]):
-        rtl(d, (cx, int(IH*(sy + i*0.042))), l, f_sf, hx('EFE4CC'))
+        rtl(d, (cx, int(IH*(sy + i*0.042))), l, f_sf, hx('F8F1E0'))
     for i, l in enumerate(wrap(d, se, f_se, IW*0.86)[:2]):
-        d.text((cx, int(IH*(sy + 0.052 + i*0.036))), l, font=f_se, fill=hx('CFC3AA'), anchor='mm')
+        d.text((cx, int(IH*(sy + 0.052 + i*0.036))), l, font=f_se, fill=hx('EFE6D2'), anchor='mm')
 
 if STAGE == 3:
     # The philological point - the page no other account can produce.
@@ -313,7 +309,7 @@ if STAGE == 3:
     en_lines = wrap(d, ine, f_ie, IW*0.86)[:3]
     ey = rule_y + 0.055
     for i, l in enumerate(en_lines):
-        d.text((cx, int(IH*(ey + i*0.040))), l, font=f_ie, fill=hx('F0E8D4'), anchor='mm')
+        d.text((cx, int(IH*(ey + i*0.040))), l, font=f_ie, fill=hx('FDFAF2'), anchor='mm')
 
 if STAGE == 4:
     sz, f_fa, _, _ = common_size()
@@ -327,9 +323,9 @@ if STAGE == 5:
     gap = (sz*1.60)/(IH/S)
     y0 = BLOCK_MID - (len(en_lines)-1)*gap/2
     for i, line in enumerate(en_lines):
-        d.text((cx, int(IH*(y0 + i*gap))), line, font=f_en, fill=hx('F4EEDE'), anchor='mm')
+        d.text((cx, int(IH*(y0 + i*gap))), line, font=f_en, fill=hx('FDFAF2'), anchor='mm')
     f_poet = ImageFont.truetype(SS+'SourceSerif4-Light.otf', S*20)
-    track(d, (cx, int(IH*POET_Y)), C.get('poetLineEn', C['poet']), f_poet, hx('C8BCA4'), S*4)
+    track(d, (cx, int(IH*POET_Y)), C.get('poetLineEn', C['poet']), f_poet, hx('E4DAC4'), S*4)
 
 card_w = IW + FB*2
 card_h = IH + FB*2 + int(H*0.070)
@@ -339,18 +335,25 @@ card.paste(inner, (FB, FB))
 cd = ImageDraw.Draw(card)
 cd.rectangle([FB-S, FB-S, FB+IW+S-1, FB+IH+S-1], outline=hx('1A140E'), width=S)
 
-# Persistent follow strip, present on every page. Average watch is 5.6s of a
-# 14s reel, so the ask AND the reason to act on it both have to live here,
-# visible from second one. Instagram already shows the handle above the reel,
-# so repeating it wastes the space the reason needs. See CTA.md.
-f_ff = ImageFont.truetype(FZ+'Vazirmatn-Medium.ttf', S*23)
-_line = '\u062f\u0646\u0628\u0627\u0644 \u06a9\u0646\u06cc\u062f  \u00b7  \u0647\u0631 \u0631\u0648\u0632 \u06cc\u06a9 \u0628\u06cc\u062a'
-_fy = FB + IH + int(H*0.024)
-cd.text((card_w//2, _fy), _line, font=f_ff, fill=hx('F2E8D2'), anchor='mm',
+# App strip, on every page from second one. Instagram allows no links in reel
+# captions, so the only route is profile -> link in bio; naming the app and
+# what it does gives a reason to make that trip. Both lines auto-fit.
+_fa = '\u0627\u067e \u0647\u0645\u062f\u0645 \u0631\u0627 \u062f\u0627\u0646\u0644\u0648\u062f \u06a9\u0646\u06cc\u062f \u0628\u0631\u0627\u06cc \u0641\u0627\u0644 \u062d\u0627\u0641\u0638 \u0648 \u062a\u0642\u0648\u06cc\u0645 \u0641\u0627\u0631\u0633\u06cc'
+_en = 'Download Hamdam for daily Persian poetry'
+fsz = 22
+while fsz > 13:
+    f_ff = ImageFont.truetype(FZ+'Vazirmatn-Medium.ttf', S*fsz)
+    if cd.textlength(_fa, font=f_ff, direction='rtl', language='fa') <= card_w*0.92: break
+    fsz -= 1
+esz = 20
+while esz > 12:
+    f_fe = ImageFont.truetype(SS+'SourceSerif4-Regular.otf', S*esz)
+    if cd.textlength(_en, font=f_fe) <= card_w*0.92: break
+    esz -= 1
+_fy = FB + IH + int(H*0.023)
+cd.text((card_w//2, _fy), _fa, font=f_ff, fill=hx('FBF4E4'), anchor='mm',
         direction='rtl', language='fa', features=['kern', 'liga'])
-cd.text((card_w//2, _fy + int(H*0.026)), 'Follow for a verse a day',
-        font=ImageFont.truetype(SS+'SourceSerif4-Light.otf', S*20),
-        fill=hx('C9BCA2'), anchor='mm')
+cd.text((card_w//2, _fy + int(H*0.027)), _en, font=f_fe, fill=hx('E8DCC4'), anchor='mm')
 
 shadow = Image.new('L', (W, H), 0)
 ImageDraw.Draw(shadow).rectangle([IX-FB, IY-FB, IX-FB+card_w, IY-FB+card_h], fill=150)
