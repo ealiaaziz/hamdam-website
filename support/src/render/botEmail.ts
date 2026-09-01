@@ -195,3 +195,31 @@ ${WRAP_CLOSE}`;
 
   return { subject: `[${publicId}] تغییر ربات هنوز اعمال نشده`, html };
 }
+
+/**
+ * Take back something the desk told her that was not true.
+ *
+ * Sent once, by hand, after the desk contradicted itself: it told her a change
+ * was live, then asked her to approve it again, then told her it had not been
+ * applied. The first message was the true one. She has no way to know that,
+ * and leaving her to work it out is worse than the original fault, because
+ * next time she will not know which of these emails to believe.
+ *
+ * Deliberately short, deliberately not an explanation of the mechanism. What
+ * she needs is which message was right and whether she has to do anything.
+ */
+export function correctionEmail(opts: { ticketId: number }): { subject: string; html: string } {
+  const publicId = ticketPublicId(opts.ticketId);
+  const html = `${WRAP_OPEN}
+<p>سلام،</p>
+<p>چند پیام پشت سر هم از ما گرفتید که با هم نمی‌خواندند. عذر می‌خواهیم.</p>
+<p><b>درست این است: تغییری که تأیید کردید اعمال شده و روی ربات فعال است.</b>
+پیام‌هایی که بعد از آن آمد و می‌گفت هنوز اعمال نشده یا دوباره تأیید کنید،
+اشتباه بود و باید نادیده گرفته شود.</p>
+<p>کاری لازم نیست بکنید. اشکالی که باعث این پیام‌ها شد برطرف شده است.</p>
+${RULE}
+${FOOTER}
+${WRAP_CLOSE}`;
+
+  return { subject: `[${publicId}] اصلاح: تغییر شما اعمال شده است`, html };
+}
