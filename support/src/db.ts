@@ -1018,11 +1018,34 @@ export function mayDeploy(change: BotChangeRow | null): boolean {
   return change.approved_ref === change.pending_change_ref;
 }
 
+/**
+ * Record that the tracked change shipped, and empty the slot it occupied.
+ *
+ * The emptying is the part that was missing, and it cost two faults on one
+ * ticket. This table holds one row per ticket, not one per change, but a
+ * ticket is a conversation and she asks for more than one thing in it. When
+ * HAM-54's change shipped, its `pending_change_ref` stayed behind, so her next
+ * message on that ticket, a new feature request, was read as a verdict on the
+ * change that had already gone live, and recorded as her refusing it.
+ *
+ * So shipping clears the change: no pending reference, no approval, no
+ * refusal, no pull request. What stays is `issue_number`, because the
+ * conversation with the agent continues there, and `deployed_at`, because
+ * "something shipped for this ticket" is worth knowing. The next change on
+ * this ticket fills the slot again through `proposeChange`.
+ */
 export async function markDeployed(db: D1Database, ticketId: number): Promise<void> {
   await db
     .prepare(
       `UPDATE ticket_bot_changes
           SET deployed_at = strftime('%Y-%m-%dT%H:%M:%fZ','now'),
+              pending_change_ref = NULL,
+              approved_ref = NULL,
+              approved_at = NULL,
+              refused_at = NULL,
+              pr_number = NULL,
+              head_sha = NULL,
+              last_outcome = NULL,
               updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')
         WHERE ticket_id = ?1`,
     )
@@ -1033,10 +1056,18 @@ export async function markDeployed(db: D1Database, ticketId: number): Promise<vo
 /**
  * Tickets the follow-up pass still has something to do about.
  *
- * Anything dispatched that has not shipped. Deliberately not filtered on
- * ticket status: a ticket can be closed while a change is still in flight,
- * and abandoning her change because the conversation ended would leave a pull
- * request approved and never merged, with nobody told.
+ * Anything dispatched on a ticket that is still open.
+ *
+ * This used to be "anything that has not shipped", and that was wrong in the
+ * way that matters: a ticket is a conversation, and she asks for a second
+ * thing after the first one ships. On HAM-54 she did exactly that, the agent
+ * built it and opened a pull request, and the desk never looked, because the
+ * ticket had a `deployed_at` from the day before. The change existed, was
+ * correct, and would have sat there unmentioned forever.
+ *
+ * Open-ticket is the bound instead. It stops the scan growing without limit,
+ * and it stops where a person has said the conversation is over, which is the
+ * honest place to stop rather than at the first thing that shipped.
  *
  * Bounded, because this runs every minute and an unbounded scan of a growing
  * table on a cron is a bill that arrives quietly.
@@ -1044,9 +1075,10 @@ export async function markDeployed(db: D1Database, ticketId: number): Promise<vo
 export async function ticketsAwaitingBotFollowUp(db: D1Database, limit = 20): Promise<number[]> {
   const result = await db
     .prepare(
-      `SELECT ticket_id FROM ticket_bot_changes
-        WHERE deployed_at IS NULL
-        ORDER BY updated_at ASC
+      `SELECT c.ticket_id FROM ticket_bot_changes c
+         JOIN tickets t ON t.id = c.ticket_id
+        WHERE t.status != 'closed'
+        ORDER BY c.updated_at ASC
         LIMIT ?1`,
     )
     .bind(limit)
