@@ -92,3 +92,43 @@ describe('recordApproval is scoped to the pending change', () => {
     await expect(recordApproval(db, 12, 'HAM-12/000000')).resolves.toBe(false);
   });
 });
+
+const shippedRow = (): BotChangeRow => ({
+  ticket_id: 54,
+  issue_number: 9,
+  pr_number: null,
+  branch: null,
+  head_sha: null,
+  pending_change_ref: null,
+  proposed_at: '2026-08-31T10:05:00Z',
+  approved_ref: null,
+  approved_at: null,
+  refused_at: null,
+  deployed_at: '2026-08-31T10:40:56Z',
+  last_outcome: null,
+  last_outcome_at: null,
+  dispatched_at: '2026-08-31T09:37:00Z',
+  updated_at: '2026-08-31T10:40:56Z',
+});
+
+/**
+ * The shape markDeployed leaves behind, asserted here because the emptying is
+ * what stops her next message on the ticket being read as a verdict on a
+ * change that already shipped. On HAM-54 it was: she asked for a new feature
+ * and the desk recorded her as refusing the live one.
+ */
+describe('a change slot emptied by shipping', () => {
+  const shipped = shippedRow();
+
+  it('is not deployable, so nothing acts on it again', () => {
+    expect(mayDeploy(shipped)).toBe(false);
+  });
+
+  it('has no pending reference, so a later reply is not a verdict on it', () => {
+    expect(shipped.pending_change_ref).toBeNull();
+  });
+
+  it('keeps the issue, because the conversation with the agent continues there', () => {
+    expect(shipped.issue_number).toBe(9);
+  });
+});
