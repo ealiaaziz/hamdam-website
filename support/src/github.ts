@@ -154,7 +154,42 @@ export interface PullState {
   number: number;
   state: 'open' | 'closed';
   merged: boolean;
+  merged_at: string | null;
+  merge_commit_sha: string | null;
   head: { sha: string };
+}
+
+/**
+ * Whether the deploy actually ran for a merged change, and how it went.
+ *
+ * Merging is not shipping. `checkShipped` used to treat the two as the same
+ * thing and email her "it is live" the moment the pull request merged, which
+ * is true only as long as the deploy that follows succeeds. A merge that
+ * lands and a deploy that then fails would have told her a change was on the
+ * bot when it was not, and telling her something false is worse than telling
+ * her nothing: she would go and test behaviour that does not exist.
+ *
+ * `pending` covers the ordinary case of looking a few seconds after the merge,
+ * and `none` covers a deploy that has not started or does not exist for this
+ * commit. Neither is an answer yet, and the caller decides how long to wait
+ * before treating the silence as something she should hear about.
+ */
+export type DeployState = 'success' | 'failed' | 'pending' | 'none';
+
+export async function deployStateFor(env: Env, sha: string): Promise<GitHubResult<DeployState>> {
+  if (!/^[0-9a-f]{40}$/.test(sha)) return { ok: false, reason: `not a commit id: ${sha.slice(0, 12)}` };
+
+  const runs = await read<{ workflow_runs: Array<{ status: string; conclusion: string | null }> }>(
+    env,
+    `/actions/workflows/deploy.yml/runs?head_sha=${sha}&per_page=10`,
+  );
+  if (!runs.ok) return runs;
+
+  const all = runs.value.workflow_runs ?? [];
+  if (all.length === 0) return { ok: true, value: 'none' };
+  if (all.some((run) => run.conclusion === 'success')) return { ok: true, value: 'success' };
+  if (all.some((run) => run.status !== 'completed')) return { ok: true, value: 'pending' };
+  return { ok: true, value: 'failed' };
 }
 
 export async function getPull(env: Env, prNumber: number): Promise<GitHubResult<PullState>> {

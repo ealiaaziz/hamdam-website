@@ -15,6 +15,7 @@ import {
 import { changeRef } from './changeApproval.js';
 import {
   canReachRepo,
+  deployStateFor,
   getPull,
   listIssueComments,
   parseAgentOutcome,
@@ -66,6 +67,16 @@ export type SendEmail = (email: NewOutboundEmail) => Promise<boolean>;
  * keeps the failure and the reason, which is where a person looks.
  */
 const RETRY_SEND_FOR_MS = 60 * 60_000;
+
+/**
+ * How long a merged change may go without a confirmed deploy before she hears
+ * about the wait itself.
+ *
+ * Fifteen minutes. The deploy runs typecheck, the full suite and the
+ * migrations before it publishes, so several minutes is ordinary and saying
+ * anything sooner would be noise. Past that, not knowing is the news.
+ */
+const CONFIRM_DEPLOY_WITHIN_MS = 15 * 60_000;
 
 export interface FollowUpSummary {
   /** Tickets with a change in flight, whether or not this pass did anything. */
@@ -184,6 +195,28 @@ async function checkShipped(
   // allowed either.
   if (!pull.value.merged) {
     await relayHeld(env, send, ticketId, change, summary);
+    return;
+  }
+
+  // Merging is not shipping. This used to send "it is live" the moment the
+  // pull request merged, which is true only while the deploy that follows
+  // succeeds. A merge that lands and a deploy that then fails would have told
+  // her a change was on the bot when it was not, and she would have gone and
+  // tested behaviour that does not exist. Telling her something false is
+  // worse than telling her nothing.
+  const deployed = await deployStateFor(env, pull.value.merge_commit_sha ?? '');
+  if (!deployed.ok) {
+    summary.failures += 1;
+    return;
+  }
+
+  if (deployed.value !== 'success') {
+    // A deploy that failed is hers to hear about immediately. One that has
+    // not answered yet is ordinary for the first minutes after a merge, so it
+    // is left alone until the wait itself is the news.
+    const waited = Date.now() - Date.parse(pull.value.merged_at ?? '') > CONFIRM_DEPLOY_WITHIN_MS;
+    if (deployed.value === 'failed') await tellHeld(env, send, ticketId, 'DEPLOY_FAILED', summary);
+    else if (waited) await tellHeld(env, send, ticketId, 'DEPLOY_NOT_CONFIRMED', summary);
     return;
   }
 
@@ -315,6 +348,25 @@ async function relayHeld(
   const reason = parseHeldReason(comments.value);
   if (!reason) return;
 
+  await tellHeld(env, send, ticketId, reason, summary);
+}
+
+/**
+ * Tell her, once, that an approved change has not been applied, and why.
+ *
+ * Shared by the two things that can hold one: the merge guard standing down,
+ * and a deploy that did not succeed. Deduplicated through `last_outcome` like
+ * the agent's questions, and rolled back on a failed send for the same reason,
+ * so a holdup she was never actually told about is retried rather than
+ * recorded as delivered.
+ */
+async function tellHeld(
+  env: Env,
+  send: SendEmail,
+  ticketId: number,
+  reason: string,
+  summary: FollowUpSummary,
+): Promise<void> {
   const fresh = await recordAgentOutcome(env.DB, ticketId, `held:${reason}`);
   if (!fresh) return;
 
