@@ -174,22 +174,31 @@ export interface PullState {
  * commit. Neither is an answer yet, and the caller decides how long to wait
  * before treating the silence as something she should hear about.
  */
-export type DeployState = 'success' | 'failed' | 'pending' | 'none';
+export type DeployOutcome =
+  | { kind: 'shipped' }
+  | { kind: 'held'; reason: string };
 
-export async function deployStateFor(env: Env, sha: string): Promise<GitHubResult<DeployState>> {
-  if (!/^[0-9a-f]{40}$/.test(sha)) return { ok: false, reason: `not a commit id: ${sha.slice(0, 12)}` };
-
-  const runs = await read<{ workflow_runs: Array<{ status: string; conclusion: string | null }> }>(
-    env,
-    `/actions/workflows/deploy.yml/runs?head_sha=${sha}&per_page=10`,
-  );
-  if (!runs.ok) return runs;
-
-  const all = runs.value.workflow_runs ?? [];
-  if (all.length === 0) return { ok: true, value: 'none' };
-  if (all.some((run) => run.conclusion === 'success')) return { ok: true, value: 'success' };
-  if (all.some((run) => run.status !== 'completed')) return { ok: true, value: 'pending' };
-  return { ok: true, value: 'failed' };
+/**
+ * How the deploy went, as reported on the pull request by the deploy itself.
+ *
+ * The obvious way to ask this is the Actions API, and the first attempt did.
+ * It returned 403 every time: this desk's token is scoped to issues and pull
+ * requests on purpose, because a token that can read workflows is a token an
+ * email can point at workflows. Widening it to close this gap would be paying
+ * in the wrong currency, so the deploy reports itself into a channel the desk
+ * can already read, in the same marker language as everything else here.
+ *
+ * Newest wins. A deploy that failed and was then re-run to success is
+ * shipped, and one that shipped and was re-run to failure is held, which is
+ * the right reading in both directions.
+ */
+export function parseDeployOutcome(comments: readonly IssueComment[]): DeployOutcome | null {
+  for (const comment of [...comments].reverse()) {
+    if (hasMarker(comment.body, /^<!--\s*desk:shipped\s*-->$/)) return { kind: 'shipped' };
+    const held = markedBlock(comment.body, ['held']);
+    if (held) return { kind: 'held', reason: held.text };
+  }
+  return null;
 }
 
 export async function getPull(env: Env, prNumber: number): Promise<GitHubResult<PullState>> {

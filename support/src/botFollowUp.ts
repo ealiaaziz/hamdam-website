@@ -15,7 +15,7 @@ import {
 import { changeRef } from './changeApproval.js';
 import {
   canReachRepo,
-  deployStateFor,
+  parseDeployOutcome,
   getPull,
   listIssueComments,
   parseAgentOutcome,
@@ -214,18 +214,19 @@ async function checkShipped(
   // her a change was on the bot when it was not, and she would have gone and
   // tested behaviour that does not exist. Telling her something false is
   // worse than telling her nothing.
-  const deployed = await deployStateFor(env, pull.value.merge_commit_sha ?? '');
-  if (!deployed.ok) {
+  const comments = await listIssueComments(env, change.pr_number);
+  if (!comments.ok) {
     summary.failures += 1;
     return;
   }
 
-  if (deployed.value !== 'success') {
+  const outcome = parseDeployOutcome(comments.value);
+  if (outcome?.kind !== 'shipped') {
     // A deploy that failed is hers to hear about immediately. One that has
     // not answered yet is ordinary for the first minutes after a merge, so it
     // is left alone until the wait itself is the news.
     const waited = Date.now() - Date.parse(pull.value.merged_at ?? '') > CONFIRM_DEPLOY_WITHIN_MS;
-    if (deployed.value === 'failed') await tellHeld(env, send, ticketId, 'DEPLOY_FAILED', summary);
+    if (outcome) await tellHeld(env, send, ticketId, outcome.reason, summary);
     else if (waited) await tellHeld(env, send, ticketId, 'DEPLOY_NOT_CONFIRMED', summary);
     return;
   }
@@ -238,8 +239,8 @@ async function checkShipped(
   await markDeployed(env.DB, ticketId);
 
   const ticket = await getTicketById(env.DB, ticketId);
-  const comments = await listIssueComments(env, change.issue_number ?? change.pr_number);
-  const description = comments.ok ? (parseAgentReport(comments.value)?.description ?? '') : '';
+  const onIssue = await listIssueComments(env, change.issue_number ?? change.pr_number);
+  const description = onIssue.ok ? (parseAgentReport(onIssue.value)?.description ?? '') : '';
   const email = changeShippedEmail({ ticketId, description });
 
   await send({
