@@ -1,20 +1,40 @@
 {
  "_readme": "Concept bank for the Hamdam Instagram reel series. The agent READS this file and never writes to it. After a concept ships, set used=true by hand - and verify against live captions, because the flag has drifted before.",
- "_verification_status": "DRAFT - Persian lesson and send lines drafted by Claude, reviewed by Ealia. Arguments and insights carry _check notes. Nothing here has published yet.",
- "_selection_rule": "Weighted to Rumi and Khayyam - the two poets with international recognition - and chosen for ORDINARY DAILY CONCERN rather than metaphysics. Poets alternate so rotation never blocks. All screened clear of wine imagery per hard rule 5. NOTE the evidence: on YouTube, Saadi's Bani Adam took 1,126 views and Rumi's obscure Nur-e Khorshid took 16 - recognition of the SPECIFIC VERSE matters more than fame of the poet.",
- "_page_note": "Reel pages: 1 headline, 2 lesson + send/reflect prompt, 3 the philological point, 4 Persian verse, 5 English translation with poet line. Stage 0 is not rendered. Recognition hooks; the argument rewards whoever stays. insightEn, lessonEn, sendEn and headline are Latin script ONLY - Source Serif has no Arabic glyphs.",
- "_prompt_principles": "Send prompts name the RELATIONSHIP, never the recipient's flaw. The sender must come out generous, not superior. Test it by reading it as the RECIPIENT: chosen, or diagnosed? Verses that assert how things are get promptType 'reflect' - a question that earns a comment - instead of a send prompt.",
- "_sendability_test": "BEFORE writing a send prompt, ask WHO THE POEM POINTS AT. This decides sendability, not the theme. (a) Points at the READER'S OWN FAILING - self-accusation. Never sendable: forwarding it says 'this is about your flaw'. Use promptType 'reflect' with a question. (b) Points at SOMETHING SHARED - sendable; the sender is saying 'this is us'. (c) Points WARMLY AT THE RECIPIENT - sendable; the sender is saying 'this is you'. A warm prompt bolted onto a self-accusing poem reads as false and is worse than no prompt. Worked example: rumi-022 is Rumi catching HIMSELF being cruel - 'we taunted him'. Pairing it with 'for someone who is kind to everyone' failed this test and was corrected on 1 Sep 2026.",
- "_cta_principle_addendum": "A send prompt that DESCRIBES the recipient ('for someone who does not grieve the past') is an appraisal, and appraisals do not get forwarded - the sender has to decide the label is true, and the recipient reads it as a claim about themselves. The strongest form is FIRST PERSON PLURAL: the sender acts on the poem and includes the recipient in it. 'Let us not grieve yesterday and tomorrow' works where 'for someone who does not grieve them' does not. Use the poem's own words wherever possible.",
- "_seasonal_note": "Check the hemisphere before scheduling any verse with seasonal imagery. The audience is largely Australian diaspora; posting about winter ending in September reads as copied from a northern account.",
- "_context_rule": "Only use verses whose meaning is complete in the lines shown. A two-line fragment whose sense depends on the surrounding ghazal cannot carry an argument - rumi-028 was drafted and dropped on 1 Sep 2026 because the insight claimed something ('many have sat here before you') that the couplet does not actually say. Self-contained quatrains are safest.",
- "_mood_key": "happy = bright Mahur; love = romantic Mahur; grave = restrained, sparse; wry = light but not celebratory. Never put a bright bed under a grave concept.",
+ "_verification_status": "Persian lesson, send and insight lines are drafted by Claude and reviewed by Ealia. Arguments carry _check notes.",
+ "_page_note": "Reel pages: 1 headline, 2 lesson + send/reflect prompt, 3 the philological point, 4 Persian verse, 5 English translation with poet line. Stage 0 is not rendered. insightEn, lessonEn, sendEn, englishSaid and headline are Latin script ONLY - Source Serif has no Arabic glyphs.",
+ "_english_said_rule": "englishSaid is the English as a writer would say it, and page 5 shows it in preference to the queue's literal 'english'. The queue is never edited - it stays as provenance. Literal glosses like 'no room remains for the trouble of strangers' are exactly the flattening this account exists to argue against.",
+ "_sendability_test": "BEFORE writing a send prompt, ask WHO THE POEM POINTS AT. (a) Points at the READER'S OWN FAILING - never sendable; use promptType 'reflect' with a question. (b) Points at SOMETHING SHARED - sendable. (c) Points WARMLY AT THE RECIPIENT - sendable. A warm prompt bolted onto a self-accusing poem reads as false.",
+ "_message_not_meditation": "The deeper filter, learned 3 Sep 2026: most verses are MEDITATIONS - the poet thinking alone - and nobody forwards a meditation because there is no one it is for. The verses that get shared are already addressed to a person. Saadi's ghazals are spoken TO someone; Khayyam's quatrains are arguments with himself. Prefer verses that are messages, and where the original uses yar or dust as an addressee, translating it as second person turns a description into something a person would actually send.",
+ "_cta_principle_addendum": "A send prompt that DESCRIBES the recipient is an appraisal, and appraisals do not get forwarded. Strongest forms: FIRST PERSON PLURAL ('let us not grieve yesterday and tomorrow') or SECOND PERSON ('for you who were there for it') - the sender adopts the line as their own words. Use the poem's own vocabulary.",
+ "_app_link_rule": "Connect a verse to the app ONLY where the connection is real. saadi-017 works because nafas is literally the dam in ham-dam. Forcing this onto a Khayyam mortality quatrain would be an advert wearing a poem, which is the thing this format exists to avoid.",
+ "_seasonal_note": "Check the hemisphere before scheduling any verse with seasonal imagery. The audience is largely Australian diaspora.",
+ "_context_rule": "Only use verses whose meaning is complete in the lines shown. rumi-028 was dropped because the insight claimed something the couplet does not say.",
+ "_mood_key": "happy = bright Mahur; love = romantic Mahur; grave = restrained, sparse; wry = light but not celebratory.",
  "concepts": [
   {
-   "id": "khayyam-025-two-days", "verseId": "khayyam-025", "poet": "Khayyam", "mood": "wry", "used": false,
+   "id": "saadi-017-one-breath", "verseId": "saadi-017", "poet": "Saadi", "mood": "love", "used": false,
+   "promptType": "send", "verseType": "feeling",
+   "headline": "ONE GOOD BREATH",
+   "englishSaid": "Once you've had one good breath with a real friend, nothing else looks like much.",
+   "argument": "The measure is nafasi - one breath. Not a year, not a friendship. One breath. Saadi is saying the whole thing can be settled in a moment that short.\n\nAnd the verb is takhayyol nakonad - does not imagine. Not \"holds no worth\", which is what the literal translation gives you. He is not claiming other things become worthless. He is saying the mind stops picturing them. Contentment as the absence of wandering.\n\nDaryaft is received, not earned - the breath arrives; you do not produce it.\n\nham-dam: the one you share that breath with. We named the app after it.",
+   "insightFa": "\u0633\u0639\u062f\u06cc \u0645\u06cc\u200c\u06af\u0648\u06cc\u062f \u00ab\u0646\u0641\u0633\u06cc\u00bb \u2014 \u06cc\u06a9 \u062f\u0645. \u0648 \u00ab\u0647\u0645\u062f\u0645\u00bb \u06cc\u0639\u0646\u06cc \u06a9\u0633\u06cc \u06a9\u0647 \u0647\u0645\u0627\u0646 \u062f\u0645 \u0631\u0627 \u0628\u0627 \u062a\u0648 \u0642\u0633\u0645\u062a \u0645\u06cc\u200c\u06a9\u0646\u062f",
+   "insightEn": "Saadi says nafasi - one breath. Hamdam means the one who shares it.",
+   "lessonFa": "\u06cc\u06a9 \u0644\u062d\u0638\u0647\u0654 \u062e\u0648\u0628 \u0628\u0627 \u062f\u0648\u0633\u062a\u060c \u0628\u0642\u06cc\u0647\u0654 \u0686\u06cc\u0632\u0647\u0627 \u0631\u0627 \u06a9\u0648\u0686\u06a9 \u0645\u06cc\u200c\u06a9\u0646\u062f",
+   "lessonEn": "One good moment with a friend makes everything else look small",
+   "sendFa": "\u0628\u0631\u0627\u06cc \u062a\u0648\u06cc\u06cc \u06a9\u0647 \u0622\u0646 \u0644\u062d\u0638\u0647 \u0628\u0627 \u0645\u0646 \u0628\u0648\u062f\u06cc",
+   "sendEn": "For you who were there for it",
+   "poetLineFa": "\u0633\u0639\u062f\u06cc \u2014 \u0634\u06cc\u0631\u0627\u0632\u060c \u0642\u0631\u0646 \u0633\u06cc\u0632\u062f\u0647\u0645",
+   "poetLineEn": "Saadi \u2014 Shiraz, 13th century",
+   "hashtagsFa": ["#\u0634\u0639\u0631_\u0641\u0627\u0631\u0633\u06cc", "#\u0633\u0639\u062f\u06cc", "#\u0627\u062f\u0628\u06cc\u0627\u062a_\u0641\u0627\u0631\u0633\u06cc"],
+   "hashtagsEn": ["#persianpoetry", "#saadi"],
+   "_check": "Read and chosen by Ealia 3 Sep 2026. The takhayyol nakonad reading (the mind stops imagining, rather than things losing worth) is interpretive - worth a native reader confirming. CTA is second person: the sender adopts the line as their own words. The app link is genuine here because nafas is the same dam as in ham-dam."
+  },
+  {
+   "id": "khayyam-025-two-days", "verseId": "khayyam-025", "poet": "Khayyam", "mood": "wry", "used": true,
    "promptType": "send", "verseType": "consolation",
    "headline": "TWO DAYS I REFUSE TO WORRY ABOUT",
-   "argument": "Khayyam does not say seize the day. Read the last two lines: he names two specific days and refuses both of them.\n\nThe day that has not come. The day that has gone. Those are the only two he has ever declined to grieve over - which leaves exactly one day standing, and he never has to mention it.\n\nThat is a sharper piece of construction than the carpe diem line English usually gives him. He does not argue for the present. He simply subtracts the other two and lets you notice what is left.",
+   "englishSaid": "These two or three days of life have gone - like water down a stream, like wind across a plain. Two days have never cost me a moment's grief: the one not yet come, and the one already gone.",
+   "argument": "Khayyam does not say seize the day. Read the last two lines: he names two specific days and refuses both of them.\n\nThe day that has not come. The day that has gone. Those are the only two he has ever declined to grieve over - which leaves exactly one day standing, and he never has to mention it.\n\nHe does not argue for the present. He subtracts the other two and lets you notice what is left.",
    "insightFa": "\u062e\u06cc\u0627\u0645 \u0646\u0645\u06cc\u200c\u06af\u0648\u06cc\u062f \u00ab\u062f\u0645 \u0631\u0627 \u062f\u0631\u06cc\u0627\u0628\u00bb \u2014 \u062f\u0648 \u0631\u0648\u0632 \u0631\u0627 \u0646\u0627\u0645 \u0645\u06cc\u200c\u0628\u0631\u062f \u0648 \u0647\u0631 \u062f\u0648 \u0631\u0627 \u06a9\u0646\u0627\u0631 \u0645\u06cc\u200c\u06af\u0630\u0627\u0631\u062f",
    "insightEn": "Khayyam never says seize the day. He names two days and refuses both, and lets you notice what is left.",
    "lessonFa": "\u062f\u0648 \u0631\u0648\u0632 \u0631\u0627 \u0646\u0645\u06cc\u200c\u0634\u0648\u062f \u0632\u0646\u062f\u06af\u06cc \u06a9\u0631\u062f: \u062f\u06cc\u0631\u0648\u0632 \u0648 \u0641\u0631\u062f\u0627",
@@ -25,13 +45,14 @@
    "poetLineEn": "Omar Khayyam \u2014 Nishapur, 11th century",
    "hashtagsFa": ["#\u0634\u0639\u0631_\u0641\u0627\u0631\u0633\u06cc", "#\u062e\u06cc\u0627\u0645", "#\u0631\u0628\u0627\u0639\u06cc\u0627\u062a"],
    "hashtagsEn": ["#persianpoetry", "#khayyam"],
-   "_check": "Self-contained quatrain - no surrounding ghazal needed. The claim is a plain reading of lines 3-4. No season, no wine, no divine addressee. Points at something SHARED. sendFa uses the couplet's own vocabulary and is FIRST PERSON PLURAL - Ealia's phrasing, flipped from second to first person 1 Sep 2026."
+   "_check": "PUBLISHED 2 Sep 2026 07:57 Sydney, instagram.com/reel/DcwrdcuD8Ep/ - reach 262, 1 save, 1 share, avg watch 3.2s."
   },
   {
    "id": "khayyam-012-not-consulted", "verseId": "khayyam-012", "poet": "Khayyam", "mood": "wry", "used": false,
    "promptType": "send", "verseType": "consolation",
    "headline": "THE PLAN WAS NOT MADE WITH YOU",
-   "argument": "Khayyam is not comforting you. Read the last line again: the arrangement was made without consulting you.\n\nThat is an odd thing to find consoling, and yet it is. If the plan was never yours to approve, then the worry you are carrying about it was never doing any work. He is not saying it will be fine. He is saying your anxiety has no job here.\n\nEnglish versions of Khayyam usually soften this into wistfulness. The Persian is drier and more practical than that.",
+   "englishSaid": "Why grieve over what has to be? Why wear your soul out on useless thought? Live gladly, let the world go by in joy - the plan was made without asking you.",
+   "argument": "Khayyam is not comforting you. Read the last line again: the arrangement was made without consulting you.\n\nIf the plan was never yours to approve, then the worry you are carrying about it was never doing any work. He is not saying it will be fine. He is saying your anxiety has no job here.",
    "insightFa": "\u062e\u06cc\u0627\u0645 \u062f\u0644\u062f\u0627\u0631\u06cc \u0646\u0645\u06cc\u200c\u062f\u0647\u062f\u061b \u0645\u06cc\u200c\u06af\u0648\u06cc\u062f \u062a\u0635\u0645\u06cc\u0645 \u0628\u06cc \u062a\u0648 \u06af\u0631\u0641\u062a\u0647 \u0634\u062f\u0647 \u2014 \u0648 \u0647\u0645\u06cc\u0646 \u0622\u0632\u0627\u062f\u062a \u0645\u06cc\u200c\u06a9\u0646\u062f",
    "insightEn": "Khayyam is not offering comfort. He says the decision was made without you - and that is what frees you.",
    "lessonFa": "\u0628\u0639\u0636\u06cc \u0686\u06cc\u0632\u0647\u0627 \u0631\u0627 \u0628\u06cc\u200c\u0645\u0634\u0648\u0631\u062a \u062a\u0648 \u0686\u06cc\u062f\u0647\u200c\u0627\u0646\u062f",
@@ -42,13 +63,14 @@
    "poetLineEn": "Omar Khayyam \u2014 Nishapur, 11th century",
    "hashtagsFa": ["#\u0634\u0639\u0631_\u0641\u0627\u0631\u0633\u06cc", "#\u062e\u06cc\u0627\u0645", "#\u0627\u062f\u0628\u06cc\u0627\u062a_\u0641\u0627\u0631\u0633\u06cc"],
    "hashtagsEn": ["#persianpoetry", "#khayyam"],
-   "_check": "Interpretation of the closing line, not an assertion about Khayyam's philosophy. Safe as phrased."
+   "_check": "A meditation rather than a message - see _message_not_meditation. Expect weaker sharing than the Saadi verses."
   },
   {
    "id": "khayyam-021-no-access", "verseId": "khayyam-021", "poet": "Khayyam", "mood": "wry", "used": false,
    "promptType": "send", "verseType": "encouragement",
    "headline": "TOMORROW IS NOT YOURS YET",
-   "argument": "The word Khayyam uses is dastras - ordinary Persian for within reach, the word you would use about a shop or a phone. Not a philosophical term at all.\n\nSo the line is not a meditation on time. It is a practical observation: tomorrow is not available to you. You cannot get at it. Whatever you are doing with it in your head right now, you are handling something that is not in the room.\n\nTranslations reach for grander language and lose exactly that plainness.",
+   "englishSaid": "Tomorrow is not yours to reach, and thinking of it is only fever. Don't waste this breath, even if your heart isn't burning - no one has priced what's left of your life.",
+   "argument": "The word Khayyam uses is dastras - ordinary Persian for within reach, the word you would use about a shop or a phone. Not a philosophical term at all.\n\nSo the line is not a meditation on time. It is practical: tomorrow is not available to you. Whatever you are doing with it in your head right now, you are handling something that is not in the room.",
    "insightFa": "\u00ab\u062f\u0633\u062a\u0631\u0633\u00bb \u0648\u0627\u0698\u0647\u0654 \u0631\u0648\u0632\u0645\u0631\u0647 \u0627\u0633\u062a\u060c \u0646\u0647 \u0641\u0644\u0633\u0641\u06cc \u2014 \u062e\u06cc\u0627\u0645 \u0645\u06cc\u200c\u06af\u0648\u06cc\u062f \u0641\u0631\u062f\u0627 \u062f\u0631 \u062f\u0633\u062a\u0631\u0633 \u062a\u0648 \u0646\u06cc\u0633\u062a",
    "insightEn": "Dastras is everyday Persian for within reach. Not a philosophical claim - a practical one.",
    "lessonFa": "\u0641\u0631\u062f\u0627 \u0647\u0646\u0648\u0632 \u0628\u0647 \u062f\u0633\u062a \u062a\u0648 \u0646\u06cc\u0633\u062a",
@@ -59,13 +81,14 @@
    "poetLineEn": "Omar Khayyam \u2014 Nishapur, 11th century",
    "hashtagsFa": ["#\u0634\u0639\u0631_\u0641\u0627\u0631\u0633\u06cc", "#\u062e\u06cc\u0627\u0645", "#\u0631\u0628\u0627\u0639\u06cc\u0627\u062a"],
    "hashtagsEn": ["#persianpoetry", "#khayyam"],
-   "_check": "dastras as everyday register is the claim to check - worth one native reader's eye on whether it read the same way in the 11th century."
+   "_check": "dastras as everyday register is the claim to check."
   },
   {
    "id": "rumi-030-spring-repays", "verseId": "rumi-030", "poet": "Rumi", "mood": "happy", "used": false,
    "promptType": "send", "verseType": "consolation",
    "headline": "WHAT AUTUMN TOOK, SPRING REPAYS",
-   "argument": "Two lines, and the whole consolation sits in one verb.\n\nRumi does not say spring is generous, or that it makes up for autumn. He says it repays - the Persian is a debt word, the one you use for settling an account. Autumn took something that was never its own to keep. Spring is not doing you a kindness; it is returning what was owed.\n\nThat is a colder and better thought than the greeting-card version.",
+   "englishSaid": "What autumn carried off, spring comes and pays back.",
+   "argument": "Rumi does not say spring is generous, or that it makes up for autumn. He says it repays - the Persian is a debt word, the one you use for settling an account. Autumn took something that was never its own to keep. Spring is not doing you a kindness; it is returning what was owed.",
    "insightFa": "\u0627\u062f\u0627 \u06a9\u0631\u062f\u0646 \u0648\u0627\u0698\u0647\u0654 \u0628\u062f\u0647\u06cc \u0627\u0633\u062a \u2014 \u0628\u0647\u0627\u0631 \u0628\u062e\u0634\u0634 \u0646\u0645\u06cc\u200c\u06a9\u0646\u062f\u060c \u062d\u0633\u0627\u0628 \u0635\u0627\u0641 \u0645\u06cc\u200c\u06a9\u0646\u062f",
    "insightEn": "The verb is a debt word. Spring is not being generous - it is settling an account.",
    "lessonFa": "\u0622\u0646\u0686\u0647 \u067e\u0627\u06cc\u06cc\u0632 \u0628\u0631\u062f\u060c \u0628\u0647\u0627\u0631 \u067e\u0633 \u0645\u06cc\u200c\u062f\u0647\u062f",
@@ -76,13 +99,14 @@
    "poetLineEn": "Rumi \u2014 Balkh and Konya, 13th century",
    "hashtagsFa": ["#\u0634\u0639\u0631_\u0641\u0627\u0631\u0633\u06cc", "#\u0645\u0648\u0644\u0627\u0646\u0627", "#\u0627\u062f\u0628\u06cc\u0627\u062a_\u0641\u0627\u0631\u0633\u06cc"],
    "hashtagsEn": ["#persianpoetry", "#rumi"],
-   "_check": "HOLD - SEASONAL. It is September in Sydney (spring), so a line about winter ending reads as borrowed from a northern account. Schedule when the seasons match. ada kardan as a debt verb is the claim worth a native reader's eye."
+   "_check": "HOLD - SEASONAL. It is spring in Sydney; a line about winter ending reads as borrowed from a northern account. Schedule when the seasons match."
   },
   {
    "id": "rumi-033-frozen-corner", "verseId": "rumi-033", "poet": "Rumi", "mood": "happy", "used": false,
    "promptType": "reflect", "verseType": "encouragement",
    "headline": "WHY HAVE YOU FROZEN IN THAT CORNER",
-   "argument": "One verb carries this line, and it repeats: to turn.\n\nRumi asks why you have stopped turning - and then names the thing that has you stuck, which is not sadness itself but a thought that only ever revolves around sadness. The distinction matters. He is not telling you to be happy. He is pointing out that you are still moving, just in a circle of one subject.",
+   "englishSaid": "Why have you frozen in that corner? Why won't you turn too? Are you some unlucky thought that circles nothing but grief?",
+   "argument": "One verb carries this line, and it repeats: to turn.\n\nRumi asks why you have stopped turning - and then names the thing that has you stuck, which is not sadness itself but a thought that only ever revolves around sadness. He is not telling you to be happy. He is pointing out that you are still moving, just in a circle of one subject.",
    "insightFa": "\u0645\u0648\u0644\u0627\u0646\u0627 \u0646\u0645\u06cc\u200c\u06af\u0648\u06cc\u062f \u063a\u0645 \u0646\u062e\u0648\u0631\u061b \u0645\u06cc\u200c\u06af\u0648\u06cc\u062f \u062a\u0648 \u062f\u0627\u0631\u06cc \u0645\u06cc\u200c\u06af\u0631\u062f\u06cc\u060c \u0627\u0645\u0627 \u0641\u0642\u0637 \u062f\u0648\u0631 \u06cc\u06a9 \u0686\u06cc\u0632",
    "insightEn": "Rumi does not say stop grieving. He says you are still turning - just around one subject.",
    "lessonFa": "\u0686\u0631\u062e\u06cc\u062f\u0646\u060c \u0627\u0632 \u0645\u0627\u0646\u062f\u0646 \u0622\u0633\u0627\u0646\u200c\u062a\u0631 \u0627\u0633\u062a",
@@ -93,13 +117,14 @@
    "poetLineEn": "Rumi \u2014 Balkh and Konya, 13th century",
    "hashtagsFa": ["#\u0634\u0639\u0631_\u0641\u0627\u0631\u0633\u06cc", "#\u0645\u0648\u0644\u0627\u0646\u0627", "#\u0627\u062f\u0628\u06cc\u0627\u062a_\u0641\u0627\u0631\u0633\u06cc"],
    "hashtagsEn": ["#persianpoetry", "#rumi"],
-   "_check": "RECLASSIFIED to reflect 1 Sep 2026 - the poem points at the reader's own stuckness, so sending it reads as 'I have noticed you are depressed'. Fails the sendability test."
+   "_check": "Reflect, not send - the poem points at the reader's own stuckness."
   },
   {
    "id": "khayyam-048-still-a-student", "verseId": "khayyam-048", "poet": "Khayyam", "mood": "grave", "used": false,
    "promptType": "reflect", "verseType": "observation",
    "headline": "STILL NO MASTER",
-   "argument": "A quatrain is built to arrive somewhere. Three lines set it up and the fourth lands.\n\nThis one refuses. Khayyam spends three lines describing a life of study and constraint, and then the fourth line admits he has not learned the trade. The form promises wisdom and the content declines to supply any.\n\nWhich is the point. It is a poem about the gap between how long you have been at something and how much you actually know - and it is eleventh century.",
+   "englishSaid": "Not one day free of this world's hold. Not one breath at ease in my own life. I've been time's apprentice long enough - and I'm still no master of it.",
+   "argument": "A quatrain is built to arrive somewhere. Three lines set it up and the fourth lands.\n\nThis one refuses. Khayyam spends three lines describing a life of study and constraint, and then the fourth admits he has not learned the trade. The form promises wisdom and the content declines to supply any.",
    "insightFa": "\u0631\u0628\u0627\u0639\u06cc \u0642\u0631\u0627\u0631 \u0627\u0633\u062a \u062f\u0631 \u0645\u0635\u0631\u0627\u0639 \u0686\u0647\u0627\u0631\u0645 \u0628\u0647 \u062d\u06a9\u0645\u062a \u0628\u0631\u0633\u062f \u2014 \u0627\u06cc\u0646 \u06cc\u06a9\u06cc \u0627\u0639\u062a\u0631\u0627\u0641 \u0645\u06cc\u200c\u06a9\u0646\u062f \u06a9\u0647 \u0646\u0631\u0633\u06cc\u062f\u0647",
    "insightEn": "A quatrain is built to arrive at wisdom in its fourth line. This one admits it has not.",
    "lessonFa": "\u0633\u0627\u0644\u200c\u0647\u0627 \u0634\u0627\u06af\u0631\u062f\u06cc \u06a9\u0631\u062f\u0645 \u0648 \u0647\u0646\u0648\u0632 \u0627\u0633\u062a\u0627\u062f \u0646\u06cc\u0633\u062a\u0645",
@@ -110,13 +135,14 @@
    "poetLineEn": "Omar Khayyam \u2014 Nishapur, 11th century",
    "hashtagsFa": ["#\u0634\u0639\u0631_\u0641\u0627\u0631\u0633\u06cc", "#\u062e\u06cc\u0627\u0645", "#\u0631\u0628\u0627\u0639\u06cc\u0627\u062a"],
    "hashtagsEn": ["#persianpoetry", "#khayyam"],
-   "_check": "That the rubai turn lands in the fourth line is standard description of the form. Reflect, not send - 'I am not good enough' is not something you forward to a friend."
+   "_check": "Reflect, not send - a confession is not something you forward."
   },
   {
    "id": "rumi-022-no-contempt", "verseId": "rumi-022", "poet": "Rumi", "mood": "grave", "used": false,
    "promptType": "reflect", "verseType": "observation",
    "headline": "LOOK DOWN ON NO ONE",
-   "argument": "Notice the order. Rumi does not begin with the advice - he begins by admitting that he was one of the people doing the taunting.\n\nWe did not think this of him, and yet we mocked him. Only then: look upon no human being with contempt.\n\nAdvice that arrives after a confession lands differently from advice that arrives from above. He is not instructing you from a height. He is telling you what he got wrong.",
+   "englishSaid": "We never thought it of him - and still we mocked him. Look down on no one.",
+   "argument": "Notice the order. Rumi does not begin with the advice - he begins by admitting that he was one of the people doing the taunting. Only then: look upon no human being with contempt.\n\nAdvice that arrives after a confession lands differently from advice that arrives from above.",
    "insightFa": "\u0645\u0648\u0644\u0627\u0646\u0627 \u0627\u0648\u0644 \u0627\u0639\u062a\u0631\u0627\u0641 \u0645\u06cc\u200c\u06a9\u0646\u062f \u06a9\u0647 \u062e\u0648\u062f\u0634 \u0637\u0639\u0646\u0647 \u0645\u06cc\u200c\u0632\u062f\u0647 \u2014 \u0646\u0635\u06cc\u062d\u062a \u0628\u0639\u062f \u0627\u0632 \u0627\u0639\u062a\u0631\u0627\u0641 \u0645\u06cc\u200c\u0622\u06cc\u062f",
    "insightEn": "Rumi admits he did the taunting himself. The advice comes after the confession, not from above it.",
    "lessonFa": "\u0647\u06cc\u0686\u200c\u06a9\u0633 \u0631\u0627 \u06a9\u0648\u0686\u06a9 \u0646\u0628\u06cc\u0646",
@@ -127,12 +153,12 @@
    "poetLineEn": "Rumi \u2014 Balkh and Konya, 13th century",
    "hashtagsFa": ["#\u0634\u0639\u0631_\u0641\u0627\u0631\u0633\u06cc", "#\u0645\u0648\u0644\u0627\u0646\u0627", "#\u0627\u062f\u0628\u06cc\u0627\u062a_\u0641\u0627\u0631\u0633\u06cc"],
    "hashtagsEn": ["#persianpoetry", "#rumi"],
-   "_check": "RECLASSIFIED to reflect 1 Sep 2026 - self-accusation, so it is not sendable. The confession-then-advice order is visible in the text. Closest verse in the queue to Saadi's Bani Adam in register."
+   "_check": "Reflect, not send - self-accusation. Closest verse in the queue to Saadi's Bani Adam in register."
   }
  ],
  "_blocked": [
   {"id": "saadi-baniadam", "poet": "Saadi", "reason": "The most recognised line in Persian literature and 64 percent of the YouTube channel - but it resolves to no validated bank. Validate against Ganjoor and add it to verse-queue.json. The single highest-value unblock available."},
-  {"id": "rumi-028-many-heads", "poet": "Rumi", "reason": "Drafted and dropped 1 Sep 2026. The insight claimed the couplet says many have sat here before you; it does not - 'ey basa' is an exclamation with no temporal claim. Needs the surrounding ghazal before any argument can rest on it."},
-  {"id": "fal-ritual", "poet": "Hafez", "reason": "Not a verse reel. Hold for Hafez Day (12 October) or Yalda (21 December). Needs a different renderer - no couplet."}
+  {"id": "rumi-028-many-heads", "poet": "Rumi", "reason": "Dropped 1 Sep 2026 - the insight claimed the couplet says many have sat here before you; it does not."},
+  {"id": "fal-ritual", "poet": "Hafez", "reason": "Not a verse reel. Hold for Yalda (21 December)."}
  ]
 }
