@@ -3,6 +3,8 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import MomentArticle from '../../components/MomentArticle.astro';
 import Footer from '../../components/Footer.astro';
 import { ROOTS_MOMENTS } from '../../data/rootsMoments';
+import { getBrisbaneToday } from '../../lib/countdown';
+import { formatMomentDate, upcomingOccurrences } from '../../lib/momentText';
 import {
   MOMENT_COPY,
   MOMENT_PAGE_IDS,
@@ -29,12 +31,37 @@ const { momentId } = Astro.props;
 const moment = ROOTS_MOMENTS.find((m) => m.id === momentId)!;
 const path = `/moments/${MOMENT_SLUGS[momentId]}/`;
 
-// The meta description is the approved sentence, verbatim. It is the best
-// description of the moment this project has, it is already signed off, and
-// using it means the snippet a search engine shows is the same sentence a
-// visitor then reads.
-const description = MOMENT_COPY[momentId].sentenceEn;
-const title = `${moment.nameEn}: ${MOMENT_TITLE_TAIL_EN[momentId]} | Hamdam`;
+// The snippet leads with the date, because the date is what the winning query
+// asks for.
+//
+// The 2026-09-03 Search Console reading has this page at average position 5.9
+// on 14 impressions with no clicks, and the named query driving it is
+// `yalda 2026`. Somebody typing a year wants to know when the night falls. The
+// page body has answered that since it was built, computed from the Persian
+// calendar rule in rootsMoments; the title and description never carried it,
+// so the one line a searcher reads before deciding to click did not answer
+// the question they asked.
+//
+// The date is the next occurrence, computed at build time from the same
+// `upcomingOccurrences` call the article body renders, so it rolls forward on
+// its own and no year is ever typed into this file. The occurrence list is
+// short by design for moments whose dates are only banked for the years the
+// app shipped with, so an empty list falls back to exactly the previous title
+// and description rather than printing a half sentence.
+//
+// The approved sentence is kept verbatim after the date, unchanged. It is
+// still the best description of the moment this project has, it is signed off,
+// and a visitor arriving from the snippet still reads the same words on the
+// page.
+const nextOccurrence = upcomingOccurrences(moment.rule, getBrisbaneToday(), 1)[0] ?? null;
+const nextDate = nextOccurrence ? formatMomentDate('en', nextOccurrence.date) : null;
+
+const description = nextDate
+  ? `${moment.nameEn} falls on ${nextDate}. ${MOMENT_COPY[momentId].sentenceEn}`
+  : MOMENT_COPY[momentId].sentenceEn;
+const title = nextOccurrence
+  ? `${moment.nameEn} ${nextOccurrence.date.year}: ${MOMENT_TITLE_TAIL_EN[momentId]} | Hamdam`
+  : `${moment.nameEn}: ${MOMENT_TITLE_TAIL_EN[momentId]} | Hamdam`;
 
 const jsonLd = momentPageSchema({
   lang: 'en',

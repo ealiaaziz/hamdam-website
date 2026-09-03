@@ -93,13 +93,21 @@ group.
 navigational, steady, and explicitly "not an opening". It was wrong on all
 three counts. Do not re-derive that conclusion; read the 2026-09-03 entry.
 
+**Correction, made while implementing this file.** An earlier draft of this
+section called `/poets/khayyam/` "the laggard at position 30.6 while its
+siblings sit at 4 to 6". That compared two different things: 30.6 is the page's
+average across every query it appears for, and 4 to 6 are per query positions
+inside the ganjoor cluster. `ganjoor khayyam` sits at position 5.0 and produced
+the only click in the window, which is in line with its siblings rather than
+behind them. There is no Khayyam gap in the ganjoor cluster. Do not go looking
+for one.
+
 **What to do.** Two options, and they are genuinely different bets:
 
 - **Lean into what works.** The ganjoor cluster is small (about 30 impressions
-  a fortnight) but the site owns it. `/poets/khayyam/` is the laggard at
-  position 30.6 while its siblings sit at 4 to 6, and only `/fa/poets/saadi/`
-  surfaces from the Farsi poet pages. Closing those two gaps is cheap and
-  compounds an existing win.
+  a fortnight) but the site owns it. Of the Farsi poet pages only
+  `/fa/poets/saadi/` surfaces at all, which is the real gap on this side, and
+  closing it needs Persian copy rather than code.
 - **Attack the head terms.** `/poets/hafez/` draws the most impressions on the
   site (50) at nearly the worst position (43.4). That is the largest single
   gap in the data. It is also the most competitive term in the space and the
@@ -129,6 +137,20 @@ Pages that already rank well and still take almost nothing:
 A page at position 3 to 6 taking zero clicks is a titles and descriptions
 problem, not a ranking problem. **This is the cheapest work in this file**: no
 new content, no new pages, just the two lines a searcher actually reads.
+
+**Done for the moment pages.** `/moments/yalda/` now renders
+`Yalda 2026: the longest night of the year | Hamdam` and a description leading
+`Yalda falls on 21 December 2026.` Both the year and the date are computed at
+build time from the same Persian calendar rule the article body already used,
+so they roll forward on their own and no year is ever typed into the
+repository. Norooz and Chaharshanbe Suri get the same treatment from the shared
+template. The Farsi moment pages are deliberately untouched: their titles are
+minimal because no Persian may be authored here, which is a recorded decision
+rather than an oversight.
+
+Still open: the homepage sits at position 3.0 and took one click on twelve
+impressions, which is too thin to act on, and its description is the approved
+tagline. Leave it until a reading gives a clearer signal.
 
 Do not guess at what is currently rendered. Read the actual `<title>` and
 `<meta name="description">` for each page above from the built output, then
