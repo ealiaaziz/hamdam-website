@@ -39,6 +39,7 @@ newest reading is always the last one in each section.
 | 2026-08-08 | all data to date (2026-07-03 to 2026-08-05) | 25 | 0 | 15.1 | 1 | 4 |
 | 2026-08-16 | since the last reading (2026-08-06 to 2026-08-13) | 70 | 2 | 36.8 | 16 | 11 |
 | 2026-08-20 | since the last reading (2026-08-16 to 2026-08-18, final) | 42 | 1 | 46.7 | 6 | 11 |
+| 2026-09-03 | since the last reading (2026-08-19 to 2026-09-01, final) | 272 | 3 | 27.2 | 33 | 13 |
 <!-- readings:row -->
 
 Trailing 28 days at the first reading (2026-07-09 to 2026-08-05): 23
@@ -299,6 +300,128 @@ absent, because an empty localisation fails review. And Apple's metadata
 locale codes are not BCP 47, so `de-DE` and `fr-FR` are right while `sv-SE`
 and `tr-TR` are rejected in favour of bare `sv` and `tr`. Nothing lists the
 valid set; the only way to learn one is to try it and read the error.
+
+### 2026-09-03, the reading where something finally moved
+
+Taken by hand, fourteen days after the last one, against a matched fourteen day
+window so the comparison is like for like.
+
+| | 2026-08-05 to 08-18 | 2026-08-19 to 09-01 |
+| --- | --- | --- |
+| Impressions | 135 | **272** |
+| Clicks | 3 | 3 |
+| CTR | 2.2% | 1.1% |
+| Average position | 41.6 | **27.2** |
+| Named queries | 26 | 33 |
+
+**Impressions doubled and average position improved by fourteen places at the
+same time.** Every previous entry in this file has had to explain why a falling
+average position was not a regression. This one does not: the site is surfacing
+for more queries *and* ranking better on them, which is the first time those two
+have moved together.
+
+**Clicks did not move.** Three, both windows, so CTR halved. Volume grew and
+conversion did not. Nobody should read the doubling as traffic; it is
+eligibility for traffic.
+
+**The position trend is steep at the end of the window.**
+
+| Date | Impressions | Avg position |
+| --- | --- | --- |
+| 2026-08-25 | 23 | 19.0 |
+| 2026-08-29 | 27 | 32.3 |
+| 2026-08-30 | 22 | 27.5 |
+| 2026-08-31 | 22 | 10.5 |
+| 2026-09-01 | 26 | 7.5 |
+
+An average position of 7.5 across a whole day is a different kind of number from
+anything in this file. It was checked rather than assumed: querying 31 August to
+1 September by page gives `/poets/saadi/` 9 impressions at 4.4,
+`/poets/rumi/` 12 at 5.7, `/fa/poets/saadi/` 6 at 5.0,
+`/poets/parvin-etesami/` 4 at 7.3, `/fal-e-hafez/` 7 at 9.6 and
+`/moments/yalda/` 1 at 2.0. It is several pages moving, not one lucky
+impression dragging a mean.
+
+**A correction to the 2026-08-20 entry, which got the ganjoor queries wrong.**
+That entry recorded them as "steady across every window now, and still at zero
+clicks lifetime", read that as navigational intent, and said in terms: "Steady
+is the expected behaviour, not a promising one. Recorded so nobody reads these
+positions as an opening." Both halves have since failed.
+
+| Query | 08-05 to 08-18 | 08-19 to 09-01 |
+| --- | --- | --- |
+| `ganjoor rumi` | 4 impressions, pos 7.25 | 19 impressions, pos 6.0 |
+| `ganjoor saadi` | 1 impression, pos 7.0 | 8 impressions, pos 4.25 |
+| `ganjoor khayyam` | 2 impressions, pos 7.5 | 3 impressions, pos 5.0, **1 click** |
+
+Not steady, and not zero clicks. The cluster is the single biggest contributor
+to the doubling, and it produced the first click this site has ever taken on a
+query that is not its own name. The caution the old entry was reaching for is
+still worth keeping in a narrower form: this is a low volume niche, thirty
+impressions in a fortnight, and owning it does not imply anything about the
+terms that carry real volume.
+
+**Which is the other half of the reading. The head terms are still nowhere.**
+`hafez` drew 15 impressions at position 52. `saadi poems` 54, `saadi poetry` 57,
+`the poems of hafez` 64, `rumi the great wagon` 79. That is where the searches
+are and the site is not competitive for any of them. The doubling came from a
+narrow branded cluster the site happens to own, plus the Farsi and moments
+pages. Read as market share, nothing has changed.
+
+**Pages with impressions, 13.**
+
+| URL | Impressions | Avg position |
+| --- | --- | --- |
+| `/poets/rumi/` | 54 | 40.1 |
+| `/poets/saadi/` | 52 | 22.3 |
+| `/poets/hafez/` | 50 | 43.4 |
+| `/fal-e-hafez/` | 31 | 16.7 |
+| `/poets/parvin-etesami/` | 21 | 20.8 |
+| `/poets/khayyam/` | 19 | 30.6 (1 click) |
+| `/moments/yalda/` | 14 | 5.9 |
+| `/` | 12 | 3.0 (1 click) |
+| `/fa/` | 6 | 12.7 |
+| `/fa/poets/saadi/` | 6 | 5.0 |
+| `/fa/privacy/` | 5 | 10.0 (1 click) |
+| `/moments/norooz/` | 1 | 4.0 |
+| `/terms/` | 1 | 87.0 |
+
+**`/moments/yalda/` is the finding with a deadline.** 14 impressions at position
+5.9, and the query `yalda 2026` at position 5, in early September. Yalda is 21
+December. The page is already ranking before the season it exists for has
+started, which is the strongest position any content on this site holds. It
+bears directly on the featuring nomination built around Yalda and on any Yalda
+in-app event: the search demand is real and the page is already there for it.
+`/moments/norooz/` at position 4 on one impression says the same shape may hold
+for Nowruz in March.
+
+**The legal pages have stopped dominating.** `/fa/privacy/` is 5 impressions and
+`/terms/` is 1, against `/privacy/` and `/fa/privacy/` being the two best
+ranking pages on the site in the previous reading. The poet cluster has
+displaced them, which is the outcome the 2026-08-16 entry predicted and the
+2026-08-20 entry could not yet see.
+
+**Countries, 30 of them.** India 31, Australia 25, United Kingdom 20, Canada 17,
+Iran 11, Austria 10. The three clicks came from Canada, Indonesia and Iran. The
+diaspora shape holds; India at the top is new and is probably the `ganjoor` and
+poetry long tail rather than anything about the product.
+
+**What this reading still cannot see.** Same limit as every previous entry:
+Search Console covers `hamdam.com.au` and says nothing about the App Store. The
+window contains 1.3 on 27 August, 1.3.1 on 30 August, the Garden in-app event
+going live on 31 August and 1.3.2 on 1 September, and none of that is visible
+here. App Store first time downloads over the same fortnight were flat at zero
+to three a day, so the two surfaces are telling different stories and neither
+one answers for the other.
+
+**The cadence argument is now settled, and the job is still paused.** This
+reading found two weeks of the most movement the site has ever had, sitting
+unrecorded because the last row was 2026-08-20 and
+`.github/workflows/seo-log.yml` still has its schedule commented out and
+`GSC_SERVICE_ACCOUNT_KEY` unset. The 2026-08-16 entry started this argument and
+the log header repeats it. Impressions doubling and average position halving is
+exactly what a monthly cadence exists to catch, and it was caught only because
+somebody asked.
 
 <!-- readings:notes -->
 
