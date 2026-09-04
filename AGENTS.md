@@ -92,6 +92,14 @@ HealthKit, EventKit, WeatherKit, StoreKit, MusicKit, Foundation Models).
 `date.nager.at` is the only non-Apple service.
 History and verification matrix: `docs/progress.md`.
 
+**Read `docs/method-failures.md` before reporting a number or telling Ealia to
+go and do something.** It records how assistant sessions on this project have
+produced confident wrong answers, and the failure mode is always the same: a
+command was run, its output was misread or its scope was narrower than assumed,
+and the misreading went straight to Ealia as a fact. Twice the correct answer
+was already in this repository, once in the very file that had just been read.
+It is one page and it is the cheapest thing here to read.
+
 **Continuing the redesign:** everything in `docs/website-redesign/33-universal-roots-and-homepage-handoff.md`
 shipped 2026-07-25 and is live. What remains is in
 `docs/website-redesign/34-next-steps.md` — read that first. Deploy with
