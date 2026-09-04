@@ -171,8 +171,20 @@ ever had sat unrecorded and surfaced only because somebody asked. Restarting is
 two uncommented lines plus one repository secret; the workflow header documents
 the service account steps.
 
-**The code side is done and tested.** What is missing is the credential, which
-is Ealia's to create. Flag it rather than working around it.
+**Correction, 2026-09-03.** An earlier draft of this section implied the missing
+secret is what stands between this project and a reading. It is not, and saying
+so sent the owner toward a Google Cloud service account he did not need. The
+property is already reachable with no credential through the Composio
+connection, toolkit `google_search_console`, authorised at `siteOwner`, and that
+is how every reading in the log was taken, including the one this file is about.
+
+`GSC_SERVICE_ACCOUNT_KEY` buys exactly one thing: the reading happening when
+nobody has asked for one. A GitHub Actions runner cannot use the Composio
+connection, because that is bound to an assistant session and not to the
+repository, so unattended means a credential the runner holds itself. Whether
+that is worth setting up is a judgement about how much an unwatched meter is
+worth, not a blocked task. Verified on 2026-09-03 by dispatching the workflow:
+it failed on its first step and committed nothing.
 
 ---
 

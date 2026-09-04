@@ -13,19 +13,35 @@ set, so it only runs on demand from the Actions tab.
 
 Paused on instruction, and the schedule was commented out rather than left live
 because a monthly job with no credential does nothing every month except email
-a failure. Both readings below were taken by hand instead, which is why the
-cadence in the table is irregular.
+a failure. Every reading in the table below was taken by hand instead, which is
+why the cadence in it is irregular.
 
-The original argument for pausing was that nothing was moving, so a monthly
-cadence would only report the same nothing. **The 2026-08-16 reading weakened
-that argument** and it should be read before anyone decides to leave this off:
-pages drawing impressions went from 4 to 11, named queries from 1 to 16, and
-the site took its first two clicks. Something is now moving fast enough that a
-regular cadence has a case it did not have on 2026-08-08. Re-enabling is two
-uncommented lines and one secret; the workflow header says how.
+**Be clear about what the missing secret does and does not block, because a
+session got this wrong on 2026-09-03 and told the owner the credential was the
+thing standing between him and a reading.** It is not. Readings need no
+credential at all: the property is reachable through the Composio connection,
+toolkit `google_search_console`, authorised at `siteOwner`, and that is the path
+that produced every row in this file. The procedure is at the bottom of this
+page. `GSC_SERVICE_ACCOUNT_KEY` buys exactly one thing, and it is worth naming
+precisely: **the reading happening when nobody has asked for one.** A GitHub
+Actions runner cannot use the Composio connection, which is bound to an
+assistant session rather than to the repository, so unattended means a
+credential the runner holds itself.
 
-The by-hand procedure at the bottom of this file needs no credential and is how
-both existing readings were taken.
+That makes the open question a real choice rather than a chore. Either readings
+are taken on request, which works today and costs nothing, or the service
+account is set up so the meter reads itself once a month whether or not anyone
+remembers. The argument for the second is the argument this file keeps making:
+the 2026-08-16 reading showed pages drawing impressions going 4 to 11 and named
+queries 1 to 16, and the 2026-09-03 reading found impressions doubled and
+average position improved by fourteen places over a fortnight that nobody had
+looked at. Both were caught because somebody asked. Neither would have been
+caught otherwise.
+
+Re-enabling the unattended path is two uncommented lines and one secret; the
+workflow header says how. Verified on 2026-09-03 by dispatching the workflow:
+it failed on its first step with `GSC_SERVICE_ACCOUNT_KEY is not set` and
+committed nothing, which is the designed behaviour.
 
 ## Readings
 
@@ -484,12 +500,10 @@ For backfills, or if the credential lapses. Search Console data lags two to
 three days, so a reading on the 3rd covers the month before it cleanly. Use
 `data_state: "final"`.
 
-The easy path is `node scripts/gsc-pull.mjs` with `GSC_SERVICE_ACCOUNT_KEY` set
-in the environment, and optionally `GSC_START` and `GSC_END` to override the
-window. That does everything the workflow does except the commit.
-
-Without the key, the property is also reachable through the Composio connection,
-toolkit `google_search_console`, authorised at `siteOwner`. Four calls to
+**The Composio path is the one that works today, and it needs no credential.**
+The property is reachable through the connection, toolkit
+`google_search_console`, authorised at `siteOwner`, confirmed again on
+2026-09-03. Every reading in the table above was taken this way. Four calls to
 `GOOGLE_SEARCH_CONSOLE_SEARCH_ANALYTICS_QUERY`, all on the same window:
 
 | Call | `dimensions` | Gives |
@@ -501,6 +515,12 @@ toolkit `google_search_console`, authorised at `siteOwner`. Four calls to
 
 Then append a row to the table above, and write a short paragraph on anything
 that moved. A reading with no commentary is close to useless in six months.
+
+The other path, `node scripts/gsc-pull.mjs` with `GSC_SERVICE_ACCOUNT_KEY` set
+in the environment and optionally `GSC_START` and `GSC_END` to override the
+window, does everything the workflow does except the commit. It needs the
+service account, so it is the path for the unattended job rather than for a
+person or a session taking a reading now.
 
 Coverage is a separate question from impressions: a page can be indexed and
 never shown. `GOOGLE_SEARCH_CONSOLE_INSPECT_URL` answers it per URL, and is
