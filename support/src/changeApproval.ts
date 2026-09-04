@@ -152,10 +152,44 @@ export function approvalVerdict(text: string): ApprovalVerdict {
   if (hasWord(tokens, REFUSE_WORDS) || hasPhrase(text, REFUSE_PHRASES) || hasEmoji(REFUSE_EMOJI)) {
     return 'refused';
   }
-  if (hasWord(tokens, APPROVE_WORDS) || hasPhrase(text, APPROVE_PHRASES) || hasEmoji(APPROVE_EMOJI)) {
-    return 'approved';
-  }
+  const approves = hasWord(tokens, APPROVE_WORDS)
+    || hasPhrase(text, APPROVE_PHRASES)
+    || hasEmoji(APPROVE_EMOJI);
+
+  // An approval that also asks something is not an approval yet.
+  //
+  // On HAM-58 she wrote, of a change with three parts, "I agree with 1 and 3
+  // and they are approved. About 2, you mean the seller's id is not shown to
+  // the buyer and only the admin sees it, right?" This read that as yes and
+  // recorded consent for the whole change, item 2 included, which she had
+  // asked about rather than agreed to. Only the migration guard stopped it
+  // merging.
+  //
+  // Consent has to name what it consents to, and someone still asking what
+  // something does has not named it. So a question mark alongside agreement
+  // makes the reply unclear, which relays it to the agent and asks her again
+  // once she has the answer. That costs her one extra email; the other way
+  // costs her code she did not agree to, on a channel with real sellers.
+  //
+  // The asymmetry is deliberate and only runs this way: a refusal with a
+  // question in it is still a refusal, decided above, because stopping on a
+  // maybe is free and shipping on one is not.
+  if (approves && asksSomething(text)) return 'unclear';
+  if (approves) return 'approved';
   return 'unclear';
+}
+
+/**
+ * Whether the reply asks anything, in either alphabet's question mark.
+ *
+ * Persian uses U+061F and Latin keyboards produce U+003F, and she writes with
+ * both. Nothing cleverer is attempted: a question mark is the one signal that
+ * is unambiguous across the languages this desk reads, and guessing at
+ * interrogative phrasing in Farsi is exactly the kind of cleverness that would
+ * fail quietly on the messages that matter.
+ */
+function asksSomething(text: string): boolean {
+  return /[?\u061F]/.test(text);
 }
 
 /** The reference printed in every approval request, e.g. `HAM-12/a3f9c1`. */

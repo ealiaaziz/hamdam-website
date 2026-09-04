@@ -179,3 +179,34 @@ describe('approvesChange: consent is tied to one change', () => {
     expect(approvesChange('ممنون', ref)).toBe(false);
   });
 });
+
+describe('an approval that still asks something', () => {
+  /**
+   * HAM-58, word for word. A change with three parts; she agreed to two and
+   * asked what the third one did. This was recorded as consent to all three,
+   * and only the migration guard stopped it merging.
+   */
+  it('does not count a partial agreement with a question as consent', () => {
+    expect(approvalVerdict(
+      'با ۱ و ۳ موافقم و مورد تاییده.\nراجع به ۲ یعنی آیدی فروشنده به خریدار نشون داده نمیشه و فقط برای ادمین قابل دیدنه، درسته؟',
+    )).toBe('unclear');
+  });
+
+  it('still reads a plain yes as approval', () => {
+    expect(approvalVerdict('بله')).toBe('approved');
+    expect(approvalVerdict('بله، ممنون')).toBe('approved');
+  });
+
+  it('treats either alphabet of question mark the same', () => {
+    expect(approvalVerdict('بله ولی این چیست؟')).toBe('unclear');
+    expect(approvalVerdict('yes but what does this do?')).toBe('unclear');
+  });
+
+  /**
+   * Only ever in this direction. Stopping on a maybe is free; shipping on one
+   * is not, so a refusal that also asks something is still a refusal.
+   */
+  it('keeps a refusal a refusal even when it asks something', () => {
+    expect(approvalVerdict('نه، چرا این کار را کردید؟')).toBe('refused');
+  });
+});
