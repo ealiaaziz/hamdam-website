@@ -38,10 +38,31 @@ average position improved by fourteen places over a fortnight that nobody had
 looked at. Both were caught because somebody asked. Neither would have been
 caught otherwise.
 
-Re-enabling the unattended path is two uncommented lines and one secret; the
-workflow header says how. Verified on 2026-09-03 by dispatching the workflow:
-it failed on its first step with `GSC_SERVICE_ACCOUNT_KEY is not set` and
-committed nothing, which is the designed behaviour.
+There are two ways to get the unattended path, and on 2026-09-04 the cheaper
+one was tried and found to be half blocked. Recorded here so nobody spends the
+attempt twice.
+
+**A scheduled Claude Routine, using the Composio connection.** This is the
+obvious answer, because it needs no new credential anywhere: a routine wakes a
+session once a month and that session reads the meter exactly as a person would.
+A routine created from inside a session cannot do it. The trigger is created
+with no connectors attached, so the session it wakes has no Composio tools and
+cannot reach Search Console, and passing the connector explicitly is refused
+with "the connectors parameter is not available for this organization". The
+routine now exists and is **paused** rather than deleted, named so its state is
+visible in the Routines list, with a prompt that already carries the procedure
+and the two traps. Attaching the Composio connector to it in the claude.ai
+Routines interface, where connectors can be attached, and enabling it is all
+that is left. That is a few clicks and no Google Cloud at all.
+
+**The GitHub Actions job, using a service account.** Two uncommented lines and
+one secret; the workflow header says how. Verified on 2026-09-03 by dispatching
+the workflow: it failed on its first step with `GSC_SERVICE_ACCOUNT_KEY is not
+set` and committed nothing, which is the designed behaviour.
+
+Prefer the routine. It reuses a connection that already exists and already
+works, it fails loudly in a place somebody looks, and it produces the
+commentary that makes a row worth keeping, which a script cannot.
 
 ## Readings
 
