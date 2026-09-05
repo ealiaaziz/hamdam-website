@@ -65,6 +65,29 @@ export const FAL_HAFEZ_BODY_EN: readonly { heading: string; body: string }[] = [
   // the ghazal in one language and, in Farsi, deliberately shows no English at
   // all (Ealia, 2026-07-27: "I don't need English translation at all, add
   // tafsir instead"). See "Verse display" in FACTS.md.
+  // Four sections added 2026-09-05. The page rendered at 296 words, thin for the
+  // highest-intent query in this space and thin for an assistant asked "how do I
+  // do a Hafez faal", which is a question this page should be able to answer on
+  // its own. Each heading below is a sub-question people actually type, and the
+  // English one is the exact Search Console query named above, where the page
+  // sat at position 27. Same rule as the paragraphs above: a matter of record
+  // about the practice, or a description of what the app already does.
+  {
+    heading: 'How a fal is taken',
+    body: 'The steps are the same whether the book is on a table or on a phone. You settle on the question first and hold it without saying it aloud, which is the niyat, the intention. Many people then say a Fatiha for Hafez himself before opening. You open the Divan at random rather than choosing, and you read the ghazal you land on from the beginning, not from the line that catches your eye. Custom says one question at a time, and not the same question twice.',
+  },
+  {
+    heading: 'Why the Divan of Hafez',
+    body: 'Other books are used the same way, the Shahnameh and the Masnavi among them, but Hafez is the one that stuck. He is called Lisan al-Ghayb, the tongue of the unseen, and Tarjoman al-Asrar, the interpreter of secrets, and both titles were given because of this practice rather than the other way round. It helps that the ghazals do not tell stories. Each one turns on longing, patience, luck or the gap between what is said and what is meant, so almost any of them will meet almost any question halfway.',
+  },
+  {
+    heading: 'Reading the answer',
+    body: 'A fal is not read as a prediction. The ghazal is taken as a comment on the situation, and the work is in deciding which line is speaking to you and what it is saying, which is why it is usually done aloud and with other people arguing about it. Printed editions often carry a tafsir, a short interpretation, beside each poem; some readers use it and some consider it beside the point. Nobody treats a fal as binding.',
+  },
+  {
+    heading: 'Fal-e Hafez in English',
+    body: 'It works in English, with one thing worth knowing. The Persian ghazal carries its meaning in ambiguity, in words that hold a worldly and a spiritual sense at once, and a translation has to choose. That is why two English versions of the same poem can read as different answers. Reading the Persian alongside the English, even without reading Persian, at least shows you where the poem is denser than the rendering. The name is transliterated several ways, fal, faal and fa\'l among them, and written فال حافظ in Persian.',
+  },
   {
     heading: 'Fal-e Hafez in Hamdam',
     body: 'Hamdam does the same thing without the paper. Ask, and it opens the Divan at a verse, in the original Persian or in English.',
