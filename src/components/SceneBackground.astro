@@ -30,6 +30,8 @@ const { image } = Astro.props;
     alt=""
     width={image.width}
     height={image.height}
+    widths={[384, 768, 1248, 1600]}
+    sizes="(min-width: 1280px) calc(50vw - 336px), 1px"
     class="scene-bg__img h-full w-full object-cover"
   />
 </div>

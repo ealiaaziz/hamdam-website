@@ -104,6 +104,17 @@ if (existsSync(iconSource)) {
     await sharp(iconSource).resize(size, size).png().toFile(join(root, `public/icons/icon-${size}.png`));
     console.log(`wrote public/icons/icon-${size}.png`);
   }
+
+  // Apple touch icon, at the root path Safari and most crawlers probe first.
+  // 180 is the largest size iOS asks for. Flattened onto the manifest's own
+  // background colour rather than left with an alpha channel, because iOS
+  // composites a transparent touch icon onto black, not onto the page.
+  await sharp(iconSource)
+    .resize(180, 180)
+    .flatten({ background: '#F5EEE0' })
+    .png()
+    .toFile(join(root, 'public/apple-touch-icon.png'));
+  console.log('wrote public/apple-touch-icon.png');
 } else {
   console.warn('icon-source-1024.png not found — manifest icons skipped (copy the app icon first)');
 }

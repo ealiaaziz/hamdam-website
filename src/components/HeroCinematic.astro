@@ -1,5 +1,5 @@
 ---
-import { Image } from 'astro:assets';
+import { Image, getImage } from 'astro:assets';
 import PersianShamseh from './PersianShamseh.astro';
 import AppStoreBadge from './AppStoreBadge.astro';
 import { starField } from '../lib/cinematic';
@@ -78,6 +78,18 @@ const stars = starField(40, 42);
 // does. Measured, not eyeballed: the two bands were found by counting cream and
 // near-black pixels per row.
 const heroScreenshot = lang === 'fa' ? heroScreenshotFa : heroScreenshotEn;
+
+// The two horizon plates are display:none/block swapped at 768px, but both
+// carry loading="eager" fetchpriority="high" because whichever one shows is
+// the LCP element. Eager beats display:none: a phone downloaded the 2880px
+// desktop plate (25KB, measured) and painted none of it. A <picture> with a
+// media-scoped <source> is the only construct where the browser rules the
+// wrong plate out before requesting it, so the swap moves out of CSS and
+// into the markup. The blossom plate below is unaffected: it is lazy, so
+// display:none was already enough to keep it off phones.
+const horizonDesktop = await getImage({ src: heroHorizonDesktop, format: 'webp', widths: [768, 1280, 1920, 2880], sizes: '100vw' });
+const horizonMobile = await getImage({ src: heroHorizonMobile, format: 'webp', widths: [390, 640, 780, 1170], sizes: '100vw' });
+
 // 945 is the render width the retired asset happened to be stored at, kept as
 // the budget size (on-page display never exceeds 360px CSS). The height is
 // derived from whichever source this locale uses, because EN is now 1290x2796
@@ -135,24 +147,27 @@ const deviceAlt =
            replaced -- it is not a stand-in for the photo, see its own
            comment below. */
       }
-      <Image
-        src={heroHorizonDesktop}
-        alt=""
-        width={heroHorizonDesktop.width}
-        height={heroHorizonDesktop.height}
-        loading="eager"
-        fetchpriority="high"
-        class="hero__horizon-photo hero__horizon-photo--desktop"
-      />
-      <Image
-        src={heroHorizonMobile}
-        alt=""
-        width={heroHorizonMobile.width}
-        height={heroHorizonMobile.height}
-        loading="eager"
-        fetchpriority="high"
-        class="hero__horizon-photo hero__horizon-photo--mobile"
-      />
+      <picture class="hero__horizon-picture">
+        <source
+          media="(min-width: 768px)"
+          srcset={horizonDesktop.srcSet.attribute}
+          sizes="100vw"
+          width={heroHorizonDesktop.width}
+          height={heroHorizonDesktop.height}
+        />
+        <img
+          src={horizonMobile.src}
+          srcset={horizonMobile.srcSet.attribute}
+          sizes="100vw"
+          alt=""
+          width={heroHorizonMobile.width}
+          height={heroHorizonMobile.height}
+          loading="eager"
+          fetchpriority="high"
+          decoding="async"
+          class="hero__horizon-photo"
+        />
+      </picture>
       {
         /* HW-04: desktop-only foreground blossom plate. Dropped on mobile
            per the page spec -- there is no HW-04 mobile variant, this is
@@ -203,6 +218,8 @@ const deviceAlt =
           alt=""
           width={HERO_SHOT_WIDTH}
           height={heroShotHeight}
+          widths={[261, 522, 783]}
+          sizes="261px"
           quality={80}
           class="hero__device-screen"
         />
@@ -367,19 +384,12 @@ const deviceAlt =
     transform: scaleX(-1) translateY(var(--horizon-drift));
   }
 
-  .hero__horizon-photo--desktop {
-    display: none;
-  }
-  .hero__horizon-photo--mobile {
-    display: block;
-  }
-  @media (min-width: 768px) {
-    .hero__horizon-photo--desktop {
-      display: block;
-    }
-    .hero__horizon-photo--mobile {
-      display: none;
-    }
+  /* display:contents so the <picture> introduces no box of its own and the
+     <img> stays the absolutely positioned child .hero__horizon-photo's rules
+     below expect. The --desktop/--mobile display swap these rules used to do
+     is now the <source media> above. */
+  .hero__horizon-picture {
+    display: contents;
   }
 
   .hero__blossom-photo {
