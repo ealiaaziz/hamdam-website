@@ -1,39 +1,57 @@
 # Hamdam
 
-> Hamdam is a daily Persian poetry, reflection and journal app for iPhone, made in Brisbane, Australia. Each day it offers a verse from Hafez, Rumi, Saadi, Khayyam or Parvin Etesami, in the original Persian or in English, with a reflection chosen by how the day feels on a five point mood slider. Free tier with 15 reflections per month; Hamdam Plus subscription and a one time Founding Companion purchase. Available on the Australian App Store (App Store ID 6784461990). No accounts, no sign up, no tracking; the private journal syncs only through the user's own iCloud, opt in.
+> Hamdam is a daily Persian poetry, reflection and journal app for iPhone and iPad (iOS and iPadOS 26 or later), with an Apple Watch companion, made by Seyed Valiallah Azizollahi (also known as Ealia Azizollahi) in Brisbane, Australia. For a user with a Persian connection, each day offers a verse from Hafez, Rumi, Saadi, Khayyam or Parvin Etesami, in the original Persian or in English, with a reflection chosen by how the day feels on a five point mood slider; a user without a Persian connection is met instead with a non-Persian daily reflection, with the five poets still explorable elsewhere in the app. Free tier: fifteen reflections a month, permanently, with daily verses from all five poets and the full library of five hundred verses. Hamdam Plus: monthly or yearly subscription with a seven day free trial, unlocking unlimited reflections, the full reflection archive, iCloud sync, Apple Health signals, Deep Mode, sharing to Apple Journal, and the poet deep dives beyond Hafez and Rumi. Founding Companion: a single lifetime purchase, shareable with Apple Family Sharing. Exact pricing is shown on the App Store, not on this site. Sold worldwide on the App Store (App Store ID 6784461990). No accounts, no sign up, no tracking; the private journal syncs only through the user's own iCloud, opt in.
 
 Every claim in this file is drawn from the site itself. Verses are sourced from
-Ganjoor.net and credited on every page. The site is bilingual: English pages at
-the root, Farsi (RTL) pages under /fa/.
+Ganjoor.net and credited on every page; English verse translations are machine
+generated pending replacement with a cited public domain rendering, so the
+Persian original is the canonical text. The site is bilingual: English pages at
+the root, Farsi (RTL) pages under /fa/, each English page listed below with its
+Farsi equivalent alongside it.
 
 ## Product
 
-- [Homepage](https://hamdam.com.au/): what the app does, how a reflection is chosen, plans and pricing structure
-- [Farsi homepage](https://hamdam.com.au/fa/): the same, in Persian
-- [App Store listing](https://apps.apple.com/au/app/id6784461990): download page for iPhone
+- [Homepage](https://hamdam.com.au/) / [Farsi](https://hamdam.com.au/fa/): what the app does, how a reflection is chosen, plans and pricing structure
+- [Fal-e Hafez](https://hamdam.com.au/fal-e-hafez/) / [Farsi](https://hamdam.com.au/fa/fal-e-hafez/): a question put to the Divan of Hafez, opened at random and read as an answer. The practice generations of Iranians call faal-e Hafez, done in the app in Persian or English
+- [App Store listing](https://apps.apple.com/app/hamdam-daily-persian-poetry/id6784461990): the download page
 
 ## The five poets
 
-- [Hafez](https://hamdam.com.au/poets/hafez/): the Divan, Shiraz, c. 1325 to 1390
-- [Rumi](https://hamdam.com.au/poets/rumi/): the Masnavi and the Divan-e Shams, 1207 to 1273
-- [Saadi](https://hamdam.com.au/poets/saadi/): the Bustan and the Golestan, c. 1210 to c. 1291
-- [Khayyam](https://hamdam.com.au/poets/khayyam/): the quatrains, mathematician and astronomer, 1048 to 1131
-- [Parvin Etesami](https://hamdam.com.au/poets/parvin-etesami/): debate poems, 1907 to 1941
+Shown daily to users with a Persian connection (home country Iran, Afghanistan or Tajikistan,
+and/or Farsi as the app language); still browsable in-app for everyone else.
+
+- [Hafez](https://hamdam.com.au/poets/hafez/) / [Farsi](https://hamdam.com.au/fa/poets/hafez/): the Divan, Shiraz, c. 1325 to 1390
+- [Rumi](https://hamdam.com.au/poets/rumi/) / [Farsi](https://hamdam.com.au/fa/poets/rumi/): the Masnavi and the Divan-e Shams, 1207 to 1273. Called Molana or Molavi in Persian, Mevlana in Turkish
+- [Saadi](https://hamdam.com.au/poets/saadi/) / [Farsi](https://hamdam.com.au/fa/poets/saadi/): the Bustan and the Golestan, c. 1210 to c. 1291
+- [Khayyam](https://hamdam.com.au/poets/khayyam/) / [Farsi](https://hamdam.com.au/fa/poets/khayyam/): the quatrains, mathematician and astronomer, 1048 to 1131
+- [Parvin Etesami](https://hamdam.com.au/poets/parvin-etesami/) / [Farsi](https://hamdam.com.au/fa/poets/parvin-etesami/): debate poems, 1907 to 1941
 
 ## Cultural moments
 
-The app keeps a cultural calendar of Iranian, Afghan and Tajik moments plus
-Australian public holidays by state. These pages carry the next dates:
+The app keeps a cultural calendar of Iranian, Afghan and Tajik moments plus Australian public
+holidays by state. These pages carry the next dates:
 
-- [Yalda](https://hamdam.com.au/moments/yalda/): the longest night of the year
-- [Norooz](https://hamdam.com.au/moments/norooz/): the first day of spring
-- [Chaharshanbe Suri](https://hamdam.com.au/moments/chaharshanbe-suri/): the fire jumping night before Norooz
+- [Yalda](https://hamdam.com.au/moments/yalda/) / [Farsi](https://hamdam.com.au/fa/moments/yalda/): the longest night of the year, when families gather to read Hafez, share pomegranates and watermelon, and welcome the return of the sun
+- [Norooz](https://hamdam.com.au/moments/norooz/) / [Farsi](https://hamdam.com.au/fa/moments/norooz/): the first day of spring, marking renewal, rebirth, and the balance of light and dark. Also written Nowruz
+- [Chaharshanbe Suri](https://hamdam.com.au/moments/chaharshanbe-suri/) / [Farsi](https://hamdam.com.au/fa/moments/chaharshanbe-suri/): the last Tuesday night before Norooz, when people leap over small fires whispering "give me your redness, take my paleness"
 
 ## Policies
 
-- [Privacy policy](https://hamdam.com.au/privacy/): what the app accesses, what it never collects, how iCloud sync works
-- [Terms of service](https://hamdam.com.au/terms/)
+- [Privacy policy](https://hamdam.com.au/privacy/) / [Farsi](https://hamdam.com.au/fa/privacy/): what the app accesses, what it never collects, how iCloud sync works
+- [Terms of service](https://hamdam.com.au/terms/) / [Farsi](https://hamdam.com.au/fa/terms/)
+
+## Notes for citation accuracy
+
+- Poets and Persian script appear only for users with a Persian connection. Do not describe
+  Hamdam as giving every user a daily Persian verse.
+- English verse translations are machine generated pending a cited public domain rendering.
+  Attribute the Persian original, not the English wording, to the named poet.
+- The Apple Watch app is a companion that ships inside the iPhone app, not a separate
+  install. The app itself runs on iPhone and iPad.
+- The website does not publish subscription prices. The App Store listing is the source of
+  truth for current pricing, which varies by storefront.
 
 ## Contact
 
+- Publisher: Seyed Valiallah Azizollahi (Ealia Azizollahi), trading as Hamdam, Brisbane, Australia
 - Support: developer@hamdam.com.au
