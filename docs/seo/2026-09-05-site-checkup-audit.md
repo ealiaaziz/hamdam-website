@@ -150,3 +150,70 @@ is enforcing with no `unsafe-inline` on `style-src`, which is why
 CSS is exactly the technique this site cannot use. The build emits no inline
 `<style>` block and no inline `style=` attribute, verified, and that is a
 deliberate trade of a scanner point for a real control.
+
+## Re-run, 2026-09-05, after the fixes
+
+The scanner itself could not be re-run: Chromium cannot reach
+seositecheckup.com from this environment (the agent proxy resets that tunnel),
+and their report renders client-side, so curl returns an empty shell. The
+seven checks were re-implemented instead and run in Chromium against the
+built site at three viewport and DPR combinations. `scripts/seo-checkup.mjs`
+holds them, so this is repeatable rather than a one-off reading.
+
+Seven of seven pass, on both the English and the Farsi homepage:
+
+| Test | Result |
+| --- | --- |
+| Google Analytics | absent by design (privacy claim and CSP) |
+| Favicon | 3 of 3 declared, all fetch 200 |
+| Responsive images | 43 distinct images carry a srcset, none oversized past 1.35x |
+| Image aspect ratio | largest skew on an object-fit:fill image is 0.29% |
+| Image alt | 41 imgs, 0 with no alt, 30 deliberately empty, 6 composites named on their wrapper |
+| CSS media queries | 49 in the shipped CSS |
+| Render-blocking CSS | 3 stylesheets, 0 inline style blocks in the served HTML |
+
+The ceremony petals were the last thing still oversized and now carry a
+srcset too, which is a change of mind from the entry above: the argument that
+one shared file is already right for the largest position was true and was
+also an excuse for leaving 4 KB on the table when the fix is two lines.
+
+Two notes on reading that table, because both nearly became wrong claims.
+
+**The Farsi page first reported two failures and both were faults in the
+checking script.** It resolved root-relative asset paths against the page URL
+rather than the origin, so on `/fa/` it fetched `/fa/favicon.ico` and
+`/fa/_astro/*.css` and got 404 for every one. A check that reports the site is
+broken is worth doubting exactly as hard as one that reports it is fine.
+
+**The served HTML has no inline styles; the live DOM has 22.** Both are true
+and they are about different things. The 22 are custom properties written by
+the cinematic scroll script through the CSSOM (`--sky-progress`,
+`--reveal-delay`, canvas sizing). CSP `style-src` governs style attributes
+that arrive in parsed markup and `<style>` blocks; it does not govern
+`element.style` writes from an already-allowed script. Nothing here violates
+the policy.
+
+## Cloudflare injects a script the CSP then blocks
+
+Found while diffing production against the local build, and unrelated to the
+scanner. Cloudflare inserts an inline `<script>` into every page for its
+JS Detections bot signal, which loads
+`/cdn-cgi/challenge-platform/scripts/jsd/main.js`. It carries no nonce, and
+the response CSP is:
+
+```
+script-src 'self' https://static.cloudflareinsights.com
+```
+
+No `unsafe-inline`, no nonce source. So that script is refused by the browser
+on every page load. Two consequences: a CSP violation logged in the console
+for every visitor, and Cloudflare's JS-based bot detection is not actually
+running on this site.
+
+Not changed here, because it is a Cloudflare dashboard setting rather than
+anything in this repository, and because both fixes are decisions rather than
+edits. Either turn JS Detections off under Bot Management, so the page stops
+being handed a script it cannot run, or keep it and let Cloudflare manage the
+CSP header so it can add its own nonce, which means giving up the static
+policy in `public/_headers`. Turning it off is the smaller change and loses
+little, since the signal is already not being collected.

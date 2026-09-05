@@ -91,6 +91,21 @@ if (behind > 0) {
   );
 }
 
+// The build reads PUBLIC_ASC_PROVIDER_TOKEN and, when it is unset, silently
+// emits every App Store link without its `pt=` parameter. Nothing fails: the
+// links still work, they just stop carrying Apple affiliate attribution, and
+// the only way to notice is to diff the built HTML against what production
+// serves. That is exactly what happened on 2026-09-05, when a deploy from an
+// environment without the variable replaced all eight links on both locales
+// with untagged ones. Checked here rather than in the build, because a build
+// for local review has no business needing a production token.
+if (!process.env.PUBLIC_ASC_PROVIDER_TOKEN) {
+  fail(
+    'PUBLIC_ASC_PROVIDER_TOKEN is not set, so this build would ship App Store links with no affiliate attribution.',
+    'Set it in the environment before deploying, or push to main and let Workers Builds deploy, which has it.',
+  );
+}
+
 // Never claim the check passed when it was overridden: a forced deploy is
 // exactly the case where the log has to say what really happened.
 if (overrodeSomething) {

@@ -49,6 +49,32 @@ deploy you can stand behind on a timescale anyone is waiting on. Push `main` so
 the repo and production agree, then deploy by hand and verify, rather than
 telling anyone it is live because the push succeeded.
 
+**Observation added 2026-09-05, and it is the first one here with a
+fingerprint rather than a stopwatch.** Every previous entry argued from timing,
+which is why they kept being wrong: a push and a manual deploy minutes apart
+produce the same page, and nothing in it says which one made it. There is a
+marker that does. The build reads `PUBLIC_ASC_PROVIDER_TOKEN` and stamps it
+into all eight App Store links as `pt=`. That variable is set in the Workers
+Builds environment and is not set in a fresh agent container, so the two paths
+produce visibly different HTML and you can tell them apart by looking.
+
+Fetched across one session: production before any deploy had `pt=` and no
+`srcset`; immediately after a manual `npm run deploy` it had `srcset` and
+**no** `pt=`; a few minutes later it had both. The build that ended up serving
+was therefore not the one deployed by hand. **Workers Builds is connected, it
+does deploy on a push to `main`, and it wins.**
+
+Two consequences, and the second is the expensive one. A push to `main` really
+does deploy, so the wait is real but the deploy is coming. And a manual
+`npm run deploy` from a container without that variable **strips Apple
+affiliate attribution from every App Store link on both locales** and reports
+success while doing it. Nothing fails, the links still work, and the only way
+to see it is to diff the built HTML against what production serves.
+`scripts/predeploy-check.mjs` now refuses to deploy when
+`PUBLIC_ASC_PROVIDER_TOKEN` is unset, which is the check that would have
+caught this. Prefer pushing `main` and waiting; deploy by hand only with that
+variable set, and verify afterwards.
+
 The likely reading of 2026-08-02 is that those five builds ran while the
 feature branch was itself the configured production branch, or that they were
 preview deployments whose dashboard URL was misread as production. The Workers

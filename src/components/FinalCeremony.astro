@@ -62,7 +62,15 @@ const PETAL_IMAGES = [petal1, petal2, petal3, petal1, petal2, petal3, petal1, pe
     }
     {PETAL_IMAGES.map((petalImg) => (
       <span class="ceremony__petal">
-        <Image src={petalImg} alt="" width={petalImg.width} height={petalImg.height} class="ceremony__petal-img" />
+        <Image
+          src={petalImg}
+          alt=""
+          width={petalImg.width}
+          height={petalImg.height}
+          widths={[53, 106, 160]}
+          sizes="53px"
+          class="ceremony__petal-img"
+        />
       </span>
     ))}
   </div>
