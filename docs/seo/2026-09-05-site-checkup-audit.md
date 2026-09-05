@@ -196,24 +196,51 @@ the policy.
 ## Cloudflare injects a script the CSP then blocks
 
 Found while diffing production against the local build, and unrelated to the
-scanner. Cloudflare inserts an inline `<script>` into every page for its
-JS Detections bot signal, which loads
-`/cdn-cgi/challenge-platform/scripts/jsd/main.js`. It carries no nonce, and
-the response CSP is:
+scanner. Cloudflare inserts an inline `<script>` into every HTML response for
+its JS Detections bot signal, which loads
+`/cdn-cgi/challenge-platform/scripts/jsd/main.js`. It carries no nonce.
+
+The block is measured, not inferred. Production's own HTML was served from
+localhost under production's exact CSP header and loaded in Chromium:
 
 ```
-script-src 'self' https://static.cloudflareinsights.com
+CSP violations fired: 1
+    script-src-elem blocked inline
+console: Refused to execute inline script because it violates the following
+         Content Security Policy directive: script-src 'self' ...
+Cloudflare beacon actually executed: false    iframes created: 0
 ```
 
-No `unsafe-inline`, no nonce source. So that script is refused by the browser
-on every page load. Two consequences: a CSP violation logged in the console
-for every visitor, and Cloudflare's JS-based bot detection is not actually
-running on this site.
+`window.__CF$cv$params` is never defined and no iframe is created. The signal
+is not being collected.
 
-Not changed here, because it is a Cloudflare dashboard setting rather than
-anything in this repository, and because both fixes are decisions rather than
-edits. Either turn JS Detections off under Bot Management, so the page stops
-being handed a script it cannot run, or keep it and let Cloudflare manage the
-CSP header so it can add its own nonce, which means giving up the static
-policy in `public/_headers`. Turning it off is the smaller change and loses
-little, since the signal is already not being collected.
+Scope is the zone, not the site. Injected into `/`, `/privacy/`, `/fa/`, a
+404 page, and `support.hamdam.com.au`; not into `robots.txt`. Both Workers are
+affected, and the support desk's CSP is tighter still (`script-src 'self'`,
+without even the insights host), so it blocks it too.
+
+**What causes it is not identified, and the obvious answer is wrong.** The
+first version of this section said to turn off Bot Fight Mode. Bot Fight Mode
+was already off, confirmed in the dashboard, and the script is still injected
+on 100% of requests under any user agent. So that was a guess dressed as a
+diagnosis. The API token in the deploy environment is denied on both
+`/zones/{id}/bot_management` and `/zones/{id}/rulesets`, so the active rules
+cannot be read from here. The remaining candidates visible in the dashboard
+are the AI bot controls, which do use the JS Detections signal for scoring:
+"Configure AI bot policies" shows 3 configurations and "Block AI bots" shows
+1. That is a lead, not a finding.
+
+**Decision, 2026-09-05: accepted and left alone.** The cost of fixing it is
+higher than the cost of having it. Allowing the script needs `'unsafe-inline'`
+in `script-src`, since Cloudflare stamps a per-request token into the body and
+no static hash can match it. That would trade a working CSP on both a
+marketing site and a ticketing system for one extra input to bot scoring.
+Turning off whatever requests the signal would weaken the AI crawler controls
+that are presumably the reason it is on. Nothing is broken for a visitor: the
+cost is a console message nobody sees, and AI bot detection continuing on user
+agent, IP reputation and ASN without the browser signal.
+
+Worth revisiting only if the AI bot policies are ever observed failing to stop
+a crawler they should stop. Cloudflare support can say definitively which
+feature triggers JS Detections on a Free zone, which is the question this
+audit could not answer.
