@@ -56,9 +56,8 @@ const path = `/moments/${MOMENT_SLUGS[momentId]}/`;
 const nextOccurrence = upcomingOccurrences(moment.rule, getBrisbaneToday(), 1)[0] ?? null;
 const nextDate = nextOccurrence ? formatMomentDate('en', nextOccurrence.date) : null;
 
-const description = nextDate
-  ? `${moment.nameEn} falls on ${nextDate}. ${MOMENT_COPY[momentId].sentenceEn}`
-  : MOMENT_COPY[momentId].sentenceEn;
+const snippet = MOMENT_COPY[momentId].snippetEn ?? MOMENT_COPY[momentId].sentenceEn;
+const description = nextDate ? `${moment.nameEn} falls on ${nextDate}. ${snippet}` : snippet;
 const title = nextOccurrence
   ? `${moment.nameEn} ${nextOccurrence.date.year}: ${MOMENT_TITLE_TAIL_EN[momentId]} | Hamdam`
   : `${moment.nameEn}: ${MOMENT_TITLE_TAIL_EN[momentId]} | Hamdam`;

@@ -1,0 +1,9 @@
+# /sitemap.xml is not a path this site generates: @astrojs/sitemap emits
+# sitemap-index.xml plus sitemap-0.xml, and robots.txt points at the index.
+# Google reads robots.txt and is fine. Several third-party SEO scanners, and
+# some smaller crawlers, probe /sitemap.xml by convention and report "no XML
+# sitemap found" when it 404s, which is what happened on 2026-09-05.
+#
+# 301 rather than a copied file, so there is one sitemap and one source of
+# truth for it.
+/sitemap.xml  /sitemap-index.xml  301

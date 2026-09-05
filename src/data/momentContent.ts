@@ -15,6 +15,13 @@
 
 export interface MomentSentence {
   sentenceEn: string;
+  /** Meta-description-only English, for moments whose sentenceEn is too long
+   *  once the date sentence is prepended. Falls back to sentenceEn when absent.
+   *  Added 2026-09-05: the description does not have to be the body sentence,
+   *  and shortening the body sentence to fit a snippet is the wrong trade.
+   *  There is deliberately no Farsi counterpart. Every Farsi description on
+   *  the site already fits, and authoring Persian here is not permitted. */
+  snippetEn?: string;
   sentenceFa: string;
 }
 
@@ -69,6 +76,7 @@ export const MOMENT_ALT: Record<string, MomentAlt> = {
 export const MOMENT_COPY: Record<string, MomentSentence> = {
   yalda: {
     sentenceEn: 'The longest night of the year, when families gather to read Hafez, share pomegranates and watermelon, and welcome the return of the sun.',
+    snippetEn: 'The longest night of the year, when families gather to read Hafez and share pomegranates.',
     sentenceFa: 'طولانی‌ترین شب سال، وقتی خانواده‌ها دور هم جمع می‌شوند تا حافظ بخوانند، انار و هندوانه به اشتراک بگذارند، و بازگشت خورشید را خوش‌آمد بگویند.',
   },
   norooz: {
@@ -77,6 +85,7 @@ export const MOMENT_COPY: Record<string, MomentSentence> = {
   },
   chaharshanbeSuri: {
     sentenceEn: "The last Tuesday night before Norooz, when people leap over small fires whispering 'give me your redness, take my paleness.'",
+    snippetEn: 'The last Tuesday night before Norooz, when people leap over small fires for the year ahead.',
     sentenceFa: 'شب سه‌شنبه‌ی آخر پیش از نوروز، وقتی مردم از روی آتش‌های کوچک می‌پرند و زمزمه می‌کنند «سرخی تو از من، زردی من از تو».',
   },
 };
