@@ -48,6 +48,31 @@ const SITE = 'https://hamdam.com.au';
 /** Stable @id for the publisher node, referenced from the app node. */
 export const ORGANIZATION_ID = `${SITE}/#organization`;
 export const APPLICATION_ID = `${SITE}/#app`;
+export const WEBSITE_ID = `${SITE}/#website`;
+
+/**
+ * The WebSite node, added 2026-09-05 after a structured-data audit.
+ *
+ * Every non-homepage page used to set `isPartOf` to APPLICATION_ID, so each poet
+ * and moment page claimed to be part of the iOS app. SoftwareApplication is a
+ * CreativeWork subtype, so nothing errored, but it is the wrong entity: a page
+ * is part of a website, and the app is what the site is *about*. There was also
+ * no node anywhere tying the 24 URLs together as one site.
+ *
+ * No SearchAction. The sitelinks searchbox wants a `target` URL template for a
+ * real search endpoint, and this site has no search: no input, no /search route,
+ * nothing in NavBar.astro. Publishing one would describe a feature that is not
+ * there, which is the same failure the FAQPage note below warns about.
+ */
+export const websiteSchema = Object.freeze({
+  '@type': 'WebSite',
+  '@id': WEBSITE_ID,
+  name: 'Hamdam',
+  url: `${SITE}/`,
+  inLanguage: Object.freeze(['en', 'fa']),
+  publisher: { '@id': ORGANIZATION_ID },
+  about: { '@id': APPLICATION_ID },
+});
 
 /**
  * VERIFIED features only (FACTS.md "Core features" and "Privacy"). English on
@@ -200,7 +225,7 @@ export function homepageSchema({ lang, name, description, url, downloadUrl, scre
 
   return {
     '@context': 'https://schema.org',
-    '@graph': [application, organizationSchema],
+    '@graph': [application, organizationSchema, websiteSchema],
   };
 }
 
@@ -238,9 +263,10 @@ export function homepageSchema({ lang, name, description, url, downloadUrl, scre
  * @param {string} options.breadcrumbHome
  * @param {string} options.homeUrl
  * @param {string} options.sameAs  Ganjoor's page for this poet.
+ * @param {string} options.slug    Poet slug, used for the Person node's stable @id.
  */
 export function poetPageSchema({
-  lang, name, alternateName, description, url, breadcrumbHome, homeUrl, sameAs,
+  lang, name, alternateName, description, url, breadcrumbHome, homeUrl, sameAs, slug,
 }) {
   return {
     '@context': 'https://schema.org',
@@ -252,10 +278,17 @@ export function poetPageSchema({
         description,
         url,
         inLanguage: lang,
-        isPartOf: { '@id': APPLICATION_ID },
+        // A page is part of the website, not part of the app. This said
+        // APPLICATION_ID until 2026-09-05; `about` below already names the
+        // topic, so nothing is lost by pointing this at the right entity.
+        isPartOf: { '@id': WEBSITE_ID },
         publisher: { '@id': ORGANIZATION_ID },
         about: {
           '@type': 'Person',
+          // One @id per poet, shared by the English and Farsi pages, so
+          // "Hafez" and "حافظ" are explicitly one entity rather than two
+          // anonymous nodes that merely happen to carry the same sameAs.
+          '@id': `${SITE}/#poet-${slug}`,
           name,
           alternateName,
           description,
@@ -270,6 +303,7 @@ export function poetPageSchema({
         ],
       },
       organizationSchema,
+      websiteSchema,
     ],
   };
 }
@@ -285,7 +319,8 @@ export function momentPageSchema({ lang, name, description, url, breadcrumbHome,
         description,
         url,
         inLanguage: lang,
-        isPartOf: { '@id': APPLICATION_ID },
+        // See the note in poetPageSchema: part of the site, about the app.
+        isPartOf: { '@id': WEBSITE_ID },
         publisher: { '@id': ORGANIZATION_ID },
         about: { '@type': 'Thing', name },
       },
@@ -297,6 +332,7 @@ export function momentPageSchema({ lang, name, description, url, breadcrumbHome,
         ],
       },
       organizationSchema,
+      websiteSchema,
     ],
   };
 }

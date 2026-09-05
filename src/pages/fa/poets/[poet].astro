@@ -30,6 +30,8 @@ const jsonLd = poetPageSchema({
   breadcrumbHome: MOMENT_UI.home.fa,
   homeUrl: new URL('/fa/', Astro.site).href,
   sameAs: page.ganjoor,
+  // Same slug as the English page, so both resolve to one Person @id.
+  slug,
 });
 ---
 

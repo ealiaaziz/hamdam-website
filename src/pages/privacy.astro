@@ -3,31 +3,45 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import LegalSection from '../components/LegalSection.astro';
 import SectionDivider from '../components/SectionDivider.astro';
 import Footer from '../components/Footer.astro';
+import { organizationSchema, websiteSchema, ORGANIZATION_ID, WEBSITE_ID } from '../lib/schema';
 
 const effectiveDate = 'Effective 13 August 2026';
 
 const description =
   'How Hamdam handles data: what it accesses, what it never collects, and how iCloud sync works. No accounts, no data selling, no tracking cookies.';
 
+// The four legal pages used to inline a bare Person as publisher while every
+// other page on the site referenced the shared Organization node by @id, so the
+// 24 URLs told Google two different things about who publishes hamdam.com.au
+// depending which one it crawled. That works against the entity consolidation
+// the Organization node exists for, given "hamdam" is a common Persian word.
+// Corrected 2026-09-05, and the graph now carries the nodes those @id
+// references point at, rather than leaving them unresolvable on this page.
 const jsonLd = {
   '@context': 'https://schema.org',
-  // WebPage, not 'PrivacyPolicy'. schema.org has no PrivacyPolicy type and never
-  // has: https://schema.org/PrivacyPolicy returns 404, the same as a nonsense
-  // string, and it is not in the pending vocabulary either. An unrecognised
-  // @type is not an error anyone sees, it just means the entity is silently
-  // ignored, so this page published structured data that did nothing. Found
-  // 2026-08-22 by resolving every @type on the live site against schema.org
-  // rather than by reading it and assuming.
-  '@type': 'WebPage',
-  name: 'Hamdam Privacy Policy',
-  description,
-  url: 'https://hamdam.com.au/privacy/',
-  datePublished: '2026-07-03',
-  dateModified: '2026-08-13',
-  publisher: {
-    '@type': 'Person',
-    name: 'Seyed Valiallah Azizollahi',
-  },
+  '@graph': [
+    {
+      // WebPage, not 'PrivacyPolicy'. schema.org has no PrivacyPolicy type and never
+      // has: https://schema.org/PrivacyPolicy returns 404, the same as a nonsense
+      // string, and it is not in the pending vocabulary either. An unrecognised
+      // @type is not an error anyone sees, it just means the entity is silently
+      // ignored, so this page published structured data that did nothing. Found
+      // 2026-08-22 by resolving every @type on the live site against schema.org
+      // rather than by reading it and assuming.
+      '@type': 'WebPage',
+      '@id': 'https://hamdam.com.au/privacy/',
+      name: 'Hamdam Privacy Policy',
+      description,
+      url: 'https://hamdam.com.au/privacy/',
+      inLanguage: 'en',
+      datePublished: '2026-07-03',
+      dateModified: '2026-08-13',
+      isPartOf: { '@id': WEBSITE_ID },
+      publisher: { '@id': ORGANIZATION_ID },
+    },
+    organizationSchema,
+    websiteSchema,
+  ],
 };
 ---
 

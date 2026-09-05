@@ -1,10 +1,14 @@
 import { describe, it, expect } from 'vitest';
 import {
   homepageSchema,
+  poetPageSchema,
+  momentPageSchema,
   organizationSchema,
+  websiteSchema,
   FEATURE_LIST,
   ORGANIZATION_ID,
   APPLICATION_ID,
+  WEBSITE_ID,
 } from '../schema.js';
 import { APP_STORE, APP_STORE_CANONICAL_URL, appStoreUrl } from '../appStore.js';
 
@@ -22,12 +26,13 @@ const build = (overrides = {}) =>
 const appNode = (schema) => schema['@graph'].find((node) => node['@type'] === 'SoftwareApplication');
 
 describe('homepageSchema', () => {
-  it('emits a graph of the application plus the shared organization', () => {
+  it('emits a graph of the application plus the shared organization and website', () => {
     const schema = build();
     expect(schema['@context']).toBe('https://schema.org');
     expect(schema['@graph'].map((node) => node['@type'])).toEqual([
       'SoftwareApplication',
       'Organization',
+      'WebSite',
     ]);
     expect(appNode(schema)['@id']).toBe(APPLICATION_ID);
     expect(organizationSchema['@id']).toBe(ORGANIZATION_ID);
@@ -272,6 +277,74 @@ describe('availableOnDevice', () => {
   // as an assertion because "add Apple Watch too" is the obvious-looking edit.
   it('does not list Apple Watch, which is a companion and not an install', () => {
     expect(appNode(build()).availableOnDevice).not.toContain('Apple Watch');
+  });
+});
+
+// Added 2026-09-05 with the WebSite node. Every non-homepage page used to set
+// isPartOf to APPLICATION_ID, so each poet and moment page claimed to be part
+// of the iOS app rather than part of this website. SoftwareApplication is a
+// CreativeWork subtype, so nothing errored and nothing surfaced; it was simply
+// the wrong entity, and there was no node anywhere tying the 24 URLs together
+// as one site. Pinned because "isPartOf the app" reads plausibly in a diff.
+describe('page nodes belong to the website, not the app', () => {
+  const poet = (lang = 'en') => poetPageSchema({
+    lang,
+    name: lang === 'fa' ? 'حافظ' : 'Hafez',
+    alternateName: lang === 'fa' ? 'Hafez' : 'حافظ',
+    description: 'A poet.',
+    url: `https://hamdam.com.au/${lang === 'fa' ? 'fa/' : ''}poets/hafez/`,
+    breadcrumbHome: 'Hamdam',
+    homeUrl: 'https://hamdam.com.au/',
+    sameAs: 'https://ganjoor.net/hafez',
+    slug: 'hafez',
+  });
+  const moment = () => momentPageSchema({
+    lang: 'en',
+    name: 'Yalda',
+    description: 'The longest night.',
+    url: 'https://hamdam.com.au/moments/yalda/',
+    breadcrumbHome: 'Hamdam',
+    homeUrl: 'https://hamdam.com.au/',
+  });
+  const pageNode = (schema) => schema['@graph'].find((n) => n['@type'] === 'WebPage');
+
+  it('points isPartOf at the website on poet and moment pages', () => {
+    expect(pageNode(poet()).isPartOf).toEqual({ '@id': WEBSITE_ID });
+    expect(pageNode(moment()).isPartOf).toEqual({ '@id': WEBSITE_ID });
+  });
+
+  it('never points isPartOf at the application node again', () => {
+    for (const schema of [poet(), poet('fa'), moment()]) {
+      expect(JSON.stringify(pageNode(schema).isPartOf)).not.toContain(APPLICATION_ID);
+    }
+  });
+
+  it('carries the website node those @id references resolve to', () => {
+    for (const schema of [poet(), moment()]) {
+      expect(schema['@graph'].some((n) => n['@id'] === WEBSITE_ID)).toBe(true);
+    }
+  });
+
+  // The website is about the app; that relationship moved here rather than
+  // being lost when isPartOf was corrected.
+  it('keeps the app as what the website is about', () => {
+    expect(websiteSchema.about).toEqual({ '@id': APPLICATION_ID });
+  });
+
+  // Hafez and حافظ are one person. Before the shared @id they were two
+  // anonymous Person nodes that merely happened to carry the same sameAs.
+  it('gives each poet one @id shared by both locales', () => {
+    const en = poet()['@graph'][0].about;
+    const fa = poet('fa')['@graph'][0].about;
+    expect(en['@id']).toBe('https://hamdam.com.au/#poet-hafez');
+    expect(fa['@id']).toBe(en['@id']);
+    expect(en.name).not.toBe(fa.name);
+  });
+
+  // The searchbox needs a real endpoint. This site has none, so publishing a
+  // SearchAction would describe a feature that is not there.
+  it('publishes no SearchAction, since the site has no search', () => {
+    expect(JSON.stringify(websiteSchema)).not.toContain('SearchAction');
   });
 });
 

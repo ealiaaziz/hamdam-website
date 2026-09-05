@@ -3,27 +3,36 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import LegalSection from '../../components/LegalSection.astro';
 import SectionDivider from '../../components/SectionDivider.astro';
 import Footer from '../../components/Footer.astro';
+import { organizationSchema, websiteSchema, ORGANIZATION_ID, WEBSITE_ID } from '../../lib/schema';
 
 const effectiveDate = 'تاریخ اجرا: 13 اوت 2026';
 
 const description =
   'شرایط حاکم بر استفاده از اپلیکیشن همدم، اشتراک همدم پلاس، و محتوای یادداشت، شامل سلب مسئولیت‌های سلامت.';
 
+// Publisher references the shared Organization node, as everywhere else on the
+// site. See the note in privacy.astro for why the four legal pages differed.
 const jsonLd = {
   '@context': 'https://schema.org',
-  // WebPage, not 'TermsAndConditions'. See the note in privacy.astro: neither
-  // type exists in schema.org, both resolve 404, and an unrecognised @type is
-  // ignored in silence rather than flagged.
-  '@type': 'WebPage',
-  name: 'شرایط استفاده‌ی همدم',
-  description,
-  url: 'https://hamdam.com.au/fa/terms/',
-  datePublished: '2026-07-03',
-  dateModified: '2026-08-13',
-  publisher: {
-    '@type': 'Person',
-    name: 'Seyed Valiallah Azizollahi',
-  },
+  '@graph': [
+    {
+      // WebPage, not 'TermsAndConditions'. See the note in privacy.astro: neither
+      // type exists in schema.org, both resolve 404, and an unrecognised @type is
+      // ignored in silence rather than flagged.
+      '@type': 'WebPage',
+      '@id': 'https://hamdam.com.au/fa/terms/',
+      name: 'شرایط استفاده‌ی همدم',
+      description,
+      url: 'https://hamdam.com.au/fa/terms/',
+      inLanguage: 'fa',
+      datePublished: '2026-07-03',
+      dateModified: '2026-08-13',
+      isPartOf: { '@id': WEBSITE_ID },
+      publisher: { '@id': ORGANIZATION_ID },
+    },
+    organizationSchema,
+    websiteSchema,
+  ],
 };
 ---
 
