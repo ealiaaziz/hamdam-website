@@ -147,6 +147,8 @@ const PANEL_DISPLAY_WIDTH = 840;
           alt={shot.alt}
           width={PANEL_DISPLAY_WIDTH}
           height={Math.round((PANEL_DISPLAY_WIDTH / shot.src.width) * shot.src.height)}
+          widths={[460, 760, 920, 1380]}
+          sizes="(min-width: 1280px) 460px, (min-width: 640px) 380px, 100vw"
           quality={78}
           class="garden__panel"
         />

@@ -19,11 +19,32 @@ Real, and the largest single thing on the list. The homepage shipped **zero
 `srcset` attributes**: every image was served at one size to every visitor.
 Measured image payload before and after, same pages, same viewports:
 
+English homepage:
+
 | viewport | before | after | change |
 | --- | --- | --- | --- |
 | 390px phone, DPR 2 | 560.0 KB | 329.3 KB | -41% |
 | 390px phone, DPR 3 | 560.0 KB | 490.8 KB | -12% |
-| 1440px desktop, DPR 2 | 758.8 KB | 403.6 KB | -47% |
+| 1440px desktop, DPR 2 | 758.8 KB | 469.9 KB | -38% |
+
+Farsi homepage:
+
+| viewport | before | after | change |
+| --- | --- | --- | --- |
+| 390px phone, DPR 2 | 490.7 KB | 296.9 KB | -39% |
+| 390px phone, DPR 3 | 490.7 KB | 439.7 KB | -10% |
+| 1440px desktop, DPR 2 | 689.4 KB | 437.5 KB | -37% |
+
+A note on how these were measured, because the first version of this table
+had a wrong number in it. The desktop row first read 403.6 KB and -47%. That
+figure came from a run in which 21 images had loaded, against a baseline run
+in which 27 had: a page-height jump to the bottom skips sections on the way
+past, so which lazy images have entered the viewport varies between runs and
+the two totals were not counting the same thing. Every figure above now comes
+from the same script, which steps down the page in viewport-sized increments
+and waits for the network to settle, and every before/after pair loaded the
+same set. A percentage is only worth quoting when both of its numbers have
+the same scope.
 
 The DPR 3 row is the honest one to read carefully. The fixed sizes that were
 shipped were roughly right for a top-end phone and wrong for everyone else,
@@ -33,6 +54,21 @@ single size was under-serving them: `07-garden-en` went from 43.4 KB to
 56.1 KB because a DPR 3 phone genuinely wants 789px of it and was being
 handed 630. Serving the right size is the goal; serving fewer bytes is what
 that usually looks like, and here it does not look like that everywhere.
+
+Two images were missed in the first pass and covered in a follow-up: the
+desktop foreground blossom plate, 1600px served into a box that reaches
+420px, and the Farsi garden panel, 840px into a box that reaches 460px. Both
+were in the measured oversize list from the start; neither got a sizes value
+with the rest.
+
+Three raster assets are deliberately left without a srcset, and the reason is
+the same for all three: one file is shared across positions of different
+sizes, and the file is already correct for the largest of them. The device
+frame is 600px into a box reaching 298px, which is exactly right at DPR 2.
+The three ceremony petals are 160px across ten fall positions whose largest
+box is 53px, which is right at DPR 3, and each file is under 3.5 KB. The
+per-position oversize factors in the raw measurement are real per position
+and misleading per asset.
 
 Every `sizes` value came from measuring the CSS box the image is painted
 into, across eight viewport widths from 360 to 1920, and taking the widest.
