@@ -49,6 +49,11 @@ if (!moment) throw new Error(`MomentArticle: unknown moment id "${momentId}"`);
 
 const name = (lang === 'fa' && moment.nameFa) || moment.nameEn;
 const sentence = lang === 'fa' ? MOMENT_COPY[momentId].sentenceFa : MOMENT_COPY[momentId].sentenceEn;
+// English only, and empty on the Farsi page by design. See the note on
+// MomentSentence.bodyEn: authoring the Farsi half is Ealia's call, so the Farsi
+// page keeps its approved sentence rather than carrying a machine-written body.
+// Same trade the poet pages already make for biographyEn.
+const body = lang === 'fa' ? [] : (MOMENT_COPY[momentId].bodyEn ?? []);
 const alt = lang === 'fa' ? MOMENT_ALT[momentId].fa : MOMENT_ALT[momentId].en;
 
 // Build-time, in Brisbane, the same basis as the homepage countdown. Four
@@ -112,6 +117,16 @@ const ctaLabel = MOMENT_UI.cta[lang];
     </div>
 
     <p class="moment__sentence text-balance">{sentence}</p>
+
+    {
+      body.length > 0 && (
+        <div class="moment__body">
+          {body.map((paragraph) => (
+            <p>{paragraph}</p>
+          ))}
+        </div>
+      )
+    }
 
     {
       /* Each row is a complete sentence in both languages, which is what lets
@@ -237,6 +252,26 @@ const ctaLabel = MOMENT_UI.cta[lang];
   :global([lang='fa']) .moment__sentence {
     font-family: var(--font-farsi);
     font-size: var(--text-body-fa);
+  }
+  /* The body paragraphs sit a step quieter than the opening sentence, which
+     keeps that sentence as the page's lead rather than the first of six. English
+     only, so no Farsi font override is needed here. */
+  .moment__body {
+    display: flex;
+    flex-direction: column;
+    gap: 1.1rem;
+    margin-top: 1.75rem;
+    max-width: 38rem;
+  }
+  .moment__body p {
+    margin: 0;
+    /* Body size, not --text-meta. This is five paragraphs of reading prose, and
+       meta size computed to under 14px, which is too small to read comfortably
+       and would be the smallest running text on the site. The step down from
+       the opening sentence is carried by colour instead. */
+    font-size: var(--text-body);
+    line-height: 1.75;
+    color: var(--text-on-night-muted);
   }
 
   .moment__dates {
