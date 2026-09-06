@@ -109,12 +109,14 @@ def field(plain=False):
         img = glow(img, int(W*.5), int(H*.30), int(W*.085), lerp(SAFFRON,CREAM,.30))
     return img
 
+# The verse Shorts ask for a subscribe. A feature video is asking for a
+# download, so the script names its own footer and this is only the default.
 FOOTER = 'Subscribe to Hamdam for more Persian poetry'
-def footer(d):
+def footer(d, text=None):
     y = int(H*.780)
     d.line([(int(W*.30), y-int(H*.030)), (int(W*.70), y-int(H*.030))],
            fill=lerp(INK,PEACH,.62), width=max(1,S))
-    d.text((W//2, y), FOOTER, font=serif(23*S), fill=lerp(INK,PEACH,.18), anchor='mm')
+    d.text((W//2, y), text or FOOTER, font=serif(23*S), fill=lerp(INK,PEACH,.18), anchor='mm')
 
 def star(d, y=.115):
     shamseh(d, W//2, int(H*y), int(W*.043), int(W*.020), lerp(SAFFRON,INK,.30), max(1,int(1.6*S)))
@@ -162,7 +164,7 @@ def fit(d, text, maxw, maxh, start, floor=30*S, bold=False):
         px -= 2*S
     return serif(floor, bold)
 
-def page(p, src=None):
+def page(p, src=None, foot=None):
     kind = p['kind']
     img = field(plain=(kind == 'turn'))
     d = ImageDraw.Draw(img)
@@ -195,7 +197,7 @@ def page(p, src=None):
             emph = (kind == 'turn' and txt is blocks[-1] and len(blocks) > 1)
             draw_marked(d, txt, None, serif(f.size, emph), int(W*.80), int(H*yy),
                         INK if emph else SOFT, INK)
-    footer(d)
+    footer(d, foot)
     return grain(img.resize((1080,1920), Image.LANCZOS))
 
 def main():
@@ -215,7 +217,7 @@ def main():
 
     paths = []
     for i, p in enumerate(spec['pages']):
-        im = page(p, spec.get('shot')); q = os.path.join(tmp, f'p{i}.png'); im.save(q); paths.append(q)
+        im = page(p, spec.get('shot'), spec.get('footer')); q = os.path.join(tmp, f'p{i}.png'); im.save(q); paths.append(q)
         if a.pages_dir:
             os.makedirs(a.pages_dir, exist_ok=True); im.save(os.path.join(a.pages_dir, f'page-{i}.png'))
 
