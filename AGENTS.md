@@ -120,9 +120,11 @@ disagree.
 
 **The page lists feature releases only (1.3, 1.2), Ealia 2026-09-06, and point
 releases such as 1.3.1 and 1.3.2 are not listed.** The filter is applied at
-render by `featureReleases()`, never to the record: the chip above the heading
-and `softwareVersion` still carry the live version, point release included,
-because the site must never publish a version the App Store disagrees with.
+render by `featureReleases()`, never to the record: `softwareVersion` still
+carries the live version, point release included, because the site must never
+publish a version the App Store disagrees with. No version chip: one was built
+and removed the same day on Ealia's instruction, so the live number is now
+machine readable only.
 The reasoning, what is deliberately missing (1.0 and 1.1, whose notes exist
 nowhere readable), and an honest account of what this page does and does not do
 for search are in `docs/seo/2026-09-06-whats-new-page.md`.

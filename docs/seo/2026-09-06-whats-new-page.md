@@ -54,24 +54,26 @@ grounds that a reader arriving here wants to know what the app can do now, and a
 widget refresh fix is noise at that altitude even when its notes are well
 written.
 
-**The live version is still stated, once.** A chip above the heading reads
-`Version 1.3.2` and its date, in both languages, and `softwareVersion` in the
-structured data carries the same number. That is not a hedge against the
-decision above; it is the decision above being implemented without breaking the
-thing the page exists for. If the page named only 1.3 while the App Store served
-1.3.2, this site would be publishing a stale version number, which is precisely
-the failure being fixed. So:
+**No version number is visible on the page except the feature releases.** A chip
+above the heading named the live release (1.3.2) for about an hour on the day
+this was built, and Ealia had it removed: it put 1.3.2 above a first card
+reading 1.3, and that is a reader's puzzle rather than a reader's answer.
+
+The live version is still published, in `softwareVersion` in the structured data
+on all four pages that carry it. That is the half that has to stay, and the two
+halves do different jobs:
 
 | | what it says | why |
 | --- | --- | --- |
-| chip, and `softwareVersion` | the live release, point release included | must never disagree with the store |
+| `softwareVersion` (JSON-LD) | the live release, point release included | machine readable, must never disagree with the store |
 | `<title>`, meta description | the newest feature release | this is what should be indexed |
 | the cards | feature releases only | the story a reader came for |
 
-The English lead paragraph says point releases are not listed, so a reader who
-notices 1.3.2 at the top and 1.3 on the first card has found a decision rather
-than a discrepancy. The Farsi page cannot say it, for the reason in the next
-section.
+So a human reads 1.3 and a crawler reads both. The English lead paragraph says
+point releases are not listed, which is what keeps the visible 1.3 an editorial
+choice rather than a stale number; a reader who checks the App Store, sees
+1.3.2, and comes back here has been told why it is not on the page. The Farsi
+page cannot say it, for the reason in the next section.
 
 **The filter is applied at render, never to the record.** `src/data/releases.ts`
 keeps every release it has text for, including 1.3.2; `featureReleases()` in
