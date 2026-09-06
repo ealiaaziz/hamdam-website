@@ -8,6 +8,24 @@ noted below, not repeated as open items.
 
 ## Open
 
+- [ ] **Google preferred sources: confirm hamdam.com.au is actually listed.**
+      Added 2026-09-06 alongside the footer link that shipped the same day.
+      Google's guidance says a site has to already appear in the source
+      preferences tool before the deep link does anything useful, and that tool
+      is behind a Google sign-in and rendered client-side, so no build, fetch or
+      curl can read it. Open
+      `https://www.google.com/preferences/source?q=hamdam.com.au` while signed
+      into Google and see whether Hamdam can be added. If it cannot, the footer
+      link is sending readers to a page that cannot find us: set
+      `PREFERRED_SOURCE.ENABLED` to false in `src/lib/preferredSource.js`, which
+      removes the link and nothing else. Background, including why the expected
+      traffic effect is close to zero either way:
+      `docs/seo/2026-09-06-google-preferred-sources.md`.
+- [ ] **Farsi wording for that same link.** The English footer says "Make
+      Hamdam a preferred source on Google". The Farsi footer says nothing,
+      because this repo bars authoring Persian and there is no approved source
+      string for it. Ealia writes the Persian or it stays English only.
+
 - [ ] **SPF record incomplete.** Current TXT record is
       `v=spf1 include:secureserver.net -all` — only authorizes GoDaddy.
       Mail actually flows through Microsoft 365 (MX confirmed:

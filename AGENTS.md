@@ -129,6 +129,22 @@ The reasoning, what is deliberately missing (1.0 and 1.1, whose notes exist
 nowhere readable), and an honest account of what this page does and does not do
 for search are in `docs/seo/2026-09-06-whats-new-page.md`.
 
+**The English footer links into Google's preferred sources (added
+2026-09-06).** One anchor to `google.com/preferences/source?q=hamdam.com.au`,
+built by `src/lib/preferredSource.js`. Google's own button was refused: it is a
+third-party script that injects its own markup, and admitting it means widening
+an enforcing CSP permanently to buy a footer link. English only, because the
+Farsi string would be authored Persian. Two things to know before touching it.
+`PREFERRED_SOURCE.ENABLED` is a kill switch and it exists because **nobody has
+confirmed hamdam.com.au appears in Google's source preferences tool**, which is
+sign-in gated and unreadable from a build container; if it is not listed, the
+link is a dead end and this flips to false. And the expected traffic effect is
+close to zero whatever that check finds: it reaches nobody who is not already
+on the site, so it is a return-visit lever, never an acquisition one. Do not
+report it as a traffic win. The full argument, and the three things that would
+actually move traffic, are in
+`docs/seo/2026-09-06-google-preferred-sources.md`.
+
 **Outbound-host rule (added 2026-07-28):** the privacy policy's third-party
 services section (`/privacy/` §5, mirrored in `/terms/` §12) is an exhaustive
 list of every host the iOS app contacts. Any new outbound host in the app

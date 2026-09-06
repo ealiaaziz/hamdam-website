@@ -1,6 +1,7 @@
 ---
 import HamdamLogotype from './HamdamLogotype.astro';
 import { APP_STORE_CANONICAL_URL } from '../lib/appStore';
+import { PREFERRED_SOURCE_URL } from '../lib/preferredSource';
 import { WHATS_NEW_UI } from '../data/whatsNewCopy';
 
 interface Props {
@@ -84,6 +85,49 @@ const { lang = 'en' } = Astro.props;
             Hamdam: Daily Persian Poetry on the App Store
           </a>
         </p>
+        {
+          /* Google's preferred-sources deep link, added 2026-09-06.
+
+             A signed-in searcher can name the sites they want more of, and
+             Google then favours those sites for that one person in Top
+             Stories, AI Mode and AI Overviews. This sends a reader straight
+             into that setting with hamdam.com.au pre-filled.
+
+             Be clear-eyed about what it can do, because the name invites the
+             opposite reading: it reaches nobody who is not already here. Every
+             click on it comes from a visitor the site already has, so it is a
+             return-visit lever and never an acquisition one. The full argument,
+             including why it was still worth the four lines, is in
+             docs/seo/2026-09-06-google-preferred-sources.md.
+
+             A link rather than Google's own button component. The button is a
+             third-party script that injects its own markup, and the CSP here is
+             enforcing, so it would cost a permanent widening of script-src and
+             more besides. An anchor costs nothing and loads nothing.
+
+             English branch only, on the same reasoning as the store link above:
+             the Farsi footer would need Persian anchor text and this repo bars
+             authoring it. Raised for Ealia rather than machine-translated here.
+             The destination page is Google's own and is localised by Google.
+
+             Renders nothing when PREFERRED_SOURCE_URL is null, which is how the
+             kill switch in src/lib/preferredSource.js is meant to be used. */
+        }
+        {
+          PREFERRED_SOURCE_URL && (
+            <p class="text-xs text-indigo/70">
+              <a
+                href={PREFERRED_SOURCE_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                class="inline-flex min-h-[44px] items-center px-1 underline decoration-saffron/40 underline-offset-4 hover:text-indigo"
+              >
+                Make Hamdam a preferred source on Google
+                <span class="sr-only"> (opens Google settings in a new tab)</span>
+              </a>
+            </p>
+          )
+        }
       </div>
     )
   }
