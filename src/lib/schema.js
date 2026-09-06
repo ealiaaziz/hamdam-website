@@ -42,6 +42,7 @@
 // prevent.
 
 import { APP_STORE, APP_STORE_CANONICAL_URL } from './appStore.js';
+import { RELEASES } from '../data/releases.ts';
 
 const SITE = 'https://hamdam.com.au';
 
@@ -185,6 +186,24 @@ export function homepageSchema({ lang, name, description, url, downloadUrl, scre
     // so naming only iOS understated what the app runs on. Still derived from
     // APP_STORE.MINIMUM_IOS, never retyped.
     operatingSystem: `iOS ${APP_STORE.MINIMUM_IOS}+, iPadOS ${APP_STORE.MINIMUM_IOS}+`,
+    // The shipping version, added 2026-09-06, and the reason is worth stating
+    // because publishing a version number is a standing maintenance cost this
+    // repository has been bitten by before.
+    //
+    // Nothing on this site said which version of Hamdam is current, so nothing
+    // an indexer or an answer engine read here could correct a stale one, and
+    // several third party listings were describing 1.1 and 1.2 months after 1.3
+    // shipped. Apple's own product page is the authority, but it is scripted,
+    // slow to be re-crawled, and publishes only the current version's notes.
+    //
+    // The drift risk is real and is handled the only way that works here: this
+    // is derived from RELEASES[0], the same generated record the What's New
+    // page renders, which is written by scripts/extract-releases.mjs from the
+    // live listing. It is never typed. `npm run check:release` fetches the
+    // store and fails when the two disagree, which is the check that turns
+    // "the site says 1.3.2" into "the site says what the store says".
+    softwareVersion: RELEASES[0].version,
+    releaseNotes: `${SITE}/whats-new/`,
     applicationCategory: 'LifestyleApplication',
     // iPad added 2026-08-28. VERIFIED four ways in FACTS.md: the project sets
     // TARGETED_DEVICE_FAMILY "1,2" in all eight configurations, it sets
@@ -323,6 +342,79 @@ export function momentPageSchema({ lang, name, description, url, breadcrumbHome,
         isPartOf: { '@id': WEBSITE_ID },
         publisher: { '@id': ORGANIZATION_ID },
         about: { '@type': 'Thing', name },
+      },
+      {
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: breadcrumbHome, item: homeUrl },
+          { '@type': 'ListItem', position: 2, name, item: url },
+        ],
+      },
+      organizationSchema,
+      websiteSchema,
+    ],
+  };
+}
+
+/**
+ * The What's New page (/whats-new/ and its Farsi pair).
+ *
+ * Deliberately modest, on the same principle as momentPageSchema: a WebPage, a
+ * BreadcrumbList, and a partial SoftwareApplication node carrying the one thing
+ * this page is authoritative about, which is the current version.
+ *
+ * The application node is partial on purpose. It shares APPLICATION_ID with the
+ * full node the homepages publish, so a consumer merges the two into one entity
+ * rather than meeting a second, thinner app. Repeating name, featureList and
+ * offers here would be two descriptions of one thing that can disagree, which
+ * is the failure the shared builder in this file was created to end.
+ *
+ * `releaseNotes` is the page's own URL rather than the notes as text. Both are
+ * valid for the property, and the text is already in the page's HTML where a
+ * crawler reads it once; publishing it twice in two forms is how the two get
+ * out of step.
+ *
+ * No `SoftwareApplication.softwareVersionHistory`, and no ItemList of the
+ * releases: schema.org has no version-history type, and inventing a shape for
+ * one publishes structure no consumer reads. The `dateModified` below is the
+ * signal that actually does something, and it is the release date rather than
+ * the build date, because the page changes when a release does.
+ *
+ * @param {object} options
+ * @param {'en' | 'fa'} options.lang
+ * @param {string} options.name
+ * @param {string} options.description
+ * @param {string} options.url
+ * @param {string} options.breadcrumbHome
+ * @param {string} options.homeUrl
+ * @param {{ version: string, iso: string }} options.latest
+ */
+export function whatsNewPageSchema({
+  lang, name, description, url, breadcrumbHome, homeUrl, latest,
+}) {
+  return {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'WebPage',
+        '@id': url,
+        name,
+        description,
+        url,
+        inLanguage: lang,
+        isPartOf: { '@id': WEBSITE_ID },
+        publisher: { '@id': ORGANIZATION_ID },
+        about: { '@id': APPLICATION_ID },
+        dateModified: latest.iso,
+      },
+      {
+        '@type': 'SoftwareApplication',
+        '@id': APPLICATION_ID,
+        url: `${SITE}/`,
+        sameAs: [APP_STORE_CANONICAL_URL],
+        softwareVersion: latest.version,
+        releaseNotes: url,
+        operatingSystem: `iOS ${APP_STORE.MINIMUM_IOS}+, iPadOS ${APP_STORE.MINIMUM_IOS}+`,
       },
       {
         '@type': 'BreadcrumbList',

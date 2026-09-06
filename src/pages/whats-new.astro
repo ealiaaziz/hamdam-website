@@ -1,0 +1,55 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import WhatsNewArticle from '../components/WhatsNewArticle.astro';
+import Footer from '../components/Footer.astro';
+import { RELEASES } from '../data/releases';
+import { WHATS_NEW_UI } from '../data/whatsNewCopy';
+import { releaseMetaDescription, releaseTitle } from '../lib/releases';
+import { whatsNewPageSchema } from '../lib/schema';
+
+// The English half of the What's New pair, added 2026-09-06. The Farsi half is
+// src/pages/fa/whats-new.astro, built from the same component and the same
+// data.
+//
+// The slug is Latin and identical on both locales, so switchLocalePath maps
+// /whats-new/ to /fa/whats-new/ with no per-locale table and BaseLayout's
+// hreflang pair is correct with no change to it. Same call the moment pages
+// made, and the same reason.
+//
+// Title and description are computed from RELEASES[0], never typed. The moment
+// pages are the precedent: they sat at position 5.9 taking no clicks until the
+// date they answer moved out of the body and into the two lines a searcher
+// reads. The question this page answers is "which version is Hamdam on", so
+// the version and its date lead both lines, and they roll forward on their own
+// when the release data is regenerated.
+const path = '/whats-new/';
+const latest = RELEASES[0];
+
+// 160 characters, the English limit metaDescription.test.js enforces against
+// the built HTML. Passed in rather than owned by the library so the two cannot
+// disagree silently: if that test's limit moves, this call is what changes.
+const description = releaseMetaDescription('en', latest, 160);
+const title = releaseTitle('en', latest);
+
+const jsonLd = whatsNewPageSchema({
+  lang: 'en',
+  name: WHATS_NEW_UI.title.en,
+  description,
+  url: new URL(path, Astro.site).href,
+  breadcrumbHome: 'Hamdam',
+  homeUrl: new URL('/', Astro.site).href,
+  latest,
+});
+---
+
+<BaseLayout
+  title={title}
+  description={description}
+  lang="en"
+  path={path}
+  jsonLd={jsonLd}
+  navOverDarkHero={true}
+>
+  <WhatsNewArticle lang="en" />
+  <Footer lang="en" />
+</BaseLayout>

@@ -3,6 +3,7 @@ import {
   homepageSchema,
   poetPageSchema,
   momentPageSchema,
+  whatsNewPageSchema,
   organizationSchema,
   websiteSchema,
   FEATURE_LIST,
@@ -11,6 +12,7 @@ import {
   WEBSITE_ID,
 } from '../schema.js';
 import { APP_STORE, APP_STORE_CANONICAL_URL, appStoreUrl } from '../appStore.js';
+import { RELEASES } from '../../data/releases.ts';
 
 const build = (overrides = {}) =>
   homepageSchema({
@@ -411,5 +413,77 @@ describe('structured data uses real schema.org types', () => {
   it('walks nested @type values, not just the top level', () => {
     expect(typesIn({ '@type': 'WebPage', publisher: { '@type': 'Person' } }))
       .toEqual(['WebPage', 'Person']);
+  });
+});
+
+describe('the published version number', () => {
+  const whatsNew = (lang = 'en') => whatsNewPageSchema({
+    lang,
+    name: "What's New in Hamdam",
+    description: 'Hamdam 1.3.2 arrived on 1 September 2026.',
+    url: `https://hamdam.com.au/${lang === 'fa' ? 'fa/' : ''}whats-new/`,
+    breadcrumbHome: 'Hamdam',
+    homeUrl: `https://hamdam.com.au/${lang === 'fa' ? 'fa/' : ''}`,
+    latest: RELEASES[0],
+  });
+
+  // The whole point of publishing a version is that it is the live one. A
+  // literal here would pass forever while the site went stale, which is the
+  // failure this test exists to make impossible: it can only pass by reading
+  // the same generated record the page renders.
+  it('is the newest release in the record, never a literal', () => {
+    expect(appNode(build()).softwareVersion).toBe(RELEASES[0].version);
+    expect(appNode(whatsNew()).softwareVersion).toBe(RELEASES[0].version);
+  });
+
+  it('is the same number on both homepages and on both release pages', () => {
+    const versions = [
+      appNode(build({ lang: 'en' })).softwareVersion,
+      appNode(build({ lang: 'fa' })).softwareVersion,
+      appNode(whatsNew('en')).softwareVersion,
+      appNode(whatsNew('fa')).softwareVersion,
+    ];
+    expect(new Set(versions).size).toBe(1);
+  });
+
+  it('looks like a version and not like anything else', () => {
+    expect(appNode(build()).softwareVersion).toMatch(/^\d+(\.\d+)*$/);
+  });
+
+  // A second SoftwareApplication node with a different @id would be a second
+  // app as far as a consumer is concerned. The partial node on the What's New
+  // page must merge with the full one the homepages publish.
+  it('shares one @id with the homepage app node', () => {
+    expect(appNode(whatsNew())['@id']).toBe(APPLICATION_ID);
+    expect(appNode(build())['@id']).toBe(APPLICATION_ID);
+  });
+
+  it('does not restate name, featureList or offers on the partial node', () => {
+    const node = appNode(whatsNew());
+    for (const field of ['name', 'featureList', 'offers', 'description', 'author']) {
+      expect(node, field).not.toHaveProperty(field);
+    }
+  });
+
+  it('points releaseNotes at the page that holds them, on both locales', () => {
+    expect(appNode(whatsNew('en')).releaseNotes).toBe('https://hamdam.com.au/whats-new/');
+    expect(appNode(whatsNew('fa')).releaseNotes).toBe('https://hamdam.com.au/fa/whats-new/');
+  });
+
+  it('dates the page by the release, not by the build', () => {
+    const page = whatsNew()['@graph'].find((n) => n['@type'] === 'WebPage');
+    expect(page.dateModified).toBe(RELEASES[0].iso);
+  });
+
+  it('is part of the website and about the app, like every other page node', () => {
+    const page = whatsNew()['@graph'].find((n) => n['@type'] === 'WebPage');
+    expect(page.isPartOf).toEqual({ '@id': WEBSITE_ID });
+    expect(page.about).toEqual({ '@id': APPLICATION_ID });
+  });
+
+  it('carries the organization and website nodes its @ids resolve to', () => {
+    const ids = whatsNew()['@graph'].map((n) => n['@id']);
+    expect(ids).toContain(ORGANIZATION_ID);
+    expect(ids).toContain(WEBSITE_ID);
   });
 });

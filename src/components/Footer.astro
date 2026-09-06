@@ -1,6 +1,7 @@
 ---
 import HamdamLogotype from './HamdamLogotype.astro';
 import { APP_STORE_CANONICAL_URL } from '../lib/appStore';
+import { WHATS_NEW_UI } from '../data/whatsNewCopy';
 
 interface Props {
   lang?: 'en' | 'fa';
@@ -21,7 +22,9 @@ const { lang = 'en' } = Astro.props;
       <div class="mx-auto flex max-w-xl flex-col items-center gap-4 text-center">
         <HamdamLogotype size={24} lang="fa" />
         <p class="font-farsi text-sm text-indigo/70">اپلیکیشنی از تیم همدم</p>
-        <nav aria-label="Footer" class="flex items-center gap-3 font-farsi text-sm text-indigo/70">
+        <nav aria-label="Footer" class="flex flex-wrap items-center justify-center gap-3 font-farsi text-sm text-indigo/70">
+          <a href="/fa/whats-new/" class="inline-flex min-h-[44px] items-center px-1 hover:text-indigo">{WHATS_NEW_UI.navLabel.fa}</a>
+          <span aria-hidden="true">·</span>
           <a href="/fa/privacy/" class="inline-flex min-h-[44px] items-center px-1 hover:text-indigo">حریم خصوصی</a>
           <span aria-hidden="true">·</span>
           <a href="/fa/terms/" class="inline-flex min-h-[44px] items-center px-1 hover:text-indigo">شرایط استفاده</a>
@@ -41,7 +44,9 @@ const { lang = 'en' } = Astro.props;
              the line. Deliberately not changed unilaterally. */
         }
         <p class="text-sm text-indigo/70">An app by the Hamdam Team</p>
-        <nav aria-label="Footer" class="flex items-center gap-3 text-sm text-indigo/70">
+        <nav aria-label="Footer" class="flex flex-wrap items-center justify-center gap-3 text-sm text-indigo/70">
+          <a href="/whats-new/" class="inline-flex min-h-[44px] items-center px-1 hover:text-indigo">{WHATS_NEW_UI.navLabel.en}</a>
+          <span aria-hidden="true">&middot;</span>
           <a href="/privacy/" class="inline-flex min-h-[44px] items-center px-1 hover:text-indigo">Privacy</a>
           <span aria-hidden="true">&middot;</span>
           <a href="/terms/" class="inline-flex min-h-[44px] items-center px-1 hover:text-indigo">Terms</a>

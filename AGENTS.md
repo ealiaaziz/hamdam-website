@@ -108,6 +108,18 @@ hook) must pass. OG images/icons regenerate via `node scripts/generate-og.mjs`.
 CSP is enforcing (`public/_headers`): no inline styles or scripts, so keep
 `inlineStylesheets: 'never'` and `assetsInlineLimit: 0` in astro.config.
 
+**The site publishes the app's version number (added 2026-09-06).**
+`/whats-new/` and `/fa/whats-new/` carry the release notes, and
+`softwareVersion` appears in the JSON-LD on those two plus both homepages.
+Every one of them reads `src/data/releases.ts`, which is **generated** by
+`scripts/extract-releases.mjs` from the live App Store listing and from
+hamdam-ios `docs/app-store/v*-whats-new.md`. Never type a version number, and
+never edit that file by hand. After a release: regenerate, read the diff, then
+`npm run check:release`, which fetches the store and fails when the two
+disagree. The reasoning, what is deliberately missing (1.3.1 and everything
+before 1.2), and an honest account of what this page does and does not do for
+search are in `docs/seo/2026-09-06-whats-new-page.md`.
+
 **Outbound-host rule (added 2026-07-28):** the privacy policy's third-party
 services section (`/privacy/` §5, mirrored in `/terms/` §12) is an exhaustive
 list of every host the iOS app contacts. Any new outbound host in the app

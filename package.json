@@ -15,6 +15,7 @@
     "deploy": "node scripts/predeploy-check.mjs && npm run build && wrangler deploy",
     "check:persian": "node scripts/check-persian.mjs",
     "check:dashes": "node scripts/check-dashes.mjs",
+    "check:release": "node scripts/check-release-current.mjs",
     "prepare": "git config core.hooksPath scripts/git-hooks"
   },
   "dependencies": {

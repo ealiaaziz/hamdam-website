@@ -4,6 +4,7 @@ import HeroCinematic from '../../components/HeroCinematic.astro';
 import MoodDemo from '../../components/MoodDemo.astro';
 import VerseShowcase from '../../components/VerseShowcase.astro';
 import { faCopy } from '../../data/siteCopy';
+import { WHATS_NEW_UI } from '../../data/whatsNewCopy';
 import PoetsBand from '../../components/PoetsBand.astro';
 import JourneyPair from '../../components/JourneyPair.astro';
 import RootsMoments from '../../components/RootsMoments.astro';
@@ -197,7 +198,12 @@ const jsonLd = homepageSchema({
     <div class="mx-auto flex max-w-xl flex-col items-center gap-4 text-center">
       <HamdamLogotype size={24} lang="fa" />
       <p class="font-farsi text-sm text-indigo/70">اپلیکیشنی از تیم همدم</p>
-      <nav aria-label="Footer" class="flex items-center gap-3 font-farsi text-sm text-indigo/70">
+      <nav aria-label="Footer" class="flex flex-wrap items-center justify-center gap-3 font-farsi text-sm text-indigo/70">
+        {/* Matches the shared Footer component, which every other Farsi page
+            uses. The label is WHATS_NEW_UI.navLabel.fa, the first word of the
+            app's own "تازه‌ها در همدم" heading, taken whole. */}
+        <a href="/fa/whats-new/" class="inline-flex min-h-[44px] items-center px-1 hover:text-indigo">{WHATS_NEW_UI.navLabel.fa}</a>
+        <span aria-hidden="true">·</span>
         <a href="/fa/privacy/" class="inline-flex min-h-[44px] items-center px-1 hover:text-indigo">حریم خصوصی</a>
         <span aria-hidden="true">·</span>
         <a href="/fa/terms/" class="inline-flex min-h-[44px] items-center px-1 hover:text-indigo">شرایط استفاده</a>

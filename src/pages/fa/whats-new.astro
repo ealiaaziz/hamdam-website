@@ -1,0 +1,54 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import WhatsNewArticle from '../../components/WhatsNewArticle.astro';
+import Footer from '../../components/Footer.astro';
+import { RELEASES } from '../../data/releases';
+import { WHATS_NEW_UI } from '../../data/whatsNewCopy';
+import { MOMENT_UI } from '../../data/momentContent';
+import { releaseMetaDescription, releaseTitle } from '../../lib/releases';
+import { whatsNewPageSchema } from '../../lib/schema';
+
+// The Farsi half. Same component, same data, same slug as
+// src/pages/whats-new.astro.
+//
+// No Persian is authored here. The title joins the app's own What's New
+// heading to the app's own version row; the description is that version row
+// followed by Ealia's own published release sentences, appended whole until
+// they no longer fit. The one thing composed is the full stop between the two,
+// and that is stated rather than hidden.
+//
+// The English page carries a lead paragraph and two section headings that this
+// one does not, because no approved Farsi exists for them. That asymmetry is
+// the same one the moment and poet pages already carry, and closing it is
+// Ealia's call, not this file's. It is recorded in TODO-Ealia.md.
+const path = '/fa/whats-new/';
+const latest = RELEASES[0];
+
+// 200 characters, the Farsi limit metaDescription.test.js enforces. Higher than
+// the English 160 because Persian script renders narrower per character, which
+// is that test's own finding, not a concession made here.
+const description = releaseMetaDescription('fa', latest, 200);
+const title = releaseTitle('fa', latest);
+
+const jsonLd = whatsNewPageSchema({
+  lang: 'fa',
+  name: WHATS_NEW_UI.title.fa,
+  description,
+  url: new URL(path, Astro.site).href,
+  breadcrumbHome: MOMENT_UI.home.fa,
+  homeUrl: new URL('/fa/', Astro.site).href,
+  latest,
+});
+---
+
+<BaseLayout
+  title={title}
+  description={description}
+  lang="fa"
+  path={path}
+  jsonLd={jsonLd}
+  navOverDarkHero={true}
+>
+  <WhatsNewArticle lang="fa" />
+  <Footer lang="fa" />
+</BaseLayout>

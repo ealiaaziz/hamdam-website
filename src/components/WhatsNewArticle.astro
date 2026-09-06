@@ -1,0 +1,423 @@
+---
+import AppStoreBadge from './AppStoreBadge.astro';
+import { RELEASES } from '../data/releases';
+import { WHATS_NEW_UI } from '../data/whatsNewCopy';
+import { MOMENT_UI, MOMENT_SLUGS, MOMENT_PAGE_IDS } from '../data/momentContent';
+import { ROOTS_MOMENTS } from '../data/rootsMoments';
+import { POET_PAGES } from '../data/poetPages';
+import { poets } from '../data/poets';
+import { FAL_HAFEZ } from '../data/falHafez';
+import { formatReleaseDate, notesFor, versionLabel } from '../lib/releases';
+
+// One page body for /whats-new/ and /fa/whats-new/, the same single-component
+// shape MomentArticle already uses, so the two locales cannot drift.
+//
+// Why this page exists, stated plainly so nobody later mistakes it for a
+// changelog nobody asked for. The App Store is the only place Hamdam's release
+// notes have ever lived, and Apple publishes only the current version's, in a
+// page that is heavily scripted and slow to be re-crawled. This site owned no
+// URL that said which version is current, so every third party description of
+// the app was free to sit on whatever version it first saw. This page is the
+// citable, static, crawlable answer, in both languages, on our own domain.
+//
+// PERSIAN. Not one Persian word is authored here. The release notes come from
+// src/data/releases.ts, generated from the App Store field itself, where the
+// Farsi half is Ealia's own published text. The chrome comes from
+// src/data/whatsNewCopy.ts, where each string names the shipped app string it
+// was copied from. Where no approved Farsi exists (the lead paragraph, the
+// "Earlier versions" heading, the links heading) the element is omitted on the
+// Farsi page rather than invented. That is MomentArticle's precedent and the
+// asymmetry is deliberate.
+
+interface Props {
+  lang: 'en' | 'fa';
+}
+
+const { lang } = Astro.props;
+
+const [latest, ...earlier] = RELEASES;
+const homeHref = lang === 'fa' ? '/fa/' : '/';
+const prefix = lang === 'fa' ? '/fa' : '';
+
+/** One release, resolved for this locale. The first paragraph is its headline. */
+function view(release: (typeof RELEASES)[number]) {
+  const [headline, ...body] = notesFor(lang, release);
+  return {
+    version: release.version,
+    label: versionLabel(lang, release.version),
+    iso: release.iso,
+    date: formatReleaseDate(lang, release.iso),
+    headline,
+    body,
+  };
+}
+
+const latestView = view(latest);
+const earlierViews = earlier.map(view);
+
+// Internal links out of this page. Link text is a poet's or a moment's own
+// name, which exists in both languages already, so this list needs no Persian
+// written for it and no group label on the Farsi side.
+const links = [
+  { href: `${prefix}/${FAL_HAFEZ.slug}/`, label: lang === 'fa' ? FAL_HAFEZ.titleFa : FAL_HAFEZ.titleEn },
+  ...POET_PAGES.map((page) => ({
+    href: `${prefix}/poets/${page.slug}/`,
+    label: lang === 'fa' ? poets[page.poetIndex].persianName : poets[page.poetIndex].transliteration,
+  })),
+  ...MOMENT_PAGE_IDS.map((id) => {
+    const moment = ROOTS_MOMENTS.find((m) => m.id === id)!;
+    return {
+      href: `${prefix}/moments/${MOMENT_SLUGS[id]}/`,
+      label: (lang === 'fa' && moment.nameFa) || moment.nameEn,
+    };
+  }),
+];
+---
+
+<article class="whats-new">
+  <div class="whats-new__inner">
+    <p class="whats-new__crumb">
+      <a href={homeHref}>{MOMENT_UI.home[lang]}</a>
+    </p>
+
+    <h1 class="whats-new__title text-balance">{WHATS_NEW_UI.title[lang]}</h1>
+
+    {lang === 'en' && <p class="whats-new__lead text-balance">{WHATS_NEW_UI.lead}</p>}
+
+    {
+      /* The latest release, given the weight it earns: this is the one fact
+         the page exists to publish, and the one an answer engine should take
+         away from it. The gold rule and the larger type are the whole of the
+         "latest" marker, deliberately, because a word like "Latest" would need
+         a Farsi half that does not exist. */
+    }
+    <section class="release release--latest" aria-labelledby="release-latest">
+      <header class="release__head">
+        <img
+          class="release__icon"
+          src="/icons/icon-192.png"
+          width="64"
+          height="64"
+          alt=""
+          decoding="async"
+        />
+        <div class="release__meta">
+          <h2 class="release__version" id="release-latest" dir="auto">{latestView.label}</h2>
+          <time class="release__date" datetime={latestView.iso}>{latestView.date}</time>
+        </div>
+      </header>
+
+      <p class="release__headline text-balance">{latestView.headline}</p>
+      <div class="release__body">
+        {latestView.body.map((paragraph) => <p>{paragraph}</p>)}
+      </div>
+    </section>
+
+    <div class="whats-new__cta">
+      <AppStoreBadge lang={lang} placement="whats-new" showRequirement />
+    </div>
+
+    {
+      earlierViews.length > 0 && (
+        <section class="whats-new__earlier" aria-labelledby={lang === 'en' ? 'earlier' : undefined}>
+          {lang === 'en' && (
+            <h2 class="whats-new__section-title" id="earlier">
+              {WHATS_NEW_UI.earlier}
+            </h2>
+          )}
+
+          <ol class="whats-new__timeline">
+            {earlierViews.map((release) => (
+              <li class="release release--earlier">
+                <header class="release__head release__head--compact">
+                  <div class="release__meta">
+                    <h3 class="release__version" dir="auto">{release.label}</h3>
+                    <time class="release__date" datetime={release.iso}>{release.date}</time>
+                  </div>
+                </header>
+                <p class="release__headline text-balance">{release.headline}</p>
+                <div class="release__body">
+                  {release.body.map((paragraph) => <p>{paragraph}</p>)}
+                </div>
+              </li>
+            ))}
+          </ol>
+        </section>
+      )
+    }
+
+    <nav class="whats-new__links" aria-label={WHATS_NEW_UI.title[lang]}>
+      {lang === 'en' && <h2 class="whats-new__section-title">{WHATS_NEW_UI.alsoTitle}</h2>}
+      <ul>
+        {links.map((link) => (
+          <li>
+            <a href={link.href}>{link.label}</a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  </div>
+</article>
+
+<style>
+  /* The page opens on first light and does not move: this is a reading page,
+     not the homepage's scroll arc. Same surface and same on-night text pair the
+     moment pages use, which is why both set navOverDarkHero. */
+  .whats-new {
+    padding-block: 6rem 5rem;
+    padding-inline: 1.5rem;
+    background:
+      radial-gradient(120% 80% at 50% 0%, rgb(240 200 120 / 0.16), transparent 62%),
+      linear-gradient(180deg, var(--surface-firstlight), var(--surface-dusk) 62%, var(--surface-night));
+    color: var(--text-on-night);
+  }
+  @media (min-width: 640px) {
+    .whats-new {
+      padding-block: 7.5rem 6rem;
+    }
+  }
+
+  .whats-new__inner {
+    max-width: 46rem;
+    margin-inline: auto;
+  }
+
+  .whats-new__crumb {
+    font-family: var(--font-sans);
+    font-size: var(--text-meta);
+    color: var(--text-on-night-muted);
+  }
+  :global([lang='fa']) .whats-new__crumb {
+    font-family: var(--font-farsi);
+  }
+  .whats-new__crumb a {
+    color: inherit;
+    text-decoration: underline;
+    text-underline-offset: 0.25em;
+  }
+  .whats-new__crumb a:hover {
+    color: var(--text-on-night);
+  }
+
+  .whats-new__title {
+    margin-top: 0.75rem;
+    font-family: var(--font-serif);
+    font-size: var(--text-display);
+    font-weight: 600;
+    line-height: 1.1;
+  }
+  :global([lang='fa']) .whats-new__title {
+    font-family: var(--font-farsi);
+    font-size: var(--text-display-fa);
+    font-weight: 500;
+    line-height: 1.3;
+  }
+
+  .whats-new__lead {
+    margin-top: 1.5rem;
+    max-width: 40rem;
+    font-family: var(--font-serif);
+    font-size: var(--text-h3);
+    line-height: 1.6;
+    color: var(--text-on-night-muted);
+  }
+
+  /* The card. Rounded panel, hairline edge, an inner top highlight so it reads
+     as a lit surface against the sky rather than a flat rectangle on it. */
+  .release {
+    margin-top: 2.5rem;
+    padding: var(--card-padding-mobile);
+    border-radius: var(--radius-panel);
+    border: 1px solid rgb(244 237 216 / 0.14);
+    background:
+      linear-gradient(180deg, rgb(244 237 216 / 0.09), rgb(244 237 216 / 0.03));
+    box-shadow: var(--shadow-lift);
+  }
+  @media (min-width: 640px) {
+    .release {
+      padding: var(--card-padding-desktop);
+    }
+  }
+
+  .release--earlier {
+    background: linear-gradient(180deg, rgb(244 237 216 / 0.055), rgb(244 237 216 / 0.02));
+  }
+
+  .release--latest {
+    border-color: rgb(240 200 120 / 0.55);
+    box-shadow:
+      var(--shadow-lift),
+      0 0 0 1px rgb(240 200 120 / 0.12),
+      0 24px 60px rgb(240 200 120 / 0.10);
+  }
+
+  .release__head {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  /* The icon carries the App Store's own corner curve, so the card reads as the
+     update card it is quoting rather than as a generic web panel. 22.37% is the
+     ratio Apple's icon grid uses at every size. */
+  .release__icon {
+    flex: none;
+    width: 64px;
+    height: 64px;
+    border-radius: 22.37%;
+    box-shadow: 0 6px 18px rgb(20 20 48 / 0.45);
+  }
+
+  .release__meta {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    min-width: 0;
+  }
+
+  .release__version {
+    font-family: var(--font-sans);
+    font-size: var(--text-h3);
+    font-weight: 600;
+    line-height: 1.2;
+    color: var(--hamdam-night-gold);
+  }
+  :global([lang='fa']) .release__version {
+    font-family: var(--font-farsi);
+  }
+
+  .release__date {
+    font-family: var(--font-sans);
+    font-size: var(--text-meta);
+    color: var(--text-on-night-muted);
+  }
+  :global([lang='fa']) .release__date {
+    font-family: var(--font-farsi);
+  }
+
+  /* The release's own opening line, which in every release Ealia has written is
+     a single sentence standing on its own. Set as the card's lead. */
+  .release__headline {
+    margin-top: 1.5rem;
+    font-family: var(--font-serif);
+    font-size: var(--text-h3);
+    line-height: 1.5;
+    color: var(--text-on-night);
+  }
+  :global([lang='fa']) .release__headline {
+    font-family: var(--font-farsi);
+  }
+
+  /* The newest release gets the larger lead. It is the one thing on the page
+     that has to be legible in a glance, including in a screenshot of it. */
+  .release--latest .release__headline {
+    font-size: var(--text-h2);
+    line-height: 1.35;
+  }
+
+  .release__body {
+    display: flex;
+    flex-direction: column;
+    gap: 1.1rem;
+    margin-top: 1.25rem;
+  }
+  .release__body p {
+    margin: 0;
+    font-family: var(--font-serif);
+    font-size: var(--text-body);
+    line-height: 1.75;
+    color: var(--text-on-night-muted);
+  }
+  :global([lang='fa']) .release__body p {
+    font-family: var(--font-farsi);
+    font-size: var(--text-body-fa);
+    line-height: 2;
+  }
+
+  .whats-new__cta {
+    margin-top: 2.5rem;
+    color: var(--text-on-night);
+  }
+
+  .whats-new__earlier {
+    margin-top: 4rem;
+  }
+
+  .whats-new__section-title {
+    font-family: var(--font-serif);
+    font-size: var(--text-h2);
+    font-weight: 600;
+    line-height: 1.2;
+  }
+
+  /* A single hairline running down the earlier releases, with a gold node at
+     each card, so the list reads as one sequence going back in time. Inline
+     start rather than left, so it moves to the right edge in Farsi with no
+     second rule. */
+  .whats-new__timeline {
+    position: relative;
+    margin-top: 1rem;
+    padding-inline-start: 1.75rem;
+    list-style: none;
+  }
+  .whats-new__timeline::before {
+    content: '';
+    position: absolute;
+    inset-block: 3.4rem 2rem;
+    inset-inline-start: 6px;
+    width: 2px;
+    border-radius: 1px;
+    background: linear-gradient(
+      180deg,
+      rgb(240 200 120 / 0.55),
+      rgb(240 200 120 / 0.06)
+    );
+  }
+  .whats-new__timeline > li {
+    position: relative;
+  }
+  .whats-new__timeline > li::before {
+    content: '';
+    position: absolute;
+    top: 3.1rem;
+    inset-inline-start: -1.75rem;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--hamdam-night-gold);
+    box-shadow: 0 0 0 4px rgb(240 200 120 / 0.14);
+  }
+
+  .whats-new__links {
+    margin-top: 4rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid rgb(244 237 216 / 0.16);
+  }
+  .whats-new__links ul {
+    margin-top: 0.5rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 1.5rem;
+    font-family: var(--font-serif);
+  }
+  :global([lang='fa']) .whats-new__links ul {
+    font-family: var(--font-farsi);
+  }
+  .whats-new__links a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    color: var(--hamdam-night-gold);
+    text-decoration: underline;
+    text-underline-offset: 0.25em;
+  }
+  .whats-new__links a:hover {
+    color: var(--text-on-night);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .release {
+      transition: border-color 200ms ease;
+    }
+  }
+</style>
