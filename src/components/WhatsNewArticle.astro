@@ -7,7 +7,7 @@ import { ROOTS_MOMENTS } from '../data/rootsMoments';
 import { POET_PAGES } from '../data/poetPages';
 import { poets } from '../data/poets';
 import { FAL_HAFEZ } from '../data/falHafez';
-import { formatReleaseDate, notesFor, versionLabel } from '../lib/releases';
+import { featureReleases, formatReleaseDate, notesFor, versionLabel } from '../lib/releases';
 
 // One page body for /whats-new/ and /fa/whats-new/, the same single-component
 // shape MomentArticle already uses, so the two locales cannot drift.
@@ -19,6 +19,14 @@ import { formatReleaseDate, notesFor, versionLabel } from '../lib/releases';
 // URL that said which version is current, so every third party description of
 // the app was free to sit on whatever version it first saw. This page is the
 // citable, static, crawlable answer, in both languages, on our own domain.
+//
+// WHAT IS LISTED. Feature releases only (1.3, 1.2), Ealia's call on 2026-09-06.
+// A point release that fixes a widget refresh is noise at the altitude a reader
+// arrives at this page with. The chip above the heading still names the version
+// the store is serving, point release or not, because the site must never state
+// a version the App Store disagrees with, and because that number is the whole
+// reason the page exists. The record in src/data/releases.ts keeps every release
+// it has text for; only the rendering filters.
 //
 // PERSIAN. Not one Persian word is authored here. The release notes come from
 // src/data/releases.ts, generated from the App Store field itself, where the
@@ -35,7 +43,11 @@ interface Props {
 
 const { lang } = Astro.props;
 
-const [latest, ...earlier] = RELEASES;
+// The live release, whatever shape its version is: this is the fact the chip
+// publishes and the one `npm run check:release` holds to the store.
+const current = RELEASES[0];
+// The releases the page tells the story of.
+const [latest, ...earlier] = featureReleases(RELEASES);
 const homeHref = lang === 'fa' ? '/fa/' : '/';
 const prefix = lang === 'fa' ? '/fa' : '';
 
@@ -52,6 +64,7 @@ function view(release: (typeof RELEASES)[number]) {
   };
 }
 
+const currentView = view(current);
 const latestView = view(latest);
 const earlierViews = earlier.map(view);
 
@@ -80,6 +93,26 @@ const links = [
       <a href={homeHref}>{MOMENT_UI.home[lang]}</a>
     </p>
 
+    {
+      /* The version the App Store is serving right now, stated once, in both
+         languages, with nothing composed: the label is the app's own Settings
+         wording and the date is formatted by locale. This is the line an answer
+         engine should take away from the page, and it is deliberately a fact
+         rather than a heading. */
+    }
+    <p class="whats-new__current">
+      <img
+        class="whats-new__current-icon"
+        src="/icons/icon-192.png"
+        width="28"
+        height="28"
+        alt=""
+        decoding="async"
+      />
+      <span class="whats-new__current-version" dir="auto">{currentView.label}</span>
+      <time class="whats-new__current-date" datetime={currentView.iso}>{currentView.date}</time>
+    </p>
+
     <h1 class="whats-new__title text-balance">{WHATS_NEW_UI.title[lang]}</h1>
 
     {lang === 'en' && <p class="whats-new__lead text-balance">{WHATS_NEW_UI.lead}</p>}
@@ -93,14 +126,6 @@ const links = [
     }
     <section class="release release--latest" aria-labelledby="release-latest">
       <header class="release__head">
-        <img
-          class="release__icon"
-          src="/icons/icon-192.png"
-          width="64"
-          height="64"
-          alt=""
-          decoding="async"
-        />
         <div class="release__meta">
           <h2 class="release__version" id="release-latest" dir="auto">{latestView.label}</h2>
           <time class="release__date" datetime={latestView.iso}>{latestView.date}</time>
@@ -199,6 +224,53 @@ const links = [
     color: var(--text-on-night);
   }
 
+  /* The current-version chip. A status line rather than a heading: it sits
+     above the title the way an App Store update row sits above its notes, and
+     it is the only place on the page a point release is named. */
+  .whats-new__current {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-top: 1rem;
+    padding: 0.4rem 0.9rem 0.4rem 0.5rem;
+    border-radius: var(--radius-pill);
+    border: 1px solid rgb(240 200 120 / 0.35);
+    background: rgb(240 200 120 / 0.08);
+  }
+  :global([dir='rtl']) .whats-new__current {
+    padding: 0.4rem 0.5rem 0.4rem 0.9rem;
+  }
+
+  /* The icon carries the App Store's own corner curve, so the chip reads as the
+     update row it is quoting rather than as a generic web pill. 22.37% is the
+     ratio Apple's icon grid uses at every size. */
+  .whats-new__current-icon {
+    flex: none;
+    width: 28px;
+    height: 28px;
+    border-radius: 22.37%;
+    box-shadow: 0 2px 8px rgb(20 20 48 / 0.4);
+  }
+
+  .whats-new__current-version {
+    font-family: var(--font-sans);
+    font-size: var(--text-meta);
+    font-weight: 600;
+    color: var(--hamdam-night-gold);
+  }
+  :global([lang='fa']) .whats-new__current-version {
+    font-family: var(--font-farsi);
+  }
+
+  .whats-new__current-date {
+    font-family: var(--font-sans);
+    font-size: var(--text-meta);
+    color: var(--text-on-night-muted);
+  }
+  :global([lang='fa']) .whats-new__current-date {
+    font-family: var(--font-farsi);
+  }
+
   .whats-new__title {
     margin-top: 0.75rem;
     font-family: var(--font-serif);
@@ -257,16 +329,6 @@ const links = [
     gap: 1rem;
   }
 
-  /* The icon carries the App Store's own corner curve, so the card reads as the
-     update card it is quoting rather than as a generic web panel. 22.37% is the
-     ratio Apple's icon grid uses at every size. */
-  .release__icon {
-    flex: none;
-    width: 64px;
-    height: 64px;
-    border-radius: 22.37%;
-    box-shadow: 0 6px 18px rgb(20 20 48 / 0.45);
-  }
 
   .release__meta {
     display: flex;

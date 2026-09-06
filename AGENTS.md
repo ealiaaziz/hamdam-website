@@ -116,9 +116,16 @@ Every one of them reads `src/data/releases.ts`, which is **generated** by
 hamdam-ios `docs/app-store/v*-whats-new.md`. Never type a version number, and
 never edit that file by hand. After a release: regenerate, read the diff, then
 `npm run check:release`, which fetches the store and fails when the two
-disagree. The reasoning, what is deliberately missing (1.3.1 and everything
-before 1.2), and an honest account of what this page does and does not do for
-search are in `docs/seo/2026-09-06-whats-new-page.md`.
+disagree.
+
+**The page lists feature releases only (1.3, 1.2), Ealia 2026-09-06, and point
+releases such as 1.3.1 and 1.3.2 are not listed.** The filter is applied at
+render by `featureReleases()`, never to the record: the chip above the heading
+and `softwareVersion` still carry the live version, point release included,
+because the site must never publish a version the App Store disagrees with.
+The reasoning, what is deliberately missing (1.0 and 1.1, whose notes exist
+nowhere readable), and an honest account of what this page does and does not do
+for search are in `docs/seo/2026-09-06-whats-new-page.md`.
 
 **Outbound-host rule (added 2026-07-28):** the privacy policy's third-party
 services section (`/privacy/` §5, mirrored in `/terms/` §12) is an exhaustive

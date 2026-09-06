@@ -5,7 +5,7 @@ import Footer from '../../components/Footer.astro';
 import { RELEASES } from '../../data/releases';
 import { WHATS_NEW_UI } from '../../data/whatsNewCopy';
 import { MOMENT_UI } from '../../data/momentContent';
-import { releaseMetaDescription, releaseTitle } from '../../lib/releases';
+import { featureReleases, releaseMetaDescription, releaseTitle } from '../../lib/releases';
 import { whatsNewPageSchema } from '../../lib/schema';
 
 // The Farsi half. Same component, same data, same slug as
@@ -22,13 +22,25 @@ import { whatsNewPageSchema } from '../../lib/schema';
 // the same one the moment and poet pages already carry, and closing it is
 // Ealia's call, not this file's. It is recorded in TODO-Ealia.md.
 const path = '/fa/whats-new/';
-const latest = RELEASES[0];
+// Two different releases, on purpose.
+//
+// `current` is what the App Store is serving, point release included. It is
+// what the chip on the page states and what goes into the structured data,
+// because a version number published here must never disagree with the store.
+//
+// `feature` is the newest feature release, which is what the title and the
+// description lead with. Ealia's call on 2026-09-06: the page tells the story
+// of feature releases, and that story is what should be indexed. A searcher
+// asking what is new in Hamdam is asking about the Garden, not about a widget
+// refresh fix.
+const current = RELEASES[0];
+const feature = featureReleases(RELEASES)[0];
 
 // 200 characters, the Farsi limit metaDescription.test.js enforces. Higher than
 // the English 160 because Persian script renders narrower per character, which
 // is that test's own finding, not a concession made here.
-const description = releaseMetaDescription('fa', latest, 200);
-const title = releaseTitle('fa', latest);
+const description = releaseMetaDescription('fa', feature, 200);
+const title = releaseTitle('fa', feature);
 
 const jsonLd = whatsNewPageSchema({
   lang: 'fa',
@@ -37,7 +49,7 @@ const jsonLd = whatsNewPageSchema({
   url: new URL(path, Astro.site).href,
   breadcrumbHome: MOMENT_UI.home.fa,
   homeUrl: new URL('/fa/', Astro.site).href,
-  latest,
+  latest: current,
 });
 ---
 

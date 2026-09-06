@@ -77,6 +77,40 @@ export function notesFor(lang, release) {
 }
 
 /**
+ * True for a feature release, false for a point release on top of one.
+ *
+ * The rule is the shape of the version string: two components is a feature
+ * release (1.2, 1.3, and one day 2.0), three is a patch on top of it (1.3.1,
+ * 1.3.2). That is the convention every Hamdam release so far has followed.
+ *
+ * Ealia's call, 2026-09-06: the What's New page tells the story of feature
+ * releases. A reader arriving here wants to know what the app can do now, and
+ * a patch that fixes a widget refresh is noise at that altitude, even when its
+ * notes are well written.
+ *
+ * This filters the PAGE, never the RECORD. src/data/releases.ts keeps every
+ * release it has text for, `npm run check:release` still compares the newest
+ * entry against the live store, and the version published in the structured
+ * data is still the live one. Filtering the record instead would mean the site
+ * quietly claimed 1.3 while the App Store served 1.3.2, which is the exact
+ * staleness this page was built to end.
+ *
+ * @param {string} version
+ */
+export function isFeatureRelease(version) {
+  return version.split('.').length === 2;
+}
+
+/**
+ * The feature releases, newest first, for rendering.
+ *
+ * @param {readonly { version: string }[]} releases
+ */
+export function featureReleases(releases) {
+  return releases.filter((release) => isFeatureRelease(release.version));
+}
+
+/**
  * The sentences of a release's notes, in order.
  *
  * A whole paragraph is often too long for a snippet while its first sentence

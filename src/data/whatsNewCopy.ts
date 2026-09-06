@@ -40,9 +40,18 @@ export const WHATS_NEW_UI = {
    */
   version: { en: 'Version', fa: 'نسخه' },
 
-  /** English only. See the note at the top of this file. */
+  /**
+   * English only. See the note at the top of this file.
+   *
+   * The second sentence earns its place: the chip above the heading names the
+   * version the App Store is serving today, which can be a point release, while
+   * the cards below are feature releases. Without a line saying so, a reader who
+   * notices 1.3.2 at the top and 1.3 on the first card has found a discrepancy
+   * rather than a decision.
+   */
   lead:
     "These are Hamdam's release notes, in the same words that went to the App Store. " +
+    'Point releases in between carry fixes and small corrections, and are not listed. ' +
     'Hamdam is a daily Persian poetry, reflection and journal app for iPhone and iPad, ' +
     'with an Apple Watch companion.',
 

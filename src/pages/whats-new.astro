@@ -4,7 +4,7 @@ import WhatsNewArticle from '../components/WhatsNewArticle.astro';
 import Footer from '../components/Footer.astro';
 import { RELEASES } from '../data/releases';
 import { WHATS_NEW_UI } from '../data/whatsNewCopy';
-import { releaseMetaDescription, releaseTitle } from '../lib/releases';
+import { featureReleases, releaseMetaDescription, releaseTitle } from '../lib/releases';
 import { whatsNewPageSchema } from '../lib/schema';
 
 // The English half of the What's New pair, added 2026-09-06. The Farsi half is
@@ -23,13 +23,25 @@ import { whatsNewPageSchema } from '../lib/schema';
 // the version and its date lead both lines, and they roll forward on their own
 // when the release data is regenerated.
 const path = '/whats-new/';
-const latest = RELEASES[0];
+// Two different releases, on purpose.
+//
+// `current` is what the App Store is serving, point release included. It is
+// what the chip on the page states and what goes into the structured data,
+// because a version number published here must never disagree with the store.
+//
+// `feature` is the newest feature release, which is what the title and the
+// description lead with. Ealia's call on 2026-09-06: the page tells the story
+// of feature releases, and that story is what should be indexed. A searcher
+// asking what is new in Hamdam is asking about the Garden, not about a widget
+// refresh fix.
+const current = RELEASES[0];
+const feature = featureReleases(RELEASES)[0];
 
 // 160 characters, the English limit metaDescription.test.js enforces against
 // the built HTML. Passed in rather than owned by the library so the two cannot
 // disagree silently: if that test's limit moves, this call is what changes.
-const description = releaseMetaDescription('en', latest, 160);
-const title = releaseTitle('en', latest);
+const description = releaseMetaDescription('en', feature, 160);
+const title = releaseTitle('en', feature);
 
 const jsonLd = whatsNewPageSchema({
   lang: 'en',
@@ -38,7 +50,7 @@ const jsonLd = whatsNewPageSchema({
   url: new URL(path, Astro.site).href,
   breadcrumbHome: 'Hamdam',
   homeUrl: new URL('/', Astro.site).href,
-  latest,
+  latest: current,
 });
 ---
 

@@ -1,6 +1,8 @@
 import { describe, test, expect } from 'vitest';
 import {
+  featureReleases,
   formatReleaseDate,
+  isFeatureRelease,
   notesFor,
   persianNumerals,
   releaseMetaDescription,
@@ -14,6 +16,8 @@ import { RELEASES } from '../../data/releases.ts';
 // direction, and the blind side is not always the obvious one.
 
 const LATEST = RELEASES[0];
+// What the two pages actually render in their title and description.
+const FEATURE = RELEASES.find((r) => isFeatureRelease(r.version));
 
 describe('persianNumerals', () => {
   test('maps every ASCII digit to its Persian counterpart', () => {
@@ -117,6 +121,46 @@ describe('the release data itself', () => {
   });
 });
 
+describe('isFeatureRelease', () => {
+  test('two components is a feature release, three is a patch on one', () => {
+    expect(isFeatureRelease('1.3')).toBe(true);
+    expect(isFeatureRelease('1.2')).toBe(true);
+    expect(isFeatureRelease('2.0')).toBe(true);
+    expect(isFeatureRelease('1.3.1')).toBe(false);
+    expect(isFeatureRelease('1.3.2')).toBe(false);
+  });
+
+  test('a bare major is a feature release and a four part build is not', () => {
+    // Both sides of the boundary, not just the shapes shipped so far.
+    expect(isFeatureRelease('2')).toBe(false);
+    expect(isFeatureRelease('1.3.2.1')).toBe(false);
+  });
+});
+
+describe('featureReleases', () => {
+  test('keeps the feature releases and drops the point releases', () => {
+    expect(featureReleases(RELEASES).map((r) => r.version)).toEqual(['1.3', '1.2']);
+  });
+
+  test('preserves newest first order', () => {
+    const dates = featureReleases(RELEASES).map((r) => r.iso);
+    expect([...dates].sort().reverse()).toEqual(dates);
+  });
+
+  test('filters the page and never the record', () => {
+    // The record must keep the live release even when the page does not show
+    // it, because check:release compares RELEASES[0] to the store and the
+    // structured data publishes it. If this ever fails, the site is about to
+    // start claiming a version the App Store disagrees with.
+    expect(RELEASES[0].version).not.toBe(featureReleases(RELEASES)[0].version);
+    expect(RELEASES.length).toBeGreaterThan(featureReleases(RELEASES).length);
+  });
+
+  test('returns an empty list rather than throwing when nothing qualifies', () => {
+    expect(featureReleases([{ version: '1.0.1' }])).toEqual([]);
+  });
+});
+
 describe('notesFor', () => {
   test('picks the half the locale asked for', () => {
     expect(notesFor('en', LATEST)).toBe(LATEST.notesEn);
@@ -160,20 +204,27 @@ describe('releaseMetaDescription', () => {
 });
 
 describe('releaseTitle', () => {
-  test('English leads with the brand and the live version', () => {
-    expect(releaseTitle('en', LATEST)).toBe(
-      `Hamdam ${LATEST.version}: what's new in the latest update | Hamdam`,
+  test('English leads with the brand and the version', () => {
+    expect(releaseTitle('en', FEATURE)).toBe(
+      `Hamdam ${FEATURE.version}: what's new in the latest update | Hamdam`,
     );
   });
 
   test('Farsi joins two approved strings and composes nothing else', () => {
-    expect(releaseTitle('fa', LATEST)).toBe(
-      `تازه‌ها در همدم: ${versionLabel('fa', LATEST.version)}`,
+    expect(releaseTitle('fa', FEATURE)).toBe(
+      `تازه‌ها در همدم: ${versionLabel('fa', FEATURE.version)}`,
     );
   });
 
   test('both titles stay inside what a search result renders', () => {
-    expect(releaseTitle('en', LATEST).length).toBeLessThanOrEqual(70);
-    expect([...releaseTitle('fa', LATEST)].length).toBeLessThanOrEqual(70);
+    expect(releaseTitle('en', FEATURE).length).toBeLessThanOrEqual(70);
+    expect([...releaseTitle('fa', FEATURE)].length).toBeLessThanOrEqual(70);
+  });
+
+  test('the indexed title names the feature release, not the point release', () => {
+    // The whole reason the two are separated. If this ever equals the live
+    // version, somebody has quietly reverted Ealia's 2026-09-06 call.
+    expect(releaseTitle('en', FEATURE)).toContain('1.3:');
+    expect(releaseTitle('en', FEATURE)).not.toContain('1.3.2');
   });
 });
