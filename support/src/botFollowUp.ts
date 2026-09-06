@@ -12,7 +12,7 @@ import {
   ticketsAwaitingBotFollowUp,
   type BotChangeRow,
 } from './db.js';
-import { changeRef } from './changeApproval.js';
+import { changeRef, asksSomething } from './changeApproval.js';
 import {
   canReachRepo,
   parseDeployOutcome,
@@ -151,6 +151,11 @@ async function checkProposal(
     prNumber: report.prNumber,
     branch: null,
     headSha: report.headSha,
+    // Judged on the description that actually goes into the email, because
+    // that is what she is answering. An agent that describes its change and
+    // then asks her something else in the same breath has made a bare "بله"
+    // ambiguous, and the approval reader is told so rather than guessing.
+    askedQuestion: asksSomething(report.description),
   });
 
   const ticket = await getTicketById(env.DB, ticketId);

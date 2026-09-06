@@ -175,7 +175,13 @@ export async function relayReply(env: Env, facts: InboundFacts): Promise<boolean
       if (verdict === 'refused') {
         await recordRefusal(env.DB, facts.ticketId);
         await addComment(env.DB, facts.ticketId, 'system', null, `Owner refused ${change.pending_change_ref}.`);
-      } else if (approvesChange(facts.body, change.pending_change_ref)) {
+      } else if (
+        approvesChange(
+          facts.body,
+          change.pending_change_ref,
+          change.proposal_asked_question === 1,
+        )
+      ) {
         const took = await recordApproval(env.DB, facts.ticketId, change.pending_change_ref);
         await addComment(
           env.DB,

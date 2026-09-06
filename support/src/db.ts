@@ -886,6 +886,12 @@ export interface BotChangeRow {
   head_sha: string | null;
   pending_change_ref: string | null;
   proposed_at: string | null;
+  /**
+   * 1 when the message that proposed this change also asked her something
+   * else. A bare "بله" then answers an unknown one of the two, so it is not
+   * read as consent. See approvesChange in changeApproval.ts.
+   */
+  proposal_asked_question: number;
   approved_ref: string | null;
   approved_at: string | null;
   refused_at: string | null;
@@ -943,7 +949,14 @@ export async function recordDispatch(
 export async function proposeChange(
   db: D1Database,
   ticketId: number,
-  change: { changeRef: string; prNumber: number | null; branch: string | null; headSha: string },
+  change: {
+    changeRef: string;
+    prNumber: number | null;
+    branch: string | null;
+    headSha: string;
+    /** Whether the text going to her asks anything beyond "may I ship this?" */
+    askedQuestion?: boolean;
+  },
 ): Promise<void> {
   await db
     .prepare(
@@ -952,6 +965,7 @@ export async function proposeChange(
               pr_number = COALESCE(?3, pr_number),
               branch = COALESCE(?4, branch),
               head_sha = ?5,
+              proposal_asked_question = ?6,
               proposed_at = strftime('%Y-%m-%dT%H:%M:%fZ','now'),
               approved_ref = NULL,
               approved_at = NULL,
@@ -959,7 +973,14 @@ export async function proposeChange(
               updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')
         WHERE ticket_id = ?1`,
     )
-    .bind(ticketId, change.changeRef, change.prNumber, change.branch, change.headSha)
+    .bind(
+      ticketId,
+      change.changeRef,
+      change.prNumber,
+      change.branch,
+      change.headSha,
+      change.askedQuestion ? 1 : 0,
+    )
     .run();
 }
 
