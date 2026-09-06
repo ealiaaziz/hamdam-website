@@ -1,0 +1,21 @@
+-- Did the message that proposed this change also ask her something else?
+--
+-- On HAM-60 the desk sent one email that both proposed a fix and asked a
+-- separate question: "here is the change, awaiting your approval" and "if you
+-- agree with this level of access, send me the numeric id". She replied
+-- "بله" and gave the number. She was answering the second question. The
+-- approval reader saw a whole-word yes with no question mark in it, called it
+-- consent for the change, and the pull request merged and deployed sixteen
+-- seconds later.
+--
+-- The outcome was harmless because she did want that fix. The mechanism was
+-- not: a yes aimed at one question released a different one.
+--
+-- So the desk records whether its own request was clean. When it was, a bare
+-- "بله" still approves, which is the case that matters and the one she
+-- actually uses. When the desk muddied its own question, her yes has to name
+-- the reference the email printed, and otherwise she is asked once, plainly,
+-- about the change alone.
+--
+-- Defaults to 0 so every row written before this behaves exactly as it did.
+ALTER TABLE ticket_bot_changes ADD COLUMN proposal_asked_question INTEGER NOT NULL DEFAULT 0;

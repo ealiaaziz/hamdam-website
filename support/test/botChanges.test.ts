@@ -9,6 +9,7 @@ const base: BotChangeRow = {
   head_sha: 'a3f9c1d4',
   pending_change_ref: 'HAM-12/a3f9c1',
   proposed_at: '2026-08-28T10:00:00.000Z',
+  proposal_asked_question: 0,
   approved_ref: 'HAM-12/a3f9c1',
   approved_at: '2026-08-28T10:05:00.000Z',
   refused_at: null,
@@ -95,6 +96,7 @@ describe('recordApproval is scoped to the pending change', () => {
 
 const shippedRow = (): BotChangeRow => ({
   ticket_id: 54,
+  proposal_asked_question: 0,
   issue_number: 9,
   pr_number: 13,
   branch: null,

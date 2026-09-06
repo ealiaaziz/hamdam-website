@@ -188,7 +188,7 @@ export function approvalVerdict(text: string): ApprovalVerdict {
  * interrogative phrasing in Farsi is exactly the kind of cleverness that would
  * fail quietly on the messages that matter.
  */
-function asksSomething(text: string): boolean {
+export function asksSomething(text: string): boolean {
   return /[?\u061F]/.test(text);
 }
 
@@ -207,10 +207,37 @@ export function changeRef(ticketPublicId: string, headSha: string): string {
  * and consent counts only for that one. So if the reply names a reference at
  * all, it has to be this one.
  */
-export function approvesChange(text: string, latestRef: string): boolean {
+export function approvesChange(
+  text: string,
+  latestRef: string,
+  proposalAskedQuestion = false,
+): boolean {
   if (approvalVerdict(text) !== 'approved') return false;
 
   const referenced = text.match(/HAM-\d+\/[0-9a-f]{6}/gi) ?? [];
-  if (referenced.length === 0) return true;
-  return referenced.some((ref) => ref.toLowerCase() === latestRef.toLowerCase());
+  if (referenced.length > 0) {
+    return referenced.some((ref) => ref.toLowerCase() === latestRef.toLowerCase());
+  }
+
+  // A bare yes is enough only when the desk asked one thing.
+  //
+  // On HAM-60 the desk sent a single email that proposed a fix and, in the
+  // same breath, asked something else: whether she was happy with the level
+  // of access a new admin would get. She replied "بله" and gave a phone
+  // number. She was answering the second question. This function saw a
+  // whole-word yes, no question mark, no reference, and returned true; the
+  // pull request merged and deployed sixteen seconds later.
+  //
+  // Nothing bad came of it, since she had asked for that fix and wanted it.
+  // Her consent was still read off a sentence that was about something else,
+  // and next time the change might not be one she would have agreed to.
+  //
+  // The guard above this one catches "yes, but what does X do?", agreement
+  // with a question mark in it. This catches the mirror image: agreement with
+  // no question mark at all, answering a question the *desk* asked alongside
+  // the proposal. Only that case is tightened, because requiring the
+  // reference every time would break the reply she actually sends, which is
+  // one word, and making her quote a code is exactly the kind of friction
+  // rule 7 exists to keep off her.
+  return !proposalAskedQuestion;
 }
