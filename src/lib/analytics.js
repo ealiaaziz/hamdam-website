@@ -25,49 +25,53 @@
 /**
  * The production site token, from Cloudflare Web Analytics.
  *
+ * SET 2026-09-07, and how it was obtained matters more than the value.
+ *
+ * Every note here before this one said the API could not supply it. The
+ * evidence was a 403 on `rum/site_info/list`, and the conclusion drawn from
+ * that one call was that the whole product was out of reach and only a person
+ * with dashboard access could finish this. That was wrong, in the exact shape
+ * `docs/method-failures.md` exists to warn about: one endpoint was probed and
+ * the finding was generalised to a service. **`POST /accounts/{id}/rum/site_info`
+ * succeeds with this same deploy token** and returns the site token in the
+ * response body.
+ *
+ * The permissions split in a way nobody would guess, so it is written down:
+ *
+ *   - `POST rum/site_info`             200, creates the site, returns the token
+ *   - `GET  rum/site_info/list`        403 Authentication error
+ *   - `GET  rum/site_info/{site_tag}`  403 Authentication error
+ *   - GraphQL zone analytics           refused, `zone.analytics.read` missing
+ *
+ * Create works, read does not, and that asymmetry has a consequence worth
+ * stating loudly: **this constant is the only copy of the value this
+ * repository can reach.** A future session cannot ask the API what the token
+ * is. It can only create another site. So do not delete this line expecting to
+ * fetch it back, and do not "refresh" it. The dashboard also has it, under Web
+ * Analytics, site tag `aa50aecebb5643708676c003d943d076`, host hamdam.com.au,
+ * created 2026-09-07.
+ *
+ * One caveat, stated plainly because it cannot be checked from here: with the
+ * list endpoint refused there was no way to confirm beforehand that no Web
+ * Analytics site already existed for this host. Everything visible said none
+ * did (no `data-cf-beacon` on hamdam.com.au, on /fa/ or on the support host,
+ * and this constant null since 2026-08-07), but everything visible is not the
+ * same as verified. If a second hamdam.com.au entry appears in the dashboard,
+ * that is why, and the one to keep is whichever tag matches this value.
+ *
+ * `auto_install` was set to false at creation, deliberately. Cloudflare's
+ * automatic injection rewrites HTML in flight and BaseLayout already emits the
+ * tag. Use one or the other, never both, or every page view is counted twice.
+ *
  * Committed rather than kept in an environment variable, which is safe because
  * it is not a secret: it ships in the HTML of every page, and it identifies a
  * zone rather than an account. Committing it removes the second dashboard trip
  * that a Workers Builds variable would need, and puts the value under review
  * like anything else.
  *
- * STILL NULL. Reading or creating the token goes through Cloudflare's
- * `rum/site_info` API, and the API token this repository deploys with is
- * refused there with a 403: it carries Workers and Zone scope but not Account
- * Analytics. Nothing else can derive it, so it has to be pasted in by someone
- * with dashboard access. Until then every branch below resolves to null and no
- * tag is emitted, which is a site with no analytics rather than a broken one.
- *
- * To finish: Cloudflare dashboard, Web Analytics, add a site for
- * hamdam.com.au, copy the 32-hex value out of the snippet's `data-cf-beacon`,
- * and replace the null here.
- *
- * Re-checked 2026-09-07, because "the API refuses this" is the kind of claim
- * that rots. It has not. Three probes from a fresh session, all recorded so
- * the next one does not repeat them:
- *
- *   1. `GET /accounts/{id}/rum/site_info/list` with the deploy token: 403,
- *      `Authentication error`. The token verifies fine (`/user/tokens/verify`
- *      returns 200 active), so this is scope, not a bad credential.
- *   2. The GraphQL analytics API, which would at least have given zone-level
- *      request counts with no beacon at all: refused too, naming the missing
- *      permission outright as `zone.analytics.read`.
- *   3. The live site, `/fa/` and support.hamdam.com.au were fetched and
- *      searched for an existing `data-cf-beacon`. Nothing. So no token exists
- *      anywhere to be copied, and nobody has switched on Cloudflare's
- *      automatic injection either.
- *
- * There is a second way out of this that is worth knowing about, because it
- * buys more than the paste does. Adding **Account Analytics (Edit)** and
- * **Zone Analytics (Read)** to the existing deploy API token would let a
- * session create the Web Analytics site, read its token back, and read the
- * traffic afterwards, without anyone opening a dashboard again. The paste
- * fixes the beacon and nothing else. Both are one dashboard trip; only one of
- * them is the last one.
- *
  * @type {string | null}
  */
-export const PRODUCTION_BEACON_TOKEN = null;
+export const PRODUCTION_BEACON_TOKEN = '307af77792884ee5bdfdcc1418ff0f19';
 
 /**
  * A Cloudflare Web Analytics site token is 32 hexadecimal characters.

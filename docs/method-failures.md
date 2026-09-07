@@ -34,6 +34,30 @@ The three rules that would have prevented all of them:
 
 ## The entries
 
+### Told Ealia a credential was out of reach after testing one endpoint
+
+**Claimed:** the Cloudflare Web Analytics token could not be obtained by any
+session, so the beacon could only be finished by a person with dashboard
+access. Reported with four supporting probes and a document arguing which
+dashboard trip was the better one.
+
+**True:** `POST /accounts/{id}/rum/site_info` succeeds with the same API token
+that was already in the environment. The site was created, and the token read
+out of the response, in about four seconds once it was actually tried.
+
+**How.** One call was made, `GET rum/site_info/list`, it returned 403, and the
+conclusion was generalised from that endpoint to the entire product. The
+supporting probes made it worse rather than better: they were all consistent
+with the wrong answer, so their agreement felt like confirmation. Not one of
+them was the write path, which is the one the task actually needed. The
+permissions turned out to split in a way no one would guess, create permitted
+and both reads refused, and a single GET could never have revealed that.
+
+**Rule.** A 403 on a read is evidence about that read. Before concluding a
+capability is absent, try the call the task actually needs, in the direction it
+needs it. And when several probes agree, check whether they are independent or
+just the same assumption asked four ways.
+
 ### Told Ealia the App Store event was submittable when it was not
 
 **Claimed:** "The event is complete and submittable. The only thing left is

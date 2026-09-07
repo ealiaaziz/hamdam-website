@@ -106,19 +106,21 @@ generated `src/data/siteCopy.ts`. Never hand-type Persian — regenerate.
 `npm test` (Vitest) and `npm run check:persian` (also a pre-commit
 hook) must pass.
 
-**Nothing counts a page view yet (re-verified 2026-09-07).**
-`PRODUCTION_BEACON_TOKEN` in `src/lib/analytics.js` is still `null`, so the
-Cloudflare Web Analytics tag is on no page, while `/privacy/` tells visitors
-it is. Do not try the API again: the deploy token is refused on both
-`rum/site_info` and zone analytics, no beacon token exists on any live host,
-and Composio has no Cloudflare connection. All three probes and the two ways
-out are in `docs/seo/2026-09-07-analytics-beacon.md`. Everything on this side
-of the token is done and proven under the live CSP in a browser. Two traps if
-you touch it: the build-log line reads both `import.meta.env` and
-`process.env` because `astro.config.mjs` only has the second and used to
-report OFF while the beacon shipped, and `npm run deploy` refuses once a
-token is committed unless `PUBLIC_CF_BEACON_TOKEN` is set, because a hand
-deploy is not a Workers Builds run and would drop the beacon silently. OG images/icons regenerate via `node scripts/generate-og.mjs`.
+**The analytics beacon is set, and goes live when this reaches `main`
+(2026-09-07).** `PRODUCTION_BEACON_TOKEN` in `src/lib/analytics.js` holds a
+real Cloudflare Web Analytics site token and a Workers Builds run puts the tag
+on all 27 pages. Three things about it. **The token cannot be read back:** this
+account's API token is permitted to `POST rum/site_info` but 403s on both
+`GET list` and `GET {site_tag}`, so that constant is the only copy the
+repository can reach, and deleting it expecting to refetch it will not work.
+The build-log line reads both `import.meta.env` and `process.env`, because
+`astro.config.mjs` only has the second and used to report OFF while the beacon
+shipped. And `npm run deploy` refuses once a token is committed unless
+`PUBLIC_CF_BEACON_TOKEN` is set, because a hand deploy is not a Workers Builds
+run and would drop the beacon silently. The full record, including the wrong
+turn taken first, is `docs/seo/2026-09-07-analytics-beacon.md`.
+
+OG images/icons regenerate via `node scripts/generate-og.mjs`.
 CSP is enforcing (`public/_headers`): no inline styles or scripts, so keep
 `inlineStylesheets: 'never'` and `assetsInlineLimit: 0` in astro.config.
 

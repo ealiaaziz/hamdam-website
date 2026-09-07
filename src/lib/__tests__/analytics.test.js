@@ -102,12 +102,19 @@ describe('resolveBeaconToken', () => {
 });
 
 describe('PRODUCTION_BEACON_TOKEN', () => {
-  // Guards the two ways this can be wrong once someone pastes the real value:
-  // a placeholder, or a typo in the shape. Null is the current, expected state.
-  it('is either null or a well-formed token, never a placeholder', () => {
-    if (PRODUCTION_BEACON_TOKEN !== null) {
-      expect(normalizeBeaconToken(PRODUCTION_BEACON_TOKEN)).toBe(PRODUCTION_BEACON_TOKEN);
-    }
+  // Set 2026-09-07, so this is no longer conditional. It guards the two ways a
+  // real value goes wrong in place: a placeholder pasted over it, or a typo in
+  // the shape. Either one renders a tag that reports nowhere, which is the
+  // failure this whole file is arranged to prevent.
+  it('is a well-formed token, never null and never a placeholder', () => {
+    expect(PRODUCTION_BEACON_TOKEN).not.toBeNull();
+    expect(normalizeBeaconToken(PRODUCTION_BEACON_TOKEN)).toBe(PRODUCTION_BEACON_TOKEN);
+  });
+
+  // The value cannot be read back from the API: create is permitted with this
+  // account's token and both read endpoints are 403. This line is the copy.
+  it('is the site token created for hamdam.com.au, not a stand-in', () => {
+    expect(PRODUCTION_BEACON_TOKEN).toBe('307af77792884ee5bdfdcc1418ff0f19');
   });
 });
 

@@ -8,29 +8,6 @@ noted below, not repeated as open items.
 
 ## Open
 
-- [ ] **Cloudflare Web Analytics token: the site still counts nothing.**
-      `PRODUCTION_BEACON_TOKEN` in `src/lib/analytics.js` has been `null` since
-      2026-08-07, so no page view on hamdam.com.au is being counted by
-      anything. The privacy policy already tells visitors this site uses
-      Cloudflare Web Analytics to count page views, so the policy is currently
-      describing something that is not happening, which is the part that makes
-      this worth doing rather than merely useful.
-      Re-verified 2026-09-07 that no session can do it: the deploy API token is
-      refused on the Web Analytics endpoint and on zone analytics, no beacon
-      token exists on any of the three live hosts, and there is no Cloudflare
-      connection in Composio. Everything else is built, tested and proven in a
-      browser under the live CSP, so the token is genuinely the only piece
-      missing. Two ways to finish, and they are not equally valuable:
-      **(a)** Cloudflare dashboard, Web Analytics, add a site for
-      `hamdam.com.au`, copy the 32 hex characters out of the snippet's
-      `data-cf-beacon` value, paste over the `null`. Fixes the beacon only.
-      **(b)** Add **Account Analytics (Edit)** and **Zone Analytics (Read)** to
-      the API token the deploy environment already holds. Then a session can
-      create the site, read the token, commit it, and read the traffic later
-      without a dashboard at all. Same one trip; this is the one that is the
-      last trip. Narrower credential versus less future friction is your call.
-      Full evidence: `docs/seo/2026-09-07-analytics-beacon.md`.
-
 - [ ] **Google preferred sources: confirm hamdam.com.au is actually listed.**
       Added 2026-09-06 alongside the footer link that shipped the same day.
       Google's guidance says a site has to already appear in the source
@@ -69,6 +46,18 @@ noted below, not repeated as open items.
       would restrict which CAs can issue TLS certs for the domain.
 
 ## Already fixed (no action needed)
+
+- [x] ~~Cloudflare Web Analytics token~~ - created by API on 2026-09-07 and
+      committed, so this needs nothing from you. It was raised here earlier
+      the same day on the mistaken finding that only the dashboard could
+      supply it; the deploy token turned out to be permitted on the create
+      endpoint even though it is refused on both read endpoints. Site tag
+      `aa50aecebb5643708676c003d943d076`. It starts counting when the branch
+      reaches `main`. One thing is still worth a dashboard glance when you are
+      next in there: confirm there is only one hamdam.com.au entry under Web
+      Analytics, since the refused list endpoint meant nobody could check for
+      an existing one first. Record:
+      `docs/seo/2026-09-07-analytics-beacon.md`.
 
 - [x] ~~"Always Use HTTPS"~~ — confirmed live 2026-07-13:
       `http://hamdam.com.au` now 301-redirects to `https://`. Was flagged as
