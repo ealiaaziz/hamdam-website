@@ -183,6 +183,24 @@ export function campaignTokenFor(lang, placement) {
  *   Ignored when campaignParams is supplied, since an inbound utm_campaign is
  *   a real attributed visit and outranks the placement default.
  */
+/**
+ * Custom product pages, by placement. Added 2026-09-07 when Apple approved the
+ * first two. A placement listed here sends its visitors to that page instead of
+ * the default listing, via Apple's `ppid` parameter, so somebody who came from
+ * the Fal-e Hafez article lands on the page whose first line is about the
+ * Faal. Placements not listed keep the default page, deliberately: the default
+ * page is where the "Reflection First" screenshot test runs until 25 October,
+ * and its population should not be moved without meaning to.
+ *
+ * The ids are App Store Connect's own, read back from the API on 2026-09-07,
+ * and the page's promotional text was confirmed rendering at these URLs before
+ * they were written here. The calendar page exists but is hidden, so it is not
+ * listed; a hidden page's ppid silently shows the default listing.
+ */
+export const CUSTOM_PRODUCT_PAGES = Object.freeze({
+  fal: 'c17f1f9b-5632-49ee-a913-63e65c306ca9',
+});
+
 export function appStoreUrl(lang = 'en', campaignParams = null, placement = null) {
   const base = `https://apps.apple.com/${APP_STORE.COUNTRY}/app/id${APP_STORE.ID}`;
   const params = new URLSearchParams();
@@ -193,6 +211,11 @@ export function appStoreUrl(lang = 'en', campaignParams = null, placement = null
   } else if (placement) {
     params.set('ct', campaignTokenFor(lang, placement));
     if (ASC_PROVIDER_TOKEN) params.set('pt', ASC_PROVIDER_TOKEN);
+  }
+  // ppid follows the placement whichever branch set ct above: an inbound
+  // utm_campaign visitor on the Fal page still came for the Faal.
+  if (placement && CUSTOM_PRODUCT_PAGES[placement]) {
+    params.set('ppid', CUSTOM_PRODUCT_PAGES[placement]);
   }
   const qs = params.toString();
   return qs ? `${base}?${qs}` : base;

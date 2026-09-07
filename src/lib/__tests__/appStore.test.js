@@ -90,3 +90,41 @@ describe('campaignParamsFromSearch', () => {
     expect(campaignParamsFromSearch(undefined).ct).toBe('website');
   });
 });
+
+
+describe('custom product pages', () => {
+  it('sends the fal placement to the approved Faal page via ppid', async () => {
+    const { appStoreUrl, CUSTOM_PRODUCT_PAGES } = await import('../appStore');
+    const u = new URL(appStoreUrl('en', null, 'fal'));
+    expect(u.searchParams.get('ppid')).toBe(CUSTOM_PRODUCT_PAGES.fal);
+    expect(u.searchParams.get('ct')).toBe('web-fal');
+  });
+
+  it('keeps ppid on the fal placement even when an inbound campaign sets ct', async () => {
+    const { appStoreUrl, CUSTOM_PRODUCT_PAGES } = await import('../appStore');
+    const u = new URL(appStoreUrl('en', { ct: 'newsletter', pt: null }, 'fal'));
+    expect(u.searchParams.get('ct')).toBe('newsletter');
+    expect(u.searchParams.get('ppid')).toBe(CUSTOM_PRODUCT_PAGES.fal);
+  });
+
+  it('leaves every other placement on the default page, where the screenshot test runs', async () => {
+    const { appStoreUrl } = await import('../appStore');
+    for (const placement of ['hero', 'nav', 'journey', 'pricing', 'footer', 'sticky']) {
+      expect(new URL(appStoreUrl('en', null, placement)).searchParams.has('ppid')).toBe(false);
+    }
+  });
+
+  it('carries the Farsi locale hint alongside ppid', async () => {
+    const { appStoreUrl, CUSTOM_PRODUCT_PAGES } = await import('../appStore');
+    const u = new URL(appStoreUrl('fa', null, 'fal'));
+    expect(u.searchParams.get('l')).toBe('fa');
+    expect(u.searchParams.get('ppid')).toBe(CUSTOM_PRODUCT_PAGES.fal);
+  });
+
+  it('every listed page id is a UUID, the shape Apple issues', async () => {
+    const { CUSTOM_PRODUCT_PAGES } = await import('../appStore');
+    for (const id of Object.values(CUSTOM_PRODUCT_PAGES)) {
+      expect(id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
+    }
+  });
+});
