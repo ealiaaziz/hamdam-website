@@ -41,7 +41,7 @@
 // violation and the exact kind of invented claim this repo's rules exist to
 // prevent.
 
-import { APP_STORE, APP_STORE_CANONICAL_URL } from './appStore.js';
+import { APP_STORE, APP_STORE_CANONICAL_URL, APP_STORE_NAME } from './appStore.js';
 import { RELEASES } from '../data/releases.ts';
 
 const SITE = 'https://hamdam.com.au';
@@ -169,7 +169,11 @@ export function homepageSchema({ lang, name, description, url, downloadUrl, scre
     '@type': 'SoftwareApplication',
     '@id': APPLICATION_ID,
     name,
-    alternateName: 'Hamdam: Daily Persian Poetry',
+    // The App Store listing name, derived from the live version rather than
+    // typed, because it changes to "Hamdam: Reflection Companion" at 1.4.
+    // This is the field a crawler lines up against Apple's own page, so a
+    // stale literal here is a contradiction rather than a cosmetic lag.
+    alternateName: APP_STORE_NAME,
     description,
     url,
     // Added 2026-08-16. `url` stays the homepage, which is this app's page on

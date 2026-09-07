@@ -145,6 +145,20 @@ The reasoning, what is deliberately missing (1.0 and 1.1, whose notes exist
 nowhere readable), and an honest account of what this page does and does not do
 for search are in `docs/seo/2026-09-06-whats-new-page.md`.
 
+**The app is renamed at version 1.4 (Ealia, 2026-09-07).** From 1.4 the App
+Store listing is "Hamdam: Reflection Companion", not "Hamdam: Daily Persian
+Poetry". **Never type either name.** `src/lib/appName.js` derives it from
+`RELEASES[0].version`, so the homepage `<title>`, `alternateName` in the
+JSON-LD, the footer's crawlable store link and the slug in
+`APP_STORE_CANONICAL_URL` all change together in the build after
+`scripts/extract-releases.mjs` picks up 1.4. Nothing to flip and nothing to
+remember; an unreadable version falls back to the old name, because being
+stale beats publishing a name Apple has not applied. One surface cannot
+follow: `public/llms.txt` is static and carries the store URL as a literal, so
+a test fails on rename day until that line is updated by hand, which is
+deliberate. The search consequence, measured against the traffic log rather
+than assumed, is in `docs/seo/2026-09-07-app-rename-1-4.md`.
+
 **The English footer links into Google's preferred sources (added
 2026-09-06).** One anchor to `google.com/preferences/source?q=hamdam.com.au`,
 built by `src/lib/preferredSource.js`. Google's own button was refused: it is a

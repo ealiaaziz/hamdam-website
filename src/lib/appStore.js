@@ -3,6 +3,35 @@
 // guidelines only permit the official badge for available apps, and the
 // store URL 404s pre-release). Flip to true on launch day.
 
+import { RELEASES } from '../data/releases.ts';
+import { appStoreNameFor, homepageTitleFor, storeSlug } from './appName.js';
+
+/**
+ * The listing's name, as the App Store currently reports it.
+ *
+ * Derived, never typed. `RELEASES[0].version` is the live version out of the
+ * generated record, and `appStoreNameFor` returns the old name below 1.4 and
+ * "Hamdam: Reflection Companion" from 1.4 onward. Ship the release, run
+ * `node scripts/extract-releases.mjs --write`, and every surface that names
+ * the app follows in the same build: the homepage title, `alternateName` in
+ * the structured data, the footer's crawlable store link, and the slug in the
+ * canonical URL below.
+ *
+ * The reasoning behind deriving rather than flipping a boolean is in
+ * src/lib/appName.js. In one line: a boolean is a thing somebody has to
+ * remember on a day they are busy shipping, and being wrong here means the
+ * site publishes a name Apple's own page contradicts.
+ */
+export const APP_STORE_NAME = appStoreNameFor(RELEASES[0]?.version);
+
+/**
+ * The English homepage `<title>`, which tracks the same switch but is not
+ * simply the name plus a suffix. See homepageTitleFor for why, including what
+ * this rename costs the site in search terms and how the 1.4 title pays it
+ * back.
+ */
+export const HOMEPAGE_TITLE_EN = homepageTitleFor(RELEASES[0]?.version);
+
 export const APP_STORE = Object.freeze({
   ID: '6784461990',
   RELEASED: true,
@@ -53,21 +82,24 @@ export const APP_STORE = Object.freeze({
  *
  * The slug is decorative to Apple: `id6784461990` alone resolves, and a
  * deliberately wrong slug still 200s. It is here because it carries the
- * product name, which is the part an indexer reads. Note that the slug Apple
- * canonicalises to is per storefront -- `/au/` rewrites to
- * `hamdam-daily-persian-poetry`, `/us/` to `hamdam-poetry-reflection`, because
- * the listing has a different localised name in each -- so no single slug is
- * "the" right one. This is the AU name, which matches `alternateName` in the
- * structured data and the site's own `<title>`.
+ * product name, which is the part an indexer reads, and that is precisely why
+ * it is derived from APP_STORE_NAME rather than frozen: the name changes at
+ * 1.4, and a slug still saying `daily-persian-poetry` after that would be the
+ * one part of the URL an indexer reads, saying the wrong thing.
  *
- * Verified 2026-08-16: resolves 200, and the iTunes lookup API returns this
- * listing for id 6784461990 on both the AU and US storefronts.
+ * The note that used to sit here, that the slug is per storefront and that
+ * `/us/` canonicalises to `hamdam-poetry-reflection`, is no longer true and is
+ * removed rather than left to mislead. Re-checked 2026-09-07 against
+ * `itunes.apple.com/lookup`: AU and US both return trackName "Hamdam: Daily
+ * Persian Poetry" and both trackViewUrls carry
+ * `hamdam-daily-persian-poetry`. The listing name no longer diverges by
+ * storefront, so there is one right slug again.
  *
  * Never append parameters to this. The campaign-parameter rewriter in
  * BaseLayout skips it by attribute for that reason.
  */
 export const APP_STORE_CANONICAL_URL =
-  `https://apps.apple.com/app/hamdam-daily-persian-poetry/id${APP_STORE.ID}`;
+  `https://apps.apple.com/app/${storeSlug(APP_STORE_NAME)}/id${APP_STORE.ID}`;
 
 // The App Store Connect provider token, read from the build environment
 // (`PUBLIC_ASC_PROVIDER_TOKEN`) rather than hard-coded, because it is an

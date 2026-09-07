@@ -1,6 +1,6 @@
 ---
 import HamdamLogotype from './HamdamLogotype.astro';
-import { APP_STORE_CANONICAL_URL } from '../lib/appStore';
+import { APP_STORE_CANONICAL_URL, APP_STORE_NAME } from '../lib/appStore';
 import { PREFERRED_SOURCE_URL } from '../lib/preferredSource';
 import { WHATS_NEW_UI } from '../data/whatsNewCopy';
 
@@ -82,7 +82,7 @@ const { lang = 'en' } = Astro.props;
             data-canonical-store-link
             class="inline-flex min-h-[44px] items-center px-1 underline decoration-saffron/40 underline-offset-4 hover:text-indigo"
           >
-            Hamdam: Daily Persian Poetry on the App Store
+            {APP_STORE_NAME} on the App Store
           </a>
         </p>
         {

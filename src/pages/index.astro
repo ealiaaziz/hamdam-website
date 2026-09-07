@@ -18,7 +18,7 @@ import quietGarden from '../assets/scenes/quiet-garden-section.jpg';
 import dawn from '../assets/scenes/dawn-section.jpg';
 import { getImage } from 'astro:assets';
 import { homepageSchema } from '../lib/schema';
-import { appStoreUrl } from '../lib/appStore';
+import { appStoreUrl, HOMEPAGE_TITLE_EN } from '../lib/appStore';
 // Real in-app screenshots, the same files the page already renders in its
 // device frames -- schema.org/screenshot must point at the actual app, not at
 // the OG artwork.
@@ -82,7 +82,7 @@ const jsonLd = homepageSchema({
 ---
 
 <BaseLayout
-  title="Hamdam: Daily Persian Poetry, Reflection and Journal"
+  title={HOMEPAGE_TITLE_EN}
   description={description}
   lang="en"
   path="/"
