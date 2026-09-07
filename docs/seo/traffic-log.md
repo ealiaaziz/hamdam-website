@@ -77,6 +77,7 @@ newest reading is always the last one in each section.
 | 2026-08-16 | since the last reading (2026-08-06 to 2026-08-13) | 70 | 2 | 36.8 | 16 | 11 |
 | 2026-08-20 | since the last reading (2026-08-16 to 2026-08-18, final) | 42 | 1 | 46.7 | 6 | 11 |
 | 2026-09-03 | since the last reading (2026-08-19 to 2026-09-01, final) | 272 | 3 | 27.2 | 33 | 13 |
+| 2026-09-07 | since the last reading (2026-09-02 to 2026-09-04, final) | 75 | 2 | 13.3 | 16 | 14 |
 <!-- readings:row -->
 
 Trailing 28 days at the first reading (2026-07-09 to 2026-08-05): 23
@@ -459,6 +460,96 @@ unrecorded because the last row was 2026-08-20 and
 the log header repeats it. Impressions doubling and average position halving is
 exactly what a monthly cadence exists to catch, and it was caught only because
 somebody asked.
+
+### 2026-09-07, the gain held and then stopped
+
+A three day window, because that is all the final data there is since the last
+reading. Too short to carry a conclusion on its own, so it is read against the
+three days before it rather than against the fortnight.
+
+**The late August jump was real, and this is the confirmation the last entry
+asked for.** That entry recorded an average position of 7.5 on 1 September and
+said plainly it was a different kind of number from anything else in the file.
+It was not a blip:
+
+| Date | Impressions | Avg position |
+| --- | --- | --- |
+| 2026-08-28 | 16 | 42.1 |
+| 2026-08-31 | 22 | 10.5 |
+| 2026-09-01 | 26 | 7.5 |
+| 2026-09-02 | 26 | 8.8 |
+| 2026-09-03 | 18 | 15.1 |
+| 2026-09-04 | 31 | 16.0 |
+
+Six consecutive days in single digits to mid teens, against the twenties to
+fifties before 30 August. One correction to how the last entry framed it: 7.5
+was the floor, not the level. The band settled at roughly 8 to 16, so quote that
+and not the best day.
+
+**And then it stopped compounding.** Matched three day windows, which is the
+comparison that matters here:
+
+| | 2026-08-30 to 09-01 | 2026-09-02 to 09-04 |
+| --- | --- | --- |
+| Impressions | 70 | 75 |
+| Clicks | 2 | 2 |
+| Average position | 14.8 | 13.3 |
+
+Flat on every measure. The site stepped up to a new level around 30 August and
+has sat on it for a week. That is consolidation, and it is a normal thing for a
+step change to do, but nobody should read the previous entry's doubling as a
+trend that is still running. It is not, on the evidence to 4 September.
+
+Lifetime to date: 507 impressions, 8 clicks, average position 28.4.
+
+**`/fal-e-hafez/` posted the best CTR any page on this site has recorded.**
+Position 6.0, 9 impressions, 1 click, 11.1%. That coincides with the commit
+that gave the page an answer to the question it ranks for, and coincidence is
+as far as this data can take it: one click is one click. Worth watching rather
+than worth claiming.
+
+**The ganjoor cluster tightened again**, having already been the subject of a
+correction two entries ago: `ganjoor khayyam` at 3.0, `ganjoor saadi` 4.5,
+`ganjoor hafez` 6.3, `ganjoor rumi` 6.3. All four now sit on the first page.
+
+**Persian script queries appeared for the first time.** `هافز`, `حافژ` and
+`ويحافظ`, at positions 8 to 19. All three are misspellings of حافظ, which is
+its own kind of signal: Farsi language searchers are reaching this site, and
+they are reaching it on the terms nobody optimises for.
+
+**Pages with impressions, 14.**
+
+| URL | Impressions | Avg position |
+| --- | --- | --- |
+| `/poets/hafez/` | 22 | 24.1 |
+| `/fal-e-hafez/` | 9 | 6.0 |
+| `/poets/khayyam/` | 9 | 7.6 |
+| `/moments/yalda/` | 7 | 8.1 |
+| `/poets/parvin-etesami/` | 7 | 12.7 |
+| `/poets/saadi/` | 7 | 13.3 |
+| `/poets/rumi/` | 6 | 7.7 |
+| `/` | 5 | 4.8 |
+| `/fa/` | 4 | 8.0 |
+| `/fa/poets/saadi/` | 3 | 5.0 |
+
+**The head terms have still not moved, and this is the fourth entry in a row to
+say so.** `hafez` at 55.7, `hafez poetry` 49, `saadi poem` 64. Every gain in
+this file continues to come from a narrow branded cluster the site happens to
+own. As market share of the searches that carry real volume, nothing has
+changed since the first reading.
+
+**The beacon is live, so the next reading can stop guessing at visitors.**
+Checked against production on 2026-09-07: exactly one `cloudflareinsights` tag
+on `/`. Cloudflare Web Analytics has been counting real page views since the
+token landed, which makes actual visitors readable for the first time in this
+project. Not from here: the API token this repository holds is refused on the
+RUM endpoints, so that figure has to come off the dashboard. Every number in
+this file is still impressions and clicks, which are eligibility for traffic
+and not traffic.
+
+**Cadence, unchanged and still worth repeating.** The job remains paused, the
+schedule commented out and `GSC_SERVICE_ACCOUNT_KEY` unset. This reading exists
+because somebody asked on 7 September, three days after the data went final.
 
 <!-- readings:notes -->
 
