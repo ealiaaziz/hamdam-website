@@ -18,6 +18,12 @@
 // time it is genuinely in the way; one that makes you say so out loud does not.
 
 import { execFileSync } from 'node:child_process';
+import {
+  PRODUCTION_BEACON_TOKEN,
+  beaconWouldShip,
+  isWorkersCiBuild,
+  normalizeBeaconToken,
+} from '../src/lib/analytics.js';
 
 const force = process.argv.includes('--force');
 let overrodeSomething = false;
@@ -103,6 +109,44 @@ if (!process.env.PUBLIC_ASC_PROVIDER_TOKEN) {
   fail(
     'PUBLIC_ASC_PROVIDER_TOKEN is not set, so this build would ship App Store links with no affiliate attribution.',
     'Set it in the environment before deploying, or push to main and let Workers Builds deploy, which has it.',
+  );
+}
+
+// The beacon has exactly the same shape of failure as the token above, and it
+// is worth stating why it needs its own check rather than trusting the build
+// log. `PRODUCTION_BEACON_TOKEN` only reaches a page on a Workers Builds run;
+// a hand deploy from a container is not one, so the moment that constant is
+// filled in, `npm run deploy` starts publishing 27 pages with no analytics on
+// them and reporting success. Same class as the `pt=` regression on
+// 2026-09-05: nothing errors, nothing looks wrong, and the only symptom is a
+// dashboard that stays empty for however long it takes somebody to notice.
+//
+// Set PUBLIC_CF_BEACON_TOKEN to the same value in the shell to deploy by hand,
+// which is the documented override and takes the explicit path in
+// resolveBeaconToken().
+const committedBeacon = normalizeBeaconToken(PRODUCTION_BEACON_TOKEN);
+const explicitBeacon = normalizeBeaconToken(process.env.PUBLIC_CF_BEACON_TOKEN);
+
+const beaconShips = beaconWouldShip({
+  committed: committedBeacon,
+  explicit: explicitBeacon,
+  isCi: isWorkersCiBuild(),
+});
+
+if (committedBeacon && !beaconShips) {
+  fail(
+    'a Cloudflare Web Analytics token is committed, but this build is not a Workers Builds run, so it would ship every page with no beacon.',
+    'Set PUBLIC_CF_BEACON_TOKEN to the same value before deploying, or push to main and let Workers Builds deploy.',
+  );
+}
+
+// Not a failure, because it has been the state of this repository since
+// 2026-08-07 and blocking every deploy on it would only teach people to pass
+// --force. It is loud because the privacy policy already tells visitors this
+// site counts page views, and right now nothing does.
+if (!committedBeacon && !explicitBeacon) {
+  console.warn(
+    '  Note: no Cloudflare Web Analytics token, so this deploy ships with no page-view counting at all (see src/lib/analytics.js).',
   );
 }
 

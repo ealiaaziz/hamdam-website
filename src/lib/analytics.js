@@ -42,6 +42,29 @@
  * hamdam.com.au, copy the 32-hex value out of the snippet's `data-cf-beacon`,
  * and replace the null here.
  *
+ * Re-checked 2026-09-07, because "the API refuses this" is the kind of claim
+ * that rots. It has not. Three probes from a fresh session, all recorded so
+ * the next one does not repeat them:
+ *
+ *   1. `GET /accounts/{id}/rum/site_info/list` with the deploy token: 403,
+ *      `Authentication error`. The token verifies fine (`/user/tokens/verify`
+ *      returns 200 active), so this is scope, not a bad credential.
+ *   2. The GraphQL analytics API, which would at least have given zone-level
+ *      request counts with no beacon at all: refused too, naming the missing
+ *      permission outright as `zone.analytics.read`.
+ *   3. The live site, `/fa/` and support.hamdam.com.au were fetched and
+ *      searched for an existing `data-cf-beacon`. Nothing. So no token exists
+ *      anywhere to be copied, and nobody has switched on Cloudflare's
+ *      automatic injection either.
+ *
+ * There is a second way out of this that is worth knowing about, because it
+ * buys more than the paste does. Adding **Account Analytics (Edit)** and
+ * **Zone Analytics (Read)** to the existing deploy API token would let a
+ * session create the Web Analytics site, read its token back, and read the
+ * traffic afterwards, without anyone opening a dashboard again. The paste
+ * fixes the beacon and nothing else. Both are one dashboard trip; only one of
+ * them is the last one.
+ *
  * @type {string | null}
  */
 export const PRODUCTION_BEACON_TOKEN = null;
@@ -92,6 +115,37 @@ export function resolveBeaconToken({ explicit, productionToken, isCi } = {}) {
 }
 
 /**
+ * The `PUBLIC_CF_BEACON_TOKEN` override, read from wherever this module has
+ * been loaded.
+ *
+ * It has to look in two places, and until 2026-09-07 it looked in one. Astro
+ * puts the variable on `import.meta.env` for anything Vite compiles, which is
+ * how BaseLayout sees it. But `astro.config.mjs` imports this same file as a
+ * plain Node module to print the build-log line, and there `import.meta.env`
+ * does not exist, so the log read the override as unset every time.
+ *
+ * The symptom was not theoretical and it was measured: a build with the
+ * variable set printed `analytics: beacon OFF, no production token committed
+ * yet` while shipping the beacon tag on all 27 pages. A log line that exists
+ * to say whether the beacon shipped, and says the opposite of what shipped, is
+ * worse than no log line, because the whole design here leans on it.
+ *
+ * Static property access on both, never a computed key: Vite substitutes
+ * `import.meta.env.PUBLIC_CF_BEACON_TOKEN` at build time by matching the
+ * literal text, so `import.meta.env[name]` would quietly stop resolving in a
+ * client bundle.
+ */
+export function pickExplicitToken(viteValue, processValue) {
+  return typeof viteValue === 'string' && viteValue.trim() ? viteValue : processValue;
+}
+
+/** @type {unknown} */
+const EXPLICIT_BEACON_TOKEN = pickExplicitToken(
+  typeof import.meta !== 'undefined' ? import.meta.env?.PUBLIC_CF_BEACON_TOKEN : undefined,
+  typeof process !== 'undefined' ? process.env?.PUBLIC_CF_BEACON_TOKEN : undefined
+);
+
+/**
  * True on Cloudflare Workers Builds, which injects WORKERS_CI=1 into every
  * build. Guarded because this module is imported from .astro frontmatter,
  * which runs in Node, but must not throw if it is ever pulled into a client
@@ -103,10 +157,25 @@ export function isWorkersCiBuild() {
 
 /** @type {string | null} */
 export const CF_BEACON_TOKEN = resolveBeaconToken({
-  explicit: typeof import.meta !== 'undefined' ? import.meta.env?.PUBLIC_CF_BEACON_TOKEN : undefined,
+  explicit: EXPLICIT_BEACON_TOKEN,
   productionToken: PRODUCTION_BEACON_TOKEN,
   isCi: isWorkersCiBuild(),
 });
+
+/**
+ * Whether a build with these inputs would actually put a beacon on the page.
+ *
+ * The same rule as resolveBeaconToken(), stated as a yes or no so the
+ * pre-deploy check can ask the question without rebuilding, and so the answer
+ * is covered by a test rather than by a condition written twice.
+ *
+ * @param {{ committed?: string | null, explicit?: string | null, isCi?: boolean }} inputs
+ *   Both tokens already normalized, so a placeholder-shaped value counts as
+ *   absent here exactly as it does at render time.
+ */
+export function beaconWouldShip({ committed, explicit, isCi } = {}) {
+  return Boolean(explicit || (isCi && committed));
+}
 
 /**
  * The value for the beacon's `data-cf-beacon` attribute.

@@ -1,5 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { normalizeBeaconToken, beaconConfig, resolveBeaconToken, PRODUCTION_BEACON_TOKEN } from '../analytics.js';
+import {
+  normalizeBeaconToken,
+  beaconConfig,
+  resolveBeaconToken,
+  beaconWouldShip,
+  pickExplicitToken,
+  PRODUCTION_BEACON_TOKEN,
+} from '../analytics.js';
 
 // The point of these is the fail-closed direction. appStore.js records what
 // happens when a token does not fail closed: `[ASC_PROVIDER_TOKEN]` shipped as
@@ -101,5 +108,40 @@ describe('PRODUCTION_BEACON_TOKEN', () => {
     if (PRODUCTION_BEACON_TOKEN !== null) {
       expect(normalizeBeaconToken(PRODUCTION_BEACON_TOKEN)).toBe(PRODUCTION_BEACON_TOKEN);
     }
+  });
+});
+
+describe('pickExplicitToken', () => {
+  it('prefers the Vite value, which is the one BaseLayout sees', () => {
+    expect(pickExplicitToken('vite-value', 'process-value')).toBe('vite-value');
+  });
+
+  it('falls back to process.env, which is all astro.config.mjs has', () => {
+    expect(pickExplicitToken(undefined, 'process-value')).toBe('process-value');
+    expect(pickExplicitToken('', 'process-value')).toBe('process-value');
+    expect(pickExplicitToken('   ', 'process-value')).toBe('process-value');
+  });
+
+  it('is undefined when neither context supplies one', () => {
+    expect(pickExplicitToken(undefined, undefined)).toBeUndefined();
+  });
+});
+
+describe('beaconWouldShip', () => {
+  const token = 'a'.repeat(32);
+
+  it('ships on an explicit override, CI or not', () => {
+    expect(beaconWouldShip({ explicit: token, isCi: false })).toBe(true);
+    expect(beaconWouldShip({ explicit: token, isCi: true })).toBe(true);
+  });
+
+  it('ships a committed token only on a CI build', () => {
+    expect(beaconWouldShip({ committed: token, isCi: true })).toBe(true);
+    expect(beaconWouldShip({ committed: token, isCi: false })).toBe(false);
+  });
+
+  it('ships nothing when there is no token anywhere', () => {
+    expect(beaconWouldShip({ isCi: true })).toBe(false);
+    expect(beaconWouldShip()).toBe(false);
   });
 });
