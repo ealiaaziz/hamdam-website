@@ -4,7 +4,7 @@
 // store URL 404s pre-release). Flip to true on launch day.
 
 import { RELEASES } from '../data/releases.ts';
-import { appStoreNameFor, homepageTitleFor, storeSlug } from './appName.js';
+import { appStoreNameFor, gamesShippedIn, homepageTitleFor, storeSlug } from './appName.js';
 
 /**
  * The listing's name, as the App Store currently reports it.
@@ -31,6 +31,14 @@ export const APP_STORE_NAME = appStoreNameFor(RELEASES[0]?.version);
  * back.
  */
 export const HOMEPAGE_TITLE_EN = homepageTitleFor(RELEASES[0]?.version);
+
+/**
+ * Whether the live listing has the Garden's games, and therefore whether copy
+ * may name them. See `gamesShippedIn` for why this is derived rather than a
+ * boolean somebody flips: the games claim and the rename are one release, and
+ * neither may appear before Apple has approved the build that carries them.
+ */
+export const GAMES_SHIPPED = gamesShippedIn(RELEASES[0]?.version);
 
 export const APP_STORE = Object.freeze({
   ID: '6784461990',

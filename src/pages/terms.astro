@@ -4,6 +4,7 @@ import LegalSection from '../components/LegalSection.astro';
 import SectionDivider from '../components/SectionDivider.astro';
 import Footer from '../components/Footer.astro';
 import { organizationSchema, websiteSchema, ORGANIZATION_ID, WEBSITE_ID } from '../lib/schema';
+import { GAMES_SHIPPED } from '../lib/appStore';
 
 const effectiveDate = 'Effective 13 August 2026';
 
@@ -101,7 +102,11 @@ const jsonLd = {
         <li>Health body signals, covering sleep and activity.</li>
         <li>Deep Mode, for longer and more searching reflection prompts.</li>
         <li>Unlimited Faal readings, beyond the three a day the free tier includes.</li>
-        <li>Unlimited plays in the Garden's games, beyond the three a day the free tier includes.</li>
+        {
+          GAMES_SHIPPED && (
+            <li>Unlimited plays in the Garden's games, beyond the three a day the free tier includes.</li>
+          )
+        }
         <li>Sharing reflections to Apple Journal.</li>
         <li>
           Poet deep-dives for Saadi, Khayyam and Parvin Etesami: their biography and cultural

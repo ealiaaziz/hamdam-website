@@ -1,6 +1,6 @@
 ---
 import { Image } from 'astro:assets';
-import { APP_STORE, appStoreUrl } from '../lib/appStore';
+import { APP_STORE, GAMES_SHIPPED, appStoreUrl } from '../lib/appStore';
 import foundingCompanionBand from '../assets/website-redesign/founding-companion-band.png';
 
 interface Props {
@@ -43,11 +43,15 @@ const copy =
         heading: 'رایگان شروع کن. پانزده تأمل در هر ماه، همیشه.',
         free: {
           title: 'رایگان',
-          body: 'رایگان شروع کن. پانزده تأمل در هر ماه، همیشه. روزی سه بازی رایگان است. همدم پلاس شمارنده ندارد.',
+          body: GAMES_SHIPPED
+            ? 'رایگان شروع کن. پانزده تأمل در هر ماه، همیشه. روزی سه بازی رایگان است. همدم پلاس شمارنده ندارد.'
+            : 'رایگان شروع کن. پانزده تأمل در هر ماه، همیشه.',
         },
         plus: {
           title: 'همدم پلاس',
-          body: 'همدم پلاس تأملات نامحدود، بایگانی تأملات و بینش‌ها در سراسر تاریخچه‌ی تو، همگام‌سازی iCloud میان دستگاه‌های تو، نشانه‌های بدنی سلامت، و صفحه‌های ژرف شاعران فراتر از حافظ و مولانا را باز می‌کند. فال بی‌شمار. بازی نامحدود در گلستان.',
+          body: GAMES_SHIPPED
+            ? 'همدم پلاس تأملات نامحدود، بایگانی تأملات و بینش‌ها در سراسر تاریخچه‌ی تو، همگام‌سازی iCloud میان دستگاه‌های تو، نشانه‌های بدنی سلامت، و صفحه‌های ژرف شاعران فراتر از حافظ و مولانا را باز می‌کند. فال بی‌شمار. بازی نامحدود در گلستان.'
+            : 'همدم پلاس تأملات نامحدود، بایگانی تأملات و بینش‌ها در سراسر تاریخچه‌ی تو، همگام‌سازی iCloud میان دستگاه‌های تو، نشانه‌های بدنی سلامت، و صفحه‌های ژرف شاعران فراتر از حافظ و مولانا را باز می‌کند.',
           trial: 'ماهانه یا سالانه، با هفت روز آزمایش رایگان برای مشترکان جدید.',
           pricing: 'قیمت در اپ‌استور نمایش داده می‌شود.',
         },
@@ -63,12 +67,16 @@ const copy =
         free: {
           title: 'Free',
           body:
-            'Begin free. Fifteen reflections every month, always, with daily verses from all five poets and the full library of five hundred verses. Ask Hafez for a faal, tend the Garden, and play its games. Three plays a day are free. Hamdam Plus has no counter.',
+            GAMES_SHIPPED
+              ? 'Begin free. Fifteen reflections every month, always, with daily verses from all five poets and the full library of five hundred verses. Ask Hafez for a faal, tend the Garden, and play its games. Three plays a day are free. Hamdam Plus has no counter.'
+              : 'Begin free. Fifteen reflections every month, always, with daily verses from all five poets and the full library of five hundred verses. Ask Hafez for a faal and tend the Garden.',
         },
         plus: {
           title: 'Hamdam Plus',
           body:
-            'Hamdam Plus opens unlimited reflections, your whole reflection archive and insights beyond the free fourteen-day window, iCloud sync between your devices, Health body signals, Deep Mode for longer reflection prompts, sharing to Apple Journal, unlimited Faal readings, unlimited plays in the Garden\'s games, and the poet deep-dives beyond Hafez and Rumi.',
+            GAMES_SHIPPED
+              ? 'Hamdam Plus opens unlimited reflections, your whole reflection archive and insights beyond the free fourteen-day window, iCloud sync between your devices, Health body signals, Deep Mode for longer reflection prompts, sharing to Apple Journal, unlimited Faal readings, unlimited plays in the Garden\'s games, and the poet deep-dives beyond Hafez and Rumi.'
+              : 'Hamdam Plus opens unlimited reflections, your whole reflection archive and insights beyond the free fourteen-day window, iCloud sync between your devices, Health body signals, Deep Mode for longer reflection prompts, sharing to Apple Journal, unlimited Faal readings, and the poet deep-dives beyond Hafez and Rumi.',
           trial: 'Monthly or yearly, with a 7-day free trial for new subscribers.',
           pricing: 'Pricing is shown on the App Store.',
         },
