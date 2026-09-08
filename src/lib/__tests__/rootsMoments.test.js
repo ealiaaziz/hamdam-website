@@ -180,11 +180,17 @@ describe('upcomingRootsMoments (against the generated catalogue)', () => {
   const upcoming = upcomingRootsMoments(ROOTS_MOMENTS, today);
 
   it('resolves a date for every moment with a banked rule', () => {
-    // auNAIDOCWeek has only 2026 banked and it has passed by 25 July 2026;
-    // auBoxingDay is deliberately banked empty. Both correctly drop out.
+    // Which moments drop out is a property of the catalogue, and the catalogue
+    // is generated from the app and grows: this asserted `dropped` was 2 until
+    // 2026-09-08, when the app gave Ekka a 2027 date and made Boxing Day a
+    // fixed 26 December. The invariant worth holding is not the count, it is
+    // that a moment drops out if and only if its rule resolves to nothing.
+    const unresolvable = ROOTS_MOMENTS.filter((m) => nextOccurrenceForRule(m.rule, today) === null);
     const dropped = ROOTS_MOMENTS.length - upcoming.length;
-    expect(dropped).toBe(2);
-    expect(upcoming.map((e) => e.moment.id)).not.toContain('auBoxingDay');
+    expect(dropped).toBe(unresolvable.length);
+    for (const m of unresolvable) {
+      expect(upcoming.map((e) => e.moment.id)).not.toContain(m.id);
+    }
   });
 
   it('is sorted closest-first with no past dates', () => {

@@ -231,12 +231,21 @@ const copy =
                 <span>{label('notSet')}</span>
               </label>
             </div>
-            <p class="roots__roadmap">
-              <span class="roots__roadmap-label">{label('comingSoon')}</span>
-              {ROADMAP_COUNTRIES.map((country) => (
-                <span class="roots__roadmap-country">{placeName(country)}</span>
-              ))}
-            </p>
+            {
+              /* Empty once every roadmap country shipped (2026-09-08). Guarded
+                 rather than deleted: the row returns by itself the next time a
+                 country is named as next but has no moments yet. Without this
+                 the section rendered a bare "Coming soon" with nothing after
+                 it. */
+              ROADMAP_COUNTRIES.length > 0 && (
+                <p class="roots__roadmap">
+                  <span class="roots__roadmap-label">{label('comingSoon')}</span>
+                  {ROADMAP_COUNTRIES.map((country) => (
+                    <span class="roots__roadmap-country">{placeName(country)}</span>
+                  ))}
+                </p>
+              )
+            }
           </fieldset>
           <ul class="roots__list">
             {regionRows.map((row) => (

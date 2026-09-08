@@ -64,12 +64,21 @@ describe('upcomingOccurrences', () => {
   // The reason the function stops short instead of padding: explicitYearlyDates
   // only knows the years the app banked. Two real dates beat three where one is
   // invented.
+  // These two build their rule inline rather than borrowing a real moment.
+  // They used to use auQldEkka ("only 2026 is banked") and auBoxingDay
+  // ("banked empty"), and on 2026-09-08 both stopped being true: the app gave
+  // Ekka a 2027 date and turned Boxing Day into a fixed 26 December. Neither
+  // was a bug here, but both failed this file. The behaviour under test is a
+  // property of upcomingOccurrences, not of whichever holiday happens to be
+  // short of data this month, so the fixture should not come from a generated
+  // catalogue that grows.
   it('returns a short list rather than inventing unbanked years', () => {
-    const ekka = ruleFor('auQldEkka'); // only 2026 is banked
-    expect(upcomingOccurrences(ekka, today, 5)).toHaveLength(1);
+    const oneYearBanked = { kind: 'explicitYearlyDates', dates: { 2026: { month: 8, day: 12 } } };
+    expect(upcomingOccurrences(oneYearBanked, today, 5)).toHaveLength(1);
   });
 
   it('returns nothing for a rule with no banked dates at all', () => {
-    expect(upcomingOccurrences(ruleFor('auBoxingDay'), today, 3)).toEqual([]);
+    const nothingBanked = { kind: 'explicitYearlyDates', dates: {} };
+    expect(upcomingOccurrences(nothingBanked, today, 3)).toEqual([]);
   });
 });

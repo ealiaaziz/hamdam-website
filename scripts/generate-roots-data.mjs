@@ -34,10 +34,24 @@ const LOCALIZATION_SWIFT = join(IOS_ROOT, 'Hamdam/Hamdam/Core/Localization.swift
 const LOCATION_SWIFT = join(IOS_ROOT, 'Hamdam/Hamdam/Weather/LocationManager.swift');
 const OUT_FILE = join(REPO_ROOT, 'src/data/rootsMoments.ts');
 
-// Countries offered as heritage on the site, then the ones on the roadmap
-// (Ealia, 2026-07-25) shown as next rather than available.
-const HERITAGE_COUNTRIES = ['IR', 'AF', 'TJ', 'AU'];
-const ROADMAP_COUNTRIES = ['GB', 'US', 'NL', 'DE'];
+// Which countries the site offers as heritage is DERIVED from the catalogue
+// below, not listed here. It used to be listed here, hardcoded as
+// ['IR','AF','TJ','AU'] with ['GB','US','NL','DE'] as the roadmap, attributed
+// to Ealia on 2026-07-25 and never revisited. By 2026-09-08 the app had
+// shipped moments for all four of those roadmap countries plus Canada and the
+// United Arab Emirates, and the site was still telling visitors the first four
+// were "Coming soon" while the app carried 19, 18, 15 and 15 moments for them.
+// A hardcoded list next to a generated one will always drift, so this one is
+// computed: a country is offered when the app has at least one moment for it.
+//
+// ORDER is editorial and is the only hand-maintained part. Persian heritage
+// leads because that is what the app is for, then the rest by how much the app
+// actually carries, which puts the fullest packs first.
+const HERITAGE_ORDER = ['IR', 'AF', 'TJ', 'AU'];
+
+/** Countries named as next but carrying no moments yet. Empty is correct and
+ *  is not a bug: everything once on the roadmap has shipped. */
+const ROADMAP_COUNTRIES = [];
 
 // IranianMonth raw values, IranianCalendarService.swift lines 21-32.
 const PERSIAN_MONTHS = {
@@ -206,7 +220,23 @@ const labels = {
 };
 
 const auStates = parseAuStates(locationSwift);
-const heritageCountries = countryNames(HERITAGE_COUNTRIES);
+// Every country the catalogue actually covers, editorial order first and the
+// remainder by moment count descending, so the list can never claim a pack the
+// app does not have nor omit one it does.
+const covered = new Map();
+for (const m of moments) {
+  for (const code of m.heritages) covered.set(code, (covered.get(code) ?? 0) + 1);
+}
+const heritageCodes = [
+  ...HERITAGE_ORDER.filter((c) => covered.has(c)),
+  ...[...covered.keys()]
+    .filter((c) => !HERITAGE_ORDER.includes(c))
+    .sort((a, b) => covered.get(b) - covered.get(a) || a.localeCompare(b)),
+];
+const missing = HERITAGE_ORDER.filter((c) => !covered.has(c));
+if (missing.length) fail(`HERITAGE_ORDER names ${missing.join(', ')}, which the catalogue has no moments for`);
+
+const heritageCountries = countryNames(heritageCodes);
 const roadmapCountries = countryNames(ROADMAP_COUNTRIES);
 
 for (const moment of moments) {
