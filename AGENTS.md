@@ -106,19 +106,21 @@ generated `src/data/siteCopy.ts`. Never hand-type Persian — regenerate.
 `npm test` (Vitest) and `npm run check:persian` (also a pre-commit
 hook) must pass.
 
-**The analytics beacon is set, and goes live when this reaches `main`
-(2026-09-07).** `PRODUCTION_BEACON_TOKEN` in `src/lib/analytics.js` holds a
-real Cloudflare Web Analytics site token and a Workers Builds run puts the tag
-on all 27 pages. Three things about it. **The token cannot be read back:** this
-account's API token is permitted to `POST rum/site_info` but 403s on both
-`GET list` and `GET {site_tag}`, so that constant is the only copy the
-repository can reach, and deleting it expecting to refetch it will not work.
-The build-log line reads both `import.meta.env` and `process.env`, because
-`astro.config.mjs` only has the second and used to report OFF while the beacon
-shipped. And `npm run deploy` refuses once a token is committed unless
-`PUBLIC_CF_BEACON_TOKEN` is set, because a hand deploy is not a Workers Builds
-run and would drop the beacon silently. The full record, including the wrong
-turn taken first, is `docs/seo/2026-09-07-analytics-beacon.md`.
+**This site already has Cloudflare Web Analytics, and you cannot see it with
+curl (established 2026-09-08).** It runs through Cloudflare's **automatic
+injection**, which rewrites HTML at the edge for browser user agents only. A
+bare `curl | grep cloudflareinsights` returns 0 and has misled four separate
+checks; add `-A "Mozilla/5.0 ... Chrome/140.0 ..."` and the beacon is there.
+`PRODUCTION_BEACON_TOKEN` in `src/lib/analytics.js` is therefore `null` **on
+purpose**: setting it adds a second beacon and double counts every view, which
+is exactly what a deploy did for an hour on 2026-09-07. The real site tag is
+`fc0907d7213743e39c87fc821feee7ae`, data from 2026-08-29; a duplicate,
+`aa50aecebb5643708676c003d943d076`, was created by that same session and should
+be deleted in the dashboard, because the API refuses DELETE and PATCH for this
+token. The traffic itself **is** readable from a session: account-scoped
+`rumPageloadEventsAdaptiveGroups` in the Cloudflare GraphQL API returns 200
+even though `rum/site_info/list` is 403, and the query is in
+`docs/seo/2026-09-07-analytics-beacon.md`.
 
 OG images/icons regenerate via `node scripts/generate-og.mjs`.
 CSP is enforcing (`public/_headers`): no inline styles or scripts, so keep

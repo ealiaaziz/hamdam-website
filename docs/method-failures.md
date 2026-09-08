@@ -34,6 +34,39 @@ The three rules that would have prevented all of them:
 
 ## The entries
 
+### Created a duplicate analytics site because curl cannot see the real one
+
+**Claimed:** hamdam.com.au had no analytics at all. Four probes agreed, one of
+them a direct fetch of the live homepage, `/fa/` and the support host searching
+for `data-cf-beacon`. All three came back empty. A Web Analytics site was then
+created by API, its token committed, and the beacon shipped to production.
+
+**True:** the site had had Cloudflare Web Analytics since at least 29 August
+2026, through Cloudflare's automatic injection. The deploy therefore put a
+**second** beacon on every page, and for about an hour every real page view was
+counted twice, into two different sites.
+
+**How.** Cloudflare's automatic injection rewrites HTML at the edge **only for
+a browser user agent**. Every check had been made with a bare curl, which is
+served a page with no beacon in it. The same fetch with a Chrome UA shows both
+tags side by side. So the evidence was not weak, it was systematically blind,
+and adding more of the same kind of probe made it look stronger:
+
+    curl -sS https://hamdam.com.au/ | grep -c cloudflareinsights                -> 0
+    curl -sS -A "Mozilla/5.0 ... Chrome/140.0 ..." https://... | grep -c ...    -> 2
+
+What finally showed it was a different kind of question. Account-scoped
+`rumPageloadEventsAdaptiveGroups` in the GraphQL API returns 200 with this
+token, even though `rum/site_info/list` is 403, and it listed two site tags
+with data, one of them going back ten days.
+
+**Rule.** Absence of evidence from one client is not absence. Before concluding
+a third-party thing is not there, ask what would have to be true for your probe
+to miss it, and then make one probe of a genuinely different kind. Here the
+answer was a two-word change to a curl flag. Note also that this is the third
+entry in this file with the same root: a narrow probe, generalised. The first
+two cost time. This one wrote wrong data into a production dataset.
+
 ### Told Ealia a credential was out of reach after testing one endpoint
 
 **Claimed:** the Cloudflare Web Analytics token could not be obtained by any

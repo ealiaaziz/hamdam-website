@@ -1,116 +1,129 @@
-# The analytics beacon: set, and the wrong turn taken on the way
+# Analytics on hamdam.com.au: it was already on, and curl could not see it
 
-Date: 2026-09-07. Asked for as "set up the analytics beacon".
+Started 2026-09-07 as "set up the analytics beacon". Corrected 2026-09-08.
+The correction is the document; the setup was never needed.
 
-**Done in the repository, not yet live.** `PRODUCTION_BEACON_TOKEN` in
-`src/lib/analytics.js` now holds a real Cloudflare Web Analytics site token,
-and a Workers Builds run puts the tag on all 27 pages across both locales. It
-starts counting when this reaches `main` and Workers Builds publishes it, and
-not one moment before.
+## The finding
 
-## The wrong turn, first, because it is the useful part
+**hamdam.com.au has had Cloudflare Web Analytics since at least 29 August
+2026.** It runs through Cloudflare's automatic injection, which rewrites the
+HTML at the edge rather than putting anything in this repository, and which
+**only fires for a browser user agent**.
 
-The first pass of this task concluded that no session could finish it: that the
-token lived behind the Cloudflare dashboard, and that Ealia had to go and paste
-it in. That conclusion was reported to him with what looked like solid
-evidence, four probes deep.
+That last clause is the whole story. Every check this project had made used a
+bare curl:
 
-It was wrong. One call was made against `rum/site_info/list`, it returned 403,
-and the finding was generalised from that one endpoint to the whole product.
-`POST /accounts/{id}/rum/site_info` succeeds with the same token. The site was
-created from a shell in about four seconds.
+```
+curl -sS https://hamdam.com.au/ | grep -c cloudflareinsights          # 0
+curl -sS -A "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) \
+  AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0 Safari/537.36" \
+  https://hamdam.com.au/ | grep -c cloudflareinsights                 # 2
+```
 
-The measured permission split, which is genuinely strange and is why nobody
-should reason about this product from a single call:
+Zero versus two. Nothing about the site changed between those two commands.
+
+## What that cost
+
+Acting on the zero, a session created a Web Analytics site by API on
+2026-09-07, committed its token, and deployed. For about an hour production
+carried **two** beacons and every real page view was counted twice, into two
+separate sites. Cloudflare's own guidance, quoted in this repository since the
+beacon module was written, is "use one or the other, never both, or every page
+view is counted twice." It was right.
+
+Read from the RUM GraphQL API on 2026-09-08:
+
+| Site tag | First data | Source |
+|---|---|---|
+| `fc0907d7213743e39c87fc821feee7ae` | 2026-08-29 | automatic injection, token `a3514c7052c648d985b8912603a2a7f8` |
+| `aa50aecebb5643708676c003d943d076` | 2026-09-07 | created in error, now receiving nothing |
+
+## The fix
+
+`PRODUCTION_BEACON_TOKEN` is `null` again, so the build emits no tag and the
+injected one is the only beacon on the page. That is a code-only change,
+immediately reversible, and it keeps the site that has the history.
+
+Two things could not be done from here, both because the API refuses them for
+this token:
+
+- `PATCH rum/site_info/{site_tag}` returns **405**, so automatic injection
+  cannot be switched off from a session.
+- `DELETE` on the duplicate site is likewise unavailable, so
+  `aa50aecebb5643708676c003d943d076` has to be removed in the dashboard. It is
+  inert in the meantime.
+
+## What this token CAN do, which is more than anyone had established
+
+Measured, not assumed:
 
 | Call | Result |
 |---|---|
-| `POST rum/site_info` | 200, creates the site, returns the token |
-| `GET rum/site_info/list` | 403 Authentication error |
-| `GET rum/site_info/{site_tag}` | 403 Authentication error |
-| GraphQL zone analytics | refused, names `zone.analytics.read` |
+| `POST rum/site_info` | 200, creates a site and returns its token |
+| `GET rum/site_info/list` | 403 |
+| `GET rum/site_info/{site_tag}` | 403 |
+| `PATCH rum/site_info/{site_tag}` | 405 |
+| GraphQL `rumPageloadEventsAdaptiveGroups`, account-scoped | **200** |
+| GraphQL zone analytics | refused, `zone.analytics.read` |
 
-Create is permitted. Read is not. Recorded in `docs/method-failures.md` as
-well, because the shape of the error is the point, not the endpoint.
-
-## What now exists
-
-A Web Analytics site on the Cloudflare account:
-
-- host `hamdam.com.au`
-- site tag `aa50aecebb5643708676c003d943d076`
-- created 2026-09-07
-- `auto_install: false`, deliberately. Cloudflare's automatic injection
-  rewrites HTML in flight and BaseLayout already emits the tag. Use one or the
-  other, never both, or every page view is counted twice.
-
-Its site token is committed in `src/lib/analytics.js`. That is safe: the value
-ships in the HTML of every page and identifies a zone rather than an account.
-It is not safe to lose, though, because **read is 403.** No future session can
-ask the API what the token is; it can only create another site. That constant
-is the copy.
-
-One caveat that cannot be resolved from here. With the list endpoint refused,
-there was no way to confirm beforehand that no Web Analytics site already
-existed for this host. Everything visible said none did: no `data-cf-beacon` on
-hamdam.com.au, on `/fa/`, or on support.hamdam.com.au, and the constant had
-been null since 2026-08-07. But everything visible is not verified. If a second
-hamdam.com.au entry turns up in the dashboard, that is the reason, and the one
-to keep is whichever tag matches the committed value.
-
-## Two things around it that were broken
-
-**The build-log line was lying, and the design leans on it.**
-`astro.config.mjs` imports `analytics.js` as a plain Node module, where
-`import.meta.env` does not exist, so the `PUBLIC_CF_BEACON_TOKEN` override read
-as unset every time. Measured, not theorised: a build with the variable set
-printed `analytics: beacon OFF, no production token committed yet` while
-shipping the tag on all 27 pages. `pickExplicitToken` now reads both contexts.
-
-**A hand deploy would have silently dropped the beacon.** A committed token
-only reaches a page on a Workers Builds run, so `npm run deploy` from a
-container would publish 27 pages with no analytics and report success. That is
-the `pt=` regression of 2026-09-05 in different clothes.
-`scripts/predeploy-check.mjs` refuses that deploy now and names the override
-that fixes it.
-
-## Proof, at each stage
-
-- Local build: `analytics: beacon off, not a Workers Builds run (local builds
-  do not report)`, and zero occurrences of `cloudflareinsights` in `dist`.
-  Correct: a laptop build must not write into the production dataset.
-- `WORKERS_CI=1` build: `analytics: beacon enabled (token ...ff0f19)`, and the
-  tag present on 27 of 27 pages with the token JSON-escaped into the attribute.
-- Served through `wrangler dev` so the real enforcing CSP from
-  `public/_headers` applied, and loaded in Chromium: zero
-  `securitypolicyviolation` events. **No CSP change was needed**, because
-  `script-src` already allows `static.cloudflareinsights.com` and `connect-src`
-  already allows `cloudflareinsights.com`. The browser's fetch of
-  `beacon.min.js` failed on this container's egress rather than on the policy:
-  the same URL returns 200 from curl here, and a blocked request raises a
-  violation event rather than a connection reset.
-
-## What is left, and it is not code
-
-This branch has to reach `main` for Workers Builds to publish it. Until then
-the live site still counts nothing, and `/privacy/` still tells visitors it
-counts page views, which remains untrue for exactly as long as that takes.
-
-After the deploy, two checks, in this order:
-
-1. The Workers Builds log should carry `analytics: beacon enabled (token
-   ...ff0f19)`.
-2. The page itself, which outranks the log:
+The GraphQL row is the useful one and it had been missed entirely. **The
+traffic is readable from a session, with no dashboard and no new credential.**
+This is the query:
 
 ```
-curl -sS https://hamdam.com.au/ | grep -c cloudflareinsights
+POST https://api.cloudflare.com/client/v4/graphql
+{"query":"query($a:String!,$s:Time!,$e:Time!){viewer{accounts(filter:{accountTag:$a}){
+  rumPageloadEventsAdaptiveGroups(limit:100,filter:{datetime_geq:$s,datetime_leq:$e},
+  orderBy:[count_DESC]){count dimensions{siteTag date requestPath countryName userAgentBrowser}}}}}",
+ "variables":{"a":"<CLOUDFLARE_ACCOUNT_ID>","s":"<ISO8601>","e":"<ISO8601>"}}
 ```
 
-`1` means it shipped. `0` means it did not, whatever the log said.
+Counts come back sampled and scaled, which is why they arrive in round tens.
 
-Data appears in the Cloudflare dashboard under Web Analytics within a few
-minutes of the first real visit. It cannot be read back through the API with
-this token, so that reading stays a dashboard trip until somebody adds
-**Account Analytics (Read)** and **Zone Analytics (Read)** to it. That is the
-open question now, and it is a much smaller one than the last version of this
-document made it.
+## First reading, 30 days to 2026-09-08
+
+Both sites combined, so the recent days are inflated by the double counting
+described above. Treat it as shape, not as measurement.
+
+| Page | Views |
+|---|---|
+| `/` | 90 across NL, US, AU, DE, SE, CA |
+| `/privacy/` | 30 |
+| `/whats-new/` | 20, including one from IR |
+| `/fa/` | 10 |
+| `/poets/rumi/` | 10 |
+| `/support` | 10 |
+
+Small numbers, and the first this project has ever had from its own pages
+rather than from Search Console impressions.
+
+## What is left
+
+1. **Delete the duplicate site** in the Cloudflare dashboard, Web Analytics,
+   tag `aa50aecebb5643708676c003d943d076`. Cosmetic, not urgent.
+2. **Decide whether to move to the in-code tag.** It is versioned, reviewable
+   and guarded by `scripts/predeploy-check.mjs`; injection is invisible to the
+   repository and to every terminal check. Moving means turning injection off
+   in the dashboard first, then setting `PRODUCTION_BEACON_TOKEN` to
+   `a3514c7052c648d985b8912603a2a7f8`, the existing site's token, so the
+   history from 29 August continues. Not done, because what is running works
+   and the swap buys tidiness rather than data.
+3. **Nothing about the privacy policy.** `/privacy/` says this site uses
+   Cloudflare Web Analytics to count page views. That was true on 29 August
+   and is true now. The earlier claim in this repository that the policy
+   described something which was not happening was itself a product of the
+   blind probe.
+
+## The machinery built along the way, which is still worth having
+
+Two real defects were found and fixed while chasing this, and both stand
+regardless of which beacon is used:
+
+- **The build-log line was blind to `import.meta.env`.** `astro.config.mjs`
+  imports `analytics.js` as a plain Node module, so a build with
+  `PUBLIC_CF_BEACON_TOKEN` set printed "beacon OFF" while shipping the tag on
+  all 27 pages. Fixed, with tests.
+- **A hand deploy would silently drop an in-code beacon.** A committed token
+  only reaches a page on a Workers Builds run, so `npm run deploy` from a
+  container would publish 27 pages with no analytics and report success.
+  `scripts/predeploy-check.mjs` refuses that now.
