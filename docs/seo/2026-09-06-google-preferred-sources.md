@@ -96,8 +96,36 @@ knows about itself:
 
 Any of the three beats this change by a distance.
 
-## Verify before believing this page
+## Measured 2026-09-08, and it is worse than "unverified"
 
-The link is checkable in thirty seconds: open it in a signed-in browser and see
-whether Hamdam appears as a source that can be added. That check has not been
-done. It is item one in `TODO-Ealia.md`.
+The direct check still needs a signed-in browser. `google.com/preferences/source`
+returns 200 to a plain fetch but the body is an empty JS shell carrying a
+`ServiceLogin` marker, with no occurrence of "hamdam" anywhere in it, and
+headless Chromium cannot reach google.com through this container's proxy
+(`ERR_CONNECTION_RESET`, a tunnel failure rather than a policy denial). So
+whether hamdam.com.au is listed in that tool is still unknown.
+
+An independent question could be answered, though, and it bears on the same
+decision. Preferred sources applies mainly to **Top Stories**, which is a news
+surface. Search Console, 10 June to 6 September 2026, `sc-domain:hamdam.com.au`:
+
+| Search type | Impressions |
+|---|---|
+| `news` | **0** |
+| `discover` | **0** |
+| `googleNews` | **0** |
+| `web` | 605 (11 clicks, average position 25.3) |
+
+Zero across every news and Discover surface, for three months. The site has a
+real web presence and no publisher presence at all.
+
+That does not prove hamdam.com.au is absent from the source preferences tool.
+It does something more useful: it makes the question mostly moot. Even a
+visitor who successfully adds Hamdam as a preferred source is expressing a
+preference about surfaces this site has never once appeared in.
+
+**Recommendation: set `PREFERRED_SOURCE.ENABLED` to false.** Not because the
+link is harmful, but because the honest expected value has gone from "close to
+zero" to "zero on the evidence available", and the footer of a deliberately
+calm page is not free. Left enabled pending Ealia's call, because he asked for
+the feature and removing it is his decision rather than a build-time one.
