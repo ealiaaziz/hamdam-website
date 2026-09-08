@@ -1,6 +1,6 @@
 ---
 import { Image } from 'astro:assets';
-import { APP_STORE, appStoreUrl } from '../lib/appStore';
+import { APP_STORE, GAMES_SHIPPED, appStoreUrl } from '../lib/appStore';
 import foundingCompanionBand from '../assets/website-redesign/founding-companion-band.png';
 
 interface Props {
@@ -16,17 +16,42 @@ const { lang } = Astro.props;
 // 2026-07-02) -- "Pricing is shown on the App Store" everywhere a price
 // would otherwise appear. "Hamdam Plus" and "Founding Companion" are the
 // app's own L.* naming (Localization.swift), never a new coinage.
+//
+// 1.4 ADDITIONS, 2026-09-08, each read off the shipping code rather than
+// off the Free-vs-Plus brief that prompted them, because the brief is a
+// summary and the code is the thing:
+//   - three plays a day free    GamesPlayLedger.freeDailyPlays = 3
+//   - unlimited plays with Plus GamesPlayGate, isUnlimited
+//   - three faal a day free     RootsTabView.freeFaalDailyLimit = 3
+//   - unlimited faal with Plus  RootsFaalSection.consumeFreeFaalUse
+//
+// THE THREE PLAYS ARE POOLED ACROSS THREE GAMES, NOT FOUR. Chistan is the
+// daily riddle and is never counted (GamesPlayGate.swift header), so the
+// free line says "the Garden's games" and does not put a number on the
+// games themselves. Gol ya Pooch is parked out of 1.4 (golYaPoochBuilt =
+// false, D50) and must not be named here or anywhere.
+//
+// THE FARSI BELOW IS NOT AUTHORED. Every Persian string added for 1.4 is
+// lifted byte for byte from the app's own shipped localisation
+// (LocalizationGamesPaywall.swift, Localization.swift), which is what this
+// repo's rule against hand-typing Persian requires. If a Persian sentence
+// is ever needed that the app does not already ship, it waits for Sima
+// rather than being written here.
 const copy =
   lang === 'fa'
     ? {
         heading: 'رایگان شروع کن. پانزده تأمل در هر ماه، همیشه.',
         free: {
           title: 'رایگان',
-          body: 'رایگان شروع کن. پانزده تأمل در هر ماه، همیشه.',
+          body: GAMES_SHIPPED
+            ? 'رایگان شروع کن. پانزده تأمل در هر ماه، همیشه. روزی سه بازی رایگان است. همدم پلاس شمارنده ندارد.'
+            : 'رایگان شروع کن. پانزده تأمل در هر ماه، همیشه.',
         },
         plus: {
           title: 'همدم پلاس',
-          body: 'همدم پلاس تأملات نامحدود، بایگانی تأملات و بینش‌ها در سراسر تاریخچه‌ی تو، همگام‌سازی iCloud میان دستگاه‌های تو، نشانه‌های بدنی سلامت، و صفحه‌های ژرف شاعران فراتر از حافظ و مولانا را باز می‌کند.',
+          body: GAMES_SHIPPED
+            ? 'همدم پلاس تأملات نامحدود، بایگانی تأملات و بینش‌ها در سراسر تاریخچه‌ی تو، همگام‌سازی iCloud میان دستگاه‌های تو، نشانه‌های بدنی سلامت، و صفحه‌های ژرف شاعران فراتر از حافظ و مولانا را باز می‌کند. فال بی‌شمار. بازی نامحدود در گلستان.'
+            : 'همدم پلاس تأملات نامحدود، بایگانی تأملات و بینش‌ها در سراسر تاریخچه‌ی تو، همگام‌سازی iCloud میان دستگاه‌های تو، نشانه‌های بدنی سلامت، و صفحه‌های ژرف شاعران فراتر از حافظ و مولانا را باز می‌کند.',
           trial: 'ماهانه یا سالانه، با هفت روز آزمایش رایگان برای مشترکان جدید.',
           pricing: 'قیمت در اپ‌استور نمایش داده می‌شود.',
         },
@@ -41,12 +66,17 @@ const copy =
         heading: 'Begin free. Fifteen reflections every month, always.',
         free: {
           title: 'Free',
-          body: 'Begin free. Fifteen reflections every month, always, with daily verses from all five poets and the full library of five hundred verses.',
+          body:
+            GAMES_SHIPPED
+              ? 'Begin free. Fifteen reflections every month, always, with daily verses from all five poets and the full library of five hundred verses. Ask Hafez for a faal, tend the Garden, and play its games. Three plays a day are free. Hamdam Plus has no counter.'
+              : 'Begin free. Fifteen reflections every month, always, with daily verses from all five poets and the full library of five hundred verses. Ask Hafez for a faal and tend the Garden.',
         },
         plus: {
           title: 'Hamdam Plus',
           body:
-            'Hamdam Plus opens unlimited reflections, your whole reflection archive and insights beyond the free fourteen-day window, iCloud sync between your devices, Health body signals, Deep Mode for longer reflection prompts, sharing to Apple Journal, and the poet deep-dives beyond Hafez and Rumi.',
+            GAMES_SHIPPED
+              ? 'Hamdam Plus opens unlimited reflections, your whole reflection archive and insights beyond the free fourteen-day window, iCloud sync between your devices, Health body signals, Deep Mode for longer reflection prompts, sharing to Apple Journal, unlimited Faal readings, unlimited plays in the Garden\'s games, and the poet deep-dives beyond Hafez and Rumi.'
+              : 'Hamdam Plus opens unlimited reflections, your whole reflection archive and insights beyond the free fourteen-day window, iCloud sync between your devices, Health body signals, Deep Mode for longer reflection prompts, sharing to Apple Journal, unlimited Faal readings, and the poet deep-dives beyond Hafez and Rumi.',
           trial: 'Monthly or yearly, with a 7-day free trial for new subscribers.',
           pricing: 'Pricing is shown on the App Store.',
         },

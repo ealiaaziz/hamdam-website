@@ -6,6 +6,7 @@ import {
   RENAME_VERSION,
   appStoreNameFor,
   compareVersions,
+  gamesShippedIn,
   homepageTitleFor,
   storeSlug,
 } from '../appName.js';
@@ -115,6 +116,40 @@ describe('what the site publishes today', () => {
       expect(APP_STORE_CANONICAL_URL).toContain('hamdam-daily-persian-poetry');
     } else {
       expect(APP_STORE_NAME).toBe(RENAMED_APP_STORE_NAME);
+    }
+  });
+});
+
+describe('gamesShippedIn', () => {
+  // The games are not in the live build. hamdam-ios origin/main has no
+  // GamesPlayGate, and the store reported 1.3.2 on 2026-09-08 while 1.4 sat in
+  // review, so copy naming the games describes a build nobody can download.
+  it('is false for every version that shipped before the games did', () => {
+    for (const v of ['1.0', '1.1', '1.2', '1.3', '1.3.1', '1.3.2']) {
+      expect(gamesShippedIn(v)).toBe(false);
+    }
+  });
+
+  it('is true from 1.4 onward', () => {
+    for (const v of ['1.4', '1.4.0', '1.4.1', '1.5', '2.0']) {
+      expect(gamesShippedIn(v)).toBe(true);
+    }
+  });
+
+  // Say less than the app does, never more. An unreadable version must not
+  // resolve to "the games are there".
+  it('is false when the version cannot be read', () => {
+    for (const v of [undefined, null, '', 'unknown', '1.4.0.1', 'v1.4', 42]) {
+      expect(gamesShippedIn(v)).toBe(false);
+    }
+  });
+
+  // The rename and the games are one release and must not half-land: a build
+  // that renames the app without the games, or vice versa, is a build that
+  // says something the store does not.
+  it('flips at the same version as the rename', () => {
+    for (const v of ['1.3.2', '1.4', '1.5']) {
+      expect(gamesShippedIn(v)).toBe(appStoreNameFor(v) === RENAMED_APP_STORE_NAME);
     }
   });
 });

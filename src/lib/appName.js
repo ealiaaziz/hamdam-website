@@ -68,6 +68,36 @@ export function compareVersions(a, b) {
   return 0;
 }
 
+/** The first version that ships the Garden's games. */
+export const GAMES_VERSION = '1.4';
+
+/**
+ * Whether the version the store reports actually carries the Garden's games.
+ *
+ * The same derivation as the name, for the same reason and with the same
+ * failure direction, because the two are the same problem. The games do not
+ * exist in the live build: `hamdam-ios` `origin/main` has no Chistan, no Hokm
+ * and no `GamesPlayGate`, and the App Store reported 1.3.2 on both the AU and
+ * US storefronts on 2026-09-08 while 1.4 sat in review. Copy that names the
+ * games is therefore true of a build nobody can download yet.
+ *
+ * That is a worse error than a stale name. A stale name is a mismatch a
+ * crawler notices; a feature claim is a promise to somebody who taps Get, and
+ * the App Store's own guideline 2.3 is about exactly this. So the games copy
+ * is gated on the shipping version rather than merged when it happens to be
+ * written, which also means the whole 1.4 bundle, name and games together,
+ * lands in one build the day Apple approves and cannot half-land.
+ *
+ * Unparseable or missing resolves to false: say less than the app does, never
+ * more.
+ *
+ * @param {unknown} currentVersion Normally RELEASES[0].version.
+ */
+export function gamesShippedIn(currentVersion) {
+  const comparison = compareVersions(currentVersion, GAMES_VERSION);
+  return comparison !== null && comparison >= 0;
+}
+
 /**
  * The App Store name for a given shipping version.
  *
