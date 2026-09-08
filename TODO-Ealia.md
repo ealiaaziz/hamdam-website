@@ -18,9 +18,15 @@ noted below, not repeated as open items.
       into Google and see whether Hamdam can be added. If it cannot, the footer
       link is sending readers to a page that cannot find us: set
       `PREFERRED_SOURCE.ENABLED` to false in `src/lib/preferredSource.js`, which
-      removes the link and nothing else. Background, including why the expected
-      traffic effect is close to zero either way:
-      `docs/seo/2026-09-06-google-preferred-sources.md`.
+      removes the link and nothing else.
+      **Measured 2026-09-08 and it mostly settles this without the sign-in.**
+      Search Console reports zero impressions on `news`, `discover` and
+      `googleNews` for the whole 10 June to 6 September window, against 605 on
+      web. Preferred sources steers Top Stories, a surface this site has never
+      appeared in, so the link cannot help whatever the tool says. The
+      recommendation is to set `PREFERRED_SOURCE.ENABLED` to false; it is left
+      on because you asked for the feature and removing it is your call.
+      Background: `docs/seo/2026-09-06-google-preferred-sources.md`.
 - [ ] **Farsi wording for that same link.** The English footer says "Make
       Hamdam a preferred source on Google". The Farsi footer says nothing,
       because this repo bars authoring Persian and there is no approved source
