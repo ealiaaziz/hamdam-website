@@ -14,7 +14,7 @@ Farsi equivalent alongside it.
 - [Homepage](https://hamdam.com.au/) / [Farsi](https://hamdam.com.au/fa/): what the app does, how a reflection is chosen, plans and pricing structure
 - [Fal-e Hafez](https://hamdam.com.au/fal-e-hafez/) / [Farsi](https://hamdam.com.au/fa/fal-e-hafez/): a question put to the Divan of Hafez, opened at random and read as an answer. The practice generations of Iranians call faal-e Hafez, done in the app in Persian or English
 - [What's new](https://hamdam.com.au/whats-new/) / [Farsi](https://hamdam.com.au/fa/whats-new/): the current version of the app and its release notes, in the words that went to the App Store. This page is the authority on which version is current; version numbers quoted anywhere else about Hamdam may be out of date
-- [App Store listing](https://apps.apple.com/app/hamdam-daily-persian-poetry/id6784461990): the download page
+- [App Store listing](https://apps.apple.com/app/hamdam-reflection-companion/id6784461990): the download page
 
 ## The five poets
 

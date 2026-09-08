@@ -94,7 +94,7 @@ describe('homepageSchema', () => {
 describe('APP_STORE_CANONICAL_URL', () => {
   it('carries no query string and no storefront segment', () => {
     expect(APP_STORE_CANONICAL_URL).toBe(
-      'https://apps.apple.com/app/hamdam-daily-persian-poetry/id6784461990'
+      'https://apps.apple.com/app/hamdam-reflection-companion/id6784461990'
     );
     expect(APP_STORE_CANONICAL_URL).not.toContain('?');
     expect(APP_STORE_CANONICAL_URL).not.toMatch(/apps\.apple\.com\/[a-z]{2}\//);
@@ -222,7 +222,7 @@ describe('organizationSchema', () => {
     expect(organizationSchema.sameAs).toEqual([
       'https://www.instagram.com/hamdam_au/',
       'https://x.com/Hamdam_au',
-      'https://apps.apple.com/app/hamdam-daily-persian-poetry/id6784461990',
+      'https://apps.apple.com/app/hamdam-reflection-companion/id6784461990',
     ]);
   });
 

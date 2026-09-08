@@ -7,6 +7,7 @@ import {
   persianNumerals,
   releaseMetaDescription,
   releaseTitle,
+  sentencesOf,
   versionLabel,
 } from '../releases.js';
 import { RELEASES } from '../../data/releases.ts';
@@ -139,7 +140,16 @@ describe('isFeatureRelease', () => {
 
 describe('featureReleases', () => {
   test('keeps the feature releases and drops the point releases', () => {
-    expect(featureReleases(RELEASES).map((r) => r.version)).toEqual(['1.3', '1.2']);
+    // Derived, not pinned. This asserted ['1.3', '1.2'] until 1.4 shipped on
+    // 2026-09-08 and made it fail for the one reason it never should: a
+    // correct new feature release. A list written out by hand here has to be
+    // edited on every release, and a test somebody edits on every release
+    // stops being read.
+    const versions = featureReleases(RELEASES).map((r) => r.version);
+    expect(versions).toEqual(RELEASES.filter((r) => isFeatureRelease(r.version)).map((r) => r.version));
+    expect(versions.every(isFeatureRelease)).toBe(true);
+    expect(versions).not.toContain('1.3.2');
+    expect(versions).not.toContain('1.3.1');
   });
 
   test('preserves newest first order', () => {
@@ -152,8 +162,22 @@ describe('featureReleases', () => {
     // it, because check:release compares RELEASES[0] to the store and the
     // structured data publishes it. If this ever fails, the site is about to
     // start claiming a version the App Store disagrees with.
-    expect(RELEASES[0].version).not.toBe(featureReleases(RELEASES)[0].version);
-    expect(RELEASES.length).toBeGreaterThan(featureReleases(RELEASES).length);
+    //
+    // This used to assert that the two differ, which was true only while a
+    // POINT release was live: 1.3.2 was filtered off the page, so the page's
+    // first entry was 1.3. 1.4 is a feature release, so the page and the
+    // record now agree, and asserting they differ was asserting a
+    // coincidence. What actually has to hold either way is below.
+    const live = RELEASES[0];
+    const page = featureReleases(RELEASES);
+    expect(RELEASES.some((r) => r.version === live.version)).toBe(true);
+    expect(page.every((r) => isFeatureRelease(r.version))).toBe(true);
+    if (isFeatureRelease(live.version)) {
+      expect(page[0].version).toBe(live.version);
+    } else {
+      expect(page[0].version).not.toBe(live.version);
+      expect(RELEASES.length).toBeGreaterThan(page.length);
+    }
   });
 
   test('returns an empty list rather than throwing when nothing qualifies', () => {
@@ -188,10 +212,22 @@ describe('releaseMetaDescription', () => {
     }
   });
 
-  test('appends whole paragraphs, never a fragment of one', () => {
+  test('appends whole sentences, never a fragment of one', () => {
+    // This asserted whole PARAGRAPHS and passed for 1.2 and 1.3 by luck: their
+    // paragraphs were single sentences, or fell outside the budget entirely.
+    // 1.4's second paragraph is two sentences and 91 characters, so the
+    // description takes the first sentence and stops, and the old assertion
+    // called that a fragment.
+    //
+    // It is not. `releaseMetaDescription` loops over `sentencesOf`, and a
+    // description that ends on a sentence boundary is what a search result
+    // should show. The implementation was right and the test was describing
+    // something the code never promised, so the test moved to what it does.
     const text = releaseMetaDescription('en', LATEST, 160);
-    for (const paragraph of LATEST.notesEn) {
-      if (text.includes(paragraph.slice(0, 12))) expect(text).toContain(paragraph);
+    const opening = `Hamdam ${LATEST.version} arrived on `;
+    expect(text.startsWith(opening)).toBe(true);
+    for (const sentence of sentencesOf(LATEST.notesEn)) {
+      if (text.includes(sentence.slice(0, 12))) expect(text).toContain(sentence);
     }
   });
 
@@ -224,7 +260,10 @@ describe('releaseTitle', () => {
   test('the indexed title names the feature release, not the point release', () => {
     // The whole reason the two are separated. If this ever equals the live
     // version, somebody has quietly reverted Ealia's 2026-09-06 call.
-    expect(releaseTitle('en', FEATURE)).toContain('1.3:');
-    expect(releaseTitle('en', FEATURE)).not.toContain('1.3.2');
+    expect(releaseTitle('en', FEATURE)).toContain(`${FEATURE.version}:`);
+    expect(isFeatureRelease(FEATURE.version)).toBe(true);
+    for (const r of RELEASES.filter((x) => !isFeatureRelease(x.version))) {
+      expect(releaseTitle('en', FEATURE)).not.toContain(r.version);
+    }
   });
 });
