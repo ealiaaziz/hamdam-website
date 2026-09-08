@@ -25,53 +25,67 @@
 /**
  * The production site token, from Cloudflare Web Analytics.
  *
- * SET 2026-09-07, and how it was obtained matters more than the value.
+ * DELIBERATELY NULL, and this is the one comment in this file to read before
+ * changing anything. **This site already has Cloudflare Web Analytics. It has
+ * had it since at least 29 August 2026. Setting this constant adds a SECOND
+ * beacon and every page view is counted twice.** That is not hypothetical: it
+ * was set on 2026-09-07, shipped to production, and did exactly that for about
+ * an hour.
  *
- * Every note here before this one said the API could not supply it. The
- * evidence was a 403 on `rum/site_info/list`, and the conclusion drawn from
- * that one call was that the whole product was out of reach and only a person
- * with dashboard access could finish this. That was wrong, in the exact shape
- * `docs/method-failures.md` exists to warn about: one endpoint was probed and
- * the finding was generalised to a service. **`POST /accounts/{id}/rum/site_info`
- * succeeds with this same deploy token** and returns the site token in the
- * response body.
+ * The existing one is Cloudflare's automatic injection, which rewrites the
+ * HTML at the edge. It is invisible to every check this repository had been
+ * making, and that is why four separate probes concluded the site had no
+ * analytics at all:
  *
- * The permissions split in a way nobody would guess, so it is written down:
+ *   curl -sS https://hamdam.com.au/ | grep -c cloudflareinsights     -> 0
+ *   curl -sS -A "Mozilla/5.0 ... Chrome/140.0 ..." ... | grep -c ...  -> 1
  *
- *   - `POST rum/site_info`             200, creates the site, returns the token
+ * **Cloudflare only injects for a browser user agent.** A bare curl is served
+ * a page with no beacon on it. Never conclude anything about analytics on this
+ * site from a request that did not send a browser UA.
+ *
+ * The two sites, read from the RUM GraphQL API on 2026-09-08:
+ *
+ *   fc0907d7213743e39c87fc821feee7ae  the real one. Automatic injection, token
+ *                                     a3514c7052c648d985b8912603a2a7f8 visible
+ *                                     in the injected tag. Data from 2026-08-29.
+ *   aa50aecebb5643708676c003d943d076  created by a session on 2026-09-07 in the
+ *                                     belief that none existed. Duplicate. It
+ *                                     has ~1 hour of double-counted data and
+ *                                     receives nothing now that this is null.
+ *                                     Delete it in the dashboard; the API
+ *                                     refuses DELETE for this token.
+ *
+ * What the API allows, which is a strange enough split to be worth writing
+ * down, all measured rather than assumed:
+ *
+ *   - `POST rum/site_info`             200, creates a site, returns its token
  *   - `GET  rum/site_info/list`        403 Authentication error
  *   - `GET  rum/site_info/{site_tag}`  403 Authentication error
+ *   - `PATCH rum/site_info/{site_tag}` 405 Method not allowed for this scheme
+ *   - GraphQL `rumPageloadEventsAdaptiveGroups`, account-scoped:  **200, works**
  *   - GraphQL zone analytics           refused, `zone.analytics.read` missing
  *
- * Create works, read does not, and that asymmetry has a consequence worth
- * stating loudly: **this constant is the only copy of the value this
- * repository can reach.** A future session cannot ask the API what the token
- * is. It can only create another site. So do not delete this line expecting to
- * fetch it back, and do not "refresh" it. The dashboard also has it, under Web
- * Analytics, site tag `aa50aecebb5643708676c003d943d076`, host hamdam.com.au,
- * created 2026-09-07.
+ * That last pair is the useful one and it was missed for a long time: the
+ * traffic itself is readable from here even though the site list is not.
+ * `docs/seo/2026-09-07-analytics-beacon.md` carries the query.
  *
- * One caveat, stated plainly because it cannot be checked from here: with the
- * list endpoint refused there was no way to confirm beforehand that no Web
- * Analytics site already existed for this host. Everything visible said none
- * did (no `data-cf-beacon` on hamdam.com.au, on /fa/ or on the support host,
- * and this constant null since 2026-08-07), but everything visible is not the
- * same as verified. If a second hamdam.com.au entry appears in the dashboard,
- * that is why, and the one to keep is whichever tag matches this value.
+ * So the only way to use this constant is to turn automatic injection OFF
+ * first, in the Cloudflare dashboard, since PATCH is refused. If you do that,
+ * set this to `a3514c7052c648d985b8912603a2a7f8`, the EXISTING site's token,
+ * so the history from 29 August continues rather than restarting. It is not a
+ * secret: it ships in the HTML of every page and identifies a zone.
  *
- * `auto_install` was set to false at creation, deliberately. Cloudflare's
- * automatic injection rewrites HTML in flight and BaseLayout already emits the
- * tag. Use one or the other, never both, or every page view is counted twice.
- *
- * Committed rather than kept in an environment variable, which is safe because
- * it is not a secret: it ships in the HTML of every page, and it identifies a
- * zone rather than an account. Committing it removes the second dashboard trip
- * that a Workers Builds variable would need, and puts the value under review
- * like anything else.
+ * Whether that is worth doing is a real question with a real answer on each
+ * side. The in-code tag is versioned, reviewable and guarded by
+ * `scripts/predeploy-check.mjs`. The injected one needs no code at all and has
+ * been working for ten days. What settles it for now is that injection is
+ * already running and already has the data, and swapping costs a dashboard
+ * trip to buy something that is working.
  *
  * @type {string | null}
  */
-export const PRODUCTION_BEACON_TOKEN = '307af77792884ee5bdfdcc1418ff0f19';
+export const PRODUCTION_BEACON_TOKEN = null;
 
 /**
  * A Cloudflare Web Analytics site token is 32 hexadecimal characters.
@@ -207,7 +221,12 @@ export function describeBeaconDecision() {
     return `analytics: beacon enabled (token ...${CF_BEACON_TOKEN.slice(-6)})`;
   }
   if (!PRODUCTION_BEACON_TOKEN) {
-    return 'analytics: beacon OFF, no production token committed yet (see src/lib/analytics.js)';
+    // Reworded 2026-09-08. It used to say "no production token committed yet",
+    // which read as a job half done and is the belief that produced a
+    // duplicate Web Analytics site. No in-code token is the intended state:
+    // Cloudflare's automatic injection counts the page views, at the edge,
+    // where nothing in this build can see it.
+    return 'analytics: no in-code beacon (intended); page views come from Cloudflare automatic injection';
   }
   if (!isWorkersCiBuild()) {
     return 'analytics: beacon off, not a Workers Builds run (local builds do not report)';

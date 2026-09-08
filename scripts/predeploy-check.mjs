@@ -140,13 +140,15 @@ if (committedBeacon && !beaconShips) {
   );
 }
 
-// Not a failure, because it has been the state of this repository since
-// 2026-08-07 and blocking every deploy on it would only teach people to pass
-// --force. It is loud because the privacy policy already tells visitors this
-// site counts page views, and right now nothing does.
+// No token is the CORRECT state as of 2026-09-08, so this is a one-line
+// reminder rather than the alarm it used to be. Page views are counted by
+// Cloudflare's automatic injection, which rewrites the HTML at the edge and
+// therefore leaves nothing in this build to look at. The earlier wording said
+// this deploy ships "with no page-view counting at all", which was wrong and
+// is exactly the belief that led to a duplicate site being created.
 if (!committedBeacon && !explicitBeacon) {
-  console.warn(
-    '  Note: no Cloudflare Web Analytics token, so this deploy ships with no page-view counting at all (see src/lib/analytics.js).',
+  console.log(
+    '  Note: no in-code beacon, as intended. Page views come from Cloudflare automatic injection (see src/lib/analytics.js).',
   );
 }
 

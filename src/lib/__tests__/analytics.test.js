@@ -102,19 +102,22 @@ describe('resolveBeaconToken', () => {
 });
 
 describe('PRODUCTION_BEACON_TOKEN', () => {
-  // Set 2026-09-07, so this is no longer conditional. It guards the two ways a
-  // real value goes wrong in place: a placeholder pasted over it, or a typo in
-  // the shape. Either one renders a tag that reports nowhere, which is the
-  // failure this whole file is arranged to prevent.
-  it('is a well-formed token, never null and never a placeholder', () => {
-    expect(PRODUCTION_BEACON_TOKEN).not.toBeNull();
-    expect(normalizeBeaconToken(PRODUCTION_BEACON_TOKEN)).toBe(PRODUCTION_BEACON_TOKEN);
+  // Null on purpose since 2026-09-08, and the test says so rather than
+  // shrugging, because "it is null" used to mean "nobody has set it up yet"
+  // and now means the opposite: this site already has Cloudflare Web
+  // Analytics through automatic injection, and a value here would be a second
+  // beacon counting every page view twice. The file comment has the detail.
+  it('is null, because automatic injection already covers this site', () => {
+    expect(PRODUCTION_BEACON_TOKEN).toBeNull();
   });
 
-  // The value cannot be read back from the API: create is permitted with this
-  // account's token and both read endpoints are 403. This line is the copy.
-  it('is the site token created for hamdam.com.au, not a stand-in', () => {
-    expect(PRODUCTION_BEACON_TOKEN).toBe('307af77792884ee5bdfdcc1418ff0f19');
+  // Kept for the day somebody turns injection off and fills this in: a
+  // placeholder or a typo must still fail closed rather than render a tag
+  // that reports nowhere.
+  it('would still have to be well formed if it were ever set', () => {
+    if (PRODUCTION_BEACON_TOKEN !== null) {
+      expect(normalizeBeaconToken(PRODUCTION_BEACON_TOKEN)).toBe(PRODUCTION_BEACON_TOKEN);
+    }
   });
 });
 
