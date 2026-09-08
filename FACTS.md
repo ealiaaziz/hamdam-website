@@ -145,6 +145,26 @@ Note on the state of the evidence, so this block is not mistaken for a finding o
   - No dollar amounts in any marketing copy. The listing does show prices; that is not permission to repeat them.
 - Free tier: 15 reflections per month. (Source: hamdam.com.au)
 - Hamdam Plus subscription: unlimited reflections, archive and insights, iCloud sync, Health body signals, poet deep-dives beyond Hafez and Rumi. Monthly or yearly, 7-day free trial for new subscribers. (Source: hamdam.com.au)
+
+### Free against Plus for 1.4 — VERIFIED 2026-09-08 against the shipping code
+The two lines above cite hamdam.com.au, which is this site citing itself. The gates below were read out of hamdam-ios `origin/feature/v1.4-games`, and each names the symbol that enforces it, so the next person can check rather than trust. Corroborated by the Free-vs-Plus marketing brief sent to Sima on 2026-09-08, which was compiled from the same code.
+
+| Gate | Free | Plus | Enforced by |
+|---|---|---|---|
+| Writing a reflection | 15 per calendar month | unlimited | `UsageTracker.freeMonthlyLimit = 15` |
+| Reading back / insights | last 14 days | everything | `PlusInvitationPolicy.freeInsightsWindowDays = 14` |
+| Asking Hafez, the Faal | 3 a day | unlimited | `RootsTabView.freeFaalDailyLimit = 3` |
+| The Garden's games | 3 plays a day | unlimited | `GamesPlayLedger.freeDailyPlays = 3` |
+
+- **The three plays are pooled across three games, not three each, and Chistan is not one of them.** The pool is Mosha'ereh, Takhte Nard and Hokm; Chistan is the daily riddle and is never counted (`GamesPlayGate.swift` header). So "four games, three plays a day" is false in both directions and must not be written.
+- **Gol ya Pooch is not in 1.4** (`GamesAvailability.golYaPoochBuilt = false`, deviation D50, Ealia 2026-09-06). Neither it nor its universal name, Bloom or Bare, may appear in any copy.
+- **Mosha'ereh is not offered to a `.universal` reader at all**, because it is verse capping and cannot exist without Persian poetry. Naming it to an audience that cannot play it is an accuracy problem, not a style one.
+- Health: **reading** sleep and movement for the Garden's coaches is free; **body signals attached to a reflection** are Plus (`SettingsHealthCard.swift` gates `bodySignalsEnabled` on `isSubscribed`). Both statements are true of different surfaces, so neither "Health is free" nor "Health is Plus" is safe on its own.
+
+### The library does not grow — VERIFIED 2026-09-08, and a live claim was removed
+- **The bundled library is fixed at 500 verses and does not grow.** Any line promising new verses, new content weekly, or a growing library is false.
+- **This was live.** `/terms/` listed "New verses and reflections added each week" as a Hamdam Plus benefit, and `/fa/terms/` carried the same line. Removed from both on 2026-09-08. It is worse than a marketing overreach because it sat in the Terms as a description of what a paying subscriber receives.
+- Nobody had checked it since the library stopped growing; it was found by testing the site against the Free-vs-Plus brief's own do-not list rather than by reading the page.
 - Founding Companion: one-time lifetime purchase, Family Sharing supported. (Source: hamdam.com.au)
 - Do not state dollar amounts in marketing; site defers to App Store. Note: one pricing tier previously flagged internally as indefensible — pricing claims need Ealia's sign-off until resolved.
 
