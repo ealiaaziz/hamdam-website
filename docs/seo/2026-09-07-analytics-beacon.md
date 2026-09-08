@@ -22,36 +22,53 @@ curl -sS -A "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) \
 
 Zero versus two. Nothing about the site changed between those two commands.
 
-## What that cost
+## What that cost, and what it did not
 
 Acting on the zero, a session created a Web Analytics site by API on
-2026-09-07, committed its token, and deployed. For about an hour production
-carried **two** beacons and every real page view was counted twice, into two
-separate sites. Cloudflare's own guidance, quoted in this repository since the
-beacon module was written, is "use one or the other, never both, or every page
-view is counted twice." It was right.
+2026-09-07, committed its token, and deployed. Seeing the injected tag and the
+new one side by side in a single response, the same session then concluded that
+every page view was being counted twice, pulled the token back out, and told
+Ealia so. **That second conclusion was also wrong**, and it was wrong for the
+same reason as the first: acting on one observation without asking what the
+data said.
 
-Read from the RUM GraphQL API on 2026-09-08:
+The hourly counts, read afterwards:
 
-| Site tag | First data | Source |
+| Hour (UTC) | `fc0907` injected | `aa50ae` in-code |
 |---|---|---|
-| `fc0907d7213743e39c87fc821feee7ae` | 2026-08-29 | automatic injection, token `a3514c7052c648d985b8912603a2a7f8` |
-| `aa50aecebb5643708676c003d943d076` | 2026-09-07 | created in error, now receiving nothing |
+| 2026-09-07 10:00 | 4 | 0 |
+| 2026-09-07 11:00 | 2 | 0 |
+| 2026-09-07 12:00 | 0 | 1 |
+| 2026-09-07 19:00 | 0 | 3 |
+| 2026-09-08 11:00 | 0 | 3 |
 
-## The fix
+The injected site went to zero in the same hour the in-code tag went live and
+has recorded nothing since. Cloudflare stands its injection aside when the page
+already carries a beacon. **There was no sustained double counting**, the two
+tags in one response were a single edge-cached page caught mid-transition, and
+removing the in-code tag briefly left the site depending on an injection that
+fresh fetches showed was no longer happening.
 
-`PRODUCTION_BEACON_TOKEN` is `null` again, so the build emits no tag and the
-injected one is the only beacon on the page. That is a code-only change,
-immediately reversible, and it keeps the site that has the history.
+So the token is back, and it stays. The choice between the two mechanisms is
+settled on determinism: the in-code tag is in the repository, visible to a
+plain curl, versioned, and guarded by `scripts/predeploy-check.mjs`. Injection
+is a dashboard setting that nothing in this repository can see, verify or
+protect, and its invisibility is what made a full day of work argue from a
+blind probe.
 
-Two things could not be done from here, both because the API refuses them for
-this token:
+One rule falls out of that and is worth stating on its own: **do not point this
+constant at `a3514c...`, the injected site's token, to reunite the history.**
+If injection ever does fire alongside the in-code tag, one shared site is
+inflated while two separate sites are merely split. A split is recoverable; an
+inflated number is not. The history before 2026-09-07 stays in the other site.
 
-- `PATCH rum/site_info/{site_tag}` returns **405**, so automatic injection
-  cannot be switched off from a session.
-- `DELETE` on the duplicate site is likewise unavailable, so
-  `aa50aecebb5643708676c003d943d076` has to be removed in the dashboard. It is
-  inert in the meantime.
+| Site tag | Data | Source |
+|---|---|---|
+| `fc0907d7213743e39c87fc821feee7ae` | 2026-08-29 to 2026-09-07 11:00Z | automatic injection, token `a3514c7052c648d985b8912603a2a7f8` |
+| `aa50aecebb5643708676c003d943d076` | 2026-09-07 12:00Z onward | the in-code tag, this repository |
+
+Neither should be deleted. The first holds ten days of history that cannot be
+moved; the second is live.
 
 ## What this token CAN do, which is more than anyone had established
 

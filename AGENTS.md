@@ -106,21 +106,22 @@ generated `src/data/siteCopy.ts`. Never hand-type Persian — regenerate.
 `npm test` (Vitest) and `npm run check:persian` (also a pre-commit
 hook) must pass.
 
-**This site already has Cloudflare Web Analytics, and you cannot see it with
-curl (established 2026-09-08).** It runs through Cloudflare's **automatic
-injection**, which rewrites HTML at the edge for browser user agents only. A
-bare `curl | grep cloudflareinsights` returns 0 and has misled four separate
-checks; add `-A "Mozilla/5.0 ... Chrome/140.0 ..."` and the beacon is there.
-`PRODUCTION_BEACON_TOKEN` in `src/lib/analytics.js` is therefore `null` **on
-purpose**: setting it adds a second beacon and double counts every view, which
-is exactly what a deploy did for an hour on 2026-09-07. The real site tag is
-`fc0907d7213743e39c87fc821feee7ae`, data from 2026-08-29; a duplicate,
-`aa50aecebb5643708676c003d943d076`, was created by that same session and should
-be deleted in the dashboard, because the API refuses DELETE and PATCH for this
-token. The traffic itself **is** readable from a session: account-scoped
-`rumPageloadEventsAdaptiveGroups` in the Cloudflare GraphQL API returns 200
-even though `rum/site_info/list` is 403, and the query is in
-`docs/seo/2026-09-07-analytics-beacon.md`.
+**Analytics: two Web Analytics sites exist, one runs at a time, and curl lies
+about it (settled 2026-09-08).** `PRODUCTION_BEACON_TOKEN` in
+`src/lib/analytics.js` is set and is the live one, on site tag
+`aa50aecebb5643708676c003d943d076`. A second site,
+`fc0907d7213743e39c87fc821feee7ae`, ran through Cloudflare's **automatic
+injection** and holds 2026-08-29 to 2026-09-07; it stopped the hour the in-code
+tag shipped, because injection stands aside when a beacon is already on the
+page. Keep both, delete neither, and **never point the constant at the injected
+site's token** to merge them: if injection ever fires alongside the tag, one
+site inflates while two only split. Injection is invisible to a bare curl,
+which is what made four probes report no analytics at all, so any check needs
+`-A "Mozilla/5.0 ... Chrome/140.0 ..."`. The traffic itself is readable from a
+session: account-scoped `rumPageloadEventsAdaptiveGroups` in the Cloudflare
+GraphQL API returns 200 even though `rum/site_info/list` is 403, and the query
+plus the full story, including two wrong conclusions in opposite directions, is
+in `docs/seo/2026-09-07-analytics-beacon.md`.
 
 OG images/icons regenerate via `node scripts/generate-og.mjs`.
 CSP is enforcing (`public/_headers`): no inline styles or scripts, so keep

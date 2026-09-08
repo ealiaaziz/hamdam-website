@@ -140,15 +140,15 @@ if (committedBeacon && !beaconShips) {
   );
 }
 
-// No token is the CORRECT state as of 2026-09-08, so this is a one-line
-// reminder rather than the alarm it used to be. Page views are counted by
-// Cloudflare's automatic injection, which rewrites the HTML at the edge and
-// therefore leaves nothing in this build to look at. The earlier wording said
-// this deploy ships "with no page-view counting at all", which was wrong and
-// is exactly the belief that led to a duplicate site being created.
+// A warning rather than a block, because there is a second mechanism that may
+// or may not be counting: Cloudflare's automatic injection, which is a
+// dashboard setting nothing here can read. It stood aside the moment the
+// in-code tag shipped, so a deploy with no in-code beacon is a deploy betting
+// on injection resuming. Say that plainly rather than either blocking or
+// implying it is fine.
 if (!committedBeacon && !explicitBeacon) {
-  console.log(
-    '  Note: no in-code beacon, as intended. Page views come from Cloudflare automatic injection (see src/lib/analytics.js).',
+  console.warn(
+    '  Note: no in-code beacon in this build. Counting then depends on Cloudflare automatic injection, which nothing here can verify (see src/lib/analytics.js).',
   );
 }
 

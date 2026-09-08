@@ -60,6 +60,20 @@ What finally showed it was a different kind of question. Account-scoped
 token, even though `rum/site_info/list` is 403, and it listed two site tags
 with data, one of them going back ten days.
 
+**And then the correction was wrong too, which is the part worth keeping.** On
+seeing both tags in one response, the same session concluded the site was
+double counting, removed the in-code beacon, and reported that to Ealia inside
+twenty minutes. The hourly data, which had not been looked at, showed the
+injected site dropped to zero the hour the in-code tag shipped and never
+recovered: Cloudflare stands its injection aside when a beacon is already
+present. Nothing had been double counted, and removing the tag left the site
+briefly counting nothing at all.
+
+Two observations, twenty minutes apart, both acted on immediately, both wrong,
+in opposite directions. The fix in each case was the same and was available
+both times: ask the data what happened over time before acting on what one
+response looks like now.
+
 **Rule.** Absence of evidence from one client is not absence. Before concluding
 a third-party thing is not there, ask what would have to be true for your probe
 to miss it, and then make one probe of a genuinely different kind. Here the

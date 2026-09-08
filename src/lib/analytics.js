@@ -25,39 +25,58 @@
 /**
  * The production site token, from Cloudflare Web Analytics.
  *
- * DELIBERATELY NULL, and this is the one comment in this file to read before
- * changing anything. **This site already has Cloudflare Web Analytics. It has
- * had it since at least 29 August 2026. Setting this constant adds a SECOND
- * beacon and every page view is counted twice.** That is not hypothetical: it
- * was set on 2026-09-07, shipped to production, and did exactly that for about
- * an hour.
+ * SET, and settled on 2026-09-08 after a wrong turn in each direction. Read
+ * the hour table below before changing it, because both of the obvious moves
+ * have already been made and measured.
  *
- * The existing one is Cloudflare's automatic injection, which rewrites the
- * HTML at the edge. It is invisible to every check this repository had been
- * making, and that is why four separate probes concluded the site had no
- * analytics at all:
+ * **This zone has two Web Analytics sites, and they do not run at once.**
  *
- *   curl -sS https://hamdam.com.au/ | grep -c cloudflareinsights     -> 0
- *   curl -sS -A "Mozilla/5.0 ... Chrome/140.0 ..." ... | grep -c ...  -> 1
+ *   fc0907d7213743e39c87fc821feee7ae  Cloudflare's automatic injection, token
+ *                                     a3514c7052c648d985b8912603a2a7f8. Data
+ *                                     from 2026-08-29 to 2026-09-07 11:00Z.
+ *   aa50aecebb5643708676c003d943d076  this constant. Created 2026-09-07 by a
+ *                                     session that believed there was no
+ *                                     analytics at all. Data from 12:00Z that
+ *                                     day, which is the hour the tag shipped.
  *
- * **Cloudflare only injects for a browser user agent.** A bare curl is served
- * a page with no beacon on it. Never conclude anything about analytics on this
- * site from a request that did not send a browser UA.
+ * Automatic injection is invisible to a bare curl, because Cloudflare only
+ * rewrites the HTML for a browser user agent. That is what fooled four
+ * separate probes into reporting no analytics:
  *
- * The two sites, read from the RUM GraphQL API on 2026-09-08:
+ *   curl -sS https://hamdam.com.au/ | grep -c cloudflareinsights          -> 0
+ *   curl -sS -A "Mozilla/5.0 ... Chrome/140.0 ..." ... | grep -c ...      -> 1
  *
- *   fc0907d7213743e39c87fc821feee7ae  the real one. Automatic injection, token
- *                                     a3514c7052c648d985b8912603a2a7f8 visible
- *                                     in the injected tag. Data from 2026-08-29.
- *   aa50aecebb5643708676c003d943d076  created by a session on 2026-09-07 in the
- *                                     belief that none existed. Duplicate. It
- *                                     has ~1 hour of double-counted data and
- *                                     receives nothing now that this is null.
- *                                     Delete it in the dashboard; the API
- *                                     refuses DELETE for this token.
+ * Never conclude anything about analytics here from a request without a
+ * browser UA.
  *
- * What the API allows, which is a strange enough split to be worth writing
- * down, all measured rather than assumed:
+ * The panic that followed that discovery was that the two beacons were double
+ * counting, and this constant was set back to null to stop it. The hourly
+ * counts say otherwise, and they are the reason it is set again:
+ *
+ *   hour (UTC)          fc0907 (injected)   aa50ae (this tag)
+ *   2026-09-07 10:00            4                  0
+ *   2026-09-07 11:00            2                  0
+ *   2026-09-07 12:00            0                  1     <- tag ships
+ *   2026-09-07 19:00            0                  3
+ *   2026-09-08 11:00            0                  3
+ *
+ * The injected site went to zero in the same hour this tag went live and has
+ * had nothing since. So injection stands aside when the page already carries a
+ * beacon: the two were never both counting, and the "double counting" was one
+ * response caught mid-transition, not a state anything was in.
+ *
+ * Which leaves the real choice, and it is settled the deterministic way. This
+ * tag is in the repository, visible to a plain curl, versioned, reviewable and
+ * guarded by `scripts/predeploy-check.mjs`. Injection is a dashboard setting
+ * nothing here can see, verify or protect, and it is what made a whole day of
+ * work argue from a blind probe.
+ *
+ * Do NOT change this to a3514c... to reunite the history. If injection ever
+ * does fire alongside this tag, pointing both at one site inflates that site;
+ * pointing them at two merely splits it. Split is recoverable, inflated is
+ * not. The pre-2026-09-07 history stays where it is, in the other site.
+ *
+ * What the API allows, all measured rather than assumed:
  *
  *   - `POST rum/site_info`             200, creates a site, returns its token
  *   - `GET  rum/site_info/list`        403 Authentication error
@@ -66,26 +85,17 @@
  *   - GraphQL `rumPageloadEventsAdaptiveGroups`, account-scoped:  **200, works**
  *   - GraphQL zone analytics           refused, `zone.analytics.read` missing
  *
- * That last pair is the useful one and it was missed for a long time: the
- * traffic itself is readable from here even though the site list is not.
- * `docs/seo/2026-09-07-analytics-beacon.md` carries the query.
+ * That fifth row is the one that finally answered this, and it had been missed
+ * for weeks: the traffic is readable from a session even though the site list
+ * is not. `docs/seo/2026-09-07-analytics-beacon.md` carries the query.
  *
- * So the only way to use this constant is to turn automatic injection OFF
- * first, in the Cloudflare dashboard, since PATCH is refused. If you do that,
- * set this to `a3514c7052c648d985b8912603a2a7f8`, the EXISTING site's token,
- * so the history from 29 August continues rather than restarting. It is not a
- * secret: it ships in the HTML of every page and identifies a zone.
- *
- * Whether that is worth doing is a real question with a real answer on each
- * side. The in-code tag is versioned, reviewable and guarded by
- * `scripts/predeploy-check.mjs`. The injected one needs no code at all and has
- * been working for ten days. What settles it for now is that injection is
- * already running and already has the data, and swapping costs a dashboard
- * trip to buy something that is working.
+ * Committed rather than kept in an environment variable, which is safe because
+ * it is not a secret: it ships in the HTML of every page and identifies a zone
+ * rather than an account.
  *
  * @type {string | null}
  */
-export const PRODUCTION_BEACON_TOKEN = null;
+export const PRODUCTION_BEACON_TOKEN = '307af77792884ee5bdfdcc1418ff0f19';
 
 /**
  * A Cloudflare Web Analytics site token is 32 hexadecimal characters.
@@ -221,12 +231,10 @@ export function describeBeaconDecision() {
     return `analytics: beacon enabled (token ...${CF_BEACON_TOKEN.slice(-6)})`;
   }
   if (!PRODUCTION_BEACON_TOKEN) {
-    // Reworded 2026-09-08. It used to say "no production token committed yet",
-    // which read as a job half done and is the belief that produced a
-    // duplicate Web Analytics site. No in-code token is the intended state:
-    // Cloudflare's automatic injection counts the page views, at the edge,
-    // where nothing in this build can see it.
-    return 'analytics: no in-code beacon (intended); page views come from Cloudflare automatic injection';
+    // Null is NOT the intended state on this site: it means the in-code tag
+    // is gone and the only thing that could still be counting is Cloudflare's
+    // automatic injection, which nothing here can see or verify. Say so.
+    return 'analytics: NO in-code beacon; counting depends entirely on Cloudflare injection (see src/lib/analytics.js)';
   }
   if (!isWorkersCiBuild()) {
     return 'analytics: beacon off, not a Workers Builds run (local builds do not report)';

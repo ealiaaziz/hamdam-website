@@ -102,22 +102,21 @@ describe('resolveBeaconToken', () => {
 });
 
 describe('PRODUCTION_BEACON_TOKEN', () => {
-  // Null on purpose since 2026-09-08, and the test says so rather than
-  // shrugging, because "it is null" used to mean "nobody has set it up yet"
-  // and now means the opposite: this site already has Cloudflare Web
-  // Analytics through automatic injection, and a value here would be a second
-  // beacon counting every page view twice. The file comment has the detail.
-  it('is null, because automatic injection already covers this site', () => {
-    expect(PRODUCTION_BEACON_TOKEN).toBeNull();
+  // Set again on 2026-09-08 after being nulled for half an hour on a
+  // double-counting scare the hourly data disproved. The injected site went to
+  // zero the hour this tag shipped and has had nothing since, so the two never
+  // counted at once. This tag is the deterministic one: in the repository,
+  // visible to a plain curl, guarded by scripts/predeploy-check.mjs.
+  it('is the site token this repository owns', () => {
+    expect(PRODUCTION_BEACON_TOKEN).toBe('307af77792884ee5bdfdcc1418ff0f19');
+    expect(normalizeBeaconToken(PRODUCTION_BEACON_TOKEN)).toBe(PRODUCTION_BEACON_TOKEN);
   });
 
-  // Kept for the day somebody turns injection off and fills this in: a
-  // placeholder or a typo must still fail closed rather than render a tag
-  // that reports nowhere.
-  it('would still have to be well formed if it were ever set', () => {
-    if (PRODUCTION_BEACON_TOKEN !== null) {
-      expect(normalizeBeaconToken(PRODUCTION_BEACON_TOKEN)).toBe(PRODUCTION_BEACON_TOKEN);
-    }
+  // Never the injected site's token. Pointing both mechanisms at one site
+  // would inflate it if injection ever fires alongside this tag; two sites
+  // merely splits the history, which is recoverable.
+  it('is not the automatically injected site token', () => {
+    expect(PRODUCTION_BEACON_TOKEN).not.toBe('a3514c7052c648d985b8912603a2a7f8');
   });
 });
 
