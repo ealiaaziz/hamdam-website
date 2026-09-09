@@ -1,0 +1,117 @@
+{
+ "_readme": "Fal pool - Hafez verses that ANSWER a held question. Persian copied byte-exact from the official Ganjoor data export (github.com/ganjoor/ganjoor-data), the same text ganjoor.net serves. Screened clear of wine imagery and of verses already published on @hamdam_au. Each carries its canonical Ganjoor URL as provenance - better provenance than verse-queue.json has.",
+ "_source": "https://cdn.jsdelivr.net/gh/ganjoor/ganjoor-data@main/poets/hafez/ghazal/{slug}.json - 495 ghazals, 8,386 hemistichs, fetched 9 Sep 2026. The whole canon is reachable this way: 240 poets, 135,319 poems, plain HTTPS, no key. Supply was never the constraint.",
+ "_selection_rule": "A fal verse must RESOLVE something: relief promised, patience rewarded, the lost returning, do not grieve. A verse about the beloved's beauty is not a fal answer, however beautiful. The test is whether it could answer a question a stranger is holding.",
+ "_ghazal_255_note": "Ghazal 255 is the gham makhor ghazal - the single most drawn fal in Persian, and the one families turn to when someone is worried. Nine of its beyts qualify and four are pooled here. Space them across weeks rather than running them together, or the format reads as one poem rather than a divination.",
+ "_still_needed": "Each verse needs englishSaid written before it can ship - Ganjoor is Persian only. That is now the real constraint, not supply. Ealia reviews every Persian and English line.",
+ "verses": [
+  {
+   "id": "hafez-sh255-b2",
+   "ghazal": "\u063a\u0632\u0644 \u0634\u0645\u0627\u0631\u0647\u0654 \u06f2\u06f5\u06f5",
+   "source": "Divan-e Hafez, Ghazal 255",
+   "ganjoor": "https://ganjoor.net/hafez/ghazal/sh255",
+   "persian": "\u0627\u06cc \u062f\u0644 \u063a\u0645\u062f\u06cc\u062f\u0647\u060c \u062d\u0627\u0644\u062a \u0628\u0650\u0647 \u0634\u0648\u062f\u060c \u062f\u0644 \u0628\u064e\u062f \u0645\u06a9\u0646\n\u0648\u06cc\u0646 \u0633\u0631\u0650 \u0634\u0648\u0631\u06cc\u062f\u0647 \u0628\u0627\u0632 \u0622\u06cc\u062f \u0628\u0647 \u0633\u0627\u0645\u0627\u0646 \u063a\u0645 \u0645\u062e\u0648\u0631",
+   "gloss": "Grieving heart, your state will improve - do not despair. This restless head will find its order again. Do not grieve.",
+   "used": false
+  },
+  {
+   "id": "hafez-sh255-b4",
+   "ghazal": "\u063a\u0632\u0644 \u0634\u0645\u0627\u0631\u0647\u0654 \u06f2\u06f5\u06f5",
+   "source": "Divan-e Hafez, Ghazal 255",
+   "ganjoor": "https://ganjoor.net/hafez/ghazal/sh255",
+   "persian": "\u062f\u0648\u0631\u0650 \u06af\u0631\u062f\u0648\u0646 \u06af\u0631 \u062f\u0648 \u0631\u0648\u0632\u06cc \u0628\u0631 \u0645\u0631\u0627\u062f\u0650 \u0645\u0627 \u0646\u0631\u0641\u062a\n\u062f\u0627\u0626\u0645\u0627\u064b \u06cc\u06a9\u0633\u0627\u0646 \u0646\u0628\u0627\u0634\u062f \u062d\u0627\u0644\u0650 \u062f\u0648\u0631\u0627\u0646 \u063a\u0645 \u0645\u062e\u0648\u0631",
+   "gloss": "If the turning of the world went against us for a day or two - the times are never permanently one way. Do not grieve.",
+   "used": false
+  },
+  {
+   "id": "hafez-sh255-b5",
+   "ghazal": "\u063a\u0632\u0644 \u0634\u0645\u0627\u0631\u0647\u0654 \u06f2\u06f5\u06f5",
+   "source": "Divan-e Hafez, Ghazal 255",
+   "ganjoor": "https://ganjoor.net/hafez/ghazal/sh255",
+   "persian": "\u0647\u0627\u0646 \u0645\u064e\u0634\u0648 \u0646\u0648\u0645\u06cc\u062f \u0686\u0648\u0646 \u0648\u0627\u0642\u0650\u0641 \u0646\u0650\u0647\u200c\u0627\u06cc \u0627\u0632 \u0633\u0650\u0631\u0651\u0650 \u063a\u06cc\u0628\n\u0628\u0627\u0634\u062f \u0627\u0646\u062f\u0631 \u067e\u0631\u062f\u0647 \u0628\u0627\u0632\u06cc\u200c\u0647\u0627\u06cc\u0650 \u067e\u0646\u0647\u0627\u0646 \u063a\u0645 \u0645\u062e\u0648\u0631",
+   "gloss": "Do not lose hope - you are not privy to what is hidden. There may be games being played behind the curtain. Do not grieve.",
+   "used": false
+  },
+  {
+   "id": "hafez-sh255-b8",
+   "ghazal": "\u063a\u0632\u0644 \u0634\u0645\u0627\u0631\u0647\u0654 \u06f2\u06f5\u06f5",
+   "source": "Divan-e Hafez, Ghazal 255",
+   "ganjoor": "https://ganjoor.net/hafez/ghazal/sh255",
+   "persian": "\u06af\u0631\u0686\u0647 \u0645\u0646\u0632\u0644 \u0628\u0633 \u062e\u0637\u0631\u0646\u0627\u06a9 \u0627\u0633\u062a \u0648 \u0645\u0642\u0635\u062f \u0628\u0633 \u0628\u0639\u06cc\u062f\n\u0647\u06cc\u0686 \u0631\u0627\u0647\u06cc \u0646\u06cc\u0633\u062a \u06a9\u0622\u0646 \u0631\u0627 \u0646\u06cc\u0633\u062a \u067e\u0627\u06cc\u0627\u0646\u060c \u063a\u0645 \u0645\u062e\u0648\u0631",
+   "gloss": "Though the stage is dangerous and the destination far - there is no road that has no end. Do not grieve.",
+   "used": false
+  },
+  {
+   "id": "hafez-sh164-b1",
+   "ghazal": "\u063a\u0632\u0644 \u0634\u0645\u0627\u0631\u0647\u0654 \u06f1\u06f6\u06f4",
+   "source": "Divan-e Hafez, Ghazal 164",
+   "ganjoor": "https://ganjoor.net/hafez/ghazal/sh164",
+   "persian": "\u0646\u0641\u0633\u0650 \u0628\u0627\u062f\u0650 \u0635\u0628\u0627 \u0645\u064f\u0634\u06a9\u200c\u0641\u0634\u0627\u0646 \u062e\u0648\u0627\u0647\u062f \u0634\u062f\n\u0639\u0627\u0644\u064e\u0645\u0650 \u067e\u06cc\u0631 \u062f\u06af\u0631\u0628\u0627\u0631\u0647 \u062c\u0648\u0627\u0646 \u062e\u0648\u0627\u0647\u062f \u0634\u062f",
+   "gloss": "The breath of the morning wind will scatter musk. The old world will be young again.",
+   "used": false
+  },
+  {
+   "id": "hafez-sh174-b1",
+   "ghazal": "\u063a\u0632\u0644 \u0634\u0645\u0627\u0631\u0647\u0654 \u06f1\u06f7\u06f4",
+   "source": "Divan-e Hafez, Ghazal 174",
+   "ganjoor": "https://ganjoor.net/hafez/ghazal/sh174",
+   "persian": "\u0645\u0698\u062f\u0647 \u0627\u06cc \u062f\u0644 \u06a9\u0647 \u062f\u06af\u0631 \u0628\u0627\u062f\u0650 \u0635\u0628\u0627 \u0628\u0627\u0632\u0622\u0645\u062f\n\u0647\u062f\u0647\u062f \u062e\u0648\u0634\u200c\u062e\u0628\u0631 \u0627\u0632 \u0637\u064e\u0631\u0652\u0641\u0650 \u0633\u0628\u0627 \u0628\u0627\u0632\u0622\u0645\u062f",
+   "gloss": "Good news, heart - the morning wind has come back. The hoopoe has returned from Sheba bringing word.",
+   "used": false
+  },
+  {
+   "id": "hafez-sh232-b1",
+   "ghazal": "\u063a\u0632\u0644 \u0634\u0645\u0627\u0631\u0647\u0654 \u06f2\u06f3\u06f2",
+   "source": "Divan-e Hafez, Ghazal 232",
+   "ganjoor": "https://ganjoor.net/hafez/ghazal/sh232",
+   "persian": "\u0628\u0631 \u0633\u0631\u0650 \u0622\u0646\u0645 \u06a9\u0647 \u06af\u0631 \u0632 \u062f\u0633\u062a \u0628\u0631\u0622\u06cc\u062f\n\u062f\u0633\u062a \u0628\u0647\u200c\u06a9\u0627\u0631\u06cc \u0632\u0646\u0645 \u06a9\u0647 \u063a\u0635\u0651\u0647 \u0633\u0631\u0622\u06cc\u062f",
+   "gloss": "I have it in mind that if it lies within my power, I will set my hand to something that ends the sorrow.",
+   "used": false
+  },
+  {
+   "id": "hafez-sh231-b1",
+   "ghazal": "\u063a\u0632\u0644 \u0634\u0645\u0627\u0631\u0647\u0654 \u06f2\u06f3\u06f1",
+   "source": "Divan-e Hafez, Ghazal 231",
+   "ganjoor": "https://ganjoor.net/hafez/ghazal/sh231",
+   "persian": "\u06af\u0641\u062a\u0645 \u063a\u0645\u0650 \u062a\u0648 \u062f\u0627\u0631\u0645 \u06af\u0641\u062a\u0627 \u063a\u0645\u064e\u062a \u0633\u0631\u0622\u06cc\u062f\n\u06af\u0641\u062a\u0645 \u06a9\u0647 \u0645\u0627\u0647\u0650 \u0645\u0646 \u0634\u0648 \u06af\u0641\u062a\u0627 \u0627\u06af\u0631 \u0628\u0631\u0622\u06cc\u062f",
+   "gloss": "I said: I carry sorrow for you. It said: your sorrow will end. I said: be my moon. It said: if it comes to pass.",
+   "used": false
+  },
+  {
+   "id": "hafez-sh235-b1",
+   "ghazal": "\u063a\u0632\u0644 \u0634\u0645\u0627\u0631\u0647\u0654 \u06f2\u06f3\u06f5",
+   "source": "Divan-e Hafez, Ghazal 235",
+   "ganjoor": "https://ganjoor.net/hafez/ghazal/sh235",
+   "persian": "\u0632\u0647\u06cc \u062e\u062c\u0633\u062a\u0647 \u0632\u0645\u0627\u0646\u06cc \u06a9\u0647 \u06cc\u0627\u0631 \u0628\u0627\u0632\u0622\u06cc\u062f\n\u0628\u0647 \u06a9\u0627\u0645\u0650 \u063a\u0645\u0632\u062f\u06af\u0627\u0646 \u063a\u0645\u06af\u064f\u0633\u0627\u0631 \u0628\u0627\u0632\u0622\u06cc\u062f",
+   "gloss": "What a blessed hour, when the friend comes back - when the one who eases sorrow returns to those who carry it.",
+   "used": false
+  },
+  {
+   "id": "hafez-sh236-b2",
+   "ghazal": "\u063a\u0632\u0644 \u0634\u0645\u0627\u0631\u0647\u0654 \u06f2\u06f3\u06f6",
+   "source": "Divan-e Hafez, Ghazal 236",
+   "ganjoor": "https://ganjoor.net/hafez/ghazal/sh236",
+   "persian": "\u062f\u0627\u0631\u0645 \u0627\u0645\u0651\u06cc\u062f \u0628\u0631 \u0627\u06cc\u0646 \u0627\u0634\u06a9\u0650 \u0686\u0648 \u0628\u0627\u0631\u0627\u0646 \u06a9\u0647 \u062f\u06af\u0631\n\u0628\u0631\u0642\u0650 \u062f\u0648\u0644\u062a \u06a9\u0647 \u0628\u0650\u0631\u064e\u0641\u062a \u0627\u0632 \u0646\u0638\u0631\u0645 \u0628\u0627\u0632\u0622\u06cc\u062f",
+   "gloss": "I have hope, on these tears like rain, that the lightning of fortune which passed out of my sight will come back.",
+   "used": false
+  },
+  {
+   "id": "hafez-sh407-b2",
+   "ghazal": "\u063a\u0632\u0644 \u0634\u0645\u0627\u0631\u0647\u0654 \u06f4\u06f0\u06f7",
+   "source": "Divan-e Hafez, Ghazal 407",
+   "ganjoor": "https://ganjoor.net/hafez/ghazal/sh407",
+   "persian": "\u06af\u0641\u062a\u0645 \u0627\u06cc \u0628\u062e\u062a \u0628\u062e\u0641\u062a\u06cc\u062f\u06cc \u0648 \u062e\u0648\u0631\u0634\u06cc\u062f \u062f\u0645\u06cc\u062f\n\u06af\u0641\u062a \u0628\u0627 \u0627\u06cc\u0646 \u0647\u0645\u0647 \u0627\u0632 \u0633\u0627\u0628\u0642\u0647 \u0646\u0648\u0645\u06cc\u062f \u0645\u0634\u0648",
+   "gloss": "I said: fortune, you slept, and the sun has risen. It said: for all that, do not despair of what went before.",
+   "used": false
+  },
+  {
+   "id": "hafez-sh439-b2",
+   "ghazal": "\u063a\u0632\u0644 \u0634\u0645\u0627\u0631\u0647\u0654 \u06f4\u06f3\u06f9",
+   "source": "Divan-e Hafez, Ghazal 439",
+   "ganjoor": "https://ganjoor.net/hafez/ghazal/sh439",
+   "persian": "\u062a\u0639\u0628\u06cc\u0631 \u0631\u0641\u062a \u00ab\u06cc\u0627\u0631 \u0633\u0641\u0631\u06a9\u0631\u062f\u0647 \u0645\u06cc\u200c\u0631\u0633\u062f\u00bb\n\u0627\u06cc \u06a9\u0627\u062c \u0647\u0631 \u0686\u0647 \u0632\u0648\u062f\u062a\u0631 \u0627\u0632 \u062f\u0631 \u062f\u0631\u0622\u0645\u062f\u06cc",
+   "gloss": "The reading came out: 'the one who travelled is arriving.' If only they would come through the door sooner.",
+   "used": false
+  }
+ ]
+}
