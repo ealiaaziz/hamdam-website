@@ -143,7 +143,25 @@ async function checkProposal(
     await relayOutcome(env, send, ticketId, change, comments.value, summary);
     return;
   }
-  if (report.headSha === change.head_sha) return; // already asked about this one
+  if (report.headSha === change.head_sha) {
+    // Already asked her about this pull request. That is not the same as the
+    // agent having nothing left to say.
+    //
+    // HAM-68, 9 September 2026: the fix shipped, she was told, and she replied
+    // asking whether her existing ad would be corrected too. The agent
+    // answered on the issue within three minutes. She never saw it, because
+    // this line returned before anything looked, and it stayed unsent for over
+    // an hour until somebody went and read the issue by hand. A change of hers
+    // is not allowed to go quiet, and that includes after it has shipped:
+    // shipping is when she is most likely to come back with a question.
+    //
+    // Safe to call unconditionally. parseAgentOutcome scans newest first and
+    // stops dead at a `desk:pr=` comment, so a ticket where nothing has been
+    // said since the proposal yields nothing and sends nothing, and
+    // recordAgentOutcome refuses to send the same message twice.
+    await relayOutcome(env, send, ticketId, change, comments.value, summary);
+    return;
+  }
 
   const ref = changeRef(ticketPublicId(ticketId), report.headSha);
   await proposeChange(env.DB, ticketId, {
