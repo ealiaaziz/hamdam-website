@@ -54,6 +54,37 @@ describe('parseAgentReport', () => {
   });
 });
 
+/**
+ * The sequence that actually happened on HAM-68, 9 September 2026.
+ *
+ * The fix shipped, she was told, and she came back asking whether her existing
+ * ad would be corrected too. The agent answered on the issue three minutes
+ * later. She never saw it: checkProposal returned as soon as it recognised the
+ * pull request it had already asked about, so nothing ever looked for a newer
+ * word from the agent. It sat unsent for over an hour.
+ *
+ * checkProposal now calls relayOutcome on that path too. These two cases are
+ * the reason that is safe to do unconditionally: a ticket where the agent has
+ * spoken since the proposal yields the new message, and a ticket where it has
+ * not yields nothing, so she is never re-sent the report she already has.
+ */
+describe('an agent that speaks again after its change has shipped', () => {
+  const comment2 = (body: string): IssueComment => ({ id: 2, body, user: { login: 'claude[bot]' } });
+  const relayedFromHer = comment2('A further message from the channel owner on this ticket.\n\n```text\nبله ولی من میخواهم آگهی قبلی هم اصلاح بشود\n```');
+  const stoodDown = comment2('<!-- desk:blocked -->\nاصلاح از مسیر خودکار به آن آگهی میرسد\n<!-- desk:end -->');
+
+  it('is heard when it has said something since the proposal', () => {
+    expect(parseAgentOutcome([report(34, SHA_A), relayedFromHer, stoodDown]))
+      .toEqual({ kind: 'blocked', text: 'اصلاح از مسیر خودکار به آن آگهی میرسد' });
+  });
+
+  it('stays silent when the proposal is still the newest word', () => {
+    // Without this, calling relayOutcome here would email her the report she
+    // was already sent, on every ticket, every pass.
+    expect(parseAgentOutcome([report(34, SHA_A), relayedFromHer])).toBeNull();
+  });
+});
+
 describe('parseAgentOutcome', () => {
   const ask = (text: string) => comment(`<!-- desk:ask -->\n${text}\n<!-- desk:end -->`);
   const blocked = (text: string) => comment(`<!-- desk:blocked -->\n${text}\n<!-- desk:end -->`);
