@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Hamdam reel frame renderer, v10.
+"""Hamdam reel frame renderer, v11.
 
     python3 hamdam_reel_render.py <conceptId> <stage 1..5> [outDir]
 
@@ -12,23 +12,25 @@
 Stage 0 exists but is NOT rendered by the task - a scene-only page consumed
 0.8s of a 3.5s average watch.
 
-WHY THIS ORDER. Average watch is 5.6s on a 14s reel, so page 2 is the only
+WHY THIS ORDER. Average watch is under 4s on a 14s reel, so page 2 is the only
 page most viewers reach after the headline. What gets forwarded is a line
 someone RECOGNISES, not a line that informs them - so the lesson and the send
 prompt go there, and the argument moves to page 3 where it rewards whoever
 stays and still does the credibility work.
 
-See _sendability_test and _cta_principle_addendum in reel-concepts.json before
-editing any prompt copy.
+NEVER FADE UP FROM BLACK when composing. Instagram ignores thumb_offset on
+reels and takes frame zero as the cover, so a black first frame ships a black
+tile and viewers scroll past before it plays. That collapsed reach on 7 and
+9 September 2026. Check frame zero measures above 25 brightness before
+publishing.
 
-FOOTER carries the app, on every page, from second one. Instagram allows no
-links in reel captions, so the only path is profile -> link in bio; naming the
-app gives a reason to make that trip.
+TWO SOURCES OF VERSE TEXT. Concepts drawn from verse-queue.json name a
+verseId. Concepts drawn from Ganjoor carry verseId 'EXTERNAL' and their own
+byte-exact 'persian' field plus a 'ganjoor' URL for provenance. Either way the
+Persian is copied, never typed, and verse-queue.json is never edited.
 
-CONTRAST: secondary text is near-white and the scrim under it is deep. Dim
-cream on a mid-tone wash was unreadable on a phone - corrected 1 Sep 2026.
-
-Persian is read byte-exact from the queue and never typed.
+Page 5 prefers englishSaid - English written as English - over the queue's
+literal gloss. See _english_said_rule in reel-concepts.json.
 """
 import sys, os, json, math, random
 from PIL import Image, ImageDraw, ImageFont, ImageFilter, features
@@ -46,9 +48,15 @@ assert 0 <= STAGE < NSTAGES
 
 concepts = json.load(open(f'{BASE}/reel-concepts.json'))['concepts']
 C = next(c for c in concepts if c['id'] == CONCEPT_ID)
-V = next(v for v in json.load(open(f'{BASE}/verse-queue.json')) if v['id'] == C['verseId'])
+# Concepts sourced from Ganjoor carry verseId EXTERNAL and their own byte-exact
+# 'persian' field. verse-queue.json is never edited; it stays as it is.
+if C.get('verseId') == 'EXTERNAL':
+    V = {'persian': C['persian'], 'english': C.get('englishSaid', '')}
+else:
+    V = next(v for v in json.load(open(f'{BASE}/verse-queue.json')) if v['id'] == C['verseId'])
 FA = [l.strip() for l in V['persian'].split('\n') if l.strip()]
-EN = V['english']
+# englishSaid is English written as English; page 5 prefers it over the queue's literal gloss.
+EN = C.get('englishSaid') or V['english']
 assert len(FA) in (2, 4)
 
 S = 2
@@ -335,9 +343,9 @@ card.paste(inner, (FB, FB))
 cd = ImageDraw.Draw(card)
 cd.rectangle([FB-S, FB-S, FB+IW+S-1, FB+IH+S-1], outline=hx('1A140E'), width=S)
 
-# App strip, on every page from second one. Instagram allows no links in reel
-# captions, so the only route is profile -> link in bio; naming the app and
-# what it does gives a reason to make that trip. Both lines auto-fit.
+# App strip, on every page. Instagram allows no links in reel captions, so the
+# only route is profile -> link in bio; naming the app and what it does gives a
+# reason to make that trip. Both lines auto-fit.
 _fa = '\u0627\u067e \u0647\u0645\u062f\u0645 \u0631\u0627 \u062f\u0627\u0646\u0644\u0648\u062f \u06a9\u0646\u06cc\u062f \u0628\u0631\u0627\u06cc \u0641\u0627\u0644 \u062d\u0627\u0641\u0638 \u0648 \u062a\u0642\u0648\u06cc\u0645 \u0641\u0627\u0631\u0633\u06cc'
 _en = 'Download Hamdam for daily Persian poetry'
 fsz = 22
