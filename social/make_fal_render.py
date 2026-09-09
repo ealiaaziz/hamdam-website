@@ -1,27 +1,27 @@
 #!/usr/bin/env python3
 """Build the fal renderer from the committed reel renderer.
 
-    python3 make_fal_render.py            # writes fal_render.py beside it
+    python3 make_fal_render.py <verseId>   # writes fal_render.py beside it
     python3 fal_render.py <verseId> <1..6> <outDir>
 
 The fal is a different object from a verse reel: it asks the viewer to do
 something before it shows them anything. Pages:
 
-  1  Make your intention        نیت کن
-  2  Hold one question          یک سؤال در دل نگه دار
+  1  Make your intention        \u0646\u06cc\u062a \u06a9\u0646
+  2  Hold one question          \u06cc\u06a9 \u0633\u0624\u0627\u0644 \u062f\u0631 \u062f\u0644 \u0646\u06af\u0647 \u062f\u0627\u0631
   3  the held beat              nothing on screen - three seconds
   4  the verse                  under a small 'today's fal from Hamdam'
   5  the English
-  6  the app                    غزل کامل را در همدم بخوان
+  6  the app                    \u063a\u0632\u0644 \u06a9\u0627\u0645\u0644 \u0631\u0627 \u062f\u0631 \u0647\u0645\u062f\u0645 \u0628\u062e\u0648\u0627\u0646
 
 Page 3 is the point of the format. Average watch is under 4 seconds, so a
 three second pause is a real risk - but it is the only reel that asks the
 viewer to DO something, and that is what might produce the profile visits
-nothing else has.
+nothing else has. Verification must NOT fail stage 3 for having no text.
 
-The fal takes its verse straight from verse-queue.json by id; there is no
-concept entry. Persian is byte-exact from the queue as always. The English
-is passed in as EN_OVERRIDE because a fal wants written English, not a gloss.
+The fal takes its verse byte-exact from fal-pool.json (or verse-queue.json for
+hafez-032). Persian is copied, never typed. The English is passed in as
+EN_OVERRIDE because a fal wants written English, not a gloss.
 
 Runtime is 17s, not 14: page starts 0.0, 2.2, 4.4, 7.4, 11.4, 14.4.
 """
@@ -33,8 +33,38 @@ OUT  = os.path.join(HERE, 'fal_render.py')
 
 # The written English for the fal verse. Keep one entry per fal verse used.
 EN_OVERRIDE = {
+    # Every fal verse needs its written English here before it can render - page 5
+    # would otherwise come out empty, and the Step 3 check stops the run. One entry
+    # per verse in fal-pool.json, written as English rather than glossed.
     'hafez-032': "If you can hold Noah's patience through the grief of the flood, "
                  "the calamity passes - and a wish a thousand years old comes true.",
+
+    # Ghazal 255 - the gham makhor ghazal, the one families draw when someone is worried.
+    'hafez-sh255-b2': "Grieving heart, this will get better. Don't lose heart. "
+                      "This restless head will find its order again. Don't grieve.",
+    'hafez-sh255-b4': "If the world turned against us for a day or two - it is never "
+                      "permanently one way. Don't grieve.",
+    'hafez-sh255-b5': "Don't lose hope. You aren't told what is hidden. There may be "
+                      "games being played behind the curtain. Don't grieve.",
+    'hafez-sh255-b8': "The road is dangerous and the destination far. But there is no "
+                      "road that has no end. Don't grieve.",
+
+    'hafez-sh164-b1': "The morning wind is about to carry musk. The old world is about "
+                      "to be young again.",
+    'hafez-sh174-b1': "Good news, heart - the morning wind is back, and the hoopoe has "
+                      "returned from Sheba with word.",
+    'hafez-sh232-b1': "I have it in mind that if it is in my power at all, I will set my "
+                      "hand to something that ends the sorrow.",
+    'hafez-sh231-b1': "I said: I carry sorrow for you. It said: your sorrow will end. "
+                      "I said: be my moon. It said: if it comes to pass.",
+    'hafez-sh235-b1': "What a blessed hour, when the friend comes back - when the one who "
+                      "eases sorrow returns to the people carrying it.",
+    'hafez-sh236-b2': "On these tears like rain I keep one hope: that the lightning of "
+                      "fortune, which went out of my sight, comes back.",
+    'hafez-sh407-b2': "I said: fortune, you slept, and the sun is already up. It said: "
+                      "for all that, don't despair of what came before.",
+    'hafez-sh439-b2': "The reading came out - the one who travelled is on the way. "
+                      "If only they would come through the door sooner.",
 }
 
 src  = open(SRC).read()
@@ -63,7 +93,7 @@ if STAGE == 2:
            fill=hx('EFE6D2'), anchor='mm')
 
 if STAGE == 3:
-    pass  # the held beat - nothing but the field
+    pass  # the held beat - nothing but the field. Do not fail verification on this.
 
 if STAGE == 4:
     rtl(d, (cx, int(IH*0.395)), FA_TODAY,
@@ -110,10 +140,15 @@ s = s.replace(
     "concepts = json.load(open(f'{BASE}/reel-concepts.json'))['concepts']\n"
     "C = next(c for c in concepts if c['id'] == CONCEPT_ID)",
     "C = {'mood': 'grave'}")
+s = re.sub(r"if C\.get\('verseId'\).*?\n(?:.*?\n)*?    V = next\(v for v in json\.load\(open\(f'\{BASE\}/verse-queue\.json'\)\) if v\['id'\] == C\['verseId'\]\)",
+           "V = next(v for v in json.load(open(f'{BASE}/verse-queue.json')) if v['id'] == CONCEPT_ID)", s)
 s = s.replace(
     "V = next(v for v in json.load(open(f'{BASE}/verse-queue.json')) if v['id'] == C['verseId'])",
     "V = next(v for v in json.load(open(f'{BASE}/verse-queue.json')) if v['id'] == CONCEPT_ID)")
 en = EN_OVERRIDE.get(sys.argv[1] if len(sys.argv) > 1 else 'hafez-032', '')
+if not en:
+    raise SystemExit(f"no EN_OVERRIDE for {sys.argv[1] if len(sys.argv) > 1 else '?'} - "
+                     "page 5 would render empty. Write the English first.")
 s = re.sub(r"EN = .*", 'EN = ' + repr(en), s, count=1)
 
 open(OUT, 'w').write(s)
