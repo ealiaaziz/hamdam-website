@@ -32,22 +32,33 @@ const IOS_ROOT = resolve(
 const MOMENTS_SWIFT = join(IOS_ROOT, 'Hamdam/Hamdam/Calendar/CulturalMoment.swift');
 const LOCALIZATION_SWIFT = join(IOS_ROOT, 'Hamdam/Hamdam/Core/Localization.swift');
 const LOCATION_SWIFT = join(IOS_ROOT, 'Hamdam/Hamdam/Weather/LocationManager.swift');
+const HERITAGE_STEP_SWIFT = join(
+  IOS_ROOT,
+  'Hamdam/Hamdam/Features/Onboarding/HeritageAndLocationStep.swift',
+);
 const OUT_FILE = join(REPO_ROOT, 'src/data/rootsMoments.ts');
 
-// Which countries the site offers as heritage is DERIVED from the catalogue
-// below, not listed here. It used to be listed here, hardcoded as
-// ['IR','AF','TJ','AU'] with ['GB','US','NL','DE'] as the roadmap, attributed
-// to Ealia on 2026-07-25 and never revisited. By 2026-09-08 the app had
-// shipped moments for all four of those roadmap countries plus Canada and the
-// United Arab Emirates, and the site was still telling visitors the first four
-// were "Coming soon" while the app carried 19, 18, 15 and 15 moments for them.
-// A hardcoded list next to a generated one will always drift, so this one is
-// computed: a country is offered when the app has at least one moment for it.
+// Which countries the site offers as heritage is READ FROM THE APP, out of
+// `pinnedCodes` in HeritageAndLocationStep.swift. Nothing about it is decided
+// here, including the order.
 //
-// ORDER is editorial and is the only hand-maintained part. Persian heritage
-// leads because that is what the app is for, then the rest by how much the app
-// actually carries, which puts the fullest packs first.
-const HERITAGE_ORDER = ['IR', 'AF', 'TJ', 'AU'];
+// It was hardcoded here until 2026-09-08 as ['IR','AF','TJ','AU'] with
+// ['GB','US','NL','DE'] as a roadmap, attributed to Ealia on 2026-07-25 and
+// never revisited. By then the app had shipped packs for all four roadmap
+// countries plus Canada and the United Arab Emirates, and the site was still
+// calling the first four "Coming soon" while the app carried 19, 18, 15 and 15
+// moments for them. A hand list beside a generated one drifts.
+//
+// The first fix was to derive the list from the catalogue, which gave ten
+// countries by including AF and TJ. That was wrong, and the app says why in
+// the comment above pinnedCodes: AF and TJ are deliberately NOT suggested,
+// because both resolve to the full Persian experience rather than to packs of
+// their own, and both are one search away in the app's picker. Mirroring the
+// app is therefore both what Ealia asked for and the more correct rule.
+//
+// Upstream, CountryPickerPinnedTests holds pinnedCodes to every shipped pack,
+// so a new pack cannot ship unsuggested. Reading that list here means the site
+// inherits that guarantee instead of restating it.
 
 /** Countries named as next but carrying no moments yet. Empty is correct and
  *  is not a bug: everything once on the roadmap has shipped. */
@@ -220,21 +231,22 @@ const labels = {
 };
 
 const auStates = parseAuStates(locationSwift);
-// Every country the catalogue actually covers, editorial order first and the
-// remainder by moment count descending, so the list can never claim a pack the
-// app does not have nor omit one it does.
+const heritageStepSwift = read(HERITAGE_STEP_SWIFT, 'HeritageAndLocationStep.swift');
+const pinnedMatch = heritageStepSwift.match(/static let pinnedCodes = \[([^\]]*)\]/);
+if (!pinnedMatch) fail('could not find `pinnedCodes` in HeritageAndLocationStep.swift');
+const heritageCodes = [...pinnedMatch[1].matchAll(/"([A-Z]{2})"/g)].map((m) => m[1]);
+if (heritageCodes.length === 0) fail('pinnedCodes parsed as empty');
+
+// The same invariant CountryPickerPinnedTests asserts upstream: a suggested
+// country must have something to show. Checked here too, because this file
+// runs against whatever revision of the app is checked out and a silently
+// empty chip is exactly the kind of drift this rewrite exists to stop.
 const covered = new Map();
 for (const m of moments) {
   for (const code of m.heritages) covered.set(code, (covered.get(code) ?? 0) + 1);
 }
-const heritageCodes = [
-  ...HERITAGE_ORDER.filter((c) => covered.has(c)),
-  ...[...covered.keys()]
-    .filter((c) => !HERITAGE_ORDER.includes(c))
-    .sort((a, b) => covered.get(b) - covered.get(a) || a.localeCompare(b)),
-];
-const missing = HERITAGE_ORDER.filter((c) => !covered.has(c));
-if (missing.length) fail(`HERITAGE_ORDER names ${missing.join(', ')}, which the catalogue has no moments for`);
+const empty = heritageCodes.filter((c) => !covered.has(c));
+if (empty.length) fail(`pinnedCodes offers ${empty.join(', ')}, which the catalogue has no moments for`);
 
 const heritageCountries = countryNames(heritageCodes);
 const roadmapCountries = countryNames(ROADMAP_COUNTRIES);

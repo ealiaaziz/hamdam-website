@@ -5,7 +5,7 @@
 //   Hamdam/Hamdam/Calendar/CulturalMoment.swift  (catalogue)
 //   Hamdam/Hamdam/Core/Localization.swift        (display names, section labels)
 // Every Farsi string here was copied byte-exact by that script, never retyped.
-// Generated 2026-09-08 from 139 banked moments.
+// Generated 2026-09-09 from 139 banked moments.
 
 export type MomentRule =
   | { kind: 'persianFixed'; month: number; day: number }
@@ -198,14 +198,12 @@ export interface NamedPlace {
  */
 export const HERITAGE_COUNTRIES: readonly NamedPlace[] = [
   { code: "IR", nameEn: "Iran", nameFa: "ایران" },
-  { code: "AF", nameEn: "Afghanistan", nameFa: "افغانستان" },
-  { code: "TJ", nameEn: "Tajikistan", nameFa: "تاجیکستان" },
   { code: "AU", nameEn: "Australia", nameFa: "استرالیا" },
-  { code: "GB", nameEn: "United Kingdom", nameFa: "بریتانیا" },
   { code: "US", nameEn: "United States", nameFa: "ایالات متحده" },
+  { code: "GB", nameEn: "United Kingdom", nameFa: "بریتانیا" },
+  { code: "CA", nameEn: "Canada", nameFa: "کانادا" },
   { code: "DE", nameEn: "Germany", nameFa: "آلمان" },
   { code: "NL", nameEn: "Netherlands", nameFa: "هلند" },
-  { code: "CA", nameEn: "Canada", nameFa: "کانادا" },
   { code: "AE", nameEn: "United Arab Emirates", nameFa: "امارات متحدهٔ عربی" },
 ];
 
