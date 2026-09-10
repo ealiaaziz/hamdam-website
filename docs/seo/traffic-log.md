@@ -78,6 +78,7 @@ newest reading is always the last one in each section.
 | 2026-08-20 | since the last reading (2026-08-16 to 2026-08-18, final) | 42 | 1 | 46.7 | 6 | 11 |
 | 2026-09-03 | since the last reading (2026-08-19 to 2026-09-01, final) | 272 | 3 | 27.2 | 33 | 13 |
 | 2026-09-07 | since the last reading (2026-09-02 to 2026-09-04, final) | 75 | 2 | 13.3 | 16 | 14 |
+| 2026-09-10 | since the last reading (2026-09-05 to 2026-09-07, final) | 168 | 3 | 10.9 | 28 | 14 |
 <!-- readings:row -->
 
 Trailing 28 days at the first reading (2026-07-09 to 2026-08-05): 23
@@ -550,6 +551,104 @@ and not traffic.
 **Cadence, unchanged and still worth repeating.** The job remains paused, the
 schedule commented out and `GSC_SERVICE_ACCOUNT_KEY` unset. This reading exists
 because somebody asked on 7 September, three days after the data went final.
+
+### 2026-09-10, the first reading with visitors in it
+
+Three days of final data again, so rates rather than totals. The headline is
+that there are now two meters, and they disagree in a way worth understanding.
+
+**Search Console: a second step up, on 5 September.**
+
+| Date | Impressions | Avg position |
+| --- | --- | --- |
+| 2026-09-03 | 18 | 15.1 |
+| 2026-09-04 | 31 | 16.0 |
+| 2026-09-05 | 50 | 8.9 |
+| 2026-09-06 | 48 | 9.7 |
+| 2026-09-07 | 70 | 13.1 |
+
+56 impressions a day against 25 in the last reading's window, so a little over
+double, and position held in single digits to low teens throughout. The
+2026-09-07 entry said the late August gain had stopped compounding and that the
+site had settled at a new level. That was true of the week it measured and is
+now superseded: it stepped again.
+
+2026-09-08 also read 70, but from `data_state: "all"` rather than final, so it
+is excluded from the row and named here only because two consecutive 70s is
+what makes the 5 September move look like a level rather than a spike.
+
+**What moved is new, and it is the moment pages.** `yalda 2026`,
+`yalda night 2026`, `when is yalda 2026`, `yalda 2026 date` and
+`shab e yalda 2026` drew 23 impressions between them, and `/moments/yalda/`
+took 37 at average position 5.7. `chaharshanbe suri 2027` sits at 5.2. These
+queries did not exist in any previous reading. The commit that put the date
+into the snippet is the plausible cause: people are searching for when Yalda
+falls, and the result now answers that in the result rather than after a click.
+
+**The site owns its own name.** `hamdam` is at position 1.5 with one click
+from four impressions. In the first reading it was 22.5 across 13 impressions
+and had never been clicked. A Persian brand query also appeared for the first
+time, `برنامه همدم ایفون`, at position 7.
+
+**The ganjoor cluster is still the largest single block**, 29 impressions, and
+still at the top of page one. Nothing new to say about it beyond the caution
+already in the 2026-09-03 entry: low volume, and owning it implies nothing
+about the terms that carry real volume.
+
+**The head terms have still not moved. Fifth entry running.** `hafez` at 50.9,
+`hafez poetry` 47, `hafez poem` 48, `saadi shirazi poems` 65. Every gain in
+this file continues to come from queries about dates, from a branded cluster,
+and from the site's own name.
+
+Of 168 impressions, 93 are against the 28 named queries and 75 are withheld.
+
+**Now the second meter, and it is the first real one this project has had.**
+
+Cloudflare Web Analytics, read through the account-scoped GraphQL endpoint
+described in `2026-09-07-analytics-beacon.md`. Seven days to 2026-09-10, 80
+pageviews. Sampled and scaled, so these arrive in round tens and are shape
+rather than measurement.
+
+| Page | Views |
+| --- | --- |
+| `/` | 42 |
+| `/privacy/` | 19 |
+| `/fa/` | 8 |
+| `/whats-new/` | 3 |
+| `/poets/hafez/` | 3 |
+
+Countries: United States 43, Australia 11, then Germany and Iran at 5 each,
+Canada and Sweden 3, China, Finland and Japan 2. **The United States is 56 per
+cent of it and Australia 14**, which is the first hard evidence for a claim
+that had only been an impression before.
+
+**Read `/privacy/` sceptically.** It is 24 per cent of all views, and the
+hourly breakdown shows roughly one direct hit an hour around the clock with no
+referrer, including through the small hours. That is the shape of automated
+fetching, not of readers: app review, privacy-link checkers, scanners. One view
+in the same window went to a bare UUID path that does not exist on this site,
+which is a scanner probing. **The honest human number is nearer 10 a day than
+the 11.4 the total implies**, and anyone quoting the 80 without this paragraph
+is quoting mostly robots.
+
+Referrers across fourteen days: direct 120, facebook.com 20, nothing else.
+
+**Why the two meters disagree, stated plainly, because it is the whole point.**
+Impressions more than doubled and pageviews did not move. Lifetime clicks are
+11. Being shown is not being visited, and the gap between the two is where this
+site currently loses. Ranking work has succeeded; the click has not been earned
+yet. That is a different problem from the one the first reading described, and
+a different one again from the head-terms problem, and all three are now live
+at once.
+
+**The LinkedIn post is live and is not in these numbers.** Published
+2026-09-09 in the evening, Brisbane, three reactions by the following night.
+It should not appear here and its absence is not evidence about it: the first
+comment sends readers to the App Store rather than to the site, and LinkedIn's
+in-app browser strips the referrer, so anything that did arrive would be
+counted as direct. The meter for that post is App Store Connect, Sources,
+campaign token `li-post`, which is not readable from a session. Do not read
+this row as the post underperforming.
 
 <!-- readings:notes -->
 
