@@ -27,6 +27,12 @@ StopIteration - no fal was prepared and Friday had nothing to publish. Fixed by
 replacing the whole EXTERNAL if/else block rather than pattern-matching one
 line inside it.
 
+FONTS. This renderer may use ONLY the seven faces the pipeline fetches:
+Vazirmatn Light/Medium/Regular and Source Serif Light/Regular/Bold/Italic.
+On 11 September 2026 the fal pages asked for Vazirmatn-SemiBold, which is
+never fetched, and every Persian headline stage died with 'cannot open
+resource'. Do not introduce an eighth face.
+
 Runtime is 17s, not 14: page starts 0.0, 2.2, 4.4, 7.4, 11.4, 14.4.
 """
 import os, re, sys
@@ -97,7 +103,7 @@ FA_WHOLE  = '\\u063a\\u0632\\u0644 \\u06a9\\u0627\\u0645\\u0644 \\u0631\\u0627 \
 
 if STAGE == 1:
     rtl(d, (cx, int(IH*0.560)), FA_INTENT,
-        ImageFont.truetype(FZ+'Vazirmatn-SemiBold.ttf', S*76), hx('FBF6EA'))
+        ImageFont.truetype(FZ+'Vazirmatn-Medium.ttf', S*76), hx('FBF6EA'))
     d.text((cx, int(IH*0.652)), 'Make your intention',
            font=ImageFont.truetype(SS+'SourceSerif4-Regular.otf', S*30),
            fill=hx('EFE6D2'), anchor='mm')
@@ -138,7 +144,7 @@ if STAGE == 5:
 
 if STAGE == 6:
     rtl(d, (cx, int(IH*0.505)), FA_TODAY,
-        ImageFont.truetype(FZ+'Vazirmatn-SemiBold.ttf', S*44), hx('FFF6E4'))
+        ImageFont.truetype(FZ+'Vazirmatn-Medium.ttf', S*44), hx('FFF6E4'))
     d.text((cx, int(IH*0.577)), "Today's fal from Hamdam",
            font=ImageFont.truetype(SS+'SourceSerif4-Regular.otf', S*26),
            fill=hx('EFE6D2'), anchor='mm')
