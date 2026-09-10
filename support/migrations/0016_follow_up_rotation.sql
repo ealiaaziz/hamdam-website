@@ -1,0 +1,21 @@
+-- When did the follow-up pass last look at this ticket?
+--
+-- The pass walked every open bot-change ticket in one Worker invocation, each
+-- one costing at least a GitHub read and sometimes a send. That was fine at
+-- three tickets. At twelve it stopped fitting: on 2026-09-10 the account's
+-- scheduled invocations of hamdam-support were dying with exceededResources,
+-- and the work that had not finished was simply lost. The cost that week was a
+-- 22 minute delay on a proposal, a 90 minute silence on a question, five
+-- messages never relayed, and, worst, the channel owner approving a fix for a
+-- broken bot twice and neither approval being recorded. She waited six hours
+-- on a change that was ready and authorised twenty minutes in.
+--
+-- So the pass now takes a few tickets at a time and rotates. That needs a
+-- record of who has been served, and `updated_at` cannot be it: that column
+-- means "this row changed", and bumping it because somebody looked would make
+-- the row lie about its own history.
+--
+-- NULL means never looked at, and the query sorts those first, so a ticket
+-- raised a minute ago is served on the next pass rather than queueing behind
+-- eleven finished ones.
+ALTER TABLE ticket_bot_changes ADD COLUMN last_checked_at TEXT;

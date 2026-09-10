@@ -10,6 +10,7 @@ import {
   proposeChange,
   recordAgentOutcome,
   ticketsAwaitingBotFollowUp,
+  markBotFollowUpChecked,
   type BotChangeRow,
 } from './db.js';
 import { changeRef, asksSomething } from './changeApproval.js';
@@ -86,12 +87,40 @@ export interface FollowUpSummary {
   failures: number;
 }
 
+/**
+ * How many tickets one pass will look at.
+ *
+ * Every ticket costs at least one GitHub read and sometimes a send on top, and
+ * a Worker invocation has a fixed budget for both requests and CPU. The pass
+ * used to take all of them: fine at three tickets, and on 2026-09-10, at
+ * twelve, the scheduled invocations of this Worker were being killed with
+ * exceededResources and whatever had not finished was lost.
+ *
+ * What that cost in one week: a proposal that reached her 22 minutes late, a
+ * question of hers answered on the issue and never sent, five messages
+ * relayed only when somebody noticed by hand, and the channel owner approving
+ * a fix for a broken bot twice with neither approval recorded, so she waited
+ * six hours on a change that was ready and authorised after twenty minutes.
+ *
+ * Five, because the ceiling is per invocation and not per ticket: what matters
+ * is that a pass always finishes. The tickets nobody has looked at go first,
+ * so a new one is served on the very next pass, and the rest rotate, so a
+ * quiet ticket is revisited within a few passes rather than every single one.
+ * Raising this buys nothing except a return to the failure above.
+ */
+const TICKETS_PER_PASS = 5;
+
 export async function followUpBotChanges(env: Env, send: SendEmail): Promise<FollowUpSummary> {
   const summary: FollowUpSummary = { watching: 0, proposed: 0, shipped: 0, failures: 0 };
   if (!canReachRepo(env)) return summary;
 
-  const ticketIds = await ticketsAwaitingBotFollowUp(env.DB);
+  const ticketIds = await ticketsAwaitingBotFollowUp(env.DB, TICKETS_PER_PASS);
   summary.watching = ticketIds.length;
+
+  // Before the work, not after. A pass that dies partway through still has to
+  // yield its place, or the tickets at the front of the queue are the only
+  // ones ever attempted and the queue stops being one.
+  await markBotFollowUpChecked(env.DB, ticketIds);
 
   for (const ticketId of ticketIds) {
     try {
