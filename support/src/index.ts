@@ -9,6 +9,7 @@ import { ackEmail, agentReplyEmail, conversationSummaryEmail, requesterReplyNoti
 import { assistantWrittenEmail } from './render/agentEmail.js';
 import { generateTrackingToken, parseTicketPublicId, stripHtml, ticketPublicId, tokensMatch } from './ids.js';
 import { cleanLine, cleanText, isOversizedBody, isValidEmail, MAX_BODY_CHARS, MAX_NAME_CHARS, MAX_SUBJECT_CHARS } from './validation.js';
+import { sweepQuietTickets } from './autoClose.js';
 import { callerKey, consumeRateLimit, mayEmailRecipient, meteringSubject, purgeRateLimits, type RateLimitBucket } from './rateLimit.js';
 import { httpsRedirectTarget, isCrossSiteRequest, isLocalHost, localePrefixTarget, trackingUrl } from './urls.js';
 import { extractAccessToken, fetchAccessKeys, verifyAccessJwt } from './access.js';
@@ -477,6 +478,7 @@ app.post('/internal/tick', async (c) => {
 
   if (work.purge) {
     await purgeRateLimits(c.env.DB);
+    await sweepQuietTickets(c.env.DB);
     done.purge = 'done';
   }
   if (work.ingest) done.ingest = await ingestInbox(c.env);
@@ -1443,7 +1445,10 @@ export default {
     // Housekeeping. Rate limit rows accumulate one per distinct caller and are
     // dead the moment their window rolls; sweeping them here keeps that off
     // the request path, where somebody is waiting.
-    if (work.purge) ctx.waitUntil(purgeRateLimits(env.DB));
+    if (work.purge) {
+      ctx.waitUntil(purgeRateLimits(env.DB));
+      ctx.waitUntil(sweepQuietTickets(env.DB));
+    }
     ctx.waitUntil(
       ingestInbox(env)
         .then((summary) => {

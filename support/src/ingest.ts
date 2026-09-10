@@ -406,6 +406,32 @@ async function handleMessage(env: Env, message: InboundMessage, summary: IngestS
       cleanText(plan.body, MAX_BODY_CHARS),
     );
     await setLastInboundMessageId(env.DB, plan.ticketId, message.internetMessageId);
+
+    // A reply reopens a closed ticket, and this is what makes closing one
+    // safe to do quietly.
+    //
+    // planInbound has never looked at status, so before this her reply to a
+    // closed ticket was appended to a closed ticket and left there: the
+    // follow-up pass skips closed tickets, so nothing would ever have picked
+    // it up. That was survivable only because nothing closed tickets. Now
+    // that tickets go quiet on their own after two days, it would have been a
+    // hole exactly where she is most likely to fall into it, on the ticket
+    // she is coming back to precisely because she has something to add.
+    //
+    // Reopened rather than left alone, and not made 'new': somebody has
+    // already worked this ticket, and 'open' says what is true, which is that
+    // it is live again.
+    const appendingTo = await getTicketById(env.DB, plan.ticketId);
+    if (appendingTo?.status === 'closed') {
+      await updateTicketStatus(env.DB, plan.ticketId, 'open');
+      await addComment(
+        env.DB,
+        plan.ticketId,
+        'system',
+        null,
+        'Reopened: the requester replied after this ticket was closed.',
+      );
+    }
     await recordInbound(env.DB, {
       internetMessageId: message.internetMessageId,
       conversationId: message.conversationId,

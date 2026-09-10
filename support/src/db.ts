@@ -1134,6 +1134,89 @@ export async function ticketsAwaitingBotFollowUp(db: D1Database, limit = 20): Pr
  * front of the queue and starve everything behind it, which is a slower
  * version of the outage this rotation exists to end.
  */
+/**
+ * Tickets the desk spoke to last, and she has not answered since.
+ *
+ * Every clause is a refusal to close something that is still somebody's turn:
+ *
+ * - there has to be a last word from the desk at all, so a ticket she raised
+ *   and nobody has answered is never quietly filed away
+ * - that last word has to be older than the cutoff
+ * - and it has to be later than anything she said, so a ticket where she
+ *   spoke last stays open however old it is. That is the important one:
+ *   three tickets were in that state the day this was written, and each is a
+ *   message of hers the desk still owes an answer to.
+ *
+ * A change she approved and that has not shipped keeps the ticket open too.
+ * The desk is mid-flight there and owes her the result. Only while it has not
+ * shipped: an approval left standing beside a `deployed_at` is finished work,
+ * and on ticket 47 a row in exactly that state, from before markDeployed
+ * cleared consent properly, would otherwise have pinned the ticket open for
+ * good.
+ */
+/**
+ * Close the tickets a sweep picked, in one statement.
+ *
+ * Same reasoning as the follow-up batch: the sweep exists to bound what one
+ * invocation spends, and spending it back one write per ticket would be
+ * silly. `closed_at` is set the way updateTicketStatus sets it, because a
+ * ticket closed by the sweep is closed, not a third thing.
+ */
+export async function closeQuietTickets(
+  db: D1Database,
+  ticketIds: readonly number[],
+): Promise<number> {
+  if (ticketIds.length === 0) return 0;
+  const holes = ticketIds.map((_, i) => `?${i + 1}`).join(', ');
+  const result = await db
+    .prepare(
+      `UPDATE tickets
+          SET status = 'closed',
+              closed_at = strftime('%Y-%m-%dT%H:%M:%fZ','now'),
+              updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')
+        WHERE id IN (${holes}) AND status != 'closed'`,
+    )
+    .bind(...ticketIds)
+    .run();
+  return result.meta.changes ?? 0;
+}
+
+export async function ticketsGoneQuiet(
+  db: D1Database,
+  before: string,
+  limit: number,
+): Promise<number[]> {
+  const result = await db
+    .prepare(
+      `WITH said AS (
+         SELECT t.id AS ticket_id,
+                (SELECT MAX(o.sent_at) FROM outbound_emails o
+                   WHERE o.ticket_id = t.id AND o.status = 'sent') AS last_from_desk,
+                (SELECT MAX(c.created_at) FROM comments c
+                   WHERE c.ticket_id = t.id AND c.author_type = 'requester') AS last_from_her
+           FROM tickets t
+          WHERE t.status != 'closed'
+       )
+       SELECT s.ticket_id FROM said s
+        WHERE s.last_from_desk IS NOT NULL
+          AND s.last_from_desk < ?1
+          AND COALESCE(s.last_from_her, '') < s.last_from_desk
+          AND NOT EXISTS (
+                SELECT 1 FROM ticket_bot_changes b
+                 WHERE b.ticket_id = s.ticket_id
+                   AND b.approved_at IS NOT NULL
+                   AND b.approved_ref IS NOT NULL
+                   AND b.approved_ref = b.pending_change_ref
+                   AND b.deployed_at IS NULL
+              )
+        ORDER BY s.last_from_desk ASC
+        LIMIT ?2`,
+    )
+    .bind(before, limit)
+    .all<{ ticket_id: number }>();
+  return (result.results ?? []).map((row) => row.ticket_id);
+}
+
 export async function markBotFollowUpChecked(
   db: D1Database,
   ticketIds: readonly number[],
