@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Hamdam reel frame renderer, v11.
+"""Hamdam reel frame renderer, v12.
 
     python3 hamdam_reel_render.py <conceptId> <stage 1..5> [outDir]
 
@@ -21,8 +21,14 @@ stays and still does the credibility work.
 NEVER FADE UP FROM BLACK when composing. Instagram ignores thumb_offset on
 reels and takes frame zero as the cover, so a black first frame ships a black
 tile and viewers scroll past before it plays. That collapsed reach on 7 and
-9 September 2026. Check frame zero measures above 25 brightness before
-publishing.
+9 September 2026 - 10 and 15 accounts reached against a 200-300 baseline.
+Check frame zero measures above 25 brightness before publishing.
+
+ONLY SEVEN FONT FACES EXIST in the pipeline: Vazirmatn Light/Medium/Regular
+and Source Serif Bold/Italic/Light/Regular. Never reference an eighth - on
+11 September 2026 the fal pages asked for Vazirmatn-SemiBold and every Persian
+headline stage died mid-draw with Pillow's bare 'cannot open resource'. The
+check below now names the missing file instead.
 
 TWO SOURCES OF VERSE TEXT. Concepts drawn from verse-queue.json name a
 verseId. Concepts drawn from Ganjoor carry verseId 'EXTERNAL' and their own
@@ -44,6 +50,19 @@ SS = os.environ.get('HAMDAM_FONTS_EN', './fonts/sourceserif/source-serif-4.005_D
 NSTAGES = 6
 
 assert features.check('raqm'), 'raqm missing - refuse to render Persian unshaped'
+
+# Fail early and by name if a font is missing. Pillow raises a bare
+# "cannot open resource" halfway through drawing, which cost a whole publish
+# slot on 11 September 2026 when the fal pages asked for Vazirmatn-SemiBold -
+# a face the pipeline has never fetched. ONLY these seven exist.
+FACES_FA = ('Vazirmatn-Light.ttf', 'Vazirmatn-Medium.ttf', 'Vazirmatn-Regular.ttf')
+FACES_EN = ('SourceSerif4-Bold.otf', 'SourceSerif4-It.otf',
+            'SourceSerif4-Light.otf', 'SourceSerif4-Regular.otf')
+_missing = ([FZ + f for f in FACES_FA if not os.path.exists(FZ + f)] +
+            [SS + f for f in FACES_EN if not os.path.exists(SS + f)])
+if _missing:
+    raise SystemExit('MISSING FONTS - fetch these before rendering:\n  ' +
+                     '\n  '.join(_missing))
 assert 0 <= STAGE < NSTAGES
 
 concepts = json.load(open(f'{BASE}/reel-concepts.json'))['concepts']
