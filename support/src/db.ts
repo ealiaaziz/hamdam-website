@@ -896,6 +896,12 @@ export interface BotChangeRow {
   approved_at: string | null;
   refused_at: string | null;
   deployed_at: string | null;
+  /**
+   * When the follow-up pass last examined this ticket. NULL means never, and
+   * sorts first, so a new ticket is served before finished ones. Distinct
+   * from updated_at, which means the row changed.
+   */
+  last_checked_at: string | null;
   /** Identifies the last question or stand-down already sent to her. */
   last_outcome: string | null;
   last_outcome_at: string | null;
@@ -1108,12 +1114,40 @@ export async function ticketsAwaitingBotFollowUp(db: D1Database, limit = 20): Pr
       `SELECT c.ticket_id FROM ticket_bot_changes c
          JOIN tickets t ON t.id = c.ticket_id
         WHERE t.status != 'closed'
-        ORDER BY c.updated_at ASC
+        ORDER BY COALESCE(c.last_checked_at, '') ASC, c.updated_at ASC
         LIMIT ?1`,
     )
     .bind(limit)
     .all<{ ticket_id: number }>();
   return (result.results ?? []).map((row) => row.ticket_id);
+}
+
+/**
+ * Note that these tickets have been looked at, so the next pass takes others.
+ *
+ * One statement for the whole batch rather than one per ticket: the point of
+ * the batch is to spend less per invocation, and paying it back in writes
+ * would be silly.
+ *
+ * Called for every ticket the pass touched, including the ones that failed.
+ * A ticket that throws on every pass would otherwise keep its place at the
+ * front of the queue and starve everything behind it, which is a slower
+ * version of the outage this rotation exists to end.
+ */
+export async function markBotFollowUpChecked(
+  db: D1Database,
+  ticketIds: readonly number[],
+): Promise<void> {
+  if (ticketIds.length === 0) return;
+  const holes = ticketIds.map((_, i) => `?${i + 1}`).join(', ');
+  await db
+    .prepare(
+      `UPDATE ticket_bot_changes
+          SET last_checked_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')
+        WHERE ticket_id IN (${holes})`,
+    )
+    .bind(...ticketIds)
+    .run();
 }
 
 /**
