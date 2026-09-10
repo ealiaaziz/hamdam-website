@@ -19,9 +19,13 @@ three second pause is a real risk - but it is the only reel that asks the
 viewer to DO something, and that is what might produce the profile visits
 nothing else has. Verification must NOT fail stage 3 for having no text.
 
-The fal takes its verse byte-exact from fal-pool.json (or verse-queue.json for
-hafez-032). Persian is copied, never typed. The English is passed in as
-EN_OVERRIDE because a fal wants written English, not a gloss.
+WHERE THE VERSE COMES FROM. A fal verse lives in fal-pool.json, keyed by its
+own id. verse-queue.json is only a fallback, for legacy ids such as hafez-032.
+On 10 September 2026 this script generated a queue-only lookup, none of the
+twelve pooled verses existed in the queue, and the Thursday prep run died with
+StopIteration - no fal was prepared and Friday had nothing to publish. Fixed by
+replacing the whole EXTERNAL if/else block rather than pattern-matching one
+line inside it.
 
 Runtime is 17s, not 14: page starts 0.0, 2.2, 4.4, 7.4, 11.4, 14.4.
 """
@@ -34,7 +38,7 @@ OUT  = os.path.join(HERE, 'fal_render.py')
 # The written English for the fal verse. Keep one entry per fal verse used.
 EN_OVERRIDE = {
     # Every fal verse needs its written English here before it can render - page 5
-    # would otherwise come out empty, and the Step 3 check stops the run. One entry
+    # would otherwise come out empty, and the check below stops the run. One entry
     # per verse in fal-pool.json, written as English rather than glossed.
     'hafez-032': "If you can hold Noah's patience through the grief of the flood, "
                  "the calamity passes - and a wish a thousand years old comes true.",
@@ -66,6 +70,19 @@ EN_OVERRIDE = {
     'hafez-sh439-b2': "The reading came out - the one who travelled is on the way. "
                       "If only they would come through the door sooner.",
 }
+
+LOOKUP = """# A fal verse lives in fal-pool.json, keyed by its own id. Fall back to
+# verse-queue.json only for legacy ids such as hafez-032. Persian is copied
+# byte-exact from whichever file holds it, and is never typed.
+_pool = []
+_pp = f'{BASE}/fal-pool.json'
+if os.path.exists(_pp):
+    _pool = json.load(open(_pp)).get('verses', [])
+_hit = next((v for v in _pool if v['id'] == CONCEPT_ID), None)
+if _hit is not None:
+    V = {'persian': _hit['persian'], 'english': ''}
+else:
+    V = next(v for v in json.load(open(f'{BASE}/verse-queue.json')) if v['id'] == CONCEPT_ID)"""
 
 src  = open(SRC).read()
 head = src[:src.index('cx = IW//2')]
@@ -140,11 +157,13 @@ s = s.replace(
     "concepts = json.load(open(f'{BASE}/reel-concepts.json'))['concepts']\n"
     "C = next(c for c in concepts if c['id'] == CONCEPT_ID)",
     "C = {'mood': 'grave'}")
-s = re.sub(r"if C\.get\('verseId'\).*?\n(?:.*?\n)*?    V = next\(v for v in json\.load\(open\(f'\{BASE\}/verse-queue\.json'\)\) if v\['id'\] == C\['verseId'\]\)",
-           "V = next(v for v in json.load(open(f'{BASE}/verse-queue.json')) if v['id'] == CONCEPT_ID)", s)
-s = s.replace(
-    "V = next(v for v in json.load(open(f'{BASE}/verse-queue.json')) if v['id'] == C['verseId'])",
-    "V = next(v for v in json.load(open(f'{BASE}/verse-queue.json')) if v['id'] == CONCEPT_ID)")
+# Replace the WHOLE EXTERNAL if/else block from the source renderer with the fal
+# lookup. Matching only the inner line leaves the replacement indented under
+# `else:` and the generated script will not parse - that was the 10 Sep failure.
+_a = s.index("# Concepts sourced from Ganjoor")
+_b = s.index("FA = [l.strip()")
+s = s[:_a] + LOOKUP + "\n" + s[_b:]
+
 en = EN_OVERRIDE.get(sys.argv[1] if len(sys.argv) > 1 else 'hafez-032', '')
 if not en:
     raise SystemExit(f"no EN_OVERRIDE for {sys.argv[1] if len(sys.argv) > 1 else '?'} - "
