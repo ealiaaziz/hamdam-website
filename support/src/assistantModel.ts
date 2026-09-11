@@ -422,6 +422,15 @@ export function validateModelReply(
   let question = blank(r.question) ? null : String(r.question).trim().slice(0, MAX_QUESTION_CHARS);
   if (action !== 'ask') question = null;
 
+  // The same impersonation check the body gets, for the same reason. The
+  // question is not a lesser field: it is rendered verbatim into the staff
+  // handover email, stored in `asked_questions`, and re-injected into every
+  // later prompt on this ticket. A model that will not claim "I have reset
+  // your subscription" in the body will say it in the question if only the
+  // body is checked, and `carriesUnapprovedContact` upstream already treats
+  // both fields as equally reachable.
+  if (question && readsAsHumanAction(question)) return { rejected: 'question claims a person acted' };
+
   // The question field exists to stop the same question being asked twice.
   // When the model asks well but leaves the field empty, the body is the
   // question, and throwing away a good reply over the bookkeeping is the
