@@ -62,18 +62,22 @@ jobs:
       # stop the owner being told her change is live.
       - name: Read the mailbox
         if: steps.configured.outputs.ready == 'true'
+        env:
+          SECRET: ${{ secrets.DESK_TICK_SECRET }}
         run: |
           curl --fail-with-body -sS -X POST \
             "https://support.hamdam.com.au/internal/tick?job=ingest" \
-            -H "x-desk-tick: ${{ secrets.DESK_TICK_SECRET }}" \
+            -H "x-desk-tick: $SECRET" \
             --max-time 30 --retry 2 --retry-delay 5
 
       - name: Follow up on bot changes
         if: always() && steps.configured.outputs.ready == 'true'
+        env:
+          SECRET: ${{ secrets.DESK_TICK_SECRET }}
         run: |
           curl --fail-with-body -sS -X POST \
             "https://support.hamdam.com.au/internal/tick?job=followup" \
-            -H "x-desk-tick: ${{ secrets.DESK_TICK_SECRET }}" \
+            -H "x-desk-tick: $SECRET" \
             --max-time 30 --retry 2 --retry-delay 5
 
       # Not a health check of the desk so much as of this workflow's own
