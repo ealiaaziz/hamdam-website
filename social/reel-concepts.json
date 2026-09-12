@@ -13,74 +13,6 @@
  "_mood_key": "happy = bright Mahur; love = romantic Mahur; grave = restrained, sparse; wry = light but not celebratory.",
  "concepts": [
   {
-   "id": "parvin-sh35-caravan",
-   "verseId": "EXTERNAL",
-   "poet": "Parvin Etesami",
-   "mood": "happy",
-   "day": "monday",
-   "used": false,
-   "promptType": "send",
-   "verseType": "encouragement",
-   "ganjoor": "https://ganjoor.net/parvin/divanp/ghasidep/sh35",
-   "source": "Divan of Parvin Etesami, Qasida 35",
-   "persian": "روز بگذشت، ز خواب سحری بگذر\nکاروان رفت، رهی گیر و برو، منشین",
-   "headline": "THE CARAVAN HAS GONE",
-   "englishSaid": "The day has gone. Leave the dawn sleep behind. The caravan has moved on - take a road, and go. Don't sit.",
-   "argument": "Four imperatives in two lines, and the last one is the only negative: manshin. Don't sit.\n\nShe isn't asking for speed. She's asking you not to stay still - which is a much lower bar, and a much harder one.\n\nThe caravan leaving is not the disaster it sounds like. The road is still there. It is only the company that has gone ahead.",
-   "insightFa": "پروین نمی‌گوید بدو — می‌گوید ننشین",
-   "insightEn": "Parvin doesn't say run. She says don't sit.",
-   "lessonFa": "کاروان رفته، اما راه درپیش است",
-   "lessonEn": "The caravan has gone. The road is before you.",
-   "sendFa": "برای تو که برای شروع، وقت را از دست ندادی",
-   "sendEn": "For you, who didn't waste time getting started",
-   "poetLineFa": "پروین اعتصامی — تبریز و تهران، قرن بیستم",
-   "poetLineEn": "Parvin Etesami — Tabriz and Tehran, 20th century",
-   "hashtagsFa": [
-    "#شعر_فارسی",
-    "#پروین_اعتصامی",
-    "#ادبیات_فارسی"
-   ],
-   "hashtagsEn": [
-    "#persianpoetry",
-    "#parvinetesami"
-   ],
-   "_check": "Persian from Ganjoor. lessonFa and sendFa are EALIA'S WORDING 11 Sep 2026 - her CTA replaced mine, which implied the recipient had been idle; hers thanks them for an act instead. Headline is Latin-only: page 1 draws in Source Serif, which has no Arabic glyphs."
-  },
-  {
-   "id": "parvin-mtm6-kindness",
-   "verseId": "EXTERNAL",
-   "poet": "Parvin Etesami",
-   "mood": "love",
-   "day": "monday",
-   "used": false,
-   "promptType": "send",
-   "verseType": "feeling",
-   "ganjoor": "https://ganjoor.net/parvin/divanp/mtm/sh6",
-   "source": "Divan of Parvin Etesami, Mathnavis 6",
-   "persian": "ناتوانی را به لطفی خاطر آوردن بدست\nیاد عجز روزگار ناتوانی داشتن",
-   "headline": "YOU WERE WEAK ONCE TOO",
-   "englishSaid": "To lift someone weak with a single kindness is to remember the season when you were weak yourself.",
-   "argument": "Not charity, and not virtue. The word is yad - memory.\n\nParvin isn't calling kindness a duty you owe from above. She's calling it recognition: you are able to lift someone because you remember being the one on the floor.\n\nWhich makes it something you do sideways, not downwards.",
-   "insightFa": "پروین لطف را وظیفه نمی‌داند — حافظه می‌داند",
-   "insightEn": "Parvin doesn't call kindness a duty. She calls it memory.",
-   "lessonFa": "مهربانی با ناتوان، یادآوری روزهای ناتوانی خودت است",
-   "lessonEn": "Being kind to someone struggling is remembering when you struggled",
-   "sendFa": "برای کسی که وقتی کم آوردی، کنارت ماند",
-   "sendEn": "For the one who stayed when you had nothing left",
-   "poetLineFa": "پروین اعتصامی — تبریز و تهران، قرن بیستم",
-   "poetLineEn": "Parvin Etesami — Tabriz and Tehran, 20th century",
-   "hashtagsFa": [
-    "#شعر_فارسی",
-    "#پروین_اعتصامی",
-    "#ادبیات_فارسی"
-   ],
-   "hashtagsEn": [
-    "#persianpoetry",
-    "#parvinetesami"
-   ],
-   "_check": "Persian from Ganjoor. sendFa uses 'kam avordan', colloquial by choice - the account's English was criticised for sounding machine-made and the Persian should not drift the same way."
-  },
-  {
    "id": "khayyam-sh136-no-foundation",
    "verseId": "EXTERNAL",
    "poet": "Khayyam",
@@ -147,6 +79,108 @@
     "#khayyam"
    ],
    "_check": "APPROVED by Ealia 9 Sep 2026. Persian from Ganjoor. The CTA IS THE VERSE'S OWN FIRST HEMISTICH - nothing invented, because 'ey dust biya' is already an invitation in the first person plural. This is the template for Wednesday. The ghanimat-as-spoils reading is interpretive and worth a native ear. SCHEDULED Wednesday 16 Sep 2026."
+  },
+  {
+   "id": "khayyam-sh84-count-on-neither",
+   "verseId": "EXTERNAL",
+   "poet": "Khayyam",
+   "mood": "wry",
+   "day": "wednesday",
+   "used": false,
+   "promptType": "send",
+   "verseType": "consolation",
+   "ganjoor": "https://ganjoor.net/khayyam/robaee/sh84",
+   "source": "Rubaiyat of Khayyam, Rubai 84",
+   "persian": "بر هر دو مکن تکیه که دوران فلک\nدر پرده هزار گونه بازی دارد",
+   "headline": "COUNT ON NEITHER",
+   "englishSaid": "Count on neither of the two - the turning of the sky keeps a thousand kinds of play behind the curtain.",
+   "argument": "Tekyeh kardan is to rely on - to make your plans assuming something holds. Khayyam's objection isn't that fortune is cruel. It's that it turns: dowran-e falak, the wheel going round. A thing that turns cannot be a support, whichever way it happens to be facing today.\n\nAnd pardeh is the curtain in front of a stage. A thousand plays are being rehearsed behind it and you have seen none of them. You are not being punished. You are simply guessing at a plot you haven't been shown.",
+   "insightFa": "«دوران فلک» یعنی چرخ می‌گردد — چیزی که می‌گردد، تکیه‌گاه نمی‌شود",
+   "insightEn": "Dowran-e falak is the wheel turning. A thing that turns can't be relied on.",
+   "lessonFa": "نه به خوبش دل ببند، نه از بدش بترس — هیچ‌کدام نمی‌ماند",
+   "lessonEn": "Don't count on the good or fear the bad. Neither one stays.",
+   "sendFa": "بیا روی هیچ‌کدام حساب نکنیم",
+   "sendEn": "Let's not count on either",
+   "poetLineFa": "خیام — نیشابور، قرن یازدهم",
+   "poetLineEn": "Omar Khayyam — Nishapur, 11th century",
+   "hashtagsFa": [
+    "#شعر_فارسی",
+    "#خیام",
+    "#رباعیات"
+   ],
+   "hashtagsEn": [
+    "#persianpoetry",
+    "#khayyam"
+   ],
+   "_check": "APPROVED by Ealia 11 Sep 2026. Persian from Ganjoor. Her two corrections: tekyeh kardan is TO RELY ON, not to put weight on - I had turned an idiom back into its literal parts; and dowran is what makes the wheel unreliable, not merely motion. SPACING: this says almost the same thing as parvin-sh27 (neither joy nor sorrow lasts), which is held in weekday-pools.json. Do not run them in the same month."
+  },
+  {
+   "id": "parvin-sh35-caravan",
+   "verseId": "EXTERNAL",
+   "poet": "Parvin Etesami",
+   "mood": "happy",
+   "day": "monday",
+   "used": false,
+   "promptType": "send",
+   "verseType": "encouragement",
+   "ganjoor": "https://ganjoor.net/parvin/divanp/ghasidep/sh35",
+   "source": "Divan of Parvin Etesami, Qasida 35",
+   "persian": "روز بگذشت، ز خواب سحری بگذر\nکاروان رفت، رهی گیر و برو، منشین",
+   "headline": "THE CARAVAN HAS GONE",
+   "englishSaid": "The day has gone. Leave the dawn sleep behind. The caravan has moved on - take a road, and go. Don't sit.",
+   "argument": "Four imperatives in two lines, and the last one is the only negative: manshin. Don't sit.\n\nShe isn't asking for speed. She's asking you not to stay still - which is a much lower bar, and a much harder one.\n\nThe caravan leaving is not the disaster it sounds like. The road is still there. It is only the company that has gone ahead.",
+   "insightFa": "پروین نمی‌گوید بدو — می‌گوید ننشین",
+   "insightEn": "Parvin doesn't say run. She says don't sit.",
+   "lessonFa": "کاروان رفته، اما راه درپیش است",
+   "lessonEn": "The caravan has gone. The road is before you.",
+   "sendFa": "برای تو که برای شروع، وقت را از دست ندادی",
+   "sendEn": "For you, who didn't waste time getting started",
+   "poetLineFa": "پروین اعتصامی — تبریز و تهران، قرن بیستم",
+   "poetLineEn": "Parvin Etesami — Tabriz and Tehran, 20th century",
+   "hashtagsFa": [
+    "#شعر_فارسی",
+    "#پروین_اعتصامی",
+    "#ادبیات_فارسی"
+   ],
+   "hashtagsEn": [
+    "#persianpoetry",
+    "#parvinetesami"
+   ],
+   "_check": "Persian from Ganjoor. lessonFa and sendFa are EALIA'S WORDING 11 Sep 2026 - her CTA replaced mine, which implied the recipient had been idle; hers thanks them for an act instead. Headline is Latin-only: page 1 draws in Source Serif, which has no Arabic glyphs."
+  },
+  {
+   "id": "parvin-mtm6-kindness",
+   "verseId": "EXTERNAL",
+   "poet": "Parvin Etesami",
+   "mood": "love",
+   "day": "monday",
+   "used": false,
+   "promptType": "send",
+   "verseType": "feeling",
+   "ganjoor": "https://ganjoor.net/parvin/divanp/mtm/sh6",
+   "source": "Divan of Parvin Etesami, Mathnavis 6",
+   "persian": "ناتوانی را به لطفی خاطر آوردن بدست\nیاد عجز روزگار ناتوانی داشتن",
+   "headline": "YOU WERE WEAK ONCE TOO",
+   "englishSaid": "To lift someone weak with a single kindness is to remember the season when you were weak yourself.",
+   "argument": "Not charity, and not virtue. The word is yad - memory.\n\nParvin isn't calling kindness a duty you owe from above. She's calling it recognition: you are able to lift someone because you remember being the one on the floor.\n\nWhich makes it something you do sideways, not downwards.",
+   "insightFa": "پروین لطف را وظیفه نمی‌داند — حافظه می‌داند",
+   "insightEn": "Parvin doesn't call kindness a duty. She calls it memory.",
+   "lessonFa": "مهربانی با ناتوان، یادآوری روزهای ناتوانی خودت است",
+   "lessonEn": "Being kind to someone struggling is remembering when you struggled",
+   "sendFa": "برای کسی که وقتی کم آوردی، کنارت ماند",
+   "sendEn": "For the one who stayed when you had nothing left",
+   "poetLineFa": "پروین اعتصامی — تبریز و تهران، قرن بیستم",
+   "poetLineEn": "Parvin Etesami — Tabriz and Tehran, 20th century",
+   "hashtagsFa": [
+    "#شعر_فارسی",
+    "#پروین_اعتصامی",
+    "#ادبیات_فارسی"
+   ],
+   "hashtagsEn": [
+    "#persianpoetry",
+    "#parvinetesami"
+   ],
+   "_check": "Persian from Ganjoor. sendFa uses 'kam avordan', colloquial by choice - the account's English was criticised for sounding machine-made and the Persian should not drift the same way."
   },
   {
    "id": "saadi-sh251-half-way",
@@ -361,40 +395,6 @@
     "#rumi"
    ],
    "_check": "PUBLISHED 9 Sep 2026 by a ghost task, wrong day, black cover - reach 10. Do not repeat."
-  },
-  {
-   "id": "khayyam-sh84-count-on-neither",
-   "verseId": "EXTERNAL",
-   "poet": "Khayyam",
-   "mood": "wry",
-   "day": "wednesday",
-   "used": false,
-   "promptType": "send",
-   "verseType": "consolation",
-   "ganjoor": "https://ganjoor.net/khayyam/robaee/sh84",
-   "source": "Rubaiyat of Khayyam, Rubai 84",
-   "persian": "بر هر دو مکن تکیه که دوران فلک\nدر پرده هزار گونه بازی دارد",
-   "headline": "COUNT ON NEITHER",
-   "englishSaid": "Count on neither of the two - the turning of the sky keeps a thousand kinds of play behind the curtain.",
-   "argument": "Tekyeh kardan is to rely on - to make your plans assuming something holds. Khayyam's objection isn't that fortune is cruel. It's that it turns: dowran-e falak, the wheel going round. A thing that turns cannot be a support, whichever way it happens to be facing today.\n\nAnd pardeh is the curtain in front of a stage. A thousand plays are being rehearsed behind it and you have seen none of them. You are not being punished. You are simply guessing at a plot you haven't been shown.",
-   "insightFa": "«دوران فلک» یعنی چرخ می‌گردد — چیزی که می‌گردد، تکیه‌گاه نمی‌شود",
-   "insightEn": "Dowran-e falak is the wheel turning. A thing that turns can't be relied on.",
-   "lessonFa": "نه به خوبش دل ببند، نه از بدش بترس — هیچ‌کدام نمی‌ماند",
-   "lessonEn": "Don't count on the good or fear the bad. Neither one stays.",
-   "sendFa": "بیا روی هیچ‌کدام حساب نکنیم",
-   "sendEn": "Let's not count on either",
-   "poetLineFa": "خیام — نیشابور، قرن یازدهم",
-   "poetLineEn": "Omar Khayyam — Nishapur, 11th century",
-   "hashtagsFa": [
-    "#شعر_فارسی",
-    "#خیام",
-    "#رباعیات"
-   ],
-   "hashtagsEn": [
-    "#persianpoetry",
-    "#khayyam"
-   ],
-   "_check": "APPROVED by Ealia 11 Sep 2026. Persian from Ganjoor. Her two corrections: tekyeh kardan is TO RELY ON, not to put weight on - I had turned an idiom back into its literal parts; and dowran is what makes the wheel unreliable, not merely motion. SPACING: this says almost the same thing as parvin-sh27 (neither joy nor sorrow lasts), which is held in weekday-pools.json. Do not run them in the same month."
   }
  ],
  "_blocked": [
@@ -421,5 +421,6 @@
  ],
  "_headline_rule": "headline is drawn on page 1 in Source Serif, which has NO Arabic glyphs. Latin script only - a Persian headline renders as tofu boxes. Put the Persian in the caption instead.",
  "_spacing_note": "Several Wednesday concepts make the same claim in different words - khayyam-sh84 (count on neither), parvin-sh27 (neither joy nor sorrow lasts, held in weekday-pools.json), and to a degree khayyam-sh136 and khayyam-sh121. They are individually good and collectively repetitive. Space them: never two in the same month.",
- "_divine_register_rule": "Persian mystical poetry points constantly at the divine - Rumi almost always, Hafez often. This account keeps religious framing out (poets by city and century, no God on screen), but hedging a verse into vagueness is not neutrality, it just empties it. POLICY, set by Ealia 12 Sep 2026: translate to the QUALITY the poet is pointing at, not the noun. Truth, the eternal, the source, light, wisdom, what does not change. Never 'God'. CHOOSE THE WORD FROM THE VERSE, not from a fixed list: sarcheshmeh-ye zamaneh contrasts permanence with flux, so 'the source of truth' fits (see rumi-sh2076-source); a verse built on nur would take 'light'; one on hekmat would take 'wisdom'. A believing reader and a secular one should each find their own meaning without either being misled about what the poem says."
+ "_divine_register_rule": "Persian mystical poetry points constantly at the divine - Rumi almost always, Hafez often. This account keeps religious framing out (poets by city and century, no God on screen), but hedging a verse into vagueness is not neutrality, it just empties it. POLICY, set by Ealia 12 Sep 2026: translate to the QUALITY the poet is pointing at, not the noun. Truth, the eternal, the source, light, wisdom, what does not change. Never 'God'. CHOOSE THE WORD FROM THE VERSE, not from a fixed list: sarcheshmeh-ye zamaneh contrasts permanence with flux, so 'the source of truth' fits (see rumi-sh2076-source); a verse built on nur would take 'light'; one on hekmat would take 'wisdom'. A believing reader and a secular one should each find their own meaning without either being misled about what the poem says.",
+ "_ordering_note": "Selection is FIRST UNUSED IN FILE ORDER, so the order in this file is the schedule. Wednesday is interleaved deliberately: Khayyam, Rumi, Khayyam, Khayyam - without this Rumi sat fourth and the account would have run four consecutive Khayyams. Check poet order whenever a concept is added."
 }
