@@ -361,6 +361,40 @@
     "#rumi"
    ],
    "_check": "PUBLISHED 9 Sep 2026 by a ghost task, wrong day, black cover - reach 10. Do not repeat."
+  },
+  {
+   "id": "khayyam-sh84-count-on-neither",
+   "verseId": "EXTERNAL",
+   "poet": "Khayyam",
+   "mood": "wry",
+   "day": "wednesday",
+   "used": false,
+   "promptType": "send",
+   "verseType": "consolation",
+   "ganjoor": "https://ganjoor.net/khayyam/robaee/sh84",
+   "source": "Rubaiyat of Khayyam, Rubai 84",
+   "persian": "بر هر دو مکن تکیه که دوران فلک\nدر پرده هزار گونه بازی دارد",
+   "headline": "COUNT ON NEITHER",
+   "englishSaid": "Count on neither of the two - the turning of the sky keeps a thousand kinds of play behind the curtain.",
+   "argument": "Tekyeh kardan is to rely on - to make your plans assuming something holds. Khayyam's objection isn't that fortune is cruel. It's that it turns: dowran-e falak, the wheel going round. A thing that turns cannot be a support, whichever way it happens to be facing today.\n\nAnd pardeh is the curtain in front of a stage. A thousand plays are being rehearsed behind it and you have seen none of them. You are not being punished. You are simply guessing at a plot you haven't been shown.",
+   "insightFa": "«دوران فلک» یعنی چرخ می‌گردد — چیزی که می‌گردد، تکیه‌گاه نمی‌شود",
+   "insightEn": "Dowran-e falak is the wheel turning. A thing that turns can't be relied on.",
+   "lessonFa": "نه به خوبش دل ببند، نه از بدش بترس — هیچ‌کدام نمی‌ماند",
+   "lessonEn": "Don't count on the good or fear the bad. Neither one stays.",
+   "sendFa": "بیا روی هیچ‌کدام حساب نکنیم",
+   "sendEn": "Let's not count on either",
+   "poetLineFa": "خیام — نیشابور، قرن یازدهم",
+   "poetLineEn": "Omar Khayyam — Nishapur, 11th century",
+   "hashtagsFa": [
+    "#شعر_فارسی",
+    "#خیام",
+    "#رباعیات"
+   ],
+   "hashtagsEn": [
+    "#persianpoetry",
+    "#khayyam"
+   ],
+   "_check": "APPROVED by Ealia 11 Sep 2026. Persian from Ganjoor. Her two corrections: tekyeh kardan is TO RELY ON, not to put weight on - I had turned an idiom back into its literal parts; and dowran is what makes the wheel unreliable, not merely motion. SPACING: this says almost the same thing as parvin-sh27 (neither joy nor sorrow lasts), which is held in weekday-pools.json. Do not run them in the same month."
   }
  ],
  "_blocked": [
@@ -385,5 +419,6 @@
    "reason": "Reserve, reflect only - a confession is not something you forward."
   }
  ],
- "_headline_rule": "headline is drawn on page 1 in Source Serif, which has NO Arabic glyphs. Latin script only - a Persian headline renders as tofu boxes. Put the Persian in the caption instead."
+ "_headline_rule": "headline is drawn on page 1 in Source Serif, which has NO Arabic glyphs. Latin script only - a Persian headline renders as tofu boxes. Put the Persian in the caption instead.",
+ "_spacing_note": "Several Wednesday concepts make the same claim in different words - khayyam-sh84 (count on neither), parvin-sh27 (neither joy nor sorrow lasts, held in weekday-pools.json), and to a degree khayyam-sh136 and khayyam-sh121. They are individually good and collectively repetitive. Space them: never two in the same month."
 }
