@@ -395,40 +395,6 @@
     "#khayyam"
    ],
    "_check": "APPROVED by Ealia 11 Sep 2026. Persian from Ganjoor. Her two corrections: tekyeh kardan is TO RELY ON, not to put weight on - I had turned an idiom back into its literal parts; and dowran is what makes the wheel unreliable, not merely motion. SPACING: this says almost the same thing as parvin-sh27 (neither joy nor sorrow lasts), which is held in weekday-pools.json. Do not run them in the same month."
-  },
-  {
-   "id": "rumi-sh2076-source",
-   "verseId": "EXTERNAL",
-   "poet": "Rumi",
-   "mood": "grave",
-   "day": "wednesday",
-   "used": false,
-   "promptType": "send",
-   "verseType": "consolation",
-   "ganjoor": "https://ganjoor.net/moulavi/shams/ghazalsh/sh2076",
-   "source": "Divan-e Shams, Ghazal 2076",
-   "persian": "زمانه روشن و تاریک و گرم و سرد شود\nمقام جز به سرچشمه زمانه مکن",
-   "headline": "NOTHING OUT THERE HOLDS STILL",
-   "englishSaid": "Time turns bright and dark, warm and cold. Seek no station except from the source of truth itself.",
-   "argument": "Four words and none of them is the point: bright, dark, warm, cold. Life going well and then badly. Rumi lists them to establish one thing - that none of it holds still.\n\nThen maqam: station, rank, the standing you are held in. His instruction is about where to ask for it. Not from the world, whose weather you have just watched change.\n\nSarcheshmeh-ye zamaneh is the spring a river rises from. Rumi is pointing past time itself, to what time comes out of.",
-   "insightFa": "«سرچشمهٔ زمانه» یعنی آنجا که زمان از آن جاری می‌شود",
-   "insightEn": "The spring of time is where time flows from - not inside time, but before it.",
-   "lessonFa": "دنیا همیشه در تغییر است؛ مقام و آرامش را از چیزهای متغیر نخواه",
-   "lessonEn": "The world is always changing. Don't seek standing or peace from things that change.",
-   "sendFa": "بیا آرامش را از چیزی که می‌گذرد نخواهیم",
-   "sendEn": "Let's not ask for peace from what passes",
-   "poetLineFa": "مولانا — بلخ و قونیه، قرن سیزدهم",
-   "poetLineEn": "Rumi — Balkh and Konya, 13th century",
-   "hashtagsFa": [
-    "#شعر_فارسی",
-    "#مولانا",
-    "#ادبیات_فارسی"
-   ],
-   "hashtagsEn": [
-    "#persianpoetry",
-    "#rumi"
-   ],
-   "_check": "APPROVED by Ealia 12 Sep 2026. Persian from Ganjoor. 'Source of truth' is her resolution of the register question: sarcheshmeh-ye zamaneh means the divine, and this account keeps religious framing out - 'truth' is honest to the poem and leaves a secular reader their own meaning. Her lesson wording; her CTA restated as a send prompt (hers was a statement, and page 2 needs something a sender can say)."
   }
  ],
  "_blocked": [
@@ -454,5 +420,6 @@
   }
  ],
  "_headline_rule": "headline is drawn on page 1 in Source Serif, which has NO Arabic glyphs. Latin script only - a Persian headline renders as tofu boxes. Put the Persian in the caption instead.",
- "_spacing_note": "Several Wednesday concepts make the same claim in different words - khayyam-sh84 (count on neither), parvin-sh27 (neither joy nor sorrow lasts, held in weekday-pools.json), and to a degree khayyam-sh136 and khayyam-sh121. They are individually good and collectively repetitive. Space them: never two in the same month."
+ "_spacing_note": "Several Wednesday concepts make the same claim in different words - khayyam-sh84 (count on neither), parvin-sh27 (neither joy nor sorrow lasts, held in weekday-pools.json), and to a degree khayyam-sh136 and khayyam-sh121. They are individually good and collectively repetitive. Space them: never two in the same month.",
+ "_divine_register_rule": "Persian mystical poetry points constantly at the divine - Rumi almost always, Hafez often. This account keeps religious framing out (poets by city and century, no God on screen), but hedging a verse into vagueness is not neutrality, it just empties it. POLICY, set by Ealia 12 Sep 2026: translate to the QUALITY the poet is pointing at, not the noun. Truth, the eternal, the source, light, wisdom, what does not change. Never 'God'. CHOOSE THE WORD FROM THE VERSE, not from a fixed list: sarcheshmeh-ye zamaneh contrasts permanence with flux, so 'the source of truth' fits (see rumi-sh2076-source); a verse built on nur would take 'light'; one on hekmat would take 'wisdom'. A believing reader and a secular one should each find their own meaning without either being misled about what the poem says."
 }
