@@ -93,6 +93,17 @@ const live = {
 // Earlier releases, newest first. Each names the file its text comes from and
 // the date's authority; nothing here is typed from memory.
 const ARCHIVED = [
+  // 1.4's date is Apple's own currentVersionReleaseDate, read from the live
+  // listing on 2026-09-08 while 1.4 was the shipping version, and kept here
+  // when 1.4.2 superseded it.
+  //
+  // A feature release has to be added here the moment a point release
+  // displaces it, or it disappears from the page entirely: the live listing
+  // serves only the current version, so 1.4 stopped being readable from Apple
+  // the hour 1.4.2 went live, and `featureReleases()` filters 1.4.2 out of the
+  // page as a point release. That is how 1.3.1 was lost. The notes survived
+  // here only because hamdam-ios had already written v1.4-whats-new.md.
+  { version: '1.4', iso: '2026-09-08', file: 'v1.4-whats-new.md' },
   { version: '1.3', iso: '2026-08-27', file: 'v1.3-whats-new.md' },
   { version: '1.2', iso: '2026-08-17', file: 'v1.2-whats-new.md' },
 ];
