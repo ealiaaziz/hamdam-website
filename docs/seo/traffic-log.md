@@ -79,6 +79,7 @@ newest reading is always the last one in each section.
 | 2026-09-03 | since the last reading (2026-08-19 to 2026-09-01, final) | 272 | 3 | 27.2 | 33 | 13 |
 | 2026-09-07 | since the last reading (2026-09-02 to 2026-09-04, final) | 75 | 2 | 13.3 | 16 | 14 |
 | 2026-09-10 | since the last reading (2026-09-05 to 2026-09-07, final) | 168 | 3 | 10.9 | 28 | 14 |
+| 2026-09-13 | since the last reading (2026-09-08 to 2026-09-10, final) | 210 | 1 | 8.7 | 26 | 14 |
 <!-- readings:row -->
 
 Trailing 28 days at the first reading (2026-07-09 to 2026-08-05): 23
@@ -649,6 +650,75 @@ in-app browser strips the referrer, so anything that did arrive would be
 counted as direct. The meter for that post is App Store Connect, Sources,
 campaign token `li-post`, which is not readable from a session. Do not read
 this row as the post underperforming.
+
+### 2026-09-13, half the site's impressions are on one page that cannot be clicked
+
+Three days of final data, 2026-09-08 to 2026-09-10. The first draft of this
+reading used a six day window starting 09-05, which overlapped the previous
+entry by three days and would have double counted them. Corrected before it was
+written down; the convention in this file is "since the last reading" and it
+only works if nobody widens a window to make a number look better.
+
+| | 09-05 to 09-07 | 09-08 to 09-10 |
+| --- | --- | --- |
+| Impressions per day | 56 | **70** |
+| Clicks | 3 | **1** |
+| Average position | 10.9 | **8.7** |
+| Named queries | 28 | 26 |
+
+**Best average position in the log, and the fewest clicks since August.** Those
+two facts belong in the same sentence, because taken apart either one is
+misleading.
+
+**`/moments/yalda/` is now half the site.** 104 of 210 impressions, average
+position 6.1, and **zero clicks**. Add norooz and chaharshanbe suri and the
+seasonal pages are 83 of the 115 named impressions, 40 per cent of everything.
+
+The previous entry noted that the yalda result "answers that in the result
+rather than after a click". This reading is what that costs, quantified: the
+page has now taken roughly 250 impressions across two windows at an average
+position of about six, and has produced no clicks at all. That is not a
+ranking problem and no amount of further ranking fixes it. `yalda 2026`,
+`when is yalda 2026`, `yalda 2026 date` and `shabe yalda 2026` are date
+questions. Google answers a date question above the results. Sixth place on one
+earns an impression and nothing else, and the better the snippet answers it the
+less reason anyone has to click.
+
+So the moment pages should be judged as brand surface rather than as traffic,
+and the traffic case has to be made somewhere else. The one click in this
+window came from `/poets/parvin-etesami/`, 18 impressions, an identity query
+rather than a date one. That is the third reading running in which every click
+has come from an identity query or the site's own name.
+
+**Watch that yalda keeps climbing anyway.** Daily impressions on that page went
+26, 25, 34, 45 across 09-07 to 09-10, and Shab-e Yalda is 21 December. Whatever
+this page is worth, there is three months more of it coming, and the next few
+readings will be dominated by it. Read them for what the rest of the site did.
+
+**1.4 shipped inside this window and nothing here measures it.** The rename to
+"Hamdam: Reflection Companion" merged at 17:04 UTC on 2026-09-08, two days into
+a three day window. Confirmed live on 2026-09-13: Apple reports
+`Hamdam: Reflection Companion` at 1.4.1 and the homepage title reads
+`Hamdam: Reflection Companion, Persian Poetry and Journal`, so the derivation in
+`src/lib/appName.js` fired as designed and no surface was left saying the old
+name. Its search effect is unreadable here and will stay unreadable for weeks:
+`hamdam` drew 2 impressions in this window against 4 in the last, which is
+noise, and the brand term is exactly what a rename disturbs. Do not read the
+next reading's brand numbers as a verdict on the rename either way without a
+matched window on both sides of 09-08.
+
+**The head terms have still not moved. Sixth entry running.** `hafez` appeared
+once, at 39. Everything else in the named table is a date query, a ganjoor
+query, or the brand.
+
+Of 210 impressions, 115 are against the 26 named queries and 95 are withheld.
+
+**Cloudflare, eight days to 2026-09-13: 140 sampled pageviews**, on `/` 70,
+`/fa/` 20, `/privacy/` 20, `/whats-new/` 20, `/fa/privacy/` 10. Still not one
+poet page and not one moment page. The pages carrying 90 per cent of the
+impressions draw too few real visitors to survive a one in ten sample, which is
+consistent with one click and is the same story the click count tells rather
+than a second one.
 
 <!-- readings:notes -->
 
