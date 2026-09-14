@@ -93,6 +93,15 @@ const live = {
 // Earlier releases, newest first. Each names the file its text comes from and
 // the date's authority; nothing here is typed from memory.
 const ARCHIVED = [
+  // 1.4 was added here on 2026-09-14, and the reason is worth keeping. The
+  // current release is read from the live listing, so while 1.4 was current
+  // its notes arrived that way and nothing needed archiving. When 1.4.2 shipped
+  // the listing started answering with the point release instead, 1.4 was in
+  // neither place, and /whats-new/ quietly fell back to featuring 1.3: the
+  // entire games announcement disappeared from the site four days after it
+  // went out on LinkedIn. A feature release has to be archived here the moment
+  // anything ships after it.
+  { version: '1.4', iso: '2026-09-08', file: 'v1.4-whats-new.md' },
   { version: '1.3', iso: '2026-08-27', file: 'v1.3-whats-new.md' },
   { version: '1.2', iso: '2026-08-17', file: 'v1.2-whats-new.md' },
 ];

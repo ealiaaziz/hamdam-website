@@ -4,7 +4,8 @@ import PoetArticle from '../../../components/PoetArticle.astro';
 import Footer from '../../../components/Footer.astro';
 import { POET_PAGES, POET_PAGE_BY_SLUG, poetFor } from '../../../data/poetPages';
 import { MOMENT_UI } from '../../../data/momentContent';
-import { poetPageSchema } from '../../../lib/schema';
+import { poetPageSchema } from '../../../lib/schema'
+import { lastmodIso } from '../../../lib/sitemapLastmod.js';;
 
 // Farsi half of the poet cluster. No Persian is authored here: the title is
 // the poet's own Persian name plus the site name, and the description is the
@@ -22,6 +23,7 @@ const description = poet.descriptionFa;
 const title = `${poet.persianName} | ${MOMENT_UI.home.fa}`;
 
 const jsonLd = poetPageSchema({
+  dateModified: lastmodIso(Astro.url.pathname),
   lang: 'fa',
   name: poet.persianName,
   alternateName: poet.transliteration,

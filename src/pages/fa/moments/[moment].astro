@@ -4,7 +4,8 @@ import MomentArticle from '../../../components/MomentArticle.astro';
 import Footer from '../../../components/Footer.astro';
 import { ROOTS_MOMENTS } from '../../../data/rootsMoments';
 import { MOMENT_COPY, MOMENT_PAGE_IDS, MOMENT_SLUGS, MOMENT_UI } from '../../../data/momentContent';
-import { momentPageSchema } from '../../../lib/schema';
+import { momentPageSchema } from '../../../lib/schema'
+import { lastmodIso } from '../../../lib/sitemapLastmod.js';;
 
 // The Farsi half of the cluster. Same component, same data, same slugs as
 // src/pages/moments/[moment].astro.
@@ -30,6 +31,7 @@ const description = MOMENT_COPY[momentId].sentenceFa;
 const title = `${name} | ${MOMENT_UI.home.fa}`;
 
 const jsonLd = momentPageSchema({
+  dateModified: lastmodIso(Astro.url.pathname),
   lang: 'fa',
   name,
   description,

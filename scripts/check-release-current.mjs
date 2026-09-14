@@ -26,17 +26,60 @@ import { RELEASES } from '../src/data/releases.ts';
 const APP_ID = '6784461990';
 const LOOKUP = `https://itunes.apple.com/lookup?id=${APP_ID}&country=us`;
 
-let listing;
-try {
-  const res = await fetch(LOOKUP);
+// The endpoint is edge cached and, for a day or so after a release, different
+// nodes answer differently. Measured on 2026-09-09, the day after 1.4 shipped:
+// ten consecutive AU lookups returned 1.4 seven times and a coherent snapshot
+// of the previous listing, old version AND old name together, three times. A
+// single call therefore failed this check about a third of the time with no
+// real disagreement, and a gate that fails at random is one people learn to
+// ignore. That is worse than no gate, and this is the gate that stops the site
+// publishing a version Apple disagrees with.
+//
+// So sample, and believe the newest release date seen rather than the last
+// response to arrive. A stale node can only ever show an OLDER release, never
+// a newer one, which is what makes "newest wins" safe here.
+const SAMPLES = 4;
+
+async function lookupOnce() {
+  const res = await fetch(LOOKUP, { cache: 'no-store' });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const body = await res.json();
   if (!body.resultCount) throw new Error('lookup returned no result');
-  listing = body.results[0];
-} catch (error) {
-  console.error(`Could not reach the App Store: ${error.message}`);
+  return body.results[0];
+}
+
+const seen = [];
+let lastError;
+for (let i = 0; i < SAMPLES; i += 1) {
+  try {
+    seen.push(await lookupOnce());
+  } catch (error) {
+    lastError = error;
+  }
+}
+
+if (seen.length === 0) {
+  console.error(`Could not reach the App Store: ${lastError?.message ?? 'unknown error'}`);
   console.error('This says nothing about whether the site is current. Try again.');
   process.exit(2);
+}
+
+// Newest by release date, with the version string as a tiebreak for the case
+// where two builds share a date.
+const listing = seen
+  .slice()
+  .sort((a, b) =>
+    String(a.currentVersionReleaseDate).localeCompare(String(b.currentVersionReleaseDate)) ||
+    String(a.version).localeCompare(String(b.version)),
+  )
+  .at(-1);
+
+const distinct = [...new Set(seen.map((r) => r.version))];
+if (distinct.length > 1) {
+  console.warn(
+    `Note: the App Store endpoint returned ${distinct.join(' and ')} across ${seen.length} samples, ` +
+      `which is edge cache lag rather than disagreement. Taking ${listing.version}, the newest.`,
+  );
 }
 
 const live = { version: listing.version, iso: listing.currentVersionReleaseDate.slice(0, 10) };

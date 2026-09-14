@@ -76,3 +76,21 @@ export function lastmodFor(pathname) {
   const date = new Date(newest);
   return Number.isNaN(date.getTime()) ? undefined : date;
 }
+
+/**
+ * The same date as a plain `YYYY-MM-DD` string, for `dateModified` in JSON-LD.
+ *
+ * Schema and sitemap read one source deliberately. They are the same claim
+ * made in two places, and two sources would eventually disagree: privacy.astro
+ * and terms.astro both hard-coded `dateModified: '2026-08-13'` and were still
+ * publishing it on 2026-09-14, having actually changed on 2026-09-05 and
+ * 2026-09-08. A wrong date on a legal page is worse than a missing one,
+ * because a reader uses it to decide whether the terms they agreed to have
+ * changed.
+ *
+ * @param {string} pathname
+ * @returns {string | undefined}
+ */
+export function lastmodIso(pathname) {
+  return lastmodFor(pathname)?.toISOString().slice(0, 10);
+}

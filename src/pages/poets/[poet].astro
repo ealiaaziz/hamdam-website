@@ -3,7 +3,8 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import PoetArticle from '../../components/PoetArticle.astro';
 import Footer from '../../components/Footer.astro';
 import { POET_PAGES, POET_PAGE_BY_SLUG, poetFor } from '../../data/poetPages';
-import { poetPageSchema } from '../../lib/schema';
+import { poetPageSchema } from '../../lib/schema'
+import { lastmodIso } from '../../lib/sitemapLastmod.js';;
 
 // English half of the poet cluster, built 2026-08-07. The Farsi half is
 // src/pages/fa/poets/[poet].astro, same component and same data.
@@ -24,6 +25,7 @@ const description = `${poet.description} ${poet.transliteration}, ${page.lifespa
 const title = `${poet.transliteration} (${poet.persianName}): poems and daily verses | Hamdam`;
 
 const jsonLd = poetPageSchema({
+  dateModified: lastmodIso(Astro.url.pathname),
   lang: 'en',
   name: poet.transliteration,
   alternateName: poet.persianName,

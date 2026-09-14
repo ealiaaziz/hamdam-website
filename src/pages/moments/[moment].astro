@@ -11,7 +11,8 @@ import {
   MOMENT_SLUGS,
   MOMENT_TITLE_TAIL_EN,
 } from '../../data/momentContent';
-import { momentPageSchema } from '../../lib/schema';
+import { momentPageSchema } from '../../lib/schema'
+import { lastmodIso } from '../../lib/sitemapLastmod.js';;
 
 // The English half of the cultural moment cluster, built 2026-08-07. The Farsi
 // half is src/pages/fa/moments/[moment].astro and is generated from the same
@@ -63,6 +64,7 @@ const title = nextOccurrence
   : `${moment.nameEn}: ${MOMENT_TITLE_TAIL_EN[momentId]} | Hamdam`;
 
 const jsonLd = momentPageSchema({
+  dateModified: lastmodIso(Astro.url.pathname),
   lang: 'en',
   name: moment.nameEn,
   description,

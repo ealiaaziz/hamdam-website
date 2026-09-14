@@ -1,4 +1,5 @@
 ---
+import { lastmodIso } from '../lib/sitemapLastmod.js';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import LegalSection from '../components/LegalSection.astro';
 import SectionDivider from '../components/SectionDivider.astro';
@@ -27,7 +28,10 @@ const jsonLd = {
       url: 'https://hamdam.com.au/terms/',
       inLanguage: 'en',
       datePublished: '2026-07-03',
-      dateModified: '2026-08-13',
+      // Derived, not typed. This line read '2026-08-13' until 2026-09-14
+      // while the page had actually changed on a later date, which on a
+      // legal page is the kind of wrong a reader relies on.
+      dateModified: lastmodIso('/terms/'),
       isPartOf: { '@id': WEBSITE_ID },
       publisher: { '@id': ORGANIZATION_ID },
     },

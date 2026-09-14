@@ -3,7 +3,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import FalHafezArticle from '../components/FalHafezArticle.astro';
 import Footer from '../components/Footer.astro';
 import { FAL_HAFEZ } from '../data/falHafez';
-import { momentPageSchema } from '../lib/schema';
+import { momentPageSchema } from '../lib/schema'
+import { lastmodIso } from '../lib/sitemapLastmod.js';;
 
 // The English Fal-e Hafez page. The Farsi pair is src/pages/fa/fal-e-hafez.astro.
 //
@@ -22,6 +23,7 @@ const description =
 const title = 'Fal-e Hafez: the Divan of Hafez, opened at random | Hamdam';
 
 const jsonLd = momentPageSchema({
+  dateModified: lastmodIso(Astro.url.pathname),
   lang: 'en',
   name: FAL_HAFEZ.titleEn,
   description,

@@ -114,3 +114,21 @@ describe('LOCALE_META', () => {
     expect(LOCALE_META.en.dir).toBe('ltr');
   });
 });
+
+describe('routes with no locale pair', () => {
+  // /404 is one document for both languages, because static hosting serves
+  // exactly one custom 404. The toggle used to compute /fa/404/, which does not
+  // exist, so a Farsi speaker who hit a dead link and pressed the toggle to get
+  // help in their own language hit a second one.
+  it('sends the 404 page to the other language home, not to a missing twin', () => {
+    expect(switchLocalePath('/404', LOCALES.FA)).toBe('/fa/');
+    expect(switchLocalePath('/404', LOCALES.EN)).toBe('/');
+  });
+
+  it('does the same with the trailing slash Astro.url.pathname supplies', () => {
+    // The first fix only knew '/404' and missed '/404/', which is the form the
+    // component actually passes, so the bug survived it.
+    expect(switchLocalePath('/404/', LOCALES.FA)).toBe('/fa/');
+    expect(switchLocalePath('/fa/404/', LOCALES.EN)).toBe('/');
+  });
+});

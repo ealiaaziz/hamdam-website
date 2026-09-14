@@ -37,9 +37,26 @@ export interface Release {
 
 export const RELEASES: readonly Release[] = [
   {
+    version: "1.4.2",
+    iso: "2026-09-13",
+    source: "itunes.apple.com/lookup, the live listing",
+    notesEn: [
+      "Small fixes, a few days after the last ones.",
+      "In Mosha'ereh the keyboard would not go away, and it was covering the answer underneath it. There is a Done key above it now, and dragging the page puts it down.",
+      "The riddle has music of its own. It was the one game that played nothing.",
+      "The app's name on Today is set in the same hand the app opens with.",
+    ],
+    notesFa: [
+      "چند اصلاح کوچک، چند روز بعد از اصلاح‌های قبلی.",
+      "در مشاعره صفحه‌کلید پایین نمی‌رفت و روی جوابِ زیرش را می‌پوشاند. حالا بالای آن دکمه‌ی «تمام» هست، و با کشیدن صفحه هم پایین می‌رود.",
+      "چیستان حالا موسیقی خودش را دارد. تنها بازی‌ای بود که هیچ صدایی نداشت.",
+      "نام برنامه در صفحه‌ی امروز با همان خطی نوشته می‌شود که برنامه با آن باز می‌شود.",
+    ],
+  },
+  {
     version: "1.4",
     iso: "2026-09-08",
-    source: "itunes.apple.com/lookup, the live listing",
+    source: "hamdam-ios docs/app-store/v1.4-whats-new.md",
     notesEn: [
       "Games.",
       "Four games have come to the Garden. Three plays a day are free; Hamdam Plus has no counter.",

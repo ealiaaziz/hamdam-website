@@ -289,7 +289,7 @@ export function homepageSchema({ lang, name, description, url, downloadUrl, scre
  * @param {string} options.slug    Poet slug, used for the Person node's stable @id.
  */
 export function poetPageSchema({
-  lang, name, alternateName, description, url, breadcrumbHome, homeUrl, sameAs, slug,
+  lang, name, alternateName, description, url, breadcrumbHome, homeUrl, sameAs, slug, dateModified,
 }) {
   return {
     '@context': 'https://schema.org',
@@ -306,6 +306,8 @@ export function poetPageSchema({
         // topic, so nothing is lost by pointing this at the right entity.
         isPartOf: { '@id': WEBSITE_ID },
         publisher: { '@id': ORGANIZATION_ID },
+        // Omitted rather than guessed when git cannot answer. See lastmodIso.
+        ...(dateModified ? { dateModified } : {}),
         about: {
           '@type': 'Person',
           // One @id per poet, shared by the English and Farsi pages, so
@@ -331,7 +333,7 @@ export function poetPageSchema({
   };
 }
 
-export function momentPageSchema({ lang, name, description, url, breadcrumbHome, homeUrl }) {
+export function momentPageSchema({ lang, name, description, url, breadcrumbHome, homeUrl, dateModified }) {
   return {
     '@context': 'https://schema.org',
     '@graph': [
@@ -346,6 +348,8 @@ export function momentPageSchema({ lang, name, description, url, breadcrumbHome,
         isPartOf: { '@id': WEBSITE_ID },
         publisher: { '@id': ORGANIZATION_ID },
         about: { '@type': 'Thing', name },
+        // Omitted rather than guessed when git cannot answer. See lastmodIso.
+        ...(dateModified ? { dateModified } : {}),
       },
       {
         '@type': 'BreadcrumbList',
