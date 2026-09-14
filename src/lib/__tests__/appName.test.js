@@ -10,6 +10,8 @@ import {
   homepageTitleFor,
   storeSlug,
 } from '../appName.js';
+import { buildLlmsTxt } from '../llmsTxt.js';
+import { RELEASES } from '../../data/releases';
 import { APP_STORE_CANONICAL_URL, APP_STORE_NAME, HOMEPAGE_TITLE_EN } from '../appStore.js';
 import { RELEASES } from '../../data/releases.ts';
 
@@ -154,12 +156,41 @@ describe('gamesShippedIn', () => {
   });
 });
 
-describe('public/llms.txt', () => {
-  // The one surface that cannot derive the name: a static file with no build
-  // step. This test is the alarm, and it is meant to fail on the day 1.4 is
-  // regenerated, so the rename cannot half-land.
+describe('/llms.txt', () => {
+  // This used to read public/llms.txt and assert only the store URL, because
+  // the file was static and that one line was the only part anyone had wired
+  // an alarm to. It worked, and it was not enough: on 2026-09-14 the URL was
+  // right and every surrounding paragraph was six days stale, with no mention
+  // of 1.4, the games or the name Apple had already applied. The file is
+  // derived now, so these assert the derivation rather than a literal.
   it('carries the same canonical store URL the rest of the site does', () => {
-    const llms = readFileSync(new URL('../../../public/llms.txt', import.meta.url), 'utf8');
-    expect(llms).toContain(APP_STORE_CANONICAL_URL);
+    expect(buildLlmsTxt()).toContain(APP_STORE_CANONICAL_URL);
+  });
+
+  it('states the shipping version and the name that version carries', () => {
+    const current = RELEASES[0].version;
+    const text = buildLlmsTxt({ currentVersion: current });
+    expect(text).toContain(`the current version is ${current}`);
+    expect(text).toContain(appStoreNameFor(current));
+  });
+
+  it('describes the games only once a version that has them is shipping', () => {
+    expect(buildLlmsTxt({ currentVersion: '1.3.2' })).not.toContain('Games in the Garden');
+    expect(buildLlmsTxt({ currentVersion: '1.4' })).toContain('Games in the Garden');
+  });
+
+  it('never states the free play count in the shape the release notes got wrong', () => {
+    // FACTS.md: the three plays are pooled and Chistan is not one of them, so
+    // "four games, three plays a day" is false in both directions.
+    const text = buildLlmsTxt({ currentVersion: '1.4' });
+    expect(text).not.toMatch(/four games/i);
+    expect(text).toContain('pooled across');
+  });
+
+  it('carries no phrase the claim gate blocks', () => {
+    const text = buildLlmsTxt();
+    for (const blocked of ['no tracking', 'we collect nothing', 'nothing leaves your device', 'no data collected']) {
+      expect(text.toLowerCase()).not.toContain(blocked);
+    }
   });
 });

@@ -4,6 +4,7 @@ import tailwindcss from '@tailwindcss/vite';
 import sitemap from '@astrojs/sitemap';
 
 import { describeBeaconDecision } from './src/lib/analytics.js';
+import { lastmodFor } from './src/lib/sitemapLastmod.js';
 
 // One line, at config load, so the Workers Builds log says plainly whether the
 // analytics beacon shipped. The failure mode this guards is silent: a renamed
@@ -16,6 +17,12 @@ export default defineConfig({
   site: 'https://hamdam.com.au',
   integrations: [
     sitemap({
+      // Per-page lastmod from git. See src/lib/sitemapLastmod.js for why this
+      // is not the build time, and why a missing field beats a guessed one.
+      serialize(item) {
+        const lastmod = lastmodFor(new URL(item.url).pathname);
+        return lastmod ? { ...item, lastmod } : item;
+      },
       i18n: {
         defaultLocale: 'en',
         locales: {

@@ -1,0 +1,59 @@
+# Pings IndexNow after a push to main, so Bing and the assistants that read its
+# index hear about a change in minutes rather than whenever they next crawl.
+#
+# Separate from ci.yml because that file's first rule is that it verifies and
+# never deploys, and this one talks to the outside world. Separate from
+# seo-log.yml because that one writes to the repository and this one does not.
+#
+# Only on main: a push to any other branch does not reach production, so
+# announcing it would point Bing at a page that has not changed.
+#
+# Google does not participate in IndexNow. It still gets the sitemap and the
+# per-page lastmod added alongside this, and for anything urgent there is
+# Request Indexing in Search Console, which is a person's job.
+
+name: IndexNow
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Reads the repository to build a sitemap, writes nothing.
+permissions:
+  contents: read
+
+# A second push while the first is still waiting should replace it, not queue
+# behind it: both would submit the same URL list anyway.
+concurrency:
+  group: indexnow
+  cancel-in-progress: true
+
+jobs:
+  submit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # The sitemap is built rather than fetched from production, so the URL
+      # list does not depend on whether the deploy has landed yet.
+      - name: Build
+        run: npm run build
+
+      # Workers Builds deploys asynchronously on the same push. Submitting
+      # immediately can point a crawler at the previous build, which is the one
+      # outcome this workflow exists to avoid. Three minutes is comfortably
+      # longer than the deploys observed in CLAUDE.md's fingerprint note.
+      - name: Wait for the deploy to land
+        run: sleep 180
+
+      - name: Submit to IndexNow
+        run: node scripts/indexnow-submit.mjs
