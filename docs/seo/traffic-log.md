@@ -1,6 +1,8 @@
 # Traffic log
 
-A running record of what Search Console actually reports, one reading a month.
+A running record of what the search engines actually report, one reading a month.
+Google Search Console is the readings table below. Bing has its own section, added
+2026-09-15 when the site was first connected to it.
 
 It exists because the site spent a day being optimised against estimates. The
 forecast in `2026-08-07-measurement.md` is a set of scenarios, and scenarios are
@@ -721,6 +723,68 @@ consistent with one click and is the same story the click count tells rather
 than a second one.
 
 <!-- readings:notes -->
+
+## Bing, and the index that feeds Copilot
+
+Connected 2026-09-15, which is the first time this project has had any Bing
+side visibility at all. It matters out of proportion to Bing's search share,
+because Bing's index is what Copilot reads and what ChatGPT's search draws on,
+and the complaint that started this work was that assistants were weeks behind
+on the 1.4 rename and the games.
+
+`hamdam.com.au` was already verified in Bing Webmaster Tools, imported from the
+Google property, so no DNS record was needed. The API connection is separate
+from that verification and is the part that took two attempts: being verified
+in Bing and having authorised a tool to reach Bing are different things, and
+the first is not evidence of the second.
+
+**Submitted 2026-09-15:** `sitemap-index.xml` as a feed, status Pending, and
+all 26 URLs. The submission is confirmed by the quota rather than by the
+acknowledgement: the URL allowance went from 100 to 74 daily and 1600 to 1574
+monthly, exactly 26 consumed. `submitted: true` on its own proves only that
+the request was accepted.
+
+### 2026-09-15, the Bing baseline
+
+| URL | First discovered | Last crawled |
+| --- | --- | --- |
+| `/` | 2026-07-19 | 2026-09-14 |
+| `/whats-new/` | never | never |
+| `/moments/yalda/` | never | never |
+
+`0001-01-01T00:00:00Z` is Bing's placeholder for never, not a date. **Bing knows
+the homepage and nothing else.**
+
+Two things follow.
+
+**This is where Google was on 2026-08-08.** That reading found one page indexed
+and everything else either discovered and skipped or entirely unknown, and it
+took about three weeks from the first crawl for the rest to work through.
+Expect the same shape here, and do not read the next fortnight of silence as
+failure.
+
+**The homepage was crawled on 2026-09-14**, the same day the sitemap gained
+`lastmod` on all 26 URLs and IndexNow was first fired. That is consistent with
+IndexNow having worked and is not proof of it: one crawl on one day, and Bing
+had discovered the homepage back in July. The honest test is whether
+`/whats-new/` and `/moments/yalda/` get crawled without anything else being
+done, since neither has ever been.
+
+**The gap worth naming.** The pages Bing has never seen include `/whats-new/`,
+which is the page carrying the version number and the 1.4 release notes. An
+assistant reading Bing's index today cannot learn that 1.4 shipped, or that
+the app has games, or that it has been renamed, because the only page Bing
+holds is the homepage. That is the mechanism behind "every AI platform is
+weeks behind", stated concretely rather than as a suspicion.
+
+### What to check next, and when
+
+About a week from 2026-09-15, re-inspect the same three URLs. The question is
+narrow: have `/whats-new/` and `/moments/yalda/` been crawled. If yes, the
+submission and IndexNow are doing their job and the next reading can carry
+Bing impressions alongside Google's. If they are still never, the sitemap feed
+is worth checking for a processing error, because Pending should not last a
+week.
 
 ## What to watch, in priority order
 
