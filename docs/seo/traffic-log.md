@@ -82,6 +82,7 @@ newest reading is always the last one in each section.
 | 2026-09-07 | since the last reading (2026-09-02 to 2026-09-04, final) | 75 | 2 | 13.3 | 16 | 14 |
 | 2026-09-10 | since the last reading (2026-09-05 to 2026-09-07, final) | 168 | 3 | 10.9 | 28 | 14 |
 | 2026-09-13 | since the last reading (2026-09-08 to 2026-09-10, final) | 210 | 1 | 8.7 | 26 | 14 |
+| 2026-09-16 | since the last reading (2026-09-11 to 2026-09-14, final) | 249 | 1 | 8.3 | 31 | 17 |
 <!-- readings:row -->
 
 Trailing 28 days at the first reading (2026-07-09 to 2026-08-05): 23
@@ -721,6 +722,73 @@ poet page and not one moment page. The pages carrying 90 per cent of the
 impressions draw too few real visitors to survive a one in ten sample, which is
 consistent with one click and is the same story the click count tells rather
 than a second one.
+
+### 2026-09-16, a whole-site audit that mostly found its own mistakes
+
+Four days of final data, 2026-09-11 to 2026-09-14. Taken as part of a full
+thirteen layer audit of all 26 pages, written up in `2026-09-16-audit.md`.
+
+| | 09-08 to 09-10 | 09-11 to 09-14 |
+| --- | --- | --- |
+| Impressions per day | 70 | **62** |
+| Clicks | 1 | **1** |
+| Average position | 8.7 | **8.3** |
+| Named queries | 26 | 31 |
+| Pages with impressions | 14 | **17** |
+
+Position improved again, for the fourth reading running, and it is now better
+than it has ever been. Impressions per day slipped from 70 to 62, which on a
+four day window against a three day window is not a number to act on.
+
+Of 249 impressions, 134 are against the 31 named queries and **115 are
+withheld**, which is 46 per cent. Worth stating plainly because the audit this
+reading came from got exactly this wrong, and the correction is below.
+
+**The audit confirmed the 2026-09-13 finding rather than adding to it.**
+`/moments/yalda/` still carries the most impressions on the site and still has
+never been clicked. The audit added the query breakdown behind it, which is the
+part that closes the question: `yalda 2026` (87 impressions, position 6.4),
+`when is yalda 2026` (27, 5.4), `yalda night 2026` (16, 5.5), `yalda 2026 date`
+(13, 5.2). Every one is a date lookup, and Google answers a date lookup in the
+results panel. The title and description already carry the computed date, added
+2026-09-05 for this exact reason, and it changed nothing. The reasonable
+conclusion is that the ceiling on this page is the shape of the SERP, not the
+snippet. That is inference from the query set, not a measured fact.
+
+**The page worth acting on is `/fal-e-hafez/`, and it was under-ranked until
+now.** 142 impressions and 2 clicks at average position 12.4, and the named
+queries under it are `fal-e hafez english` (11 impressions, position 8.3),
+`faal hafiz` (5, 8.0), `faal e hafiz` (5, 10.8), `fal e hafez` (6, 9.0). The
+word carrying the demand is "english", the title did not contain it, and those
+four queries had 33 impressions and no clicks between them at page one
+positions. The title now reads `Fal-e Hafez in English: the Divan, opened at
+random | Hamdam`, shipped 2026-09-16. This is the first change on this site made
+from a named query set rather than from a guess about one, so the next reading
+is a real test of it.
+
+**The poet pages rank for somebody else's brand.** `/poets/hafez/` draws 201
+impressions over 90 days at average position 34.2, and the split is the whole
+story: `hafez` at position 55.5, `ganjoor hafez` at 6.7. Ganjoor is ganjoor.net,
+the archive people are navigating to. A good position on `ganjoor <poet>` is not
+a winnable click, and no title fixes that.
+
+**Two corrections this reading forced, and the first is embarrassing because
+this file already prevented it once.**
+
+1. **The headline was summed from the query breakdown again.** The audit's first
+   draft reported the trailing 90 days as 517 impressions and 3 clicks. The
+   property total is **1134 impressions and 13 clicks** at average position 17.7.
+   The 2026-08-08 entry above records this same mistake being made and corrected,
+   and states the rule: take the headline from a `dimensions: []` call. It was
+   made again by a session that had not read this file before reporting a number.
+   The rule has not changed. What is now also true is that it has failed twice,
+   so it is worth treating the query breakdown as actively misleading rather than
+   merely incomplete: at this reading it hides 46 per cent of impressions.
+2. **The audit was written against a working copy 49 commits behind `main`.**
+   The live crawl and the Search Console pull were current, so every measurement
+   in it stands. Every claim about the source code in its first draft did not,
+   and seven findings were withdrawn on contact with the real tree. Discovered
+   only because the push was rejected. `git fetch` before an audit, not after it.
 
 <!-- readings:notes -->
 

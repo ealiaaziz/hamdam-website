@@ -216,6 +216,70 @@ because catching them was luck rather than method.
 **Rule.** A file named for a date may contain many dates. Key on the row's own
 date, and take the newest file that reports each one.
 
+### Audited a working copy that was 49 commits behind main
+
+**Claimed:** across a whole-site SEO audit on 2026-09-16, a series of statements
+about what this repository contains. Among them: the poet pages carry no `Person`
+schema, the moments pages are missing headings, `/fa/privacy/` exceeds the meta
+description limit.
+
+**True:** all three were already handled, and had been for some time. `Person` is
+nested as `WebPage.about` in `src/lib/schema.js`. `MomentArticle.astro` documents
+the missing headings as a deliberate choice so no Persian label had to be
+invented. The Farsi description limit is 200 by design and is stated in
+`metaDescription.test.js`.
+
+**How.** `git fetch` was never run. The working copy was 49 commits old, so every
+file read was a week stale. The live site was crawled and Search Console was
+pulled through Composio, and both of those were current, which made the audit
+feel grounded: the measurements really were real. Only the code was fiction. The
+gap surfaced when `git push` was rejected, which is to say by luck, at the end,
+after a report had already been written and handed over twice.
+
+**Rule.** An audit begins with `git fetch` and a check that HEAD is not behind.
+Every other entry here is a misread output; this one is an accurate read of a
+stale input, which looks identical until something rejects it.
+
+### Summed the query breakdown for a headline again, two entries after the rule
+
+**Claimed:** the site drew 517 impressions and 3 clicks over the trailing 90 days.
+
+**True:** 1134 impressions and 13 clicks. The reported figure understated
+impressions by half and clicks by four times.
+
+**How.** The number was summed from a `dimensions: ['query']` call. Google
+withholds low volume queries, so that breakdown is a subset. At the 2026-09-16
+reading it hides 46 per cent of impressions.
+
+**This is a repeat.** `docs/seo/traffic-log.md` records the same mistake in its
+2026-08-08 entry, along with the correction and the rule: take the headline from
+a `dimensions: []` call. That file was not read before the number was reported.
+
+**Rule.** Restating the rule achieves nothing; it was already written down and
+still failed. The fix is upstream of it: before reporting any Search Console
+figure, read `docs/seo/traffic-log.md`. It is the meter and it carries its own
+instructions.
+
+### Five findings that were the tool, not the site
+
+One habit, not five events. All came from ad hoc regex over HTML during the same
+2026-09-16 audit, and all were caught before a file changed.
+
+- "27 images missing alt text." Zero are. The pattern looked for `alt="` and
+  missed the valueless `alt` attribute, which is a valid empty alt.
+- "`/poets/rumi/` has an 8 character meta description." It is complete. The
+  pattern treated the apostrophe in `reed's` as a closing quote.
+- "No schema on any of the 26 pages." All 26 have it. The parser read `@type`
+  at the top level and the schema is under `@graph`.
+- "No `Person` schema on the poet pages." It is nested one level deeper, under
+  `WebPage.about`.
+- "Trailing slash 307 is worth fixing." Already assessed and closed in
+  `traffic-log.md` on 2026-08-08.
+
+**Rule.** A regex over HTML produces claims about the regex. Confirm every
+reported absence by reading one example of the markup by eye, because a broken
+pattern and a missing tag produce identical output.
+
 ## What to do with this file
 
 Read it at the start of a session that will be reporting numbers or telling
