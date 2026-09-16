@@ -74,6 +74,34 @@ rather than by the edge, which is the correct outcome, since a `403` at the
 edge and a `Disallow` in `robots.txt` are the same result for a compliant
 crawler.
 
+## Verified 2026-09-16
+
+The check prescribed above was finally run. **Every agent returns 200, on `/` and
+on `/robots.txt` alike.** Ten were tried, covering both paths each: GPTBot,
+ChatGPT-User, OAI-SearchBot, ClaudeBot, Claude-User, anthropic-ai, CCBot,
+PerplexityBot, Google-Extended and bingbot. Not one 403.
+
+By the criterion this document sets, the managed rule is no longer intercepting
+anything, and the warning that used to head `public/robots.txt` was removed in the
+same commit as this note.
+
+**The caveat, stated because the test is weaker than it looks.** Cloudflare's
+managed AI crawler block classifies verified bots by reverse DNS and origin ASN,
+not by the user agent string alone. A curl from a laptop carrying `GPTBot` in its
+user agent is not a verified bot, so it can take a different path through the edge
+than the real GPTBot does. What these ten results prove is that **nothing is being
+blocked on the user agent string**. They cannot prove that a genuine verified
+crawler is not being handled differently.
+
+Two independent signals point the same way and are worth more than the curl:
+Google's URL inspection reports successful fetches with recent crawl times across
+the site, and Bing crawled all 26 URLs after the 2026-09-15 submission. Verified
+bots are reaching the origin.
+
+The only conclusive check is the Cloudflare dashboard's bot analytics, which needs
+access this repository's rules bar an assistant from having. If the question ever
+matters more than it does today, that is where the answer is.
+
 ## What this does not fix
 
 Retrieval crawlers can now read the site, but there are only six URLs to read,

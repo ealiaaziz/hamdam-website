@@ -18,11 +18,11 @@
 # need, is kept in docs/seo/2026-08-07-ai-crawler-policy.md rather than deleted
 # from history, so reversing this is an edit rather than a rediscovery.
 #
-# One thing this file cannot do on its own: Cloudflare's managed AI crawler
-# block sits in front of the origin and answers 403 before robots.txt is ever
-# requested. While that dashboard rule is on, everything below is inert. It is
-# a Cloudflare setting, not a repository one. See the doc above for the steps,
-# and for the curl commands that prove whether it took effect.
+# This file used to warn that Cloudflare's managed AI crawler block sat in front
+# of the origin and answered 403 before robots.txt was ever requested, making
+# everything below inert. That warning was removed on 2026-09-16 after the check
+# the policy doc prescribes was run and every agent came back 200. The result and
+# its one caveat are recorded in that doc under "Verified 2026-09-16".
 
 User-agent: *
 Allow: /
