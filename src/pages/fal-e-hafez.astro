@@ -20,7 +20,15 @@ const path = '/fal-e-hafez/';
 // sentence moves into the page body where it already appears.
 const description =
   'A question put to a book: hold your question, open the Divan of Hafez at random, and read the ghazal you land on. Do it on iPhone in Persian or English.';
-const title = 'Fal-e Hafez: the Divan of Hafez, opened at random | Hamdam';
+// "in English" added 2026-09-16, from measured Search Console demand rather
+// than a guess. Over the 90 days to 16 September this page drew its traffic on
+// `fal-e hafez english` (11 impressions, position 8.3), `faal hafiz` (5, 8.0),
+// `faal e hafiz` (5, 10.8) and `fale hafez english` (1, 41.0): the word people
+// type is "english", and the title did not contain it. Zero clicks on 33
+// impressions at page-one positions. "of Hafez" comes out to pay for it, which
+// costs nothing because "Hafez" is already the second word of the title.
+// 60 characters exactly.
+const title = 'Fal-e Hafez in English: the Divan, opened at random | Hamdam';
 
 const jsonLd = momentPageSchema({
   dateModified: lastmodIso(Astro.url.pathname),

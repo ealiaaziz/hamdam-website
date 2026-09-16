@@ -78,7 +78,13 @@ export const MOMENT_ID_BY_SLUG: Record<string, string> = Object.fromEntries(
 export const MOMENT_TITLE_TAIL_EN: Record<string, string> = {
   yalda: 'the longest night of the year',
   norooz: 'the first day of spring',
-  chaharshanbeSuri: 'the last Tuesday night before Norooz',
+  // Shortened 2026-09-16 from 'the last Tuesday night before Norooz'. That
+  // tail put the rendered title at 69 characters, so Google cut it mid-phrase
+  // and the searcher never saw "before Norooz". 60 exactly with the year and
+  // the brand suffix. "fire festival" is also the language people search with.
+  // The precise Tuesday-night definition is unchanged in the page body and in
+  // the meta description, which carries the computed date.
+  chaharshanbeSuri: 'fire festival before Norooz',
 };
 
 export const MOMENT_ALT: Record<string, MomentAlt> = {
