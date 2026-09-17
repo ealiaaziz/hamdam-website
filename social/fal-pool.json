@@ -6,14 +6,13 @@
  "_still_needed": "Each verse needs englishSaid written before it can ship - Ganjoor is Persian only. That is now the real constraint, not supply. Ealia reviews every Persian and English line.",
  "verses": [
   {
-   "id": "hafez-sh255-b2",
-   "ghazal": "غزل شمارهٔ ۲۵۵",
-   "source": "Divan-e Hafez, Ghazal 255",
-   "ganjoor": "https://ganjoor.net/hafez/ghazal/sh255",
-   "persian": "ای دل غمدیده، حالت بِه شود، دل بَد مکن\nوین سرِ شوریده باز آید به سامان غم مخور",
-   "gloss": "Grieving heart, your state will improve - do not despair. This restless head will find its order again. Do not grieve.",
-   "used": true,
-   "published": "2026-09-11 08:30 Brisbane, instagram.com/reel/DdH6brkk_en/ - reach 1214, 14 saves, 4 shares, 35 likes, 7.5s avg watch. Best post on the account by a wide margin."
+   "id": "hafez-sh164-b1",
+   "ghazal": "غزل شمارهٔ ۱۶۴",
+   "source": "Divan-e Hafez, Ghazal 164",
+   "ganjoor": "https://ganjoor.net/hafez/ghazal/sh164",
+   "persian": "نفسِ بادِ صبا مُشک‌فشان خواهد شد\nعالَمِ پیر دگرباره جوان خواهد شد",
+   "gloss": "The breath of the morning wind will scatter musk. The old world will be young again.",
+   "used": false
   },
   {
    "id": "hafez-sh255-b4",
@@ -22,33 +21,6 @@
    "ganjoor": "https://ganjoor.net/hafez/ghazal/sh255",
    "persian": "دورِ گردون گر دو روزی بر مرادِ ما نرفت\nدائماً یکسان نباشد حالِ دوران غم مخور",
    "gloss": "If the turning of the world went against us for a day or two - the times are never permanently one way. Do not grieve.",
-   "used": false
-  },
-  {
-   "id": "hafez-sh255-b5",
-   "ghazal": "غزل شمارهٔ ۲۵۵",
-   "source": "Divan-e Hafez, Ghazal 255",
-   "ganjoor": "https://ganjoor.net/hafez/ghazal/sh255",
-   "persian": "هان مَشو نومید چون واقِف نِه‌ای از سِرِّ غیب\nباشد اندر پرده بازی‌هایِ پنهان غم مخور",
-   "gloss": "Do not lose hope - you are not privy to what is hidden. There may be games being played behind the curtain. Do not grieve.",
-   "used": false
-  },
-  {
-   "id": "hafez-sh255-b8",
-   "ghazal": "غزل شمارهٔ ۲۵۵",
-   "source": "Divan-e Hafez, Ghazal 255",
-   "ganjoor": "https://ganjoor.net/hafez/ghazal/sh255",
-   "persian": "گرچه منزل بس خطرناک است و مقصد بس بعید\nهیچ راهی نیست کآن را نیست پایان، غم مخور",
-   "gloss": "Though the stage is dangerous and the destination far - there is no road that has no end. Do not grieve.",
-   "used": false
-  },
-  {
-   "id": "hafez-sh164-b1",
-   "ghazal": "غزل شمارهٔ ۱۶۴",
-   "source": "Divan-e Hafez, Ghazal 164",
-   "ganjoor": "https://ganjoor.net/hafez/ghazal/sh164",
-   "persian": "نفسِ بادِ صبا مُشک‌فشان خواهد شد\nعالَمِ پیر دگرباره جوان خواهد شد",
-   "gloss": "The breath of the morning wind will scatter musk. The old world will be young again.",
    "used": false
   },
   {
@@ -61,12 +33,30 @@
    "used": false
   },
   {
+   "id": "hafez-sh255-b5",
+   "ghazal": "غزل شمارهٔ ۲۵۵",
+   "source": "Divan-e Hafez, Ghazal 255",
+   "ganjoor": "https://ganjoor.net/hafez/ghazal/sh255",
+   "persian": "هان مَشو نومید چون واقِف نِه‌ای از سِرِّ غیب\nباشد اندر پرده بازی‌هایِ پنهان غم مخور",
+   "gloss": "Do not lose hope - you are not privy to what is hidden. There may be games being played behind the curtain. Do not grieve.",
+   "used": false
+  },
+  {
    "id": "hafez-sh232-b1",
    "ghazal": "غزل شمارهٔ ۲۳۲",
    "source": "Divan-e Hafez, Ghazal 232",
    "ganjoor": "https://ganjoor.net/hafez/ghazal/sh232",
    "persian": "بر سرِ آنم که گر ز دست برآید\nدست به‌کاری زنم که غصّه سرآید",
    "gloss": "I have it in mind that if it lies within my power, I will set my hand to something that ends the sorrow.",
+   "used": false
+  },
+  {
+   "id": "hafez-sh255-b8",
+   "ghazal": "غزل شمارهٔ ۲۵۵",
+   "source": "Divan-e Hafez, Ghazal 255",
+   "ganjoor": "https://ganjoor.net/hafez/ghazal/sh255",
+   "persian": "گرچه منزل بس خطرناک است و مقصد بس بعید\nهیچ راهی نیست کآن را نیست پایان، غم مخور",
+   "gloss": "Though the stage is dangerous and the destination far - there is no road that has no end. Do not grieve.",
    "used": false
   },
   {
@@ -113,6 +103,17 @@
    "persian": "تعبیر رفت «یار سفرکرده می‌رسد»\nای کاج هر چه زودتر از در درآمدی",
    "gloss": "The reading came out: 'the one who travelled is arriving.' If only they would come through the door sooner.",
    "used": false
+  },
+  {
+   "id": "hafez-sh255-b2",
+   "ghazal": "غزل شمارهٔ ۲۵۵",
+   "source": "Divan-e Hafez, Ghazal 255",
+   "ganjoor": "https://ganjoor.net/hafez/ghazal/sh255",
+   "persian": "ای دل غمدیده، حالت بِه شود، دل بَد مکن\nوین سرِ شوریده باز آید به سامان غم مخور",
+   "gloss": "Grieving heart, your state will improve - do not despair. This restless head will find its order again. Do not grieve.",
+   "used": true,
+   "published": "2026-09-11 08:30 Brisbane, instagram.com/reel/DdH6brkk_en/ - reach 1214, 14 saves, 4 shares, 35 likes, 7.5s avg watch. Best post on the account by a wide margin."
   }
- ]
+ ],
+ "_ordering_note": "Selection is FIRST UNUSED IN FILE ORDER, so this order is the schedule. Interleaved so no two consecutive weeks draw on Ghazal 255 - four of the twelve come from it, and running them together would read as one poem serialised rather than a fal. hafez-sh255-b2 published 11 Sep; sh164-b1 is next."
 }
