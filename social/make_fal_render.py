@@ -174,7 +174,11 @@ en = EN_OVERRIDE.get(sys.argv[1] if len(sys.argv) > 1 else 'hafez-032', '')
 if not en:
     raise SystemExit(f"no EN_OVERRIDE for {sys.argv[1] if len(sys.argv) > 1 else '?'} - "
                      "page 5 would render empty. Write the English first.")
-s = re.sub(r"EN = .*", 'EN = ' + repr(en), s, count=1)
+# ANCHORED to the start of a line. An unanchored "EN = .*" also matches inside
+# FACES_EN = (...) in the source renderer, which corrupts the tuple and leaves
+# the generated script unable to compile. That broke every Thursday fal run
+# from 10 Sep 2026, when the font guard introduced FACES_EN, until 18 Sep.
+s = re.sub(r"^EN = .*$", 'EN = ' + repr(en), s, count=1, flags=re.M)
 
 open(OUT, 'w').write(s)
 print(OUT)
