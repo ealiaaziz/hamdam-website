@@ -111,7 +111,26 @@ const ogImage = new URL(
     <meta name="theme-color" content={navOverDarkHero ? '#141430' : '#F4EDD8'} />
     <meta name="apple-itunes-app" content={`app-id=${APP_STORE.ID}`} />
     {noindex && <meta name="robots" content="noindex" />}
-    <link rel="canonical" href={canonicalURL} />
+    {
+      /* A noindexed page declares no canonical (2026-09-16). The two tags
+         contradict each other: a canonical asserts "this is the indexable
+         address of this content", which is what noindex asserts it is not.
+         Concretely, the 404 page used to emit
+         `<link rel="canonical" href="https://hamdam.com.au/404">` on every 404
+         response, and /404 answers 200, because Cloudflare serves
+         dist/404.html as an ordinary static asset as well as using it for
+         not_found_handling. A canonical naming a crawlable 200 URL is an
+         invitation to crawl it.
+
+         This is hygiene, not an incident. It was found while chasing the
+         Search Console mail of 2026-09-16 and the first write-up claimed it
+         was the cause. It is not: URL inspection says /404 is "URL is unknown
+         to Google", so nothing ever followed that tag. The mail's actual
+         source was support.hamdam.com.au, which is correctly noindexed on
+         purpose. See docs/seo/2026-09-16-indexing-email.md. The tag is removed
+         because it is wrong, not because it cost anything. */
+    }
+    {!noindex && <link rel="canonical" href={canonicalURL} />}
     <link rel="manifest" href="/site.webmanifest" />
     <link rel="alternate" hreflang="en" href={new URL(enPath, Astro.site)} />
     <link rel="alternate" hreflang="fa" href={new URL(faPath, Astro.site)} />
