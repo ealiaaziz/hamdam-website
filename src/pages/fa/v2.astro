@@ -1,0 +1,45 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import V2Article from '../../components/V2Article.astro';
+import Footer from '../../components/Footer.astro';
+import { V2_HEADLINE, V2_UI } from '../../data/v2Release';
+import { MOMENT_UI } from '../../data/momentContent';
+import { momentPageSchema } from '../../lib/schema';
+
+// The Farsi half. Same component, same data, same slug as src/pages/v2.astro.
+//
+// No Persian is authored here, and for once none is MISSING either. Every
+// Farsi string on this page, including the headings and the status line, was
+// written in hamdam-ios and copied by scripts/extract-v2-notes.mjs. The
+// asymmetry the What's New and moment pages carry, where the Farsi side drops
+// the chrome it has no approved words for, does not apply to this page. That
+// was the point of writing the copy over there.
+const path = '/fa/v2/';
+
+// 200 characters, the Farsi limit metaDescription.test.js enforces. Higher than
+// the English 160 because Persian script renders narrower per character, which
+// is that test's own finding rather than a concession made here.
+const description = `${V2_UI.status.fa} ${V2_HEADLINE.fa}`.slice(0, 200);
+const title = V2_UI.title.fa;
+
+const jsonLd = momentPageSchema({
+  lang: 'fa',
+  name: title,
+  description,
+  url: new URL(path, Astro.site).href,
+  breadcrumbHome: MOMENT_UI.home.fa,
+  homeUrl: new URL('/fa/', Astro.site).href,
+});
+---
+
+<BaseLayout
+  title={title}
+  description={description}
+  lang="fa"
+  path={path}
+  jsonLd={jsonLd}
+  navOverDarkHero={true}
+>
+  <V2Article lang="fa" />
+  <Footer lang="fa" />
+</BaseLayout>

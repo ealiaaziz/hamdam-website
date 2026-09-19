@@ -5,6 +5,7 @@ import MoodDemo from '../../components/MoodDemo.astro';
 import VerseShowcase from '../../components/VerseShowcase.astro';
 import { faCopy } from '../../data/siteCopy';
 import { WHATS_NEW_UI } from '../../data/whatsNewCopy';
+import { V2_UI } from '../../data/v2Release';
 import PoetsBand from '../../components/PoetsBand.astro';
 import JourneyPair from '../../components/JourneyPair.astro';
 import RootsMoments from '../../components/RootsMoments.astro';
@@ -203,6 +204,11 @@ const jsonLd = homepageSchema({
             uses. The label is WHATS_NEW_UI.navLabel.fa, the first word of the
             app's own "تازه‌ها در همدم" heading, taken whole. */}
         <a href="/fa/whats-new/" class="inline-flex min-h-[44px] items-center px-1 hover:text-indigo">{WHATS_NEW_UI.navLabel.fa}</a>
+        <span aria-hidden="true">·</span>
+        {/* Hamdam 2.0. The label is V2_UI.navLabel.fa, written in hamdam-ios
+            with the rest of the 2.0 copy and copied here by
+            scripts/extract-v2-notes.mjs, never typed in this repository. */}
+        <a href="/fa/v2/" class="inline-flex min-h-[44px] items-center px-1 hover:text-indigo">{V2_UI.navLabel.fa}</a>
         <span aria-hidden="true">·</span>
         <a href="/fa/privacy/" class="inline-flex min-h-[44px] items-center px-1 hover:text-indigo">حریم خصوصی</a>
         <span aria-hidden="true">·</span>

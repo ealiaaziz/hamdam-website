@@ -1,0 +1,48 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import V2Article from '../components/V2Article.astro';
+import Footer from '../components/Footer.astro';
+import { V2_HEADLINE, V2_UI } from '../data/v2Release';
+import { momentPageSchema } from '../lib/schema';
+
+// The English half of the Hamdam 2.0 pair. The Farsi half is
+// src/pages/fa/v2.astro, built from the same component and the same data.
+//
+// The slug is Latin and identical on both locales, so switchLocalePath maps
+// /v2/ to /fa/v2/ with no per-locale table and BaseLayout's hreflang pair is
+// correct with no change to it. Same move the moment and What's New pages made.
+//
+// momentPageSchema, NOT whatsNewPageSchema. That one publishes a
+// SoftwareApplication node carrying the current version, and this page is about
+// a version the App Store does not have: claiming 2.0 in structured data while
+// Apple answers 1.4.2 is precisely the disagreement `npm run check:release`
+// exists to prevent. A WebPage and a BreadcrumbList is the honest shape, and
+// nothing here states a version number a machine will read as shipped.
+const path = '/v2/';
+
+// 160 characters, the English limit metaDescription.test.js enforces against
+// the built HTML.
+const description = `${V2_UI.status.en} ${V2_HEADLINE.en}`.slice(0, 160);
+const title = V2_UI.title.en;
+
+const jsonLd = momentPageSchema({
+  lang: 'en',
+  name: title,
+  description,
+  url: new URL(path, Astro.site).href,
+  breadcrumbHome: 'Hamdam',
+  homeUrl: new URL('/', Astro.site).href,
+});
+---
+
+<BaseLayout
+  title={title}
+  description={description}
+  lang="en"
+  path={path}
+  jsonLd={jsonLd}
+  navOverDarkHero={true}
+>
+  <V2Article lang="en" />
+  <Footer lang="en" />
+</BaseLayout>
