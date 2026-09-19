@@ -83,6 +83,7 @@ newest reading is always the last one in each section.
 | 2026-09-10 | since the last reading (2026-09-05 to 2026-09-07, final) | 168 | 3 | 10.9 | 28 | 14 |
 | 2026-09-13 | since the last reading (2026-09-08 to 2026-09-10, final) | 210 | 1 | 8.7 | 26 | 14 |
 | 2026-09-16 | since the last reading (2026-09-11 to 2026-09-14, final) | 249 | 1 | 8.3 | 31 | 17 |
+| 2026-09-19 | since the last reading (2026-09-15 to 2026-09-17, final) | 177 | 1 | 7.5 | 24 | 14 |
 <!-- readings:row -->
 
 Trailing 28 days at the first reading (2026-07-09 to 2026-08-05): 23
@@ -790,6 +791,73 @@ this file already prevented it once.**
    and seven findings were withdrawn on contact with the real tree. Discovered
    only because the push was rejected. `git fetch` before an audit, not after it.
 
+### 2026-09-19, two days of the title test, and a window that was nearly widened
+
+| | 09-11 to 09-14 | 09-15 to 09-17 |
+| --- | --- | --- |
+| Impressions per day | 62 | **59** |
+| Clicks | 1 | **1** |
+| Average position | 8.3 | **7.5** |
+| Named queries | 31 | 24 |
+| Pages with impressions | 17 | **14** |
+
+Three days of final data. Position improved for the fifth reading running and
+is the best in this file. Everything else is flat, which on a three day window
+against a four day window is what flat should look like.
+
+**This entry was nearly the double count the file warns about.** The first pull
+covered 2026-09-11 to 2026-09-17 and was written up in full before anyone
+noticed that 09-11 to 09-14 is already the row above. That seven day window is
+550 impressions and 3 clicks, and reporting it as "since the last reading"
+would have counted four days twice and turned a flat week into a 27 per cent
+rise. The 2026-09-10 entry records the identical error being caught, and the
+convention exists precisely for this.
+
+What is worth recording is how it was caught: **not by reading this file, but by
+a rebase conflict.** The working copy was five commits behind `main` and the
+2026-09-16 reading did not exist in it, so the file being consulted for "what
+was the last reading" was stale. The 2026-09-16 entry directly above records an
+audit written against a tree 49 commits behind and says `git fetch` before an
+audit, not after it. That applies to taking a reading too, and it is now the
+second time the stale checkout has been the root cause. **Fetch before reading
+the log, because the log is the thing that tells you which window is yours.**
+
+**The `/fal-e-hafez/` title change shipped 09-16 and there are two days of data
+on it. That is not a verdict.** The page took 29 impressions and 1 click, a 3.4
+per cent CTR, at average position 10.7 against 12.4 over the 90 days before it.
+Against that, `fal-e hafez english` -- the query the change was aimed at -- sits
+at position 11 on 2 impressions, where it was 8.3 on 11 impressions before. Two
+impressions is not a position. Read this at the next reading, not now.
+
+**What the click history does say is that this page is the only one that
+converts.** Every click it has ever drawn, dated: 2026-09-02, 2026-09-13,
+2026-09-16. Three clicks across seven weeks, arriving at a roughly steady rate
+that predates the title change by a fortnight. Aside from the homepage on the
+brand term, no other page on this site has ever been clicked. That is the
+finding, and it was already visible in the 2026-09-16 entry's "142 impressions
+and 2 clicks"; this reading dates them rather than discovering them.
+
+**Yalda: 69 impressions, position 4.8, zero clicks. Fourth window running.**
+Its best average position yet and still nothing. Add norooz (15) and
+chaharshanbe suri (3) and the seasonal pages are 87 of 177, 49 per cent.
+
+**`/poets/parvin-etesami/` is now the second largest page on the site**, 31
+impressions at position 7.1, ahead of the fal page. It draws almost no named
+queries, so what is pulling it is withheld and cannot be characterised from
+here. Worth watching rather than explaining.
+
+**`hafez` drew 2 impressions at position 38.5.** Better than the 53 and 55 of
+the last two readings and still page four. Eighth reading with no head term
+inside the top twenty.
+
+Of 177 impressions, 92 are against the 24 named queries and **85 are withheld,
+48 per cent**, holding at the level the previous entry flagged.
+
+**Countries:** United States 74, Australia 16, Canada 15, United Kingdom 9,
+Germany 9. **Iran: 1.** The Farsi pages drew 3 impressions of 177 between them.
+Neither number moves without Persian language links, and no on-site change
+reaches them.
+
 <!-- readings:notes -->
 
 ## Bing, and the index that feeds Copilot
@@ -853,6 +921,56 @@ submission and IndexNow are doing their job and the next reading can carry
 Bing impressions alongside Google's. If they are still never, the sitemap feed
 is worth checking for a processing error, because Pending should not last a
 week.
+
+### 2026-09-19, the check that was promised, and a correction to the baseline
+
+**"Bing knows the homepage and nothing else" was wrong.** It was written from
+three URLs, and two of the three happened to be the unknown ones. Nine were
+sampled this time:
+
+| URL | First discovered | Last crawled |
+| --- | --- | --- |
+| `/` | 2026-07-19 | 2026-09-18 |
+| `/fa/` | 2026-07-20 | 2026-09-14 |
+| `/privacy/` | 2026-08-30 | 2026-09-04 |
+| `/fal-e-hafez/` | 2026-09-03 | 2026-09-18 |
+| `/poets/hafez/` | 2026-09-03 | 2026-09-18 |
+| `/moments/norooz/` | 2026-09-11 | 2026-09-11 |
+| `/poets/parvin-etesami/` | 2026-09-16 | 2026-09-16 |
+| `/whats-new/` | never | never |
+| `/moments/yalda/` | never | never |
+
+Seven of nine are discovered and crawled, three of them discovered before the
+API connection existed. Bing has been working through this site since July.
+The baseline overstated the problem, and it overstated it in the direction that
+made the work look more necessary, which is the direction to be most suspicious
+of. Left in place with the correction beside it, because the method error is
+the useful part: **three URLs is a sample, not a census, and it was reported as
+a census.**
+
+`document_size` is 0 for three of the crawled pages despite a crawl date. That
+is not read as "crawled but empty" here, because no claim in this file needs
+it; it is metadata lag or a field this API does not populate reliably, and
+guessing which would be the same mistake again.
+
+**`/whats-new/` and `/moments/yalda/` are still never crawled**, four days after
+being submitted individually and in a sitemap. That is the check the 09-15 entry
+asked for and the answer is no.
+
+**And the sitemap was part of the reason.** `sitemap-index.xml` has reported
+`status: Success` since 09-15 -- and `url_count: 1`. Bing processed the index,
+counted the one child sitemap it points to as the single URL it contains, and
+never expanded it. A feed can be green and deliver nothing. **Check `url_count`
+against the number of pages, not the status field.**
+
+`sitemap-0.xml` was therefore submitted directly today at 11:24 UTC. Bing
+crawled it within the same minute and now reports `url_count: 26`. Both feeds
+are left in place; the index costs nothing and may yet expand.
+
+Next check, about a week out: whether `/whats-new/` and `/moments/yalda/` have
+been crawled now that Bing has all 26 URLs from a feed it demonstrably read. If
+they are still never after that, the cause is not submission and there is no
+point submitting a third time.
 
 ## What to watch, in priority order
 
